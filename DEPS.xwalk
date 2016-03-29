@@ -18,7 +18,7 @@
 # -----------------------------------
 
 chromium_crosswalk_rev = '44155bc3e23350f47b2b6510a06d53e79749e215'
-v8_crosswalk_rev = 'c533f2bd4fab36afb6e93ac23cef0e8373f9df00'
+v8_crosswalk_rev = '9c1c322c9cc49ad82accf351f165c0aa3744a7e9'
 
 crosswalk_git = 'https://github.com/crosswalk-project'
 
