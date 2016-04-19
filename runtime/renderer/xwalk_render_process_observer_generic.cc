@@ -8,7 +8,7 @@
 #include "content/public/renderer/render_thread.h"
 #include "extensions/common/url_pattern.h"
 #include "ipc/ipc_message_macros.h"
-#include "third_party/WebKit/public/web/WebSecurityOrigin.h"
+#include "third_party/WebKit/public/platform/WebSecurityOrigin.h"
 #include "third_party/WebKit/public/web/WebSecurityPolicy.h"
 #include "third_party/WebKit/public/platform/WebString.h"
 #include "xwalk/application/common/constants.h"
