@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef ANDROID_WEBVIEW_BROWSER_SCOPED_ALLOW_WAIT_FOR_LEGACY_WEB_VIEW_API_H
-#define ANDROID_WEBVIEW_BROWSER_SCOPED_ALLOW_WAIT_FOR_LEGACY_WEB_VIEW_API_H
+#ifndef XWALK_RUNTIME_BROWSER_ANDROID_SCOPED_ALLOW_WAIT_FOR_LEGACY_WEB_VIEW_API_H_
+#define XWALK_RUNTIME_BROWSER_ANDROID_SCOPED_ALLOW_WAIT_FOR_LEGACY_WEB_VIEW_API_H_
 
 #include "base/threading/thread_restrictions.h"
 
@@ -17,4 +17,4 @@ class ScopedAllowWaitForLegacyWebViewApi {
   base::ThreadRestrictions::ScopedAllowWait wait;
 };
 
-#endif  // ANDROID_WEBVIEW_BROWSER_SCOPED_ALLOW_WAIT_FOR_LEGACY_WEB_VIEW_API_H
+#endif  // XWALK_RUNTIME_BROWSER_ANDROID_SCOPED_ALLOW_WAIT_FOR_LEGACY_WEB_VIEW_API_H_

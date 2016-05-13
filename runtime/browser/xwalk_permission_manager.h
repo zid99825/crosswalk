@@ -6,6 +6,7 @@
 #ifndef XWALK_RUNTIME_BROWSER_XWALK_PERMISSION_MANAGER_H_
 #define XWALK_RUNTIME_BROWSER_XWALK_PERMISSION_MANAGER_H_
 
+#include <string>
 #include <vector>
 
 #include "base/callback_forward.h"

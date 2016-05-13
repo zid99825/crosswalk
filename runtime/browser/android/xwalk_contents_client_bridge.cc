@@ -334,7 +334,7 @@ void XWalkContentsClientBridge::ExitFullscreen(
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   WebContents* web_contents = reinterpret_cast<WebContents*>(j_web_contents);
   if (web_contents)
-    // TODO(mrunal): Instead of hardcoding the value below we can accept this 
+    // TODO(mrunal): Instead of hardcoding the value below we can accept this
     // as a parameter
     web_contents->ExitFullscreen(/*will_cause_resize=*/false);
 }

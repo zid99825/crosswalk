@@ -30,7 +30,8 @@ struct AccessWhitelistItem {
 };
 
 AccessWhitelistItem::AccessWhitelistItem(
-    const GURL& source, const GURL& dest, const std::string& dest_host, bool allow_subdomains)
+    const GURL& source, const GURL& dest,
+    const std::string& dest_host, bool allow_subdomains)
     : source(source),
       dest(dest),
       dest_host(dest_host),
@@ -81,10 +82,9 @@ void XWalkRenderProcessObserver::OnRenderProcessShutdown() {
   is_blink_initialized_ = false;
 }
 
-void XWalkRenderProcessObserver::OnSetAccessWhiteList(const GURL& source,
-                                                      const GURL& dest,
-                                                      const std::string& dest_host,
-                                                      bool allow_subdomains) {
+void XWalkRenderProcessObserver::OnSetAccessWhiteList(
+    const GURL& source, const GURL& dest,
+    const std::string& dest_host, bool allow_subdomains) {
   base::AutoLock lock(lock_);
   if (is_blink_initialized_)
     AddAccessWhiteListEntry(source, dest, dest_host, allow_subdomains);

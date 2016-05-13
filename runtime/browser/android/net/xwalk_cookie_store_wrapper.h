@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef XWALK_RUNTIME_BROWSER_ANDROID_NET_XWALK_COOKIE_STORE_WRAPPER_H_
+#define XWALK_RUNTIME_BROWSER_ANDROID_NET_XWALK_COOKIE_STORE_WRAPPER_H_
+
 #include <string>
 
 #include "base/bind.h"
@@ -99,8 +102,8 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
       Type argument) {
     task_runner->PostTask(
         FROM_HERE,
-        base::Bind(&XWalkCookieStoreWrapper::RunClosureCallback, weak_cookie_store,
-                   base::Bind(callback, argument)));
+        base::Bind(&XWalkCookieStoreWrapper::RunClosureCallback,
+                   weak_cookie_store, base::Bind(callback, argument)));
   }
 
   // Returns a base::Callback that takes an argument of Type and posts a task to
@@ -128,4 +131,6 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
   base::WeakPtrFactory<XWalkCookieStoreWrapper> weak_factory_;
 };
 
-}  // namesspace xwalk
+}  // namespace xwalk
+
+#endif  // XWALK_RUNTIME_BROWSER_ANDROID_NET_XWALK_COOKIE_STORE_WRAPPER_H_

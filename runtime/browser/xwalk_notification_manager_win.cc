@@ -56,8 +56,7 @@ void XWalkNotificationManager::ShowDesktopNotification(
 }
 
 void XWalkNotificationManager::RemoveNotification(
-    XWalkNotificationWin* notification)
-{
+    XWalkNotificationWin* notification) {
   notification->Destroy();
   notifications_.erase(notification);
 }

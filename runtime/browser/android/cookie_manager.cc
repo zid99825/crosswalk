@@ -121,8 +121,8 @@ void GetUserDataDir(FilePath* user_data_dir) {
   }
 }
 
-// CookieManager creates and owns XWalkView's CookieStore, in addition to handling
-// calls into the CookieStore from Java.
+// CookieManager creates and owns XWalkView's CookieStore, in addition to
+// handling calls into the CookieStore from Java.
 //
 // Since Java calls can be made on the IO Thread, and must synchronously return
 // a result, and the CookieStore API allows it to asynchronously return results,
@@ -130,7 +130,7 @@ void GetUserDataDir(FilePath* user_data_dir) {
 class CookieManager {
  public:
   static CookieManager* GetInstance();
-  
+
   // Returns the TaskRunner on which the CookieStore lives.
   base::SingleThreadTaskRunner* GetCookieStoreTaskRunner();
   // Returns the CookieStore, creating it if necessary. This must only be called
@@ -205,7 +205,7 @@ class CookieManager {
 
 base::LazyInstance<CookieManager>::Leaky g_lazy_instance;
 
-} //namespace
+}  // namespace
 
 // static
 CookieManager* CookieManager::GetInstance() {
@@ -268,7 +268,8 @@ net::CookieStore* CookieManager::GetCookieStore() {
     cookie_store_task_runner_ =
         BrowserThread::GetMessageLoopProxyForThread(BrowserThread::IO);
     cookie_config.client_task_runner = cookie_store_task_runner_;
-    cookie_config.background_task_runner = cookie_store_backend_thread_.task_runner();
+    cookie_config.background_task_runner =
+        cookie_store_backend_thread_.task_runner();
 
     {
       base::AutoLock lock(accept_file_scheme_cookies_lock_);

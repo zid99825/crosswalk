@@ -137,7 +137,6 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
   content::RenderFrameHost::AllowInjectingJavaScriptForAndroidWebView();
 
   // Prepare the cookie store.
-
 }
 
 void XWalkBrowserMainPartsAndroid::PostMainMessageLoopRun() {

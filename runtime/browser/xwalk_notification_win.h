@@ -5,18 +5,19 @@
 #ifndef XWALK_RUNTIME_BROWSER_XWALK_NOTIFICATION_WIN_H_
 #define XWALK_RUNTIME_BROWSER_XWALK_NOTIFICATION_WIN_H_
 
-#include <string>
-
-#include "base/callback.h"
-#include "base/files/scoped_temp_dir.h"
-#include "base/strings/string16.h"
-
 #include <windows.h>
 #include <windows.ui.notifications.h>
 #include <wrl/event.h>
 #include <wrl/implements.h>
 #include <wrl/module.h>
 #include <wrl/wrappers/corewrappers.h>
+#include <string>
+
+#include "base/callback.h"
+#include "base/files/scoped_temp_dir.h"
+#include "base/strings/string16.h"
+
+
 
 namespace mswr = Microsoft::WRL;
 namespace mswrw = Microsoft::WRL::Wrappers;
@@ -48,7 +49,7 @@ class XWalkNotificationManager;
 
 class XWalkNotificationWin :
     public base::RefCountedThreadSafe<XWalkNotificationWin> {
-public:
+ public:
   XWalkNotificationWin(
       XWalkNotificationManager* manager,
       scoped_ptr<content::DesktopNotificationDelegate> delegate);
@@ -67,7 +68,7 @@ public:
 
   void Dismiss();
 
-private:
+ private:
   friend class NotificationEventHandlerWin;
   void NotificationClosed();
   void NotificationClicked();
@@ -129,7 +130,7 @@ class NotificationEventHandlerWin :
                               NotificationActivatedEventHandler,
                               NotificationDismissedEventHandler,
                               NotificationFailedEventHandler> {
-public:
+ public:
   NotificationEventHandlerWin(
       XWalkNotificationWin* notification);
   ~NotificationEventHandlerWin();
@@ -141,7 +142,7 @@ public:
   IFACEMETHODIMP Invoke(winui::Notifications::IToastNotification* sender,
       winui::Notifications::IToastFailedEventArgs* e);
 
-private:
+ private:
   XWalkNotificationWin* notification_;
 
   DISALLOW_COPY_AND_ASSIGN(NotificationEventHandlerWin);

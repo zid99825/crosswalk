@@ -345,7 +345,8 @@ base::Closure XWalkCookieStoreWrapper::CreateWrappedClosureCallback(
                                weak_factory_.GetWeakPtr(), callback));
 }
 
-void XWalkCookieStoreWrapper::RunClosureCallback(const base::Closure& callback) {
+void XWalkCookieStoreWrapper::RunClosureCallback(
+    const base::Closure& callback) {
   DCHECK(client_task_runner_->RunsTasksOnCurrentThread());
   callback.Run();
 }
