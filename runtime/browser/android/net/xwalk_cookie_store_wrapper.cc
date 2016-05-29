@@ -103,6 +103,7 @@ void SetCookieWithOptionsAsyncOnCookieThread(
     const std::string& cookie_line,
     const net::CookieOptions& options,
     const net::CookieStore::SetCookiesCallback& callback) {
+  DLOG(INFO) << "Setting cookie Async in cookie_store_wrapper";
   GetCookieStore()->SetCookieWithOptionsAsync(url, cookie_line, options,
                                               callback);
 }
@@ -122,6 +123,7 @@ void SetCookieWithDetailsAsyncOnCookieThread(
     bool enforce_strict_secure,
     net::CookiePriority priority,
     const net::CookieStore::SetCookiesCallback& callback) {
+  DLOG(INFO) << "Setting cookie Async in cookie_store_wrapper";
   GetCookieStore()->SetCookieWithDetailsAsync(
       url, name, value, domain, path, creation_time, expiration_time,
       last_access_time, secure, http_only, same_site, enforce_strict_secure,
