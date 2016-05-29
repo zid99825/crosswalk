@@ -12,6 +12,8 @@ import org.chromium.base.annotations.JNINamespace;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.util.Log;
+
 /**
  * Delegate for handling callbacks. All methods are called on the IO thread.
  */
@@ -51,6 +53,9 @@ public abstract class XWalkContentsIoThreadClient {
     protected XWalkWebResourceResponseInternal shouldInterceptRequest(String url, boolean isMainFrame,
             boolean hasUserGesture, String method, String[] requestHeaderNames,
             String[] requestHeaderValues) {
+
+        Log.i("XWalkWebResponseInternal", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
+
         XWalkContentsClient.WebResourceRequestInner request =
             new XWalkContentsClient.WebResourceRequestInner();
         request.url = url;
