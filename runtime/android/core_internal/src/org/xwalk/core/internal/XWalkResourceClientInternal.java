@@ -300,9 +300,9 @@ public class XWalkResourceClientInternal {
     }
 
     /**
-     * Notify the host application to handle a SSL client certificate request. The host application 
-     * is responsible for showing the UI if desired and providing the keys. There are three ways to 
-     * respond: proceed(), cancel() or ignore(). XWalkView remembers the response if proceed() or cancel() 
+     * Notify the host application to handle a SSL client certificate request. The host application
+     * is responsible for showing the UI if desired and providing the keys. There are three ways to
+     * respond: proceed(), cancel() or ignore(). XWalkView remembers the response if proceed() or cancel()
      * is called and does not call onReceivedClientCertRequest() again for the same host and port pair.
      * XWalkView does not remember the response if ignore() is called.
      *
@@ -312,7 +312,7 @@ public class XWalkResourceClientInternal {
      *
      * @param view The XWalkView that is initiating the callback
      * @param handler An instance of a ClientCertRequestHandlerInternal
-     * 
+     *
      * @since 6.0
      */
     @XWalkAPI
@@ -407,6 +407,20 @@ public class XWalkResourceClientInternal {
                         haHandler.cancel();
                     }
                 }).create().show();
+    }
+
+    /**
+     * Construct an instance of XWalkWebResourceResponseInternal
+     * for application usage with no variables set. You <b>must</b>
+     * call {@link XWalkWebResourceResponseInternal#ready} after
+     * setting data or the thread will hang indefinately.
+     *
+     * @return XWalkWebResourceResponseInternal.
+     * @since 6.0
+     */
+    @XWalkAPI
+    public XWalkWebResourceResponseInternal createXWalkWebResourceResponse() {
+        return new XWalkWebResourceResponseInternal();
     }
 
     /**

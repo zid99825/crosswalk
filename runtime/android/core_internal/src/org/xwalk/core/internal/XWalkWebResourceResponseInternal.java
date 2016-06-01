@@ -12,6 +12,7 @@ import org.chromium.base.annotations.JNINamespace;
 import java.io.InputStream;
 import java.io.StringBufferInputStream;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Encapsulates a resource response. Applications can return an instance of this
@@ -29,6 +30,8 @@ public class XWalkWebResourceResponseInternal{
     private Map<String, String> mResponseHeaders;
     private String[] mResponseHeaderNames;
     private String[] mResponseHeaderValues;
+    private CountDownLatch mReadyLatch;
+    private boolean mReady;
 
     // Never use this constructor.
     // It is only used in XWalkWebResourceResponseBridge.
@@ -36,12 +39,15 @@ public class XWalkWebResourceResponseInternal{
         mMimeType = null;
         mEncoding = null;
         mData = null;
+        mReadyLatch = new CountDownLatch(1);
+        mReady = false;
     }
 
     XWalkWebResourceResponseInternal(String mimeType, String encoding, InputStream data) {
         mMimeType = mimeType;
         mEncoding = encoding;
         setData(data);
+        mReady = true;
     }
 
     XWalkWebResourceResponseInternal(String mimeType, String encoding, InputStream data,
@@ -51,6 +57,35 @@ public class XWalkWebResourceResponseInternal{
         mStatusCode = statusCode;
         mReasonPhrase = reasonPhrase;
         mResponseHeaders = responseHeaders;
+    }
+
+    private void waitUntilReady() {
+      Log.i("XWalkWebResponseInternal.waitUntilReady()", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
+        if (!mReady) {
+            if (mReadyLatch != null) {
+                Log.d("XWalkWebResourceResponse", "Waiting to be ready");
+                try {
+                    mReadyLatch.await();
+                } catch (InterruptedException e) {
+                    Log.w("XWalkWebResourceResponse", "Interrupted while waiting to be ready", e);
+                }
+            } else {
+                Log.w("XWalkWebResourceResponse", "Not ready, but no latch available");
+            }
+        }
+    }
+
+    public void ready() {
+        Log.i("XWalkWebResponseInternal.ready()", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
+        if (!mReady) {
+            if (mReadyLatch != null) {
+                Log.d("XWalkWebResourceResponse", "Notified ready");
+            } else {
+                Log.w("XWalkWebResourceResponse", "Tried to notify ready, but no latch available");
+            }
+        } else {
+            Log.w("XWalkWebResourceResponse", "Already ready, but notified again");
+        }
     }
 
     private void fillInResponseHeaderNamesAndValuesIfNeeded() {
@@ -84,11 +119,13 @@ public class XWalkWebResourceResponseInternal{
      */
     @XWalkAPI
     public String getMimeType() {
+        waitUntilReady();
         return mMimeType;
     }
 
     @CalledByNative
     public String getMimeTypeNative() {
+        waitUntilReady();
         return mMimeType;
     }
 
@@ -112,11 +149,13 @@ public class XWalkWebResourceResponseInternal{
      */
     @XWalkAPI
     public String getEncoding() {
+        waitUntilReady();
         return mEncoding;
     }
 
     @CalledByNative
     public String getEncodingNative() {
+        waitUntilReady();
         return mEncoding;
     }
 
@@ -146,11 +185,14 @@ public class XWalkWebResourceResponseInternal{
      */
     @XWalkAPI
     public InputStream getData() {
+        waitUntilReady();
         return mData;
     }
 
     @CalledByNative
     public InputStream getDataNative() {
+      // TODO: Why are there two versions of get data? Threading?
+        waitUntilReady();
         return mData;
     }
 
@@ -194,11 +236,13 @@ public class XWalkWebResourceResponseInternal{
      */
     @XWalkAPI
     public int getStatusCode() {
+        waitUntilReady();
         return mStatusCode;
     }
 
     @CalledByNative
     public int getStatusCodeNative() {
+        waitUntilReady();
         return mStatusCode;
     }
 
@@ -210,11 +254,13 @@ public class XWalkWebResourceResponseInternal{
      */
     @XWalkAPI
     public String getReasonPhrase() {
+        waitUntilReady();
         return mReasonPhrase;
     }
 
     @CalledByNative
     public String getReasonPhraseNative() {
+        waitUntilReady();
         return mReasonPhrase;
     }
 
@@ -237,17 +283,20 @@ public class XWalkWebResourceResponseInternal{
      */
     @XWalkAPI
     public Map<String, String> getResponseHeaders() {
+        waitUntilReady();
         return mResponseHeaders;
     }
 
     @CalledByNative
     private String[] getResponseHeaderNames() {
+        waitUntilReady();
         fillInResponseHeaderNamesAndValuesIfNeeded();
         return mResponseHeaderNames;
     }
 
     @CalledByNative
     private String[] getResponseHeaderValues() {
+        waitUntilReady();
         fillInResponseHeaderNamesAndValuesIfNeeded();
         return mResponseHeaderValues;
     }
