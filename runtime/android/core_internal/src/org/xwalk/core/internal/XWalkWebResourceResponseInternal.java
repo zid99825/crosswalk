@@ -75,6 +75,7 @@ public class XWalkWebResourceResponseInternal{
         }
     }
 
+    @XWalkAPI
     public void ready() {
         Log.i("XWalkWebResponseInternal.ready()", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
         if (!mReady) {
