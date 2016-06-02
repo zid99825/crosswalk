@@ -81,6 +81,8 @@ public class XWalkWebResourceResponseInternal{
         if (!mReady) {
             if (mReadyLatch != null) {
                 Log.d("XWalkWebResourceResponse", "Notified ready");
+                mReadyLatch.countDown();
+                mReady = true;
             } else {
                 Log.w("XWalkWebResourceResponse", "Tried to notify ready, but no latch available");
             }
