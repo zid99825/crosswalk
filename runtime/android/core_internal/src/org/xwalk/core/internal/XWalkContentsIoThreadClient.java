@@ -54,7 +54,7 @@ public abstract class XWalkContentsIoThreadClient {
             boolean hasUserGesture, String method, String[] requestHeaderNames,
             String[] requestHeaderValues) {
 
-        Log.i("XWalkWebResponseInternal", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
+        //Log.i("XWalkWebResponseInternal", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
 
         XWalkContentsClient.WebResourceRequestInner request =
             new XWalkContentsClient.WebResourceRequestInner();

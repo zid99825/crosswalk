@@ -60,34 +60,34 @@ public class XWalkWebResourceResponseInternal{
     }
 
     private void waitUntilReady() {
-      Log.i("XWalkWebResponseInternal.waitUntilReady()", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
+        //Log.i("XWalkWebResponseInternal.waitUntilReady()", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
         if (!mReady) {
             if (mReadyLatch != null) {
-                Log.d("XWalkWebResourceResponse", "Waiting to be ready");
+                //Log.d("XWalkWebResourceResponse", "Waiting to be ready");
                 try {
                     mReadyLatch.await();
                 } catch (InterruptedException e) {
                     Log.w("XWalkWebResourceResponse", "Interrupted while waiting to be ready", e);
                 }
             } else {
-                Log.w("XWalkWebResourceResponse", "Not ready, but no latch available");
+                //Log.w("XWalkWebResourceResponse", "Not ready, but no latch available");
             }
         }
     }
 
     @XWalkAPI
     public void ready() {
-        Log.i("XWalkWebResponseInternal.ready()", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
+        //Log.i("XWalkWebResponseInternal.ready()", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
         if (!mReady) {
             if (mReadyLatch != null) {
-                Log.d("XWalkWebResourceResponse", "Notified ready");
+                //Log.d("XWalkWebResourceResponse", "Notified ready");
                 mReadyLatch.countDown();
                 mReady = true;
             } else {
                 Log.w("XWalkWebResourceResponse", "Tried to notify ready, but no latch available");
             }
         } else {
-            Log.w("XWalkWebResourceResponse", "Already ready, but notified again");
+            //Log.w("XWalkWebResourceResponse", "Already ready, but notified again");
         }
     }
 
