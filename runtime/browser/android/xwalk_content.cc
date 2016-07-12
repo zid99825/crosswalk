@@ -16,6 +16,7 @@
 #include "base/base_paths_android.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
+#include "base/memory/ptr_util.h"
 #include "base/path_service.h"
 #include "base/pickle.h"
 #include "base/strings/string_number_conversions.h"
@@ -31,6 +32,7 @@
 #include "content/public/common/renderer_preferences.h"
 #include "content/public/common/ssl_status.h"
 #include "content/public/common/url_constants.h"
+#include "ui/gfx/geometry/rect_f.h"
 #include "xwalk/application/common/application_manifest_constants.h"
 #include "xwalk/application/common/manifest.h"
 #include "xwalk/runtime/browser/android/net_disk_cache_remover.h"
@@ -49,6 +51,7 @@
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertUTF8ToJavaString;
+using base::android::ConvertUTF16ToJavaString;
 using base::android::ScopedJavaLocalRef;
 using content::BrowserThread;
 using content::WebContents;
@@ -132,7 +135,7 @@ XWalkContent* XWalkContent::FromWebContents(
   return XWalkContentUserData::GetContents(web_contents);
 }
 
-XWalkContent::XWalkContent(scoped_ptr<content::WebContents> web_contents)
+XWalkContent::XWalkContent(std::unique_ptr<content::WebContents> web_contents)
     : web_contents_(std::move(web_contents)) {
   xwalk_autofill_manager_.reset(new XWalkAutofillManager(web_contents_.get()));
   XWalkContentLifecycleNotifier::OnXWalkViewCreated();
@@ -195,7 +198,7 @@ void XWalkContent::SetJavaPeers(JNIEnv* env,
   RuntimeResourceDispatcherHostDelegateAndroid::OnIoThreadClientReady(
       render_process_id, render_frame_id);
   InterceptNavigationDelegate::Associate(web_contents_.get(),
-      make_scoped_ptr(new InterceptNavigationDelegate(
+      base::WrapUnique(new InterceptNavigationDelegate(
           env, intercept_navigation_delegate)));
   web_contents_->SetDelegate(web_contents_delegate_.get());
 
@@ -212,7 +215,7 @@ XWalkContent::GetWebContents(JNIEnv* env, jobject obj) {
 }
 
 void XWalkContent::SetPendingWebContentsForPopup(
-    scoped_ptr<content::WebContents> pending) {
+    std::unique_ptr<content::WebContents> pending) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   if (pending_contents_.get()) {
     // TODO(benm): Support holding multiple pop up window requests.
@@ -236,11 +239,8 @@ void XWalkContent::ClearCache(
   DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
   render_view_host_ext_->ClearCache();
 
-  if (include_disk_files) {
-    RemoveHttpDiskCache(web_contents_->GetBrowserContext(),
-                        web_contents_->GetRoutingID(),
-                        std::string());
-  }
+  if (include_disk_files)
+    RemoveHttpDiskCache(web_contents_->GetRenderProcessHost(), std::string());
 }
 
 void XWalkContent::ClearCacheForSingleFile(
@@ -250,11 +250,8 @@ void XWalkContent::ClearCacheForSingleFile(
   DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
   std::string key = base::android::ConvertJavaStringToUTF8(env, url);
 
-  if (!key.empty()) {
-    RemoveHttpDiskCache(web_contents_->GetBrowserContext(),
-                        web_contents_->GetRoutingID(),
-                        key);
-  }
+  if (!key.empty())
+    RemoveHttpDiskCache(web_contents_->GetRenderProcessHost(), key);
 }
 
 ScopedJavaLocalRef<jstring> XWalkContent::DevToolsAgentId(JNIEnv* env,
@@ -266,6 +263,50 @@ ScopedJavaLocalRef<jstring> XWalkContent::DevToolsAgentId(JNIEnv* env,
 
 void XWalkContent::Destroy(JNIEnv* env, jobject obj) {
   delete this;
+}
+
+void XWalkContent::RequestNewHitTestDataAt(JNIEnv* env,
+                                           jobject obj,
+                                           jfloat x,
+                                           jfloat y,
+                                           jfloat touch_major) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  gfx::PointF touch_center(x, y);
+  gfx::SizeF touch_area(touch_major, touch_major);
+  render_view_host_ext_->RequestNewHitTestDataAt(touch_center, touch_area);
+}
+
+void XWalkContent::UpdateLastHitTestData(JNIEnv* env, jobject obj) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  if (!render_view_host_ext_->HasNewHitTestData()) return;
+
+  const XWalkHitTestData& data = render_view_host_ext_->GetLastHitTestData();
+  render_view_host_ext_->MarkHitTestDataRead();
+
+  // Make sure to null the java object if data is empty/invalid
+  ScopedJavaLocalRef<jstring> extra_data_for_type;
+  if (data.extra_data_for_type.length())
+    extra_data_for_type = ConvertUTF8ToJavaString(
+      env, data.extra_data_for_type);
+
+  ScopedJavaLocalRef<jstring> href;
+  if (data.href.length())
+    href = ConvertUTF16ToJavaString(env, data.href);
+
+  ScopedJavaLocalRef<jstring> anchor_text;
+  if (data.anchor_text.length())
+    anchor_text = ConvertUTF16ToJavaString(env, data.anchor_text);
+
+  ScopedJavaLocalRef<jstring> img_src;
+  if (data.img_src.is_valid())
+    img_src = ConvertUTF8ToJavaString(env, data.img_src.spec());
+  Java_XWalkContent_updateHitTestData(env,
+                                      obj,
+                                      data.type,
+                                      extra_data_for_type.obj(),
+                                      href.obj(),
+                                      anchor_text.obj(),
+                                      img_src.obj());
 }
 
 ScopedJavaLocalRef<jstring> XWalkContent::GetVersion(JNIEnv* env,
@@ -287,12 +328,12 @@ jboolean XWalkContent::SetManifest(JNIEnv* env,
   std::string json_input =
       base::android::ConvertJavaStringToUTF8(env, manifest_string);
 
-  scoped_ptr<base::Value> manifest_value = base::JSONReader::Read(json_input);
+  std::unique_ptr<base::Value> manifest_value = base::JSONReader::Read(json_input);
   if (!manifest_value || !manifest_value->IsType(base::Value::TYPE_DICTIONARY))
       return false;
 
   xwalk::application::Manifest manifest(
-      make_scoped_ptr(
+      base::WrapUnique(
           static_cast<base::DictionaryValue*>(manifest_value.release())));
 
   std::string url;
@@ -464,7 +505,7 @@ jboolean XWalkContent::SetState(JNIEnv* env, jobject obj, jbyteArray state) {
 }
 
 static jlong Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
-  scoped_ptr<WebContents> web_contents(content::WebContents::Create(
+  std::unique_ptr<WebContents> web_contents(content::WebContents::Create(
       content::WebContents::CreateParams(
           XWalkRunner::GetInstance()->browser_context())));
   return reinterpret_cast<intptr_t>(new XWalkContent(std::move(web_contents)));

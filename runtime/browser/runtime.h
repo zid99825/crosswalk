@@ -5,10 +5,10 @@
 #ifndef XWALK_RUNTIME_BROWSER_RUNTIME_H_
 #define XWALK_RUNTIME_BROWSER_RUNTIME_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "base/memory/scoped_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "xwalk/runtime/browser/runtime_ui_delegate.h"
 #include "content/public/browser/notification_observer.h"
@@ -74,7 +74,7 @@ class Runtime : public content::WebContentsDelegate,
 
   // Create a new Runtime instance with the given browsing context.
   static Runtime* Create(XWalkBrowserContext* context,
-                         content::SiteInstance* site = nullptr);
+                         scoped_refptr<content::SiteInstance> site = nullptr);
 
   void LoadURL(const GURL& url);
   void Show();
@@ -164,6 +164,10 @@ class Runtime : public content::WebContentsDelegate,
   void DidUpdateFaviconURL(
       const std::vector<content::FaviconURL>& candidates) override;
   void TitleWasSet(content::NavigationEntry* entry, bool explicit_set) override;
+  void DidNavigateAnyFrame(
+      content::RenderFrameHost* render_frame_host,
+      const content::LoadCommittedDetails& details,
+      const content::FrameNavigateParams& params) override;
 
   // Callback method for WebContents::DownloadImage.
   void DidDownloadFavicon(int id,
@@ -180,10 +184,11 @@ class Runtime : public content::WebContentsDelegate,
 
   // Notification manager.
   content::NotificationRegistrar registrar_;
+  base::ThreadChecker thread_checker_;
 
-  scoped_ptr<content::WebContents> web_contents_;
+  std::unique_ptr<content::WebContents> web_contents_;
 #if !defined(OS_ANDROID)
-  scoped_ptr<XWalkAutofillManager> xwalk_autofill_manager_;
+  std::unique_ptr<XWalkAutofillManager> xwalk_autofill_manager_;
 #endif
 
   gfx::Image app_icon_;

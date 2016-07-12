@@ -9,25 +9,27 @@ import android.os.Bundle;
 
 /**
  * <p><code>XWalkActivity</code> helps to execute all procedures to make Crosswalk Project runtime
- * workable and displays dialogs to interact with the user. The activities that hold the
+ * workable and displays dialogs to interact with the user if needed. The activities that hold the
  * {@link XWalkView} objects might want to extend <code>XWalkActivity</code> to obtain this
  * capability. For those activities, there's no need to use {@link XWalkInitializer} and
  * {@link XWalkUpdater}.</p>
  *
- * <p>By <code>XWalkActivity</code>, your application can support all of embedded mode, shared mode
- * and download mode with same code. So this is the preferred interface. </p>
+ * <p><strong>By <code>XWalkActivity</code>, your application can support all running modes
+ * (embedded mode, shared mode, download mode) with same code. So this is the preferred interface.
+ * </strong></p>
  *
- * <h3>Sample Code</h3>
+ * <h3>Edit Activity</h3>
  *
  * <p>Here is the sample code for all running modes:</p>
  *
  * <pre>
  * import android.os.Bundle;
+ *
  * import org.xwalk.core.XWalkActivity;
  * import org.xwalk.core.XWalkView;
  *
  * public class MainActivity extends XWalkActivity {
- *     XWalkView mXWalkView;
+ *     private XWalkView mXWalkView;
  *
  *     &#64;Override
  *     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +42,7 @@ import android.os.Bundle;
  *         // 3. Call mXWalkView.setXXClient(), e.g., setUIClient
  *         // 4. Call mXWalkView.setXXListener(), e.g., setDownloadListener
  *         // 5. Call mXWalkView.addJavascriptInterface()
+ *
  *         setContentView(R.layout.activity_main);
  *         mXWalkView = (XWalkView) findViewById(R.id.xwalkview);
  *     }
@@ -47,17 +50,31 @@ import android.os.Bundle;
  *     &#64;Override
  *     public void onXWalkReady() {
  *         // Do anyting with the embedding API
+ *
  *         mXWalkView.load("https://crosswalk-project.org/", null);
  *     }
  * }
  * </pre>
  *
- * <h3>App Manifest</h3>
+ * <h3>Edit Layout</h3>
+ *
+ * <p>When the application was generated, some default layout resources were added to the project.
+ * Add a single XWalkView resource to a proper place in the main layout resource file,
+ * res/layout/activity_main.xml, like this:</p>
+ *
+ * <pre>
+ *   &lt;org.xwalk.core.XWalkView
+ *       android:id="@+id/xwalkview"
+ *       android:layout_width="match_parent"
+ *       android:layout_height="match_parent" /&gt;
+ * </pre>
+ *
+ * <h3>Edit App Manifest</h3>
  *
  * <p>For shared mode and download mode, you might need to edit the Android manifest to set some
- * properties. </p>
+ * properties.</p>
  *
- * <h5>Shared Mode</h5>
+ * <h4>Shared Mode</h4>
  *
  * <p>If you want the end-user to download Crosswalk Project runtime from specified URL instead of
  * switching to the application store, add following &lt;meta-data&gt; element inside the
@@ -79,7 +96,7 @@ import android.os.Bundle;
  * &lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /&gt;
  * </pre>
  *
- * <h5>Download Mode</h5>
+ * <h4>Download Mode</h4>
  *
  * <p>Firstly, you need to add following &lt;meta-data&gt; element to enable download mode:</p>
  *
@@ -118,31 +135,61 @@ public abstract class XWalkActivity extends Activity {
     private XWalkActivityDelegate mActivityDelegate;
 
     /**
-     * Run on the UI thread to notify Crosswalk Project runtime is ready.
+     * Run on the UI thread to notify Crosswalk Project runtime is ready.<br>
+     * You should load the web page in {@link XWalkView} within this method.
      */
     protected abstract void onXWalkReady();
 
     /**
      * Run on the UI thread to notify the initialization of Crosswalk Project runtime failed or is
-     * cancelled. Then, your won't be able to use {@link XWalkView}. By default, it will call
-     * finish() to close your activity.
+     * cancelled.<br>
+     * Then, your won't be able to use {@link XWalkView}. By default, it will call finish() to
+     * close your activity.
+     *
+     * @since 7.0
      */
     protected void onXWalkFailed() {
         finish();
     }
 
     /**
-     * Return true if Crosswalk Project runtime is ready, false otherwise.
+     * Get the dialog manager so that you can customize the dialog to be dislplayed when
+     * initializing Crosswalk Project runtime. Please note that you should modify the dialog within
+     * onCreate(). Once onResume() is invoked, some dialog maybe already displayed. The dialog
+     * manager is meaningless in download mode because there won't be any UI interaction.
+     *
+     * @return the dialog manager which this activity is using
+     * @since 7.0
+     */
+    protected XWalkDialogManager getDialogManager() {
+        return mActivityDelegate.getDialogManager();
+    }
+
+    /**
+     * Return whether Crosswalk Project runtime is ready.
+     *
+     * @return true if Crosswalk Project runtime is ready, false otherwise
      */
     public boolean isXWalkReady() {
         return mActivityDelegate.isXWalkReady();
     }
 
     /**
-     * Return true if running in shared mode, false otherwise.
+     * Return whether running in shared mode.
+     *
+     * @return true if running in shared mode, false otherwise
      */
     public boolean isSharedMode() {
         return mActivityDelegate.isSharedMode();
+    }
+
+    /**
+     * Return whether running in shared mode.
+     *
+     * @return true if running in download mode, false otherwise
+     */
+    public boolean isDownloadMode() {
+        return mActivityDelegate.isDownloadMode();
     }
 
     @Override

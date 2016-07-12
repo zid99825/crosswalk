@@ -198,7 +198,7 @@ class CookieManager {
   base::Thread cookie_store_backend_thread_;
 
   scoped_refptr<base::SingleThreadTaskRunner> cookie_store_task_runner_;
-  scoped_refptr<net::CookieStore> cookie_store_;
+  std::unique_ptr<net::CookieStore> cookie_store_;
 
   DISALLOW_COPY_AND_ASSIGN(CookieManager);
 };
@@ -248,6 +248,8 @@ base::SingleThreadTaskRunner* CookieManager::GetCookieStoreTaskRunner() {
 }
 
 net::CookieStore* CookieManager::GetCookieStore() {
+  DCHECK(cookie_store_task_runner_->RunsTasksOnCurrentThread());
+
   if (!cookie_store_) {
     FilePath user_data_dir;
     GetUserDataDir(&user_data_dir);
@@ -265,8 +267,6 @@ net::CookieStore* CookieManager::GetCookieStore() {
     content::CookieStoreConfig cookie_config(
         cookie_store_path, content::CookieStoreConfig::RESTORED_SESSION_COOKIES,
         nullptr, nullptr);
-    cookie_store_task_runner_ =
-        BrowserThread::GetMessageLoopProxyForThread(BrowserThread::IO);
     cookie_config.client_task_runner = cookie_store_task_runner_;
     cookie_config.background_task_runner =
         cookie_store_backend_thread_.task_runner();

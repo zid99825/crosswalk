@@ -37,7 +37,7 @@ namespace xwalk {
 
 // A class that handles the Java<->Native communication for the
 // XWalkContentsClient. XWalkContentsClientBridge is created and owned by
-// native XWalkViewContents class and it only has a weak reference to the
+// native XWalkContent class and it only has a weak reference to the
 // its Java peer. Since the Java XWalkContentsClientBridge can have
 // indirect refs from the Application (via callbacks) and so can outlive
 // XWalkView, this class notifies it before being destroyed and to nullify
@@ -65,13 +65,12 @@ class XWalkContentsClientBridge : public XWalkContentsClientBridgeBase ,
       override;
   void RunBeforeUnloadDialog(
       const GURL& origin_url,
-      const base::string16& message_text,
       const content::JavaScriptDialogManager::DialogClosedCallback& callback)
       override;
   void ShowNotification(
       const content::PlatformNotificationData& notification_data,
       const content::NotificationResources& notification_resources,
-      scoped_ptr<content::DesktopNotificationDelegate> delegate,
+      std::unique_ptr<content::DesktopNotificationDelegate> delegate,
       base::Closure* cancel_callback)
       override;
   void OnWebLayoutPageScaleFactorChanged(
@@ -90,7 +89,6 @@ class XWalkContentsClientBridge : public XWalkContentsClientBridgeBase ,
   void ProceedSslError(JNIEnv* env, jobject obj, jboolean proceed, jint id);
   void ConfirmJsResult(JNIEnv*, jobject, int id, jstring prompt);
   void CancelJsResult(JNIEnv*, jobject, int id);
-  void ExitFullscreen(JNIEnv*, jobject, jlong web_contents);
   void NotificationDisplayed(JNIEnv*, jobject, jint id);
   void NotificationClicked(JNIEnv*, jobject, jint id);
   void NotificationClosed(JNIEnv*, jobject, jint id, bool by_user);
@@ -111,7 +109,7 @@ class XWalkContentsClientBridge : public XWalkContentsClientBridgeBase ,
 
   virtual void SelectClientCertificate(
       net::SSLCertRequestInfo* cert_request_info,
-      scoped_ptr<content::ClientCertificateDelegate> delegate);
+      std::unique_ptr<content::ClientCertificateDelegate> delegate);
 
   void HandleErrorInClientCertificateResponse(int id);
 
@@ -140,7 +138,7 @@ class XWalkContentsClientBridge : public XWalkContentsClientBridgeBase ,
   IDMap<SelectCertificateCallback, IDMapOwnPointer>
       pending_client_cert_request_callbacks_;
 
-  scoped_ptr<XWalkIconHelper> icon_helper_;
+  std::unique_ptr<XWalkIconHelper> icon_helper_;
 };
 
 bool RegisterXWalkContentsClientBridge(JNIEnv* env);

@@ -8,6 +8,7 @@
 #include "base/command_line.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
+#include "base/json/string_escape.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
@@ -188,7 +189,7 @@ void XWalkDevToolsFrontend::HandleMessageFromDevToolsFrontend(
   std::string method;
   base::ListValue* params = nullptr;
   base::DictionaryValue* dict = nullptr;
-  scoped_ptr<base::Value> parsed_message = base::JSONReader::Read(message);
+  std::unique_ptr<base::Value> parsed_message = base::JSONReader::Read(message);
   if (!parsed_message ||
       !parsed_message->GetAsDictionary(&dict) ||
       !dict->GetString("method", &method)) {
@@ -232,7 +233,7 @@ void XWalkDevToolsFrontend::HandleMessageFromDevToolsFrontend(
     fetcher->SetRequestContext(web_contents()->GetBrowserContext()->
         GetRequestContext());
     fetcher->SetExtraRequestHeaders(headers);
-    fetcher->SaveResponseWithWriter(scoped_ptr<net::URLFetcherResponseWriter>(
+    fetcher->SaveResponseWithWriter(std::unique_ptr<net::URLFetcherResponseWriter>(
         new ResponseWriter(weak_factory_.GetWeakPtr(), stream_id)));
     fetcher->Start();
     return;
@@ -267,18 +268,21 @@ void XWalkDevToolsFrontend::DispatchProtocolMessage(
     content::DevToolsAgentHost* agent_host, const std::string& message) {
 
   if (message.length() < kMaxMessageChunkSize) {
-    base::string16 javascript = base::UTF8ToUTF16(
-        "DevToolsAPI.dispatchMessage(" + message + ");");
+    std::string param;
+    base::EscapeJSONString(message, true, &param);
+    std::string code = "DevToolsAPI.dispatchMessage(" + param + ");";
+    base::string16 javascript = base::UTF8ToUTF16(code);
     web_contents()->GetMainFrame()->ExecuteJavaScriptForTests(javascript);
     return;
   }
 
-  base::FundamentalValue total_size(static_cast<int>(message.length()));
+  size_t total_size = message.length();
   for (size_t pos = 0; pos < message.length(); pos += kMaxMessageChunkSize) {
     std::string param;
-    base::JSONWriter::Write(
-        base::StringValue(message.substr(pos, kMaxMessageChunkSize)), &param);
-    std::string code = "DevToolsAPI.dispatchMessageChunk(" + param + ");";
+    base::EscapeJSONString(message.substr(pos, kMaxMessageChunkSize), true,
+        &param);
+    std::string code = "DevToolsAPI.dispatchMessageChunk(" + param + "," +
+        std::to_string(pos ? 0 : total_size) + ");";
     base::string16 javascript = base::UTF8ToUTF16(code);
     web_contents()->GetMainFrame()->ExecuteJavaScriptForTests(javascript);
   }

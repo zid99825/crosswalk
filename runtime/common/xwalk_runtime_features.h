@@ -22,10 +22,10 @@ class XWalkRuntimeFeatures {
   // Declare new features here and and define them in xwalk_runtime_features.cc.
   DECLARE_RUNTIME_FEATURE(SysApps);
   DECLARE_RUNTIME_FEATURE(RawSocketsAPI);
-  DECLARE_RUNTIME_FEATURE(DeviceCapabilitiesAPI);
   DECLARE_RUNTIME_FEATURE(StorageAPI);
   DECLARE_RUNTIME_FEATURE(DialogAPI);
   DECLARE_RUNTIME_FEATURE(ApplicationAPI);
+  DECLARE_RUNTIME_FEATURE(WiFiDirectAPI);
 
   void Initialize(const base::CommandLine* cmd);
   void DumpFeaturesFlags();

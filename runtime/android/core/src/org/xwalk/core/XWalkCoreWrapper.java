@@ -199,12 +199,12 @@ class XWalkCoreWrapper {
             return sProvisionalInstance.mCoreStatus;
         }
 
-        String cpuAbi = getPrimaryCpuAbi();
-        if (cpuAbi.equalsIgnoreCase("arm64-v8a")) {
+        String deviceAbi = getDeviceAbi();
+        if (deviceAbi.equals("arm64-v8a")) {
             sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE64_PACKAGE);
-        } else if (cpuAbi.equalsIgnoreCase("x86")) {
+        } else if (deviceAbi.equals("x86")) {
             sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE_IA_PACKAGE);
-        } else if (cpuAbi.equalsIgnoreCase("x86_64")) {
+        } else if (deviceAbi.equals("x86_64")) {
             if (!sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE64_PACKAGE)) {
                 sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE64_IA_PACKAGE);
             }
@@ -235,7 +235,8 @@ class XWalkCoreWrapper {
         Log.d(TAG, "Init embedded mode");
         XWalkCoreWrapper provisionalInstance = new XWalkCoreWrapper(null, -1);
         if (!provisionalInstance.findEmbeddedCore()) {
-            Assert.fail("Please have your activity extend XWalkActivity for shared mode");
+            throw new RuntimeException(
+                    "Please have your activity extend XWalkActivity for shared mode");
         }
 
         sInstance = provisionalInstance;
@@ -453,12 +454,12 @@ class XWalkCoreWrapper {
         try {
             md = MessageDigest.getInstance(hashAlgorithm);
         } catch (NoSuchAlgorithmException | NullPointerException e) {
-            Assert.fail("Invalid hash algorithm");
+            throw new IllegalArgumentException("Invalid hash algorithm");
         }
 
         byte[] hashArray = hexStringToByteArray(hashCode);
         if (hashArray == null) {
-            Assert.fail("Invalid hash code");
+            throw new IllegalArgumentException("Invalid hash code");
         }
 
         for (int i = 0; i < packageInfo.signatures.length; ++i) {
@@ -529,26 +530,60 @@ class XWalkCoreWrapper {
         return null;
     }
 
-    public static String getApplicationAbi() {
-        return Build.CPU_ABI;
+    public static String getRuntimeAbi() {
+        String runtimeAbi = System.getProperty("os.arch").toLowerCase();
+        switch (runtimeAbi) {
+            case "x86":
+            case "i686":
+            case "i386":
+            case "ia32":
+                return "x86";
+            case "x64":
+            case "x86_64":
+                return "x86_64";
+            case "armv7l":
+            case "armeabi":
+            case "armeabi-v7a":
+                return "armeabi-v7a";
+            case "aarch64":
+            case "armv8":
+            case "arm64":
+                return "arm64-v8a";
+            default:
+                throw new RuntimeException("Unexpected runtime ABI: " + runtimeAbi);
+        }
     }
 
-    public static String getPrimaryCpuAbi() {
+    public static String getDeviceAbi() {
+        String deviceAbi = "";
         try {
-            return Build.SUPPORTED_ABIS[0];
+            deviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase();
         } catch (NoSuchFieldError e) {
             try {
                 Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");
                 InputStreamReader ir = new InputStreamReader(process.getInputStream());
                 BufferedReader input = new BufferedReader(ir);
-                String abi = input.readLine();
+                deviceAbi = input.readLine().toLowerCase();
                 input.close();
                 ir.close();
-                return abi;
             } catch (IOException ex) {
+                // CPU_ABI is deprecated in API level 21 and maybe incorrect on Houdini
+                deviceAbi = Build.CPU_ABI.toLowerCase();
             }
         }
-        // CPU_ABI is deprecated in API level 21 and maybe incorrect on Houdini
-        return Build.CPU_ABI;
+
+        switch (deviceAbi) {
+            case "x86":
+                return "x86";
+            case "x86_64":
+                return "x86_64";
+            case "armeabi":
+            case "armeabi-v7a":
+                return "armeabi-v7a";
+            case "arm64-v8a":
+                return "arm64-v8a";
+            default:
+                throw new RuntimeException("Unexpected device ABI: " + deviceAbi);
+        }
     }
 }

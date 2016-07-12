@@ -18,12 +18,15 @@
         'api_files': [
           '<(DEPTH)/xwalk/runtime/android/core/src/org/xwalk/core/JavascriptInterface.java',
           '<(DEPTH)/xwalk/runtime/android/core/src/org/xwalk/core/XWalkActivity.java',
+          '<(DEPTH)/xwalk/runtime/android/core/src/org/xwalk/core/XWalkDialogManager.java',
           '<(DEPTH)/xwalk/runtime/android/core/src/org/xwalk/core/XWalkInitializer.java',
           '<(DEPTH)/xwalk/runtime/android/core/src/org/xwalk/core/XWalkUpdater.java',
           '>(reflection_gen_dir)/wrapper/org/xwalk/core/ClientCertRequest.java',
           '>(reflection_gen_dir)/wrapper/org/xwalk/core/XWalkCookieManager.java',
           '>(reflection_gen_dir)/wrapper/org/xwalk/core/XWalkDownloadListener.java',
           '>(reflection_gen_dir)/wrapper/org/xwalk/core/XWalkExtension.java',
+          '>(reflection_gen_dir)/wrapper/org/xwalk/core/XWalkExternalExtensionManager.java',
+          '>(reflection_gen_dir)/wrapper/org/xwalk/core/XWalkFindListener.java',
           '>(reflection_gen_dir)/wrapper/org/xwalk/core/XWalkGetBitmapCallback.java',
           '>(reflection_gen_dir)/wrapper/org/xwalk/core/XWalkHttpAuthHandler.java',
           '>(reflection_gen_dir)/wrapper/org/xwalk/core/XWalkJavascriptResult.java',
@@ -223,7 +226,6 @@
           ],
           'action': [
             'python', 'build/android/merge_jars.py',
-            '--build-dir=<(PRODUCT_DIR)',
             '--jars=>(input_jars_paths)',
             '--output-jar=<(jar_final_path)',
           ],
@@ -253,7 +255,6 @@
           ],
           'action': [
             'python', 'build/android/merge_jars.py',
-            '--build-dir=<(PRODUCT_DIR)',
             '--jars=>(input_jars_paths)',
             '--output-jar=<(jar_final_path)',
           ],
@@ -284,9 +285,12 @@
           ],
           'action': [
             'python', 'build/android/merge_jars.py',
-            '--build-dir=<(PRODUCT_DIR)',
             '--jars=>(input_jars_paths)',
             '--output-jar=<(jar_final_path)',
+            # This argument is important for this final JAR we are creating, as
+            # it validates that we are filtering out the right JARs when doing
+            # the merge.
+            '--validate-skipped-jars-list',
           ],
         },
       ],

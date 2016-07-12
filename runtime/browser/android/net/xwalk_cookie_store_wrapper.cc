@@ -29,7 +29,7 @@ class SubscriptionWrapper {
  public:
   SubscriptionWrapper() : weak_factory_(this) {}
 
-  scoped_ptr<net::CookieStore::CookieChangedSubscription> Subscribe(
+  std::unique_ptr<net::CookieStore::CookieChangedSubscription> Subscribe(
       const GURL& url,
       const std::string& name,
       const net::CookieStore::CookieChangedCallback& callback) {
@@ -79,7 +79,7 @@ class SubscriptionWrapper {
     base::WeakPtr<SubscriptionWrapper> subscription_wrapper_;
     scoped_refptr<base::TaskRunner> client_task_runner_;
 
-    scoped_ptr<net::CookieStore::CookieChangedSubscription> subscription_;
+    std::unique_ptr<net::CookieStore::CookieChangedSubscription> subscription_;
 
     DISALLOW_COPY_AND_ASSIGN(NestedSubscription);
   };
@@ -119,7 +119,7 @@ void SetCookieWithDetailsAsyncOnCookieThread(
     base::Time last_access_time,
     bool secure,
     bool http_only,
-    bool same_site,
+    net::CookieSameSite same_site,
     bool enforce_strict_secure,
     net::CookiePriority priority,
     const net::CookieStore::SetCookiesCallback& callback) {
@@ -197,6 +197,8 @@ XWalkCookieStoreWrapper::XWalkCookieStoreWrapper()
     : client_task_runner_(base::ThreadTaskRunnerHandle::Get()),
       weak_factory_(this) {}
 
+XWalkCookieStoreWrapper::~XWalkCookieStoreWrapper() {}
+
 void XWalkCookieStoreWrapper::SetCookieWithOptionsAsync(
     const GURL& url,
     const std::string& cookie_line,
@@ -219,7 +221,7 @@ void XWalkCookieStoreWrapper::SetCookieWithDetailsAsync(
     base::Time last_access_time,
     bool secure,
     bool http_only,
-    bool same_site,
+    net::CookieSameSite same_site,
     bool enforce_strict_secure,
     net::CookiePriority priority,
     const SetCookiesCallback& callback) {
@@ -318,7 +320,7 @@ void XWalkCookieStoreWrapper::SetForceKeepSessionState() {
       base::Bind(&SetForceKeepSessionStateOnCookieThread));
 }
 
-scoped_ptr<net::CookieStore::CookieChangedSubscription>
+std::unique_ptr<net::CookieStore::CookieChangedSubscription>
 XWalkCookieStoreWrapper::AddCallbackForCookie(
     const GURL& url,
     const std::string& name,
@@ -335,7 +337,9 @@ XWalkCookieStoreWrapper::AddCallbackForCookie(
   return subscription->Subscribe(url, name, callback);
 }
 
-XWalkCookieStoreWrapper::~XWalkCookieStoreWrapper() {}
+bool XWalkCookieStoreWrapper::IsEphemeral() {
+  return GetCookieStore()->IsEphemeral();
+}
 
 base::Closure XWalkCookieStoreWrapper::CreateWrappedClosureCallback(
     const base::Closure& callback) {

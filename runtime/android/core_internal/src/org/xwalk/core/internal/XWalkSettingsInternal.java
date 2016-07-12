@@ -36,6 +36,41 @@ public class XWalkSettingsInternal {
         TEXT_AUTOSIZING
     }
 
+    /**
+     * Default cache usage mode. If the navigation type doesn't impose any
+     * specific behavior, use cached resources when they are available
+     * and not expired, otherwise load resources from the network.
+     * Use with {@link #setCacheMode}.
+     * @since 7.0
+     */
+    @XWalkAPI
+    public static final int LOAD_DEFAULT = -1;
+
+    /**
+     * Use cached resources when they are available, even if they have expired.
+     * Otherwise load resources from the network.
+     * Use with {@link #setCacheMode}.
+     * @since 7.0
+     */
+    @XWalkAPI
+    public static final int LOAD_CACHE_ELSE_NETWORK = 1;
+
+    /**
+     * Don't use the cache, load from the network.
+     * Use with {@link #setCacheMode}.
+     * @since 7.0
+     */
+    @XWalkAPI
+    public static final int LOAD_NO_CACHE = 2;
+
+    /**
+     * Don't use the network, load from the cache.
+     * Use with {@link #setCacheMode}.
+     * @since 7.0
+     */
+    @XWalkAPI
+    public static final int LOAD_CACHE_ONLY = 3;
+
     private static final String TAG = "XWalkSettings";
 
     // This class must be created on the UI thread. Afterwards, it can be
@@ -60,6 +95,7 @@ public class XWalkSettingsInternal {
     private boolean mDomStorageEnabled = true;
     private boolean mDatabaseEnabled = true;
     private boolean mUseWideViewport = false;
+    private boolean mLoadWithOverviewMode = false;
     private boolean mMediaPlaybackRequiresUserGesture = false;
     private String mDefaultVideoPosterURL;
     private final boolean mPasswordEchoEnabled;
@@ -249,8 +285,19 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setCacheMode}.
+     * Overrides the way the cache is used. The way the cache is used is based
+     * on the navigation type. For a normal page load, the cache is checked
+     * and content is re-validated as needed. When navigating back, content is
+     * not revalidated, instead the content is just retrieved from the cache.
+     * This method allows the client to override this behavior by specifying
+     * one of {@link #LOAD_DEFAULT},
+     * {@link #LOAD_CACHE_ELSE_NETWORK}, {@link #LOAD_NO_CACHE} or
+     * {@link #LOAD_CACHE_ONLY}. The default value is {@link #LOAD_DEFAULT}.
+     *
+     * @param mode the mode to use
+     * @since 7.0
      */
+    @XWalkAPI
     public void setCacheMode(int mode) {
         synchronized (mXWalkSettingsLock) {
             if (mCacheMode != mode) {
@@ -260,8 +307,13 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getCacheMode}.
+     * Gets the current setting for overriding the cache mode.
+     *
+     * @return the current setting for overriding the cache mode
+     * @see #setCacheMode
+     * @since 7.0
      */
+    @XWalkAPI
     public int getCacheMode() {
         synchronized (mXWalkSettingsLock) {
             return mCacheMode;
@@ -269,8 +321,24 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setBlockNetworkLoads}.
+     * Sets whether the XWalkView should not load resources from the network.
+     * Note that if the value of this setting is
+     * changed from true to false, network resources referenced by content
+     * currently displayed by the XWalkView are not fetched until
+     * {@link org.xwalk.core.XWalkView#reload} is called.
+     * If the application does not have the
+     * {@link android.Manifest.permission#INTERNET} permission, attempts to set
+     * a value of false will cause a {@link java.lang.SecurityException}
+     * to be thrown. The default value is false if the application has the
+     * {@link android.Manifest.permission#INTERNET} permission, otherwise it is
+     * true.
+     *
+     * @param flag whether the XWalkView should not load any resources from the
+     *             network
+     * @see org.xwalk.core.XWalkView#reload
+     * @since 7.0
      */
+    @XWalkAPI
     public void setBlockNetworkLoads(boolean flag) {
         synchronized (mXWalkSettingsLock) {
             if (!flag && mContext.checkPermission(
@@ -285,8 +353,13 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getBlockNetworkLoads}.
+     * Gets whether the XWalkView does not load any resources from the network.
+     *
+     * @return true if the XWalkView does not load any resources from the network
+     * @see #setBlockNetworkLoads
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getBlockNetworkLoads() {
         synchronized (mXWalkSettingsLock) {
             return mBlockNetworkLoads;
@@ -294,8 +367,13 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setAllowFileAccess}.
+     * Enables or disables file access within XWalkView. File access is enabled by
+     * default. Note that this enables or disables file system access only.
+     * Assets and resources are still accessible using file:///android_asset and
+     * file:///android_res.
+     * @since 7.0
      */
+    @XWalkAPI
     public void setAllowFileAccess(boolean allow) {
         synchronized (mXWalkSettingsLock) {
             if (mAllowFileUrlAccess != allow) {
@@ -305,8 +383,12 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getAllowFileAccess}.
+     * Gets whether this XWalkView supports file access.
+     *
+     * @see #setAllowFileAccess
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getAllowFileAccess() {
         synchronized (mXWalkSettingsLock) {
             return mAllowFileUrlAccess;
@@ -314,8 +396,12 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setAllowContentAccess}.
+     * Enables or disables content URL access within XWalkView. Content URL
+     * access allows XWalkView to load content from a content provider installed
+     * in the system. The default is enabled.
+     * @since 7.0
      */
+    @XWalkAPI
     public void setAllowContentAccess(boolean allow) {
         synchronized (mXWalkSettingsLock) {
             if (mAllowContentUrlAccess != allow) {
@@ -325,8 +411,12 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getAllowContentAccess}.
+     * Gets whether this XWalkView supports content URL access.
+     *
+     * @see #setAllowContentAccess
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getAllowContentAccess() {
         synchronized (mXWalkSettingsLock) {
             return mAllowContentUrlAccess;
@@ -354,8 +444,14 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setJavaScriptEnabled}.
+     * Tells the XWalkView to enable JavaScript execution.
+     * <b>The default is true.</b>
+     * Note that the default value of this setting is different with WebView.
+     *
+     * @param flag true if the XWalkView should execute JavaScript
+     * @since 7.0
      */
+    @XWalkAPI
     public void setJavaScriptEnabled(boolean flag) {
         synchronized (mXWalkSettingsLock) {
             if (mJavaScriptEnabled != flag) {
@@ -366,8 +462,20 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setAllowUniversalAccessFromFileURLs}.
+     * Sets whether JavaScript running in the context of a file scheme URL
+     * should be allowed to access content from any origin. This includes
+     * access to content from other file scheme URLs. See
+     * {@link #setAllowFileAccessFromFileURLs}. To enable the most restrictive,
+     * and therefore secure policy, this setting should be disabled.
+     * Note that this setting affects only JavaScript access to file scheme
+     * resources. Other access to such resources, for example, from image HTML
+     * elements, is unaffected. The default value is false.
+     *
+     * @param flag whether JavaScript running in the context of a file scheme
+     *             URL should be allowed to access content from any origin
+     * @since 7.0
      */
+    @XWalkAPI
     public void setAllowUniversalAccessFromFileURLs(boolean flag) {
         synchronized (mXWalkSettingsLock) {
             if (mAllowUniversalAccessFromFileURLs != flag) {
@@ -378,8 +486,21 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setAllowFileAccessFromFileURLs}.
+     * Sets whether JavaScript running in the context of a file scheme URL
+     * should be allowed to access content from other file scheme URLs. To
+     * enable the most restrictive, and therefore secure policy, this setting
+     * should be disabled. Note that the value of this setting is ignored if
+     * the value of {@link #getAllowUniversalAccessFromFileURLs} is true.
+     * Note too, that this setting affects only JavaScript access to file scheme
+     * resources. Other access to such resources, for example, from image HTML
+     * elements, is unaffected. The default value is false.
+     *
+     * @param flag whether JavaScript running in the context of a file scheme
+     *             URL should be allowed to access content from other file
+     *             scheme URLs
+     * @since 7.0
      */
+    @XWalkAPI
     public void setAllowFileAccessFromFileURLs(boolean flag) {
         synchronized (mXWalkSettingsLock) {
             if (mAllowFileAccessFromFileURLs != flag) {
@@ -432,8 +553,13 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getJavaScriptEnabled}.
+     * Gets whether JavaScript is enabled.
+     *
+     * @return true if JavaScript is enabled
+     * @see #setJavaScriptEnabled
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getJavaScriptEnabled() {
         synchronized (mXWalkSettingsLock) {
             return mJavaScriptEnabled;
@@ -441,8 +567,16 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getAllowUniversalAccessFromFileURLs}.
+     * Gets whether JavaScript running in the context of a file scheme URL can
+     * access content from any origin. This includes access to content from
+     * other file scheme URLs.
+     *
+     * @return whether JavaScript running in the context of a file scheme URL
+     *         can access content from any origin
+     * @see #setAllowUniversalAccessFromFileURLs
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getAllowUniversalAccessFromFileURLs() {
         synchronized (mXWalkSettingsLock) {
             return mAllowUniversalAccessFromFileURLs;
@@ -450,8 +584,15 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getAllowFileAccessFromFileURLs}.
+     * Gets whether JavaScript running in the context of a file scheme URL can
+     * access content from other file scheme URLs.
+     *
+     * @return whether JavaScript running in the context of a file scheme URL
+     *         can access content from other file scheme URLs
+     * @see #setAllowFileAccessFromFileURLs
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getAllowFileAccessFromFileURLs() {
         synchronized (mXWalkSettingsLock) {
             return mAllowFileAccessFromFileURLs;
@@ -459,8 +600,13 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setJavaScriptCanOpenWindowsAutomatically}.
+     * Tells JavaScript to open windows automatically. This applies to the
+     * JavaScript function window.open(). The default is true.
+     *
+     * @param flag true if JavaScript can open windows automatically
+     * @since 7.0
      */
+    @XWalkAPI
     public void setJavaScriptCanOpenWindowsAutomatically(boolean flag) {
         synchronized (mXWalkSettingsLock) {
             if (mJavaScriptCanOpenWindowsAutomatically != flag) {
@@ -470,9 +616,16 @@ public class XWalkSettingsInternal {
         }
     }
 
+
     /**
-     * See {@link android.webkit.WebSettings#getJavaScriptCanOpenWindowsAutomatically}.
+     * Gets whether JavaScript can open windows automatically.
+     *
+     * @return true if JavaScript can open windows automatically during
+     *         window.open()
+     * @see #setJavaScriptCanOpenWindowsAutomatically
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getJavaScriptCanOpenWindowsAutomatically() {
         synchronized (mXWalkSettingsLock) {
             return mJavaScriptCanOpenWindowsAutomatically;
@@ -558,9 +711,9 @@ public class XWalkSettingsInternal {
                 needToSync = true;
             }
         }
-        // The obvious problem here is that other WebViews will not be updated,
+        // The obvious problem here is that other XWalkViews will not be updated,
         // until they execute synchronization from Java to the native side.
-        // But this is the same behaviour as it was in the legacy WebView.
+        // But this is the same behaviour as it was in the legacy XWalkView.
         if (needToSync) {
             synchronized (mXWalkSettingsLock) {
                 mEventHandler.updateWebkitPreferencesLocked();
@@ -581,8 +734,13 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setDomStorageEnabled}.
+     * Sets whether the DOM storage API is enabled. The default value is true.
+     * Note that the default value of this setting is different with WebView.
+     *
+     * @param flag true if the XWalkView should use the DOM storage API
+     * @since 7.0
      */
+    @XWalkAPI
     public void setDomStorageEnabled(boolean flag) {
         synchronized (mXWalkSettingsLock) {
             if (mDomStorageEnabled != flag) {
@@ -593,8 +751,13 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getDomStorageEnabled}.
+     * Gets whether the DOM Storage APIs are enabled.
+     *
+     * @return true if the DOM Storage APIs are enabled
+     * @see #setDomStorageEnabled
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getDomStorageEnabled() {
        synchronized (mXWalkSettingsLock) {
            return mDomStorageEnabled;
@@ -692,10 +855,10 @@ public class XWalkSettingsInternal {
     }
 
     /**
-      * Get the user agent of web page/app.
-      * @return the XWalkView's user-agent string.
-      * @since 6.0
-      */
+     * Get the user agent of web page/app.
+     * @return the XWalkView's user-agent string.
+     * @since 6.0
+     */
     @XWalkAPI
     public String getUserAgentString() {
         synchronized (mXWalkSettingsLock) {
@@ -765,8 +928,10 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#setSaveFormData}.
+     * Sets whether the XWalkView should save form data. The default is true.
+     * @since 7.0
      */
+    @XWalkAPI
     public void setSaveFormData(final boolean enable) {
         synchronized (mXWalkSettingsLock) {
             if (mAutoCompleteEnabled == enable) return;
@@ -783,8 +948,12 @@ public class XWalkSettingsInternal {
     }
 
     /**
-     * See {@link android.webkit.WebSettings#getSaveFormData}.
+     * Gets whether the XWalkView saves form data.
+     * @return whether the XWalkView saves form data
+     * @see #setSaveFormData
+     * @since 7.0
      */
+    @XWalkAPI
     public boolean getSaveFormData() {
         synchronized (mXWalkSettingsLock) {
             return getSaveFormDataLocked();
@@ -1099,7 +1268,7 @@ public class XWalkSettingsInternal {
 
     /**
      * Sets the underlying layout algorithm.
-     * This will cause a relayout of the WebView. The default is NARROW_COLUMNS.
+     * This will cause a relayout of the XWalkView. The default is NARROW_COLUMNS.
      * @param la the layout algorithm to use.
      * @since 6.0
      */
@@ -1130,6 +1299,43 @@ public class XWalkSettingsInternal {
         return mLayoutAlgorithm == LayoutAlgorithmInternal.TEXT_AUTOSIZING;
     }
 
+    /**
+     * Sets whether the XWalkView loads pages in overview mode, that is, zooms out
+     * the content to fit on screen by width. This setting is taken into account
+     * when the content width is greater than the width of the XWalkView control,
+     * for example, when getUseWideViewPort() is enabled. The default is false.
+     * @param overview whether this XWalkView loads pages in overview mode.
+     * @since 7.0
+     */
+    @XWalkAPI
+    public void setLoadWithOverviewMode(boolean overview) {
+        synchronized (mXWalkSettingsLock) {
+            if (mLoadWithOverviewMode == overview) return;
+            mLoadWithOverviewMode = overview;
+            mEventHandler.maybeRunOnUiThreadBlocking(new Runnable() {
+                @Override
+                public void run() {
+                    if (mNativeXWalkSettings != 0) {
+                        mEventHandler.updateWebkitPreferencesLocked();
+                        nativeResetScrollAndScaleState(mNativeXWalkSettings);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Gets whether this XWalkView loads pages in overview mode.
+     * @return whether this XWalkView loads pages in overview mode.
+     * @since 7.0
+     */
+    @XWalkAPI
+    public boolean getLoadWithOverviewMode() {
+        synchronized (mXWalkSettingsLock) {
+            return mLoadWithOverviewMode;
+        }
+    }
+
     private native long nativeInit(WebContents webContents);
 
     private native void nativeDestroy(long nativeXWalkSettings);
@@ -1147,4 +1353,6 @@ public class XWalkSettingsInternal {
     private native void nativeUpdateFormDataPreferences(long nativeXWalkSettings);
 
     private native void nativeUpdateInitialPageScale(long nativeXWalkSettings);
+
+    private native void nativeResetScrollAndScaleState(long nativeXWalkSettings);
 }

@@ -21,8 +21,6 @@ import android.util.Log;
 import java.io.File;
 import java.util.List;
 
-import junit.framework.Assert;
-
 import org.xwalk.core.XWalkLibraryLoader.DownloadListener;
 
 /**
@@ -48,13 +46,14 @@ import org.xwalk.core.XWalkLibraryLoader.DownloadListener;
  * libraries and resources. It has smaller size but will take a little more time at the first
  * launch.</p>
  *
- * <h3>Sample Code</h3>
+ * <h3>Edit Activity</h3>
  *
  * <p>Here is the sample code for embedded mode and shared mode:</p>
  *
  * <pre>
  * import android.app.Activity;
  * import android.os.Bundle;
+ *
  * import org.xwalk.core.XWalkInitializer;
  * import org.xwalk.core.XWalkUpdater;
  * import org.xwalk.core.XWalkView;
@@ -63,9 +62,9 @@ import org.xwalk.core.XWalkLibraryLoader.DownloadListener;
  *        XWalkInitializer.XWalkInitListener,
  *        XWalkUpdater.XWalkUpdateListener {
  *
- *     XWalkInitializer mXWalkInitializer;
- *     XWalkUpdater mXWalkUpdater;
- *     XWalkView mXWalkView;
+ *     private XWalkView mXWalkView;
+ *     private XWalkInitializer mXWalkInitializer;
+ *     private XWalkUpdater mXWalkUpdater;
  *
  *     &#64;Override
  *     protected void onCreate(Bundle savedInstanceState) {
@@ -74,24 +73,31 @@ import org.xwalk.core.XWalkLibraryLoader.DownloadListener;
  *         // Must call initAsync() before anything that involves the embedding
  *         // API, including invoking setContentView() with the layout which
  *         // holds the XWalkView object.
+ *
  *         mXWalkInitializer = new XWalkInitializer(this, this);
  *         mXWalkInitializer.initAsync();
  *
- *         // Until onXWalkReady() is invoked, you should do nothing with the
+ *         // Until onXWalkInitCompleted() is invoked, you should do nothing with the
  *         // embedding API except the following:
  *         // 1. Instantiate the XWalkView object
  *         // 2. Call XWalkPreferences.setValue()
  *         // 3. Call mXWalkView.setXXClient(), e.g., setUIClient
  *         // 4. Call mXWalkView.setXXListener(), e.g., setDownloadListener
  *         // 5. Call mXWalkView.addJavascriptInterface()
+ *
  *         setContentView(R.layout.activity_main);
  *         mXWalkView = (XWalkView) findViewById(R.id.xwalkview);
  *     }
  *
  *     &#64;Override
- *     public void onXWalkInitCompleted() {
- *         // Do anyting with the embedding API
- *         mXWalkView.load("https://crosswalk-project.org/", null);
+ *     protected void onResume() {
+ *         super.onResume();
+ *
+ *         // Try to initialize again when the user completed updating and
+ *         // returned to current activity. The initAsync() will do nothing if
+ *         // the initialization is proceeding or has already been completed.
+ *
+ *         mXWalkInitializer.initAsync();
  *     }
  *
  *     &#64;Override
@@ -101,6 +107,8 @@ import org.xwalk.core.XWalkLibraryLoader.DownloadListener;
  *     &#64;Override
  *     public void onXWalkInitCancelled() {
  *         // Perform error handling here
+ *
+ *         finish();
  *     }
  *
  *     &#64;Override
@@ -108,31 +116,27 @@ import org.xwalk.core.XWalkLibraryLoader.DownloadListener;
  *         if (mXWalkUpdater == null) {
  *             mXWalkUpdater = new XWalkUpdater(this, this);
  *         }
- *
- *         // The updater won't be launched if previous update dialog is
- *         // showing.
  *         mXWalkUpdater.updateXWalkRuntime();
  *     }
  *
  *     &#64;Override
- *     protected void onResume() {
- *         super.onResume();
+ *     public void onXWalkInitCompleted() {
+ *         // Do anyting with the embedding API
  *
- *         // Try to initialize again when the user completed updating and
- *         // returned to current activity. The initAsync() will do nothing if
- *         // the initialization has already been completed successfully.
- *         mXWalkInitializer.initAsync();
+ *         mXWalkView.load("https://crosswalk-project.org/", null);
  *     }
  *
  *     &#64;Override
  *     public void onXWalkUpdateCancelled() {
  *         // Perform error handling here
+ *
+ *         finish();
  *     }
  * }
  * </pre>
  *
  * <p>For download mode, the code is almost the same except you should use
- * {@link XWalkBackgroundUpdateListener} instead of {link XWalkUpdateListener}. </p>
+ * {@link XWalkBackgroundUpdateListener} instead of {@link XWalkUpdateListener}. </p>
  *
  * <pre>
  * public class MyActivity extends Activity implements
@@ -147,31 +151,38 @@ import org.xwalk.core.XWalkLibraryLoader.DownloadListener;
  *
  *     &#64;Override
  *     public void onXWalkUpdateProgress(int percentage) {
+ *         // Update the progress to UI or do nothing
  *     }
  *
  *     &#64;Override
  *     public void onXWalkUpdateCancelled() {
  *         // Perform error handling here
+ *
+ *         finish();
  *     }
  *
  *     &#64;Override
  *     public void onXWalkUpdateFailed() {
  *         // Perform error handling here
+ *
+ *         finish();
  *     }
  *
  *     &#64;Override
  *     public void onXWalkUpdateCompleted() {
+ *         // Start to initialize again once update finished
+ *
  *         mXWalkInitializer.initAsync();
  *     }
  * }
  * </pre>
  *
- * <h3>App Manifest</h3>
+ * <h3>Edit App Manifest</h3>
  *
  * <p>For shared mode and download mode, you might need to edit the Android manifest to set some
  * properties. </p>
  *
- * <h5>Shared Mode</h5>
+ * <h4>Shared Mode</h4>
  *
  * <p>If you want the end-user to download Crosswalk Project runtime from specified URL instead of
  * switching to the application store, add following &lt;meta-data&gt; element inside the
@@ -193,7 +204,7 @@ import org.xwalk.core.XWalkLibraryLoader.DownloadListener;
  * &lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /&gt;
  * </pre>
  *
- * <h5>Download Mode</h5>
+ * <h4>Download Mode</h4>
  *
  * <p>Firstly, you need to add following &lt;meta-data&gt; element to enable download mode:</p>
  *
@@ -291,7 +302,7 @@ public class XWalkUpdater {
     private boolean mIsDownloading;
 
     /**
-     * Create XWalkUpdater for single activity
+     * Create XWalkUpdater for single activity.
      *
      * @param listener The {@link XWalkUpdateListener} to use
      * @param activity The activity which initiate the update
@@ -302,8 +313,14 @@ public class XWalkUpdater {
         mDialogManager = new XWalkDialogManager(activity);
     }
 
-    // This constructor is for XWalkActivityDelegate
-    XWalkUpdater(XWalkUpdateListener listener, Activity activity,
+    /**
+     * Create XWalkUpdater for single activity.
+     *
+     * @param listener The {@link XWalkUpdateListener} to use
+     * @param activity The activity which initiate the update
+     * @param dialogManager The {@link XWalkDialogManager} to use
+     */
+    public XWalkUpdater(XWalkUpdateListener listener, Activity activity,
             XWalkDialogManager dialogManager) {
         mUpdateListener = listener;
         mActivity = activity;
@@ -330,7 +347,7 @@ public class XWalkUpdater {
      * <p>Please try to initialize by {@link XWalkInitializer} first and only invoke this method
      * when the initialization failed. This method must be invoked on the UI thread.
      *
-     * @return True if the updater is launched, false if is in updating, or the Crosswalk runtime
+     * @return true if the updater is launched, false if is in updating, or the Crosswalk runtime
      *         doesn't need to be updated, or the Crosswalk runtime has not been initialized yet.
      */
     public boolean updateXWalkRuntime() {
@@ -361,20 +378,9 @@ public class XWalkUpdater {
         } else if (mBackgroundUpdateListener != null) {
             downloadXWalkApkInBackground();
         } else {
-            Assert.fail();
+            throw new IllegalArgumentException("Update listener is null");
         }
 
-        return true;
-    }
-
-    /**
-     * Dismiss the dialog showing and waiting for user's input.
-     *
-     * @return Return false if no dialog is being displayed, true if dismissed the showing dialog.
-     */
-    public boolean dismissDialog() {
-        if (mDialogManager == null || !mDialogManager.isShowingDialog()) return false;
-        mDialogManager.dismissDialog();
         return true;
     }
 
@@ -391,7 +397,7 @@ public class XWalkUpdater {
     /**
      * Cancel the background download
      *
-     * @return Return false if it is not a background updater or is not downloading, true otherwise.
+     * @return false if it is not a background updater or is not downloading, true otherwise.
      */
     public boolean cancelBackgroundDownload() {
         if (mBackgroundUpdateListener == null || !mIsDownloading) return false;
@@ -412,46 +418,69 @@ public class XWalkUpdater {
             return;
         }
 
-        try {
-            String packageName = XWalkLibraryInterface.XWALK_CORE_PACKAGE;
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse(ANDROID_MARKET_DETAILS + packageName));
-            List<ResolveInfo> infos = mActivity.getPackageManager().queryIntentActivities(
-                    intent, PackageManager.MATCH_ALL);
-            boolean primaryStoreIsGooglePlay =
-                    infos.get(0).activityInfo.packageName.equals(GOOGLE_PLAY_PACKAGE);
+        String packageName = XWalkLibraryInterface.XWALK_CORE_PACKAGE;
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(ANDROID_MARKET_DETAILS + packageName));
+        List<ResolveInfo> infos = mActivity.getPackageManager().queryIntentActivities(
+                intent, PackageManager.MATCH_ALL);
 
-            String primaryCpuAbi = XWalkCoreWrapper.getPrimaryCpuAbi();
-            boolean isArmDevice = primaryCpuAbi.equalsIgnoreCase("armeabi-v7a")
-                    || primaryCpuAbi.equalsIgnoreCase("arm64-v8a");
+        StringBuilder supportedStores = new StringBuilder();
+        boolean hasGooglePlay = false;
 
-            String appAbi = XWalkCoreWrapper.getApplicationAbi();
-            boolean is32BitApp = appAbi.equalsIgnoreCase("x86")
-                    || appAbi.equalsIgnoreCase("armeabi-v7a");
+        Log.d(TAG, "Available Stores:");
+        for (ResolveInfo info : infos) {
+            Log.d(TAG, info.activityInfo.packageName);
+            hasGooglePlay |= info.activityInfo.packageName.equals(GOOGLE_PLAY_PACKAGE);
 
-            if (is32BitApp) {
-                if (primaryStoreIsGooglePlay || isArmDevice) {
-                    packageName = XWalkLibraryInterface.XWALK_CORE_PACKAGE;
-                } else {
-                    packageName = XWalkLibraryInterface.XWALK_CORE_IA_PACKAGE;
+            String storeName = getStoreName(info.activityInfo.packageName);
+            if (storeName != null) {
+                if (supportedStores.length() > 0) {
+                    supportedStores.append("/");
                 }
-            } else {
-                if (primaryStoreIsGooglePlay || isArmDevice) {
-                    packageName = XWalkLibraryInterface.XWALK_CORE64_PACKAGE;
-                } else {
-                    packageName = XWalkLibraryInterface.XWALK_CORE64_IA_PACKAGE;
-                }
+                supportedStores.append(storeName);
             }
-
-            intent.setData(Uri.parse(ANDROID_MARKET_DETAILS + packageName));
-            mActivity.startActivity(intent);
-
-            Log.d(TAG, "Market opened");
-            mDialogManager.dismissDialog();
-        } catch (ActivityNotFoundException e) {
-            Log.d(TAG, "Market open failed");
-            mDialogManager.showMarketOpenError(mCancelCommand);
         }
+
+        if (supportedStores.length() == 0) {
+            mDialogManager.showUnsupportedStore(mCancelCommand);
+            return;
+        }
+
+        String deviceAbi = XWalkCoreWrapper.getDeviceAbi();
+        String runtimeAbi = XWalkCoreWrapper.getRuntimeAbi();
+        boolean isArmDevice = deviceAbi.equals("armeabi-v7a") || deviceAbi.equals("arm64-v8a");
+        boolean is32BitApp = runtimeAbi.equals("armeabi-v7a") || runtimeAbi.equals("x86");
+        Log.d(TAG, "Device ABI: " + deviceAbi);
+        Log.d(TAG, "Runtime ABI: " + runtimeAbi);
+
+        if (hasGooglePlay || isArmDevice) {
+            if (is32BitApp) {
+                packageName = XWalkLibraryInterface.XWALK_CORE_PACKAGE;
+            } else {
+                packageName = XWalkLibraryInterface.XWALK_CORE64_PACKAGE;
+            }
+        } else {
+            if (is32BitApp) {
+                packageName = XWalkLibraryInterface.XWALK_CORE_IA_PACKAGE;
+            } else {
+                packageName = XWalkLibraryInterface.XWALK_CORE64_IA_PACKAGE;
+            }
+        }
+
+        Log.d(TAG, "Package name of Crosswalk to download: " + packageName);
+        intent.setData(Uri.parse(ANDROID_MARKET_DETAILS + packageName));
+        final Intent storeIntent = intent;
+
+        String storeName = hasGooglePlay ?
+                getStoreName(GOOGLE_PLAY_PACKAGE) : supportedStores.toString();
+        Log.d(TAG, "Supported Stores: " + storeName);
+
+        mDialogManager.showSelectStore(new Runnable() {
+            @Override
+            public void run() {
+                mActivity.startActivity(storeIntent);
+            }
+        }, storeName);
     }
 
     private void downloadXWalkApkInBackground() {
@@ -463,8 +492,22 @@ public class XWalkUpdater {
     }
 
     private String getXWalkApkUrl() {
+        String deviceAbi = XWalkCoreWrapper.getDeviceAbi();
+        boolean isX86Device = deviceAbi.equals("x86") || deviceAbi.equals("x86_64");
+
+        String runtimeAbi = XWalkCoreWrapper.getRuntimeAbi();
+        if (runtimeAbi.equals("armeabi-v7a")) {
+            if (isX86Device) {
+                runtimeAbi = "x86";
+            }
+        } else if (runtimeAbi.equals("arm64-v8a")) {
+            if (isX86Device) {
+                runtimeAbi = "x86_64";
+            }
+        }
+
         String url = getAppMetaData(META_XWALK_APK_URL);
-        return url == null ? "" : url + ARCH_QUERY_STRING + Build.CPU_ABI;
+        return url == null ? "" : url + ARCH_QUERY_STRING + runtimeAbi;
     }
 
     private class ForegroundListener implements DownloadListener {
@@ -491,7 +534,7 @@ public class XWalkUpdater {
         @Override
         public void onDownloadFailed(int status, int error) {
             mDialogManager.dismissDialog();
-            mDialogManager.showDownloadError(status, error, mCancelCommand, mDownloadCommand);
+            mDialogManager.showDownloadError(mCancelCommand, mDownloadCommand);
         }
 
         @Override
@@ -620,6 +663,13 @@ public class XWalkUpdater {
                     mActivity.getPackageName(), PackageManager.GET_META_DATA);
             return appInfo.metaData.getString(name);
         } catch (NameNotFoundException | NullPointerException e) {
+        }
+        return null;
+    }
+
+    private String getStoreName(String storePackage) {
+        if (storePackage.equals(GOOGLE_PLAY_PACKAGE)) {
+            return mActivity.getString(R.string.google_play_store);
         }
         return null;
     }

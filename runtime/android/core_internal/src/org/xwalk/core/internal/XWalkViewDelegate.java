@@ -25,8 +25,6 @@ import android.content.res.Resources.NotFoundException;
 import android.os.Build;
 import android.util.Log;
 
-import junit.framework.Assert;
-
 import org.chromium.base.CommandLine;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.PathUtils;
@@ -102,7 +100,9 @@ class XWalkViewDelegate {
     }
 
     public static void init(Context libContext, Context appContext) {
-        if (!loadXWalkLibrary(libContext, null)) Assert.fail();
+        if (!loadXWalkLibrary(libContext, null)) {
+            throw new RuntimeException("Failed to load native library");
+        }
 
         try {
             if (libContext == null) {
@@ -147,7 +147,7 @@ class XWalkViewDelegate {
             Log.d(TAG, "Native library is built for IA");
         } else {
             Log.d(TAG, "Native library is built for ARM");
-            if (sDeviceAbi.equalsIgnoreCase("x86") || sDeviceAbi.equalsIgnoreCase("x86_64")) {
+            if (sDeviceAbi.equals("x86") || sDeviceAbi.equals("x86_64")) {
                 sLoadedByHoudini = true;
                 return false;
             }
@@ -268,7 +268,7 @@ class XWalkViewDelegate {
                     try {
                         return context.getAssets().open(resource);
                     } catch (IOException e) {
-                        Assert.fail(resource + " can't be found in assets.");
+                        throw new RuntimeException(resource + " can't be found in assets.");
                     }
                 } else if (isDownloadMode) {
                     try {
@@ -276,7 +276,7 @@ class XWalkViewDelegate {
                                 XWALK_CORE_EXTRACTED_DIR, Context.MODE_PRIVATE).getAbsolutePath();
                         return new FileInputStream(new File(resDir, resource));
                     } catch (FileNotFoundException e) {
-                        Assert.fail(resource + " can't be found.");
+                        throw new RuntimeException(resource + " can't be found.");
                     }
                 } else {
                     String resourceName = resource.split("\\.")[0];
@@ -284,10 +284,9 @@ class XWalkViewDelegate {
                     try {
                         return context.getResources().openRawResource(resourceId);
                     } catch (NotFoundException e) {
-                        Assert.fail("R.raw." + resourceName + " can't be found.");
+                        throw new RuntimeException("R.raw." + resourceName + " can't be found.");
                     }
                 }
-                return null;
             }
         });
     }
@@ -323,25 +322,18 @@ class XWalkViewDelegate {
 
     static {
         try {
-            sDeviceAbi = Build.SUPPORTED_ABIS[0];
-
-            StringBuffer supported_abis = new StringBuffer();
-            supported_abis.append(sDeviceAbi);
-            for (int i = 1; i < Build.SUPPORTED_ABIS.length; ++i) {
-                supported_abis.append(", " + Build.SUPPORTED_ABIS[i]);
-            }
-            Log.d(TAG, "Supported ABIs: " + supported_abis.toString());
+            sDeviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase();
         } catch (NoSuchFieldError e) {
             try {
                 Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");
                 InputStreamReader ir = new InputStreamReader(process.getInputStream());
                 BufferedReader input = new BufferedReader(ir);
-                sDeviceAbi = input.readLine();
+                sDeviceAbi = input.readLine().toLowerCase();
                 input.close();
                 ir.close();
             } catch (IOException ex) {
                 // CPU_ABI is deprecated in API level 21 and maybe incorrect on Houdini
-                sDeviceAbi = Build.CPU_ABI;
+                sDeviceAbi = Build.CPU_ABI.toLowerCase();
             }
         }
         Log.d(TAG, "Device ABI: " + sDeviceAbi);

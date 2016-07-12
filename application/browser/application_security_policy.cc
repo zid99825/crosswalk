@@ -40,9 +40,9 @@ bool ApplicationSecurityPolicy::WhitelistEntry::operator==(
          other.subdomains == subdomains;
 }
 
-scoped_ptr<ApplicationSecurityPolicy> ApplicationSecurityPolicy::
+std::unique_ptr<ApplicationSecurityPolicy> ApplicationSecurityPolicy::
     Create(scoped_refptr<ApplicationData> app_data) {
-  scoped_ptr<ApplicationSecurityPolicy> security_policy;
+  std::unique_ptr<ApplicationSecurityPolicy> security_policy;
   // CSP policy takes precedence over WARP.
   if (app_data->HasCSPDefined())
     security_policy.reset(new ApplicationSecurityPolicyCSP(app_data));
@@ -177,12 +177,14 @@ void ApplicationSecurityPolicyCSP::InitEntries() {
 
       for (const auto& directive : policies) {
         for (const auto& it : directive.second) {
-          URLPattern allowedUrl(URLPattern::SCHEME_ALL);
-          if (allowedUrl.Parse(it) != URLPattern::PARSE_SUCCESS)
-            continue;
           GURL url(it);
           if (!url.is_valid())
             continue;
+
+          URLPattern allowedUrl(URLPattern::SCHEME_ALL);
+          if (allowedUrl.Parse(url.spec()) != URLPattern::PARSE_SUCCESS)
+            continue;
+
           AddWhitelistEntry(url, allowedUrl.host(), allowedUrl.match_subdomains());
         }
       }

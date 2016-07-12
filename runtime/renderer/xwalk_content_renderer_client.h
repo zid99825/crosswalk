@@ -6,11 +6,11 @@
 #ifndef XWALK_RUNTIME_RENDERER_XWALK_CONTENT_RENDERER_CLIENT_H_
 #define XWALK_RUNTIME_RENDERER_XWALK_CONTENT_RENDERER_CLIENT_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "base/compiler_specific.h"
-#include "base/memory/scoped_ptr.h"
 #include "base/files/file.h"
 #include "base/strings/string16.h"
 #include "content/public/renderer/content_renderer_client.h"
@@ -47,11 +47,9 @@ class XWalkContentRendererClient
   void RenderFrameCreated(content::RenderFrame* render_frame) override;
   void RenderViewCreated(content::RenderView* render_view) override;
   bool IsExternalPepperPlugin(const std::string& module_name) override;
-#if defined(OS_ANDROID)
-  unsigned long long VisitedLinkHash(const char* canonical_url, // NOLINT
-                                             size_t length) override;
-  bool IsLinkVisited(unsigned long long link_hash) override; // NOLINT
-#endif
+  unsigned long long VisitedLinkHash(const char* canonical_url,
+                                     size_t length) override;
+  bool IsLinkVisited(unsigned long long link_hash) override;
 
   bool WillSendRequest(blink::WebFrame* frame,
                        ui::PageTransition transition_type,
@@ -72,19 +70,17 @@ class XWalkContentRendererClient
 #endif
 
  protected:
-  scoped_ptr<XWalkRenderProcessObserver> xwalk_render_process_observer_;
+  std::unique_ptr<XWalkRenderProcessObserver> xwalk_render_process_observer_;
 
  private:
   // XWalkExtensionRendererController::Delegate implementation.
   void DidCreateModuleSystem(
       extensions::XWalkModuleSystem* module_system) override;
 
-  scoped_ptr<extensions::XWalkExtensionRendererController>
+  std::unique_ptr<extensions::XWalkExtensionRendererController>
       extension_controller_;
 
-#if defined(OS_ANDROID)
-  scoped_ptr<visitedlink::VisitedLinkSlave> visited_link_slave_;
-#endif
+  std::unique_ptr<visitedlink::VisitedLinkSlave> visited_link_slave_;
 
   void GetNavigationErrorStrings(
       content::RenderFrame* render_frame,

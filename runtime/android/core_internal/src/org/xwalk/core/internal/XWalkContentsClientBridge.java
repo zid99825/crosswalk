@@ -23,6 +23,7 @@ import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
+import android.widget.Toast;
 
 import java.security.cert.X509Certificate;
 import java.security.KeyStore.PrivateKeyEntry;
@@ -47,7 +48,7 @@ import org.chromium.content.browser.DownloadInfo;
 
 import org.xwalk.core.internal.XWalkUIClientInternal.LoadStatusInternal;
 
-// Help bridge callback in XWalkContentsClient to XWalkViewClient and
+// Help bridge callback in XWalkContentsClient to XWalkResourceClient, XWalkUIClient and
 // XWalkWebChromeClient; Also handle the JNI conmmunication logic.
 @JNINamespace("xwalk")
 class XWalkContentsClientBridge extends XWalkContentsClient
@@ -682,12 +683,18 @@ class XWalkContentsClientBridge extends XWalkContentsClient
     // If returns false, the request is immediately canceled, and any call to proceedSslError
     // has no effect. If returns true, the request should be canceled or proceeded using
     // proceedSslError().
-    // Unlike the webview classic, we do not keep keep a database of certificates that
+    // Unlike the webview classic, we do not keep a database of certificates that
     // are allowed by the user, because this functionality is already handled via
     // ssl_policy in native layers.
     @CalledByNative
     private boolean allowCertificateError(int certError, byte[] derBytes, final String url,
             final int id) {
+        boolean shouldDeny = SslUtil.shouldDenyRequest(certError);
+        if (shouldDeny) {
+            Toast.makeText(mXWalkView.getContext(), R.string.ssl_error_deny_request,
+                    Toast.LENGTH_SHORT).show();
+            return false;
+        }
         final SslCertificate cert = SslUtil.getCertificateFromDerBytes(derBytes);
         if (cert == null) {
             // if the certificate or the client is null, cancel the request
@@ -843,11 +850,6 @@ class XWalkContentsClientBridge extends XWalkContentsClient
         nativeCancelJsResult(mNativeContentsClientBridge, id);
     }
 
-    void exitFullscreen(long nativeWebContents) {
-        if (mNativeContentsClientBridge == 0) return;
-        nativeExitFullscreen(mNativeContentsClientBridge, nativeWebContents);
-    }
-
     public void notificationDisplayed(int id) {
         if (mNativeContentsClientBridge == 0) return;
         nativeNotificationDisplayed(mNativeContentsClientBridge, id);
@@ -872,7 +874,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient
     }
 
     // Implement ContentViewDownloadDelegate methods.
-    public void requestHttpGetDownload(DownloadInfo downloadInfo) {
+    public void requestHttpGetDownload(DownloadInfo downloadInfo, boolean mustDownload) {
         if (mDownloadListener != null) {
             mDownloadListener.onDownloadStart(downloadInfo.getUrl(), downloadInfo.getUserAgent(),
             downloadInfo.getContentDisposition(), downloadInfo.getMimeType(), downloadInfo.getContentLength());
@@ -882,7 +884,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient
     public void onDownloadStarted(String filename, String mimeType) {
     }
 
-    public void onDangerousDownload(String filename, int downloadId) {
+    public void onDangerousDownload(String filename, String downloadGuid) {
     }
 
     public void requestFileAccess(final long callbackId) {
@@ -918,7 +920,6 @@ class XWalkContentsClientBridge extends XWalkContentsClient
     private native void nativeConfirmJsResult(long nativeXWalkContentsClientBridge, int id,
             String prompt);
     private native void nativeCancelJsResult(long nativeXWalkContentsClientBridge, int id);
-    private native void nativeExitFullscreen(long nativeXWalkContentsClientBridge, long nativeWebContents);
     private native void nativeNotificationDisplayed(long nativeXWalkContentsClientBridge, int id);
     private native void nativeNotificationClicked(long nativeXWalkContentsClientBridge, int id);
     private native void nativeNotificationClosed(long nativeXWalkContentsClientBridge, int id, boolean byUser);

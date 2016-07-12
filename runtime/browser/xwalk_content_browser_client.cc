@@ -101,13 +101,11 @@ XWalkContentBrowserClient* XWalkContentBrowserClient::Get() {
 
 XWalkContentBrowserClient::XWalkContentBrowserClient(XWalkRunner* xwalk_runner)
     : xwalk_runner_(xwalk_runner),
-      url_request_context_getter_(nullptr),
 #if defined(OS_POSIX) && !defined(OS_MACOSX)
       v8_natives_fd_(-1),
       v8_snapshot_fd_(-1),
 #endif  // OS_POSIX && !OS_MACOSX
-      main_parts_(nullptr),
-      browser_context_(xwalk_runner->browser_context()) {
+      main_parts_(nullptr) {
   DCHECK(!g_browser_client);
   g_browser_client = this;
 }
@@ -128,29 +126,6 @@ content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
 #endif
 
   return main_parts_;
-}
-
-net::URLRequestContextGetter* XWalkContentBrowserClient::CreateRequestContext(
-    content::BrowserContext* browser_context,
-    content::ProtocolHandlerMap* protocol_handlers,
-    content::URLRequestInterceptorScopedVector request_interceptors) {
-  url_request_context_getter_ =
-      static_cast<XWalkBrowserContext*>(browser_context)->CreateRequestContext(
-          protocol_handlers, std::move(request_interceptors));
-  return url_request_context_getter_;
-}
-
-net::URLRequestContextGetter*
-XWalkContentBrowserClient::CreateRequestContextForStoragePartition(
-    content::BrowserContext* browser_context,
-    const base::FilePath& partition_path,
-    bool in_memory,
-    content::ProtocolHandlerMap* protocol_handlers,
-    content::URLRequestInterceptorScopedVector request_interceptors) {
-  return static_cast<XWalkBrowserContext*>(browser_context)->
-      CreateRequestContextForStoragePartition(
-          partition_path, in_memory, protocol_handlers,
-          std::move(request_interceptors));
 }
 
 // This allow us to append extra command line switches to the child
@@ -177,7 +152,8 @@ XWalkContentBrowserClient::CreateQuotaPermissionContext() {
 }
 
 content::AccessTokenStore* XWalkContentBrowserClient::CreateAccessTokenStore() {
-  return new XWalkAccessTokenStore(url_request_context_getter_);
+  return new XWalkAccessTokenStore(
+      xwalk_runner_->browser_context()->url_request_getter());
 }
 
 content::WebContentsViewDelegate*
@@ -263,7 +239,7 @@ bool XWalkContentBrowserClient::AllowSetCookie(
 void XWalkContentBrowserClient::SelectClientCertificate(
     content::WebContents* web_contents,
     net::SSLCertRequestInfo* cert_request_info,
-    scoped_ptr<content::ClientCertificateDelegate> delegate) {
+    std::unique_ptr<content::ClientCertificateDelegate> delegate) {
 #if defined(OS_ANDROID)
   XWalkContentsClientBridgeBase* client =
       XWalkContentsClientBridgeBase::FromWebContents(web_contents);
@@ -318,7 +294,7 @@ void XWalkContentBrowserClient::DidCreatePpapiPlugin(
     content::BrowserPpapiHost* browser_host) {
 #if defined(ENABLE_PLUGINS)
   browser_host->GetPpapiHost()->AddHostFactoryFilter(
-      scoped_ptr<ppapi::host::HostFactory>(
+      std::unique_ptr<ppapi::host::HostFactory>(
           new XWalkBrowserPepperHostFactory(browser_host)));
 #endif
 }

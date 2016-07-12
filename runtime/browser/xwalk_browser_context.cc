@@ -39,8 +39,15 @@
 #include "xwalk/runtime/common/xwalk_paths.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 
+
 #if defined(OS_ANDROID)
 #include "base/strings/string_split.h"
+#elif defined(OS_WIN)
+#include "base/base_paths_win.h"
+#elif defined(OS_LINUX)
+#include "base/nix/xdg_util.h"
+#elif defined(OS_MACOSX)
+#include "base/base_paths_mac.h"
 #endif
 
 using content::BrowserThread;
@@ -85,9 +92,7 @@ XWalkBrowserContext::XWalkBrowserContext()
     save_form_data_(true) {
   InitWhileIOAllowed();
   InitFormDatabaseService();
-#if defined(OS_ANDROID)
   InitVisitedLinkMaster();
-#endif
   CHECK(!g_browser_context);
   g_browser_context = this;
 }
@@ -121,18 +126,43 @@ XWalkBrowserContext* XWalkBrowserContext::FromWebContents(
 
 void XWalkBrowserContext::InitWhileIOAllowed() {
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
+  base::FilePath path;
   if (cmd_line->HasSwitch(switches::kXWalkDataPath)) {
-    base::FilePath path =
-        cmd_line->GetSwitchValuePath(switches::kXWalkDataPath);
+    path = cmd_line->GetSwitchValuePath(switches::kXWalkDataPath);
     PathService::OverrideAndCreateIfNeeded(
         DIR_DATA_PATH, path, false, true);
+    BrowserContext::Initialize(this, path);
+  } else {
+    base::FilePath::StringType xwalk_suffix;
+    xwalk_suffix = FILE_PATH_LITERAL("xwalk");
+#if defined(OS_WIN)
+    CHECK(PathService::Get(base::DIR_LOCAL_APP_DATA, &path));
+    path = path.Append(xwalk_suffix);
+#elif defined(OS_LINUX)
+    std::unique_ptr<base::Environment> env(base::Environment::Create());
+    base::FilePath config_dir(
+        base::nix::GetXDGDirectory(env.get(),
+                                   base::nix::kXdgConfigHomeEnvVar,
+                                   base::nix::kDotConfigDir));
+    path = config_dir.Append(xwalk_suffix);
+#elif defined(OS_MACOSX)
+    CHECK(PathService::Get(base::DIR_APP_DATA, &path));
+    path = path.Append(xwalk_suffix);
+#elif defined(OS_ANDROID)
+    CHECK(PathService::Get(base::DIR_ANDROID_APP_DATA, &path));
+    path = path.Append(xwalk_suffix);
+#else
+    NOTIMPLEMENTED();
+#endif
   }
+
+  BrowserContext::Initialize(this, path);
 #if !defined(OS_ANDROID)
   XWalkContentSettings::GetInstance()->Init();
 #endif
 }
 
-scoped_ptr<content::ZoomLevelDelegate>
+std::unique_ptr<content::ZoomLevelDelegate>
 XWalkBrowserContext::CreateZoomLevelDelegate(
     const base::FilePath& partition_path) {
   return nullptr;
@@ -174,18 +204,6 @@ XWalkBrowserContext::GetDownloadManagerDelegate() {
 
 net::URLRequestContextGetter* XWalkBrowserContext::GetRequestContext() {
   return GetDefaultStoragePartition(this)->GetURLRequestContext();
-}
-
-net::URLRequestContextGetter*
-    XWalkBrowserContext::GetRequestContextForRenderProcess(
-        int renderer_child_id) {
-#if defined(OS_ANDROID)
-  return GetRequestContext();
-#else
-  content::RenderProcessHost* rph =
-      content::RenderProcessHost::FromID(renderer_child_id);
-  return rph->GetStoragePartition()->GetURLRequestContext();
-#endif
 }
 
 net::URLRequestContextGetter* XWalkBrowserContext::GetMediaRequestContext() {
@@ -390,6 +408,7 @@ void XWalkBrowserContext::SetCSPString(const std::string& csp) {
 std::string XWalkBrowserContext::GetCSPString() const {
   return csp_;
 }
+#endif
 
 void XWalkBrowserContext::InitVisitedLinkMaster() {
   visitedlink_master_.reset(
@@ -409,7 +428,5 @@ void XWalkBrowserContext::RebuildTable(
   // Therefore this initialization path is not used.
   enumerator->OnComplete(true);
 }
-
-#endif
 
 }  // namespace xwalk
