@@ -128,13 +128,14 @@ class Method(object):
   ANNOTATION_POST_BRIDGELINE = 'postBridgeLines'
 
   def __init__(self, class_name, class_loader,
-      is_constructor, is_static, is_abstract,
+      is_constructor, is_static, is_abstract, is_deprecated,
       method_name, method_return, params, annotation, doc=''):
     self._class_name = class_name
     self._class_loader = class_loader
     self._is_constructor = is_constructor
     self._is_static = is_static
     self._is_abstract = is_abstract
+    self._is_deprecated = is_deprecated
     self._is_delegate = False
     self._disable_reflect_method = False
     self._method_name = method_name
@@ -157,6 +158,7 @@ class Method(object):
     self._wrapper_params_declare_for_bridge = ''
     self._wrapper_params_pass_to_bridge = ''
     self._is_reservable = False
+    self._parameter_is_internal = False
 
     self.ParseMethodParams(params)
     self.ParseMethodAnnotation(annotation)
@@ -181,6 +183,10 @@ class Method(object):
   @property
   def is_abstract(self):
     return self._is_abstract
+
+  @property
+  def is_deprecated(self):
+    return self._is_deprecated
 
   @property
   def is_reservable(self):
@@ -415,11 +421,12 @@ class Method(object):
       # the way bridge uses as the condition for whether call super or
       # call wrapper in override call
       #   XWalkViewInternal view => (view instanceof XWalkViewBridge)
-      if (is_internal_class and
-          not java_data.HasInstanceCreateInternallyAnnotation()):
-        return'(%s instanceof %s)' % (param_name, java_data.GetBridgeName())
-      else:
-        return None
+      if is_internal_class:
+        if not java_data.HasInstanceCreateInternallyAnnotation():
+          return'(%s instanceof %s)' % (param_name, java_data.GetBridgeName())
+        else:
+          self._parameter_is_internal = True
+      return None
     elif param_string_type == ParamStringType.WRAPPER_DECLARE:
       # the way wrapper declare the param
       #   XWalkViewInternal view => XWalkView view
@@ -533,9 +540,12 @@ ${POST_BRIDGE_LINES}
     return template.substitute(value)
 
   def GenerateBridgeOverrideMethod(self):
-    if not self._bridge_override_condition:
+    if not self._bridge_override_condition and not self._parameter_is_internal:
       return '    @Override'
-    template = Template("""\
+    # If _bridge_override_condition and _parameter_is_internal are True
+    # concurrently, _bridge_override_condition should be treated in priority.
+    if self._bridge_override_condition:
+      template = Template("""\
     @Override
     public ${RETURN_TYPE} ${NAME}(${PARAMS}) {
         if (${IF_CONDITION}) {
@@ -543,6 +553,13 @@ ${POST_BRIDGE_LINES}
         } else {
             ${RETURN}super.${NAME}(${PARAMS_PASSING});
         }
+    }
+""")
+    else:
+      template = Template("""\
+    @Override
+    public ${RETURN_TYPE} ${NAME}(${PARAMS}) {
+        ${RETURN}${NAME}(${BRIDGE_PARAMS_PASSING});
     }
 """)
 
@@ -563,7 +580,7 @@ ${POST_BRIDGE_LINES}
     if return_is_internal:
       template = Template("""\
     public ${RETURN_TYPE} ${NAME}(${PARAMS}) {
-        if (${METHOD_DECLARE_NAME}.isNull()) {
+        if (${METHOD_DECLARE_NAME} == null || ${METHOD_DECLARE_NAME}.isNull()) {
             ${RETURN_SUPER}${NAME}Super(${PARAMS_PASSING_SUPER});
         } else {
             ${GENERIC_TYPE_DECLARE}${RETURN}coreBridge.getBridgeObject(\
@@ -581,7 +598,7 @@ ${PARAMS_PASSING});
     else :
       template = Template("""\
     public ${RETURN_TYPE} ${NAME}(${PARAMS}) {
-        if (${METHOD_DECLARE_NAME}.isNull()) {
+        if (${METHOD_DECLARE_NAME} == null || ${METHOD_DECLARE_NAME}.isNull()) {
             ${RETURN_SUPER}${NAME}Super(${PARAMS_PASSING_SUPER});
         } else {
             ${GENERIC_TYPE_DECLARE}${RETURN}${METHOD_DECLARE_NAME}.invoke(\
@@ -735,7 +752,11 @@ ${PRE_WRAP_LINES}
         postWrapperMethod = new ReflectMethod(this,
                 \"post%s\");\n""" % self._method_declare_name)
 
-    value = {'DOC': self.GenerateDoc(self.method_doc),
+    doc_string = self.GenerateDoc(self.method_doc)
+    if self._is_deprecated :
+      doc_string += "\n    @Deprecated"
+
+    value = {'DOC': doc_string,
              'CLASS_NAME': self._class_java_data.wrapper_name,
              'PARAMS': self._wrapper_params_declare,
              'PRE_WRAP_LINES': pre_wrap_string}
@@ -782,7 +803,7 @@ ${DOC}
             ${RETURN}${METHOD_DECLARE_NAME}.invoke(${PARAMS_PASSING});
         } catch (UnsupportedOperationException e) {
             if (coreWrapper == null) {
-                Assert.fail("Cannot call this method before xwalk is ready");
+                throw new RuntimeException("Crosswalk's APIs are not ready yet");
             } else {
                 XWalkCoreWrapper.handleRuntimeError(e);
             }
@@ -799,10 +820,14 @@ ${DOC}
       return_state = 'return (%s) ' % ConvertPrimitiveTypeToObject(return_type)
       return_null = 'return %s;' % GetPrimitiveTypeDefaultValue(return_type)
 
+    doc_string = self.GenerateDoc(self.method_doc)
+    if self._is_deprecated :
+      doc_string += "\n    @Deprecated"
+
     value = {'RETURN_TYPE': self.method_return,
              'RETURN': return_state,
              'RETURN_NULL': return_null,
-             'DOC': self.GenerateDoc(self.method_doc),
+             'DOC': doc_string,
              'NAME': self.method_name,
              'PARAMS': self._wrapper_params_declare,
              'METHOD_DECLARE_NAME': self._method_declare_name,
@@ -827,7 +852,7 @@ ${DOC}
 ${METHOD_DECLARE_NAME}.invoke(${PARAMS_PASSING}));
         } catch (UnsupportedOperationException e) {
             if (coreWrapper == null) {
-                Assert.fail("Cannot call this method before xwalk is ready");
+                throw new RuntimeException("Crosswalk's APIs are not ready yet");
             } else {
                 XWalkCoreWrapper.handleRuntimeError(e);
             }
@@ -872,7 +897,7 @@ ${DOC}
         try {\n"""
       suffix_str = """\n        } catch (UnsupportedOperationException e) {
             if (coreWrapper == null) {
-                Assert.fail("Cannot call this method before xwalk is ready");
+                throw new RuntimeException("Crosswalk's APIs are not ready yet");
             } else {
                 XWalkCoreWrapper.handleRuntimeError(e);
             }
@@ -915,10 +940,14 @@ ${PARAMS_PASSING}).toString());""" % self._method_return
     pre_wrap_string = self._method_annotations.get(
         self.ANNOTATION_PRE_WRAPLINE, '')
 
+    doc_string = self.GenerateDoc(self.method_doc)
+    if self._is_deprecated :
+      doc_string += "\n    @Deprecated"
+
     value = {'RETURN_TYPE': return_type,
              'RETURN': return_state,
              'RETURN_NULL': return_null,
-             'DOC': self.GenerateDoc(self.method_doc),
+             'DOC': doc_string,
              'NAME': self.method_name,
              'PARAMS': re.sub(r'ValueCallback<([A-Za-z]+)Internal>',
                   r'ValueCallback<\1>',self._wrapper_params_declare),

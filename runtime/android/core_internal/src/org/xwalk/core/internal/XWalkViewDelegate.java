@@ -16,6 +16,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import android.app.Activity;
+import android.app.Service;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -25,6 +27,7 @@ import android.content.res.Resources.NotFoundException;
 import android.os.Build;
 import android.util.Log;
 
+import org.chromium.base.ApplicationStatusManager;
 import org.chromium.base.CommandLine;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.PathUtils;
@@ -43,7 +46,7 @@ class XWalkViewDelegate {
     private static boolean sInitialized = false;
     private static boolean sLibraryLoaded = false;
     private static boolean sLoadedByHoudini = false;
-    private static String sDeviceAbi = "";
+    private static String sDeviceAbi;
     private static final String PRIVATE_DATA_DIRECTORY_SUFFIX = "xwalkcore";
     private static final String XWALK_CORE_EXTRACTED_DIR = "extracted_xwalkcore";
     private static final String META_XWALK_ENABLE_DOWNLOAD_MODE = "xwalk_enable_download_mode";
@@ -104,15 +107,45 @@ class XWalkViewDelegate {
             throw new RuntimeException("Failed to load native library");
         }
 
+        if (sInitialized) return;
+
+        Context context = libContext == null ?
+                appContext : new MixedContext(libContext, appContext);
+
+        PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX, context);
+
+        // Initialize chromium resources. Assign them the correct ids in xwalk core.
+        XWalkInternalResources.resetIds(context);
+
+        // Last place to initialize CommandLine object. If you haven't initialize
+        // the CommandLine object before XWalkViewContent is created, here will create
+        // the object to guarantee the CommandLine object is not null and the
+        // consequent prodedure does not crash.
+        if (!CommandLine.isInitialized()) {
+            CommandLine.init(readCommandLine(context.getApplicationContext()));
+        }
+
         try {
-            if (libContext == null) {
-                init(appContext);
-            } else {
-                init(new MixedContext(libContext, appContext));
-            }
+            setupResourceInterceptor(context);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        // Use MixedContext to initialize the ResourceExtractor, as the pak file
+        // is in the library apk if in shared apk mode.
+        ResourceExtractor.get(context);
+
+        startBrowserProcess(context);
+
+        if (appContext instanceof Activity) {
+            ApplicationStatusManager.init(((Activity) appContext).getApplication());
+        } else if (appContext instanceof Service) {
+            ApplicationStatusManager.init(((Service) appContext).getApplication());
+        }
+
+        XWalkPresentationHost.createInstanceOnce(context);
+
+        sInitialized = true;
     }
 
     // Keep this function to preserve backward compatibility.
@@ -147,7 +180,8 @@ class XWalkViewDelegate {
             Log.d(TAG, "Native library is built for IA");
         } else {
             Log.d(TAG, "Native library is built for ARM");
-            if (sDeviceAbi.equals("x86") || sDeviceAbi.equals("x86_64")) {
+            if (isIaDevice()) {
+                Log.d(TAG, "Crosswalk's native library does not support Houdini");
                 sLoadedByHoudini = true;
                 return false;
             }
@@ -155,32 +189,6 @@ class XWalkViewDelegate {
 
         sLibraryLoaded = true;
         return true;
-    }
-
-    private static void init(final Context context) throws IOException {
-        if (sInitialized) return;
-
-        PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX, context);
-
-        // Initialize chromium resources. Assign them the correct ids in xwalk core.
-        XWalkInternalResources.resetIds(context);
-
-        // Last place to initialize CommandLine object. If you haven't initialize
-        // the CommandLine object before XWalkViewContent is created, here will create
-        // the object to guarantee the CommandLine object is not null and the
-        // consequent prodedure does not crash.
-        if (!CommandLine.isInitialized()) {
-            CommandLine.init(readCommandLine(context.getApplicationContext()));
-        }
-
-        setupResourceInterceptor(context);
-
-        // Use MixedContext to initialize the ResourceExtractor, as the pak file
-        // is in the library apk if in shared apk mode.
-        ResourceExtractor.get(context);
-
-        startBrowserProcess(context);
-        sInitialized = true;
     }
 
     private static void startBrowserProcess(final Context context) {
@@ -312,30 +320,37 @@ class XWalkViewDelegate {
             PackageManager packageManager = context.getPackageManager();
             ApplicationInfo appInfo = packageManager.getApplicationInfo(
                     context.getPackageName(), PackageManager.GET_META_DATA);
-            return appInfo.metaData.getString(name);
+            return appInfo.metaData.get(name).toString();
         } catch (NameNotFoundException | NullPointerException e) {
+            return null;
         }
-        return null;
+    }
+
+    private static boolean isIaDevice() {
+        String abi = getDeviceAbi();
+        return abi.equals("x86") || abi.equals("x86_64");
+    }
+
+    private static String getDeviceAbi() {
+        if (sDeviceAbi == null) {
+            try {
+                sDeviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase();
+            } catch (NoSuchFieldError e) {
+                try {
+                    Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");
+                    InputStreamReader ir = new InputStreamReader(process.getInputStream());
+                    BufferedReader input = new BufferedReader(ir);
+                    sDeviceAbi = input.readLine().toLowerCase();
+                    input.close();
+                    ir.close();
+                } catch (IOException ex) {
+                    throw new RuntimeException("Can not detect device's ABI");
+                }
+            }
+            Log.d(TAG, "Device ABI: " + sDeviceAbi);
+        }
+        return sDeviceAbi;
     }
 
     private static native boolean nativeIsLibraryBuiltForIA();
-
-    static {
-        try {
-            sDeviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase();
-        } catch (NoSuchFieldError e) {
-            try {
-                Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");
-                InputStreamReader ir = new InputStreamReader(process.getInputStream());
-                BufferedReader input = new BufferedReader(ir);
-                sDeviceAbi = input.readLine().toLowerCase();
-                input.close();
-                ir.close();
-            } catch (IOException ex) {
-                // CPU_ABI is deprecated in API level 21 and maybe incorrect on Houdini
-                sDeviceAbi = Build.CPU_ABI.toLowerCase();
-            }
-        }
-        Log.d(TAG, "Device ABI: " + sDeviceAbi);
-    }
 }

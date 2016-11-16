@@ -151,7 +151,6 @@
           '<(PRODUCT_DIR)/xwalk_xwview_test/assets/echo_sync_java.html',
           '<(PRODUCT_DIR)/xwalk_xwview_test/assets/favicon.html',
           '<(PRODUCT_DIR)/xwalk_xwview_test/assets/file_chooser.html',
-          '<(PRODUCT_DIR)/xwalk_xwview_test/assets/find.html',
           '<(PRODUCT_DIR)/xwalk_xwview_test/assets/framesEcho.html',
           '<(PRODUCT_DIR)/xwalk_xwview_test/assets/fullscreen_enter_exit.html',
           '<(PRODUCT_DIR)/xwalk_xwview_test/assets/fullscreen_togged.html',
@@ -180,7 +179,6 @@
             'test/android/data/echo_sync_java.html',
             'test/android/data/favicon.html',
             'test/android/data/file_chooser.html',
-            'test/android/data/find.html',
             'test/android/data/framesEcho.html',
             'test/android/data/fullscreen_enter_exit.html',
             'test/android/data/fullscreen_togged.html',
@@ -197,58 +195,6 @@
         },
       ],
       'includes': [ '../build/java_apk.gypi' ],
-    },
-    {
-      'target_name': 'xwalk_core_unittests',
-      'type': '<(gtest_target_type)',
-      'dependencies': [
-        '../base/base.gyp:test_support_base',
-        '../net/net.gyp:net_test_support',
-        '../testing/android/native_test.gyp:native_test_native_code',
-        '../testing/gmock.gyp:gmock',
-        '../testing/gtest.gyp:gtest',
-      ],
-      'include_dirs': [
-        '..',
-      ],
-      'sources': [
-        'runtime/common/android/xwalk_core_tests.cc',
-      ],
-    },
-    {
-      'target_name': 'xwalk_core_unittests_java',
-      'type': 'none',
-      'dependencies': [
-      ],
-      'variables': {
-        'java_in_dir': 'test/android/unittestjava',
-      },
-      # TODO: supress gyp error: "'find ../cameo_webview/unittestjava  -name "*.java"' returned exit status 1"
-      # 'includes': [ '../build/java.gypi' ],
-    },
-    {
-      'target_name': 'xwalk_core_unittests_jni',
-      'type': 'none',
-      'sources': [
-      ],
-      'variables': {
-        'jni_gen_package': 'xwalk_core_unittests',
-      },
-      'includes': [ '../build/jni_generator.gypi' ],
-    },
-    {
-      'target_name': 'xwalk_core_unittests_apk',
-      'type': 'none',
-      'dependencies': [
-        'xwalk_core_unittests',
-        'xwalk_core_unittests_java',
-        'xwalk_core_unittests_jni',
-      ],
-      'variables': {
-        'test_suite_name': 'xwalk_core_unittests',
-        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)xwalk_core_unittests<(SHARED_LIB_SUFFIX)',
-      },
-      'includes': [ '../build/apk_test.gypi' ],
     },
     {
       'target_name': 'xwalk_runtime_client_shell_apk',
@@ -618,7 +564,6 @@
       'target_name': 'xwalk_core_internal_shell_apk',
       'type': 'none',
       'dependencies': [
-        '../third_party/android_tools/android_tools.gyp:android_support_v13_javalib',
         'libxwalkcore',
         'xwalk_core_extensions_java',
         'xwalk_core_internal_java',

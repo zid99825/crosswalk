@@ -4,29 +4,21 @@
 
 package org.xwalk.core;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.Signature;
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
 import dalvik.system.DexClassLoader;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
 import java.io.File;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import junit.framework.Assert;
 
@@ -39,12 +31,6 @@ class XWalkCoreWrapper {
     private static final String BRIDGE_PACKAGE = "org.xwalk.core.internal";
     private static final String TAG = "XWalkLib";
     private static final String XWALK_CORE_CLASSES_DEX = "classes.dex";
-    private static final String OPTIMIZED_DEX_DIR = "dex";
-    private static final String META_XWALK_ENABLE_DOWNLOAD_MODE = "xwalk_enable_download_mode";
-    private static final String META_XWALK_DOWNLOAD_MODE = "xwalk_download_mode";
-    private static final String META_XWALK_DOWNLOAD_MODE_UPDATE = "xwalk_download_mode_update";
-    private static final String PATTERN_BIT_MISMATCH =
-            "dlopen failed: \".+\" is (32|64)-bit instead of (32|64)-bit";
 
     private static XWalkCoreWrapper sProvisionalInstance;
     private static XWalkCoreWrapper sInstance;
@@ -78,7 +64,6 @@ class XWalkCoreWrapper {
     private int mApiVersion;
     private int mMinApiVersion;
     private int mCoreStatus;
-    private boolean mIsDownloadMode;
 
     private Context mWrapperContext;
     private Context mBridgeContext;
@@ -128,27 +113,14 @@ class XWalkCoreWrapper {
         sReservedActions.get(tag).add(new ReservedAction(method));
     }
 
-    public static void handleRuntimeError(RuntimeException e) {
-        e.printStackTrace();
-        sInstance.mCoreStatus = XWalkLibraryInterface.STATUS_OLDER_VERSION;
-        final Activity activity = (Activity) sInstance.mWrapperContext;
-        XWalkUpdater xwalkUpdater = new XWalkUpdater(
-            new XWalkUpdater.XWalkUpdateListener() {
-                @Override
-                public void onXWalkUpdateCancelled() {
-                    activity.finish();
-                }
-            },
-            activity);
-        xwalkUpdater.updateXWalkRuntime();
-    }
-
     /**
      * This method must be invoked on the UI thread.
      */
     public static void handlePostInit(String tag) {
-        if (!sReservedActions.containsKey(tag)) return;
         Log.d(TAG, "Post init xwalk core in " + tag);
+        if (!sReservedActions.containsKey(tag)) {
+            return;
+        }
 
         LinkedList<ReservedAction> reservedActions = sReservedActions.get(tag);
         for (ReservedAction action : reservedActions) {
@@ -172,21 +144,26 @@ class XWalkCoreWrapper {
             }
         }
 
-        sReservedActivities.remove(tag);
         sReservedActions.remove(tag);
+        sReservedActivities.remove(tag);
     }
 
-    public static int attachXWalkCore(Context context) {
+    public static void handleRuntimeError(RuntimeException e) {
+        Log.e(TAG, "This API is incompatible with the Crosswalk runtime library");
+        e.printStackTrace();
+    }
+
+    public static int attachXWalkCore() {
         Assert.assertFalse(sReservedActivities.isEmpty());
         Assert.assertNull(sInstance);
 
         Log.d(TAG, "Attach xwalk core");
-        sProvisionalInstance = new XWalkCoreWrapper(context, 1);
+        sProvisionalInstance = new XWalkCoreWrapper(XWalkEnvironment.getApplicationContext(), 1);
         if (sProvisionalInstance.findEmbeddedCore()) {
             return sProvisionalInstance.mCoreStatus;
         }
 
-        if (sProvisionalInstance.mIsDownloadMode) {
+        if (XWalkEnvironment.isDownloadMode()) {
             sProvisionalInstance.findDownloadedCore();
             return sProvisionalInstance.mCoreStatus;
         }
@@ -195,18 +172,17 @@ class XWalkCoreWrapper {
             Log.d(TAG, "Not verifying the package integrity of Crosswalk runtime library");
         }
 
-        if (sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE_PACKAGE)) {
-            return sProvisionalInstance.mCoreStatus;
-        }
-
-        String deviceAbi = getDeviceAbi();
-        if (deviceAbi.equals("arm64-v8a")) {
-            sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE64_PACKAGE);
-        } else if (deviceAbi.equals("x86")) {
-            sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE_IA_PACKAGE);
-        } else if (deviceAbi.equals("x86_64")) {
-            if (!sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE64_PACKAGE)) {
+        if (XWalkEnvironment.is64bitDevice()) {
+            if (sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE_PACKAGE)) {
+            } else if (sProvisionalInstance.findSharedCore(
+                    XWalkLibraryInterface.XWALK_CORE64_PACKAGE)) {
+            } else if (XWalkEnvironment.isIaDevice()) {
                 sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE64_IA_PACKAGE);
+            }
+        } else {
+            if (sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE_PACKAGE)) {
+            } else if (XWalkEnvironment.isIaDevice()) {
+                sProvisionalInstance.findSharedCore(XWalkLibraryInterface.XWALK_CORE_IA_PACKAGE);
             }
         }
         return sProvisionalInstance.mCoreStatus;
@@ -249,13 +225,6 @@ class XWalkCoreWrapper {
                 minApiVersion : mApiVersion;
         mCoreStatus = XWalkLibraryInterface.STATUS_PENDING;
         mWrapperContext = context;
-
-        String enable = getApplicationMetaData(META_XWALK_DOWNLOAD_MODE);
-        if (enable == null) {
-            enable = getApplicationMetaData(META_XWALK_ENABLE_DOWNLOAD_MODE);
-        }
-        mIsDownloadMode = enable != null
-                && (enable.equalsIgnoreCase("enable") || enable.equalsIgnoreCase("true"));
     }
 
     private void initCoreBridge() {
@@ -302,11 +271,9 @@ class XWalkCoreWrapper {
     }
 
     private boolean findDownloadedCore() {
-        String libDir = mWrapperContext.getDir(XWalkLibraryInterface.XWALK_CORE_EXTRACTED_DIR,
-                Context.MODE_PRIVATE).getAbsolutePath();
+        String libDir = XWalkEnvironment.getExtractedCoreDir();
         String dexPath = libDir + File.separator + XWALK_CORE_CLASSES_DEX;
-        String dexOutputPath = mWrapperContext.getDir(OPTIMIZED_DEX_DIR, Context.MODE_PRIVATE).
-                getAbsolutePath();
+        String dexOutputPath = XWalkEnvironment.getOptimizedDexDir();
         ClassLoader localClassLoader = ClassLoader.getSystemClassLoader();
         mBridgeLoader = new DexClassLoader(dexPath, dexOutputPath, libDir, localClassLoader);
 
@@ -321,6 +288,7 @@ class XWalkCoreWrapper {
     }
 
     private boolean checkCoreVersion() {
+        Log.d(TAG, "[Environment] SDK:" + Build.VERSION.SDK_INT);
         Log.d(TAG, "[App Version] build:" + XWalkAppVersion.XWALK_BUILD_VERSION
                 + ", api:" + mApiVersion + ", min_api:" + mMinApiVersion);
 
@@ -336,14 +304,11 @@ class XWalkCoreWrapper {
             Log.d(TAG, "[Lib Version] build:" + buildVersion
                     + ", api:" + libVersion + ", min_api:" + minLibVersion);
 
-            if (mIsDownloadMode && !buildVersion.isEmpty()) {
-                String update = getApplicationMetaData(META_XWALK_DOWNLOAD_MODE_UPDATE);
-                if (update != null
-                        && (update.equalsIgnoreCase("enable") || update.equalsIgnoreCase("true"))
-                        && !buildVersion.equals(XWalkAppVersion.XWALK_BUILD_VERSION)) {
-                    mCoreStatus = XWalkLibraryInterface.STATUS_RUNTIME_MISMATCH;
-                    return false;
-                }
+            if (XWalkEnvironment.isDownloadMode() && XWalkEnvironment.isDownloadModeUpdate()
+                    && !buildVersion.isEmpty()
+                    && !buildVersion.equals(XWalkAppVersion.XWALK_BUILD_VERSION)) {
+                mCoreStatus = XWalkLibraryInterface.STATUS_RUNTIME_MISMATCH;
+                return false;
             }
 
             if (mMinApiVersion > libVersion) {
@@ -387,9 +352,7 @@ class XWalkCoreWrapper {
                 }
 
                 if (!architectureMatched && mWrapperContext != null) {
-                    libDir = mWrapperContext.getDir(
-                            XWalkLibraryInterface.PRIVATE_DATA_DIRECTORY_SUFFIX,
-                            Context.MODE_PRIVATE).toString();
+                    libDir = XWalkEnvironment.getPrivateDataDir();
                     architectureMatched = (boolean) method.invoke(mBridgeContext, libDir);
                 }
             }
@@ -517,73 +480,5 @@ class XWalkCoreWrapper {
         } catch (ClassNotFoundException e) {
         }
         return null;
-    }
-
-    private String getApplicationMetaData(String name) {
-        try {
-            PackageManager packageManager = mWrapperContext.getPackageManager();
-            ApplicationInfo appInfo = packageManager.getApplicationInfo(
-                    mWrapperContext.getPackageName(), PackageManager.GET_META_DATA);
-            return appInfo.metaData.getString(name);
-        } catch (NameNotFoundException | NullPointerException e) {
-        }
-        return null;
-    }
-
-    public static String getRuntimeAbi() {
-        String runtimeAbi = System.getProperty("os.arch").toLowerCase();
-        switch (runtimeAbi) {
-            case "x86":
-            case "i686":
-            case "i386":
-            case "ia32":
-                return "x86";
-            case "x64":
-            case "x86_64":
-                return "x86_64";
-            case "armv7l":
-            case "armeabi":
-            case "armeabi-v7a":
-                return "armeabi-v7a";
-            case "aarch64":
-            case "armv8":
-            case "arm64":
-                return "arm64-v8a";
-            default:
-                throw new RuntimeException("Unexpected runtime ABI: " + runtimeAbi);
-        }
-    }
-
-    public static String getDeviceAbi() {
-        String deviceAbi = "";
-        try {
-            deviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase();
-        } catch (NoSuchFieldError e) {
-            try {
-                Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");
-                InputStreamReader ir = new InputStreamReader(process.getInputStream());
-                BufferedReader input = new BufferedReader(ir);
-                deviceAbi = input.readLine().toLowerCase();
-                input.close();
-                ir.close();
-            } catch (IOException ex) {
-                // CPU_ABI is deprecated in API level 21 and maybe incorrect on Houdini
-                deviceAbi = Build.CPU_ABI.toLowerCase();
-            }
-        }
-
-        switch (deviceAbi) {
-            case "x86":
-                return "x86";
-            case "x86_64":
-                return "x86_64";
-            case "armeabi":
-            case "armeabi-v7a":
-                return "armeabi-v7a";
-            case "arm64-v8a":
-                return "arm64-v8a";
-            default:
-                throw new RuntimeException("Unexpected device ABI: " + deviceAbi);
-        }
     }
 }

@@ -33,11 +33,11 @@ import org.chromium.content_public.browser.LoadUrlParams;
 import org.chromium.content.browser.test.util.CallbackHelper;
 import org.chromium.content.browser.test.util.Criteria;
 import org.chromium.content.browser.test.util.CriteriaHelper;
+import org.chromium.net.test.util.TestWebServer;
 import org.chromium.ui.gfx.DeviceDisplayInfo;
 
 import org.xwalk.core.ClientCertRequest;
 import org.xwalk.core.XWalkDownloadListener;
-import org.xwalk.core.XWalkFindListener;
 import org.xwalk.core.XWalkHttpAuthHandler;
 import org.xwalk.core.XWalkJavascriptResult;
 import org.xwalk.core.XWalkNavigationHistory;
@@ -49,6 +49,8 @@ import org.xwalk.core.XWalkUIClient;
 import org.xwalk.core.XWalkView;
 import org.xwalk.core.XWalkWebResourceRequest;
 import org.xwalk.core.XWalkWebResourceResponse;
+
+import org.xwalk.core.xwview.test.util.ImagePageGenerator;
 
 public class XWalkViewTestBase
        extends ActivityInstrumentationTestCase2<XWalkViewTestRunnerActivity> {
@@ -267,15 +269,6 @@ public class XWalkViewTestBase
         }
     }
 
-    class TestXWalkFindListener extends XWalkFindListener {
-        @Override
-        public void onFindResultReceived(int activeMatchOrdinal, int numberOfMatches,
-                boolean isDoneCounting) {
-            mTestHelperBridge.onFindResultReceived(activeMatchOrdinal, numberOfMatches,
-                    isDoneCounting);
-        }
-    }
-
     void setDownloadListener() {
         final Context context = getActivity();
         getInstrumentation().runOnMainSync(new Runnable() {
@@ -283,15 +276,6 @@ public class XWalkViewTestBase
             public void run() {
                 TestXWalkDownloadListener listener = new TestXWalkDownloadListener(context);
                 getXWalkView().setDownloadListener(listener);
-            }
-        });
-    }
-
-    void setFindListener() {
-        getInstrumentation().runOnMainSync(new Runnable() {
-            @Override
-            public void run() {
-                getXWalkView().setFindListener(new TestXWalkFindListener());
             }
         });
     }
@@ -357,7 +341,6 @@ public class XWalkViewTestBase
         CallbackHelper pageFinishedHelper = mTestHelperBridge.getOnPageFinishedHelper();
         int currentCallCount = pageFinishedHelper.getCallCount();
         loadUrlAsync(url);
-
         pageFinishedHelper.waitForCallback(currentCallCount, 1, WAIT_TIMEOUT_SECONDS,
                 TimeUnit.SECONDS);
     }
@@ -379,26 +362,47 @@ public class XWalkViewTestBase
         getInstrumentation().runOnMainSync(new Runnable() {
             @Override
             public void run() {
-                mXWalkView.load(url, null);
+                mXWalkView.loadUrl(url);
             }
         });
     }
 
-    protected void loadDataSync(final String url, final String data, final String mimeType,
+    protected void loadDataSync(final String data, final String mimeType,
             final boolean isBase64Encoded) throws Exception {
         CallbackHelper pageFinishedHelper = mTestHelperBridge.getOnPageFinishedHelper();
         int currentCallCount = pageFinishedHelper.getCallCount();
-        loadDataAsync(url, data, mimeType, isBase64Encoded);
+        loadDataAsync(data, mimeType, isBase64Encoded);
         pageFinishedHelper.waitForCallback(currentCallCount, 1, WAIT_TIMEOUT_SECONDS,
                 TimeUnit.SECONDS);
     }
 
-    protected void loadDataAsync(final String url, final String data, final String mimeType,
+    protected void loadDataAsync(final String data, final String mimeType,
              final boolean isBase64Encoded) throws Exception {
         getInstrumentation().runOnMainSync(new Runnable() {
             @Override
             public void run() {
-                mXWalkView.load(url, data);
+                mXWalkView.loadData(data, mimeType, isBase64Encoded ? "base64" : null);
+            }
+        });
+    }
+
+    protected void loadDataWithBaseUrlSync(final String data, final String mimeType,
+            final boolean isBase64Encoded, final String baseUrl,
+            final String historyUrl) throws Throwable {
+        CallbackHelper pageFinishedHelper = mTestHelperBridge.getOnPageFinishedHelper();
+        int currentCallCount = pageFinishedHelper.getCallCount();
+        loadDataWithBaseUrlAsync(data, mimeType, isBase64Encoded, baseUrl, historyUrl);
+        pageFinishedHelper.waitForCallback(currentCallCount, 1, WAIT_TIMEOUT_SECONDS,
+                TimeUnit.SECONDS);
+    }
+
+    protected void loadDataWithBaseUrlAsync(final String data, final String mimeType,
+            final boolean isBase64Encoded, final String baseUrl, final String historyUrl) throws Throwable {
+        getInstrumentation().runOnMainSync(new Runnable() {
+            @Override
+            public void run() {
+                mXWalkView.loadDataWithBaseURL(
+                        baseUrl, data, mimeType, isBase64Encoded ? "base64" : null, historyUrl);
             }
         });
     }
@@ -409,7 +413,6 @@ public class XWalkViewTestBase
         CallbackHelper pageFinishedHelper = contentsClient.getOnPageFinishedHelper();
         int currentCallCount = pageFinishedHelper.getCallCount();
         loadUrlAsyncByContent(xWalkContent, url);
-
         pageFinishedHelper.waitForCallback(currentCallCount, 1, WAIT_TIMEOUT_SECONDS,
                 TimeUnit.SECONDS);
     }
@@ -422,7 +425,6 @@ public class XWalkViewTestBase
         int onErrorCallCount = onReceivedErrorHelper.getCallCount();
         int onFinishedCallCount = onPageFinishedHelper.getCallCount();
         loadUrlAsyncByContent(xWalkContent, url);
-
         onReceivedErrorHelper.waitForCallback(onErrorCallCount, 1, WAIT_TIMEOUT_MS,
                 TimeUnit.MILLISECONDS);
         onPageFinishedHelper.waitForCallback(onFinishedCallCount, 1, WAIT_TIMEOUT_MS,
@@ -434,7 +436,7 @@ public class XWalkViewTestBase
         getInstrumentation().runOnMainSync(new Runnable() {
             @Override
             public void run() {
-                xWalkContent.load(url, null);
+                xWalkContent.loadUrl(url);
             }
         });
     }
@@ -512,16 +514,14 @@ public class XWalkViewTestBase
 
     protected void loadAssetFile(String fileName) throws Exception {
         String fileContent = getFileContent(fileName);
-        loadDataSync(fileName, fileContent, "text/html", false);
+        loadDataSync(fileContent, "text/html", false);
     }
 
     public void loadAssetFileAndWaitForTitle(String fileName) throws Exception {
         CallbackHelper getTitleHelper = mTestHelperBridge.getOnTitleUpdatedHelper();
         int currentCallCount = getTitleHelper.getCallCount();
         String fileContent = getFileContent(fileName);
-
-        loadDataAsync(fileName, fileContent, "text/html", false);
-
+        loadDataAsync(fileContent, "text/html", false);
         getTitleHelper.waitForCallback(currentCallCount, 1, WAIT_TIMEOUT_SECONDS,
                 TimeUnit.SECONDS);
     }
@@ -766,7 +766,6 @@ public class XWalkViewTestBase
             str = "document.getElementById('" + id + "')";
         }
         final String script1 = str + " != null";
-        final String script2 = str + ".dispatchEvent(evObj);";
         CriteriaHelper.pollInstrumentationThread(new Criteria() {
             @Override
             public boolean isSatisfied() {
@@ -782,10 +781,10 @@ public class XWalkViewTestBase
         }, WAIT_TIMEOUT_MS, CHECK_INTERVAL);
 
         try {
-            loadJavaScriptUrl("javascript:var evObj = document.createEvent('Events'); " +
-                "evObj.initEvent('click', true, false); " +
-                script2 +
-                "console.log('element with id [" + id + "] clicked');");
+            loadJavaScriptUrl(
+                "javascript:var evObj = new MouseEvent('click', {bubbles: true}); "
+                        + "document.getElementById('" + id + "').dispatchEvent(evObj);"
+                        + "console.log('element with id [" + id + "] clicked');");
         } catch (Throwable t) {
             t.printStackTrace();
         }
@@ -1107,7 +1106,7 @@ public class XWalkViewTestBase
         getInstrumentation().runOnMainSync(new Runnable() {
             @Override
             public void run() {
-                view.load(null, data);
+                view.loadData(data, "text/html", null);
             }
         });
     }
@@ -1227,6 +1226,33 @@ public class XWalkViewTestBase
             @Override
             public void run() {
                 mXWalkView.getSettings().setAllowFileAccessFromFileURLs(value);
+            }
+        });
+    }
+
+    protected void setLoadsImagesAutomatically(final boolean value) throws Exception {
+        getInstrumentation().runOnMainSync(new Runnable() {
+            @Override
+            public void run() {
+                mXWalkView.getSettings().setLoadsImagesAutomatically(value);
+            }
+        });
+    }
+
+    protected void setSupportMultipleWindows(final boolean value) throws Exception {
+        getInstrumentation().runOnMainSync(new Runnable() {
+            @Override
+            public void run() {
+                mXWalkView.getSettings().setSupportMultipleWindows(value);
+            }
+        });
+    }
+
+    protected void setJavaScriptCanOpenWindowsAutomatically(final boolean value) throws Exception {
+        getInstrumentation().runOnMainSync(new Runnable() {
+            @Override
+            public void run() {
+                mXWalkView.getSettings().setJavaScriptCanOpenWindowsAutomatically(value);
             }
         });
     }
@@ -1539,24 +1565,6 @@ public class XWalkViewTestBase
         });
     }
 
-    protected void findAllAsync(final String text) {
-        getInstrumentation().runOnMainSync(new Runnable() {
-            @Override
-            public void run() {
-                mXWalkView.findAllAsync(text);
-            }
-        });
-    }
-
-    protected void findNext(final boolean forward) {
-        getInstrumentation().runOnMainSync(new Runnable() {
-            @Override
-            public void run() {
-                mXWalkView.findNext(forward);
-            }
-        });
-    }
-
     protected boolean getUseWideViewPortOnUiThreadByXWalkView(
             final XWalkView view) throws Exception {
         return runTestOnUiThreadAndGetResult(new Callable<Boolean>() {
@@ -1819,6 +1827,83 @@ public class XWalkViewTestBase
             assertEquals(
                 value == ENABLED ? HAS_LOCAL_STORAGE : NO_LOCAL_STORAGE,
                         getTitleOnUiThreadByContent(mView));
+        }
+
+        private XWalkView mView;
+        private TestHelperBridge mHelperBridge;
+    }
+
+    protected void setDatabaseEnabledOnUiThreadByXWalkView(
+            final boolean value, final XWalkView view) throws Exception {
+        getInstrumentation().runOnMainSync(new Runnable() {
+            @Override
+            public void run() {
+                view.getSettings().setDatabaseEnabled(value);
+            }
+        });
+    }
+
+    protected boolean getDatabaseEnabledOnUiThreadByXWalkView(
+            final XWalkView view) throws Exception {
+        return runTestOnUiThreadAndGetResult(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return view.getSettings().getDatabaseEnabled();
+            }
+        });
+    }
+
+    class XWalkSettingsDatabaseTestHelper extends XWalkSettingsTestHelper<Boolean> {
+        private static final String TEST_FILE = "xwalkview/database_access.html";
+        private static final String NO_DATABASE = "No database";
+        private static final String HAS_DATABASE = "Has database";
+
+        XWalkSettingsDatabaseTestHelper(
+                XWalkView xWalkContent,
+                final TestHelperBridge helperBridge) throws Throwable {
+            super(xWalkContent);
+            mView = xWalkContent;
+            mHelperBridge = helperBridge;
+            XWalkViewTestBase.assertFileIsReadable(UrlUtils.getTestFilePath(TEST_FILE));
+        }
+
+        @Override
+        protected Boolean getAlteredValue() {
+            return DISABLED;
+        }
+
+        @Override
+        protected Boolean getInitialValue() {
+            return ENABLED;
+        }
+
+        @Override
+        protected Boolean getCurrentValue() {
+            try {
+                return getDatabaseEnabledOnUiThreadByXWalkView(mView);
+            } catch (Exception e) {
+                return true;
+            }
+        }
+
+        @Override
+        protected void setCurrentValue(Boolean value) {
+            try {
+                setDatabaseEnabledOnUiThreadByXWalkView(value, mView);
+            } catch (Exception e) {
+            }
+        }
+
+        @Override
+        protected void doEnsureSettingHasValue(Boolean value) throws Throwable {
+            // It seems accessing the database through a data scheme is not
+            // supported, and fails with a DOM exception (likely a cross-domain
+            // violation).
+            loadUrlSyncByContent(mView, mHelperBridge,
+                    UrlUtils.getTestFileUrl(TEST_FILE));
+            assertEquals(
+                    value == ENABLED ? HAS_DATABASE : NO_DATABASE,
+                    getTitleOnUiThreadByContent(mView));
         }
 
         private XWalkView mView;
@@ -2282,6 +2367,156 @@ public class XWalkViewTestBase
         private TestHelperBridge mHelperBridge;
     }
 
+    protected void setLoadsImagesAutomaticallyOnUiThreadByXWalkView(
+            final boolean value, final XWalkView view) throws Exception {
+        getInstrumentation().runOnMainSync(new Runnable() {
+            @Override
+            public void run() {
+                view.getSettings().setLoadsImagesAutomatically(value);
+            }
+        });
+    }
+
+    protected boolean getLoadsImagesAutomaticallyOnUiThreadByXWalkView(
+            final XWalkView view) throws Exception {
+        return runTestOnUiThreadAndGetResult(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return view.getSettings().getLoadsImagesAutomatically();
+            }
+        });
+    }
+
+    class XWalkSettingsLoadImagesAutomaticallyTestHelper extends XWalkSettingsTestHelper<Boolean> {
+
+        XWalkSettingsLoadImagesAutomaticallyTestHelper(
+                XWalkView xWalkContent,
+                final TestHelperBridge helperBridge,
+                ImagePageGenerator generator) throws Throwable {
+            super(xWalkContent);
+            mView = xWalkContent;
+            mHelperBridge = helperBridge;
+            mGenerator = generator;
+        }
+
+        @Override
+        protected Boolean getAlteredValue() {
+            return DISABLED;
+        }
+
+        @Override
+        protected Boolean getInitialValue() {
+            return ENABLED;
+        }
+
+        @Override
+        protected Boolean getCurrentValue() {
+            try {
+                return getLoadsImagesAutomaticallyOnUiThreadByXWalkView(mView);
+            } catch (Exception e) {
+                return true;
+            }
+        }
+
+        @Override
+        protected void setCurrentValue(Boolean value) {
+            try {
+                setLoadsImagesAutomaticallyOnUiThreadByXWalkView(value, mView);
+            } catch (Exception e) {
+            }
+        }
+
+        @Override
+        protected void doEnsureSettingHasValue(Boolean value) throws Throwable {
+            loadDataSyncWithXWalkView(mGenerator.getPageSource(), mView, mHelperBridge);
+            assertEquals(value == ENABLED
+                    ? ImagePageGenerator.IMAGE_LOADED_STRING
+                    : ImagePageGenerator.IMAGE_NOT_LOADED_STRING,
+                    getTitleOnUiThreadByContent(mView));
+        }
+
+        private XWalkView mView;
+        private TestHelperBridge mHelperBridge;
+        private ImagePageGenerator mGenerator;
+    }
+
+    protected void setBlockNetworkImageOnUiThreadByXWalkView(
+            final boolean value, final XWalkView view) throws Exception {
+        getInstrumentation().runOnMainSync(new Runnable() {
+            @Override
+            public void run() {
+                view.getSettings().setBlockNetworkImage(value);
+            }
+        });
+    }
+
+    protected boolean getBlockNetworkImageOnUiThreadByXWalkView(
+            final XWalkView view) throws Exception {
+        return runTestOnUiThreadAndGetResult(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return view.getSettings().getBlockNetworkImage();
+            }
+        });
+    }
+
+    class XWalkSettingsBlockNetworkImageHelper extends XWalkSettingsTestHelper<Boolean> {
+
+        XWalkSettingsBlockNetworkImageHelper(
+                XWalkView xWalkContent,
+                final TestHelperBridge helperBridge,
+                TestWebServer webServer,
+                ImagePageGenerator generator) throws Throwable {
+            super(xWalkContent);
+            mView = xWalkContent;
+            mHelperBridge = helperBridge;
+            mWebServer = webServer;
+            mGenerator = generator;
+        }
+
+        @Override
+        protected Boolean getAlteredValue() {
+            return ENABLED;
+        }
+
+        @Override
+        protected Boolean getInitialValue() {
+            return DISABLED;
+        }
+
+        @Override
+        protected Boolean getCurrentValue() {
+            try {
+                return getBlockNetworkImageOnUiThreadByXWalkView(mView);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @Override
+        protected void setCurrentValue(Boolean value) {
+            try {
+                setBlockNetworkImageOnUiThreadByXWalkView(value, mView);
+            } catch (Exception e) {
+            }
+        }
+
+        @Override
+        protected void doEnsureSettingHasValue(Boolean value) throws Throwable {
+            final String httpImageUrl = mGenerator.getPageUrl(mWebServer);
+            loadUrlSyncByContent(mView, mHelperBridge, httpImageUrl);
+            assertEquals(value == DISABLED
+                    ? ImagePageGenerator.IMAGE_LOADED_STRING
+                    : ImagePageGenerator.IMAGE_NOT_LOADED_STRING,
+                    getTitleOnUiThreadByContent(mView));
+        }
+
+        private XWalkView mView;
+        private TestHelperBridge mHelperBridge;
+        private TestWebServer mWebServer;
+        private ImagePageGenerator mGenerator;
+    }
+
     /**
      * Verifies the number of resource requests made to the content provider.
      * @param resource Resource name
@@ -2301,5 +2536,4 @@ public class XWalkViewTestBase
     private String createContentUrl(final String target) {
         return TestContentProvider.createContentUrl(target);
     }
-
 }

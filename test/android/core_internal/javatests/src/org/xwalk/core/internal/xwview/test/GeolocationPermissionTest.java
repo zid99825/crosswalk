@@ -39,7 +39,7 @@ public class GeolocationPermissionTest extends XWalkViewInternalTestBase {
     public void testGeolocationPermissionShowPrompt() throws Throwable {
         class TestWebChromeClient extends XWalkWebChromeClient {
             public TestWebChromeClient() {
-                super(getXWalkView());
+                super();
             }
 
             private int mCalledCount = 0;
@@ -63,7 +63,7 @@ public class GeolocationPermissionTest extends XWalkViewInternalTestBase {
             }
         });
         String fileContent = getFileContent("geolocation.html");
-        loadDataSync("https://google.com/", fileContent, "text/html", false);
+        loadDataWithBaseUrlSync(fileContent, "text/html", false, "https://google.com/", null);
         getInstrumentation().runOnMainSync(new Runnable() {
             @Override
             public void run() {
@@ -80,7 +80,7 @@ public class GeolocationPermissionTest extends XWalkViewInternalTestBase {
     public void testGeolocationPermissionHidePrompt() throws Throwable {
         class TestWebChromeClient extends XWalkWebChromeClient {
             public TestWebChromeClient() {
-                super(getXWalkView());
+                super();
             }
 
             @Override

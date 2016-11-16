@@ -1,34 +1,6 @@
 {
   'targets': [
     {
-      'target_name': 'generate_xwalk_runtime_client_version',
-      'type': 'none',
-      'actions': [
-        {
-          # Generate the version for runtime client.
-          'action_name': 'generate_runtime_client_version',
-          'variables': {
-            'template_file': 'app/android/runtime_client/src/templates/XWalkRuntimeClientVersion.template',
-            'output_file': '<(SHARED_INTERMEDIATE_DIR)/version_java/XWalkRuntimeClientVersion.java',
-          },
-          'inputs': [
-            'VERSION',
-            '<(template_file)',
-            'build/android/generate_runtime_client_version.py',
-          ],
-          'outputs': [
-            '<(output_file)',
-          ],
-          'action': [
-            'python', 'build/android/generate_runtime_client_version.py',
-            '--template=<(template_file)',
-            '--output=<(output_file)',
-            '--xwalk-version=<(xwalk_version)',
-          ],
-        },
-      ],
-    },
-    {
       'target_name': 'xwalk_app_hello_world_apk',
       'type': 'none',
       'dependencies': [
@@ -89,7 +61,6 @@
       'target_name': 'xwalk_app_runtime_java',
       'type': 'none',
       'dependencies': [
-        'generate_xwalk_runtime_client_version',
         'xwalk_core_java',
       ],
       'variables': {
@@ -97,16 +68,14 @@
         'additional_src_dirs': [
           'app/android/runtime_client',
         ],
-        'generated_src_dirs': [ '<(SHARED_INTERMEDIATE_DIR)/version_java' ],
       },
       'includes': ['../build/java.gypi'],
     },
     {
-      'target_name': 'prepare_xwalk_app_template',
+      'target_name': 'xwalk_app_template',
       'type': 'none',
       'dependencies': [
         'xwalk_app_runtime_java',
-        'xwalk_app_template_apk',
         'xwalk_core_library',
         'xwalk_shared_library',
       ],
@@ -115,42 +84,29 @@
           'action_name': 'prepare_xwalk_app_template',
           'message': 'Generating XWalk App Template.',
           'inputs': [
-            'build/android/common_function.py',
             'build/android/generate_app_packaging_tool.py',
+            '<@(version_files)',
           ],
           'outputs': [
-            '<(PRODUCT_DIR)/prepare_xwalk_app_template_intermediate/always_run',
+            '<(stamp)',
           ],
+          'variables': {
+            'stamp': '<(INTERMEDIATE_DIR)/stamp',
+            'version_files': [
+              '<(DEPTH)/xwalk/API_VERSION',
+              '<(DEPTH)/xwalk/VERSION',
+            ],
+          },
           'action': [
             'python', 'build/android/generate_app_packaging_tool.py',
-            '--build-dir', '<(PRODUCT_DIR)',
-            '--build-mode', '<(CONFIGURATION_NAME)',
+            '--android-template', '<(DEPTH)/xwalk/app/android/app_template',
+            '--core-library-dir', '<(PRODUCT_DIR)/xwalk_core_library',
+            '--extra-files', '<(version_files)',
             '--output-dir', '<(PRODUCT_DIR)/xwalk_app_template',
-            '--source-dir', '<(DEPTH)/xwalk',
-          ],
-        },
-      ],
-    },
-    {
-      'target_name': 'xwalk_app_template',
-      'type': 'none',
-      'dependencies': [
-        'prepare_xwalk_app_template',
-      ],
-      'actions': [
-        {
-          'action_name': 'tar_app_template',
-          'inputs': [
-            'app/android/app_template/AndroidManifest.xml',
-            'tools/tar.py',
-          ],
-          'outputs': [
-            '<(PRODUCT_DIR)/xwalk_app_template.tar.gz',
-            '<(PRODUCT_DIR)/xwalk_app_template_intermediate/always_run',
-          ],
-          'action': [
-            'python', 'tools/tar.py',
-            '<(PRODUCT_DIR)/xwalk_app_template'
+            '--shared-library-dir', '<(PRODUCT_DIR)/xwalk_shared_library',
+            '--stamp', '<(stamp)',
+            '--xwalk-runtime-jar',
+            '<(PRODUCT_DIR)/lib.java/xwalk_app_runtime_java.jar',
           ],
         },
       ],

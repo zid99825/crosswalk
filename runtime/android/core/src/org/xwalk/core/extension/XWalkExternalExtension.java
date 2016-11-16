@@ -4,6 +4,7 @@
 
 package org.xwalk.core.extension;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -47,7 +48,6 @@ public class XWalkExternalExtension {
     /**
      * Constructor with the information of an extension.
      * @param name the extension name.
-     * @param apiVersion the version of API.
      * @param jsApi the code stub of JavaScript for this extension.
      * @param context the extension context.
      */
@@ -58,7 +58,6 @@ public class XWalkExternalExtension {
     /**
      * Constructor with the information of an extension.
      * @param name the extension name.
-     * @param apiVersion the version of API.
      * @param jsApi the code stub of JavaScript for this extension.
      * @param entryPoints Entry points are used when the extension needs to
      *                    have objects outside the namespace that is
@@ -145,6 +144,8 @@ public class XWalkExternalExtension {
 
     /**
      * Called when this app is onNewIntent.
+     *
+     * @param intent passed from android.app.Activity.onNewIntent()
      */
     public void onNewIntent(Intent intent) {
     }
@@ -154,12 +155,18 @@ public class XWalkExternalExtension {
      * of the exit code.
      * Please call XWalkExtensionContextClient.startActivityForResult()
      * so that this callback can be called correctly for all cases.
+     * @param requestCode the request code.
+     * @param resultCode the result code.
+     * @param data the Intent data received.
+     * @deprecated This method is no longer supported
      */
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
     }
 
     /**
      * Called when a new extension instance is created.
+     *
+     * @param instanceID the ID of the instance that is created
      */
     public void onInstanceCreated(int instanceID) {
         instanceHelpers.put(instanceID,
@@ -168,6 +175,8 @@ public class XWalkExternalExtension {
 
     /**
      * Called when a extension instance is destroyed.
+     *
+     * @param instanceID the ID of the instance that is destroyed
      */
     public void onInstanceDestroyed(int instanceID) {
         instanceHelpers.remove(instanceID);
@@ -210,6 +219,7 @@ public class XWalkExternalExtension {
      * message.
      * @param extensionInstanceID the ID of extension instance where the message came from.
      * @param message the message from JavaScript code.
+     * @return whether the message is handled
      */
     public String onSyncMessage(int extensionInstanceID, String message) {
         Object result = null;
@@ -226,7 +236,7 @@ public class XWalkExternalExtension {
     public MessageHandler getMessageHandler() {
         return mHandler;
     }
-    
+
     public ReflectionHelper getTargetReflect(String cName) {
         ReflectionHelper targetReflect = mReflection.getConstructorReflection(cName);
         return (targetReflect != null) ? targetReflect : mReflection;
@@ -281,14 +291,16 @@ public class XWalkExternalExtension {
         mExtensionContext.broadcastMessage(this, message);
     }
 
+
     /**
      * Start another activity to get some data back.
      * Call this function then will get onActivityResult() callback.
+     * @param intent the intent.
      * @param requestCode the request code.
-     * @param resultCode the result code.
-     * @param data the Intent data received.
+     * @param options the options.
+     * @deprecated This method is no longer supported
      */
     public void startActivityForResult(Intent intent, int requestCode, Bundle options) {
-        mExtensionContext.startActivityForResult(intent, requestCode, options);
+        throw new ActivityNotFoundException("This method is no longer supported");
     }
 }

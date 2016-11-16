@@ -26,9 +26,6 @@
       'include_dirs': [
         '..',
       ],
-      'ldflags': [
-        '-Wl,--no-fatal-warnings',
-      ],
       'sources': [
         'runtime/app/android/xwalk_entry_point.cc',
         'runtime/app/android/xwalk_jni_registrar.cc',
@@ -61,7 +58,6 @@
       'variables': {
         'script_dir': 'tools/reflection_generator',
         'internal_dir': 'runtime/android/core_internal/src/org/xwalk/core/internal',
-        'template_dir': 'runtime/android/templates',
         'scripts': [
           '>!@(find <(script_dir) -name "*.py")'
         ],
@@ -71,10 +67,10 @@
         'reflect_sources': [
           '>!@(find <(internal_dir) -name "Reflect*.java")'
         ],
-        'templates': [
-          '>!@(find <(template_dir) -name "*.template")'
-        ],
+        'xwalk_app_version_template': 'runtime/android/templates/XWalkAppVersion.template',
+        'xwalk_core_version_template': 'runtime/android/templates/XWalkCoreVersion.template',
         'timestamp': '<(reflection_java_dir)/gen.timestamp',
+        'extra_reflection_args': [],
       },
       'all_dependent_settings': {
         'variables': {
@@ -82,6 +78,13 @@
           'reflection_gen_dir': '<(reflection_java_dir)',
         },
       },
+      'conditions': [
+        ['verify_xwalk_apk==1', {
+          'variables': {
+            'extra_reflection_args': ['--verify-xwalk-apk'],
+          },
+        }],
+      ],
       'actions': [
         {
           'action_name': 'generate_reflection',
@@ -90,7 +93,8 @@
             '>@(scripts)',
             '>@(internal_sources)',
             '>@(reflect_sources)',
-            '>@(templates)',
+            '<(xwalk_app_version_template)',
+            '<(xwalk_core_version_template)',
             'API_VERSION',
             'VERSION',
           ],
@@ -100,14 +104,15 @@
           'action': [
             'python', '<(script_dir)/reflection_generator.py',
             '--input-dir', '<(internal_dir)',
-            '--template-dir', '<(template_dir)',
+            '--xwalk-app-version-template-path', '<(xwalk_app_version_template)',
+            '--xwalk-core-version-template-path', '<(xwalk_core_version_template)',
             '--bridge-output', '<(reflection_java_dir)/bridge',
             '--wrapper-output', '<(reflection_java_dir)/wrapper',
             '--stamp', '<(timestamp)',
             '--api-version=<(api_version)',
             '--min-api-version=<(min_api_version)',
-            '--verify-xwalk-apk=<(verify_xwalk_apk)',
             '--xwalk-build-version=<(xwalk_version)',
+            '<@(extra_reflection_args)',
           ],
         },
       ],
@@ -302,12 +307,14 @@
             '<@(build_system_inputs)',
           ],
           'outputs': [
-            "<!@(['python', 'build/android/lzma_compress.py', '--mode=show-output-names', \
-                  '--sources=<(lzma_compress_inputs)', '--dest-path=<(assets_dir)'])",
+            '<(assets_dir)/classes.dex',
+            '<(assets_dir)/icudtl.dat.lzma',
+            '<(assets_dir)/libxwalkcore.so.lzma',
+            '<(assets_dir)/xwalk.pak.lzma',
+            '<(assets_dir)/xwalk_100_percent.pak.lzma',
           ],
           'action': [
             'python', 'build/android/lzma_compress.py',
-            '--mode=compress',
             '--dest-path=<(assets_dir)',
             '--sources=<(lzma_compress_inputs)',
           ],

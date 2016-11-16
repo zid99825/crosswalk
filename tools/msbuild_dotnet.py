@@ -6,49 +6,63 @@
 msbuild_dotnet.py -- Invoke MSBuild for .NET project.
 """
 
-import logging
-import optparse
+import argparse
 import os
 import subprocess
 import sys
 
 
+def ParseNinjaEnvironmentFile(env_file):
+  """Parses a ninja environment.<arch> file and merges its values into the
+  existing environment variables.
+  """
+  with open(env_file, 'rb') as f:
+    lines = f.read().split('\0')
+    env = {}
+    for line in lines:
+      if '=' not in line:
+        continue
+      key, value = line.split('=')
+      os.environ[key] = value
+
+
 def LaunchMSBuild(options):
-  if not options.output_dir:
-    print('You must specify the output-dir')
-    return 1
-  if not options.project:
-    print('You have not specified the project you want to build')
-    return 1
-  if not options.build_type:
-    print('You have not specified the build-type')
-    return 1
+  # GN needs --environment-file in order to find the MSBuild.exe executable,
+  # which is not added to the default %PATH% by the Visual Studio installer.
+  if options.environment_file is not None:
+    ParseNinjaEnvironmentFile(options.environment_file)
 
-  output_dir = os.path.abspath(options.output_dir)
-  tools_dir = os.path.dirname(os.path.abspath(__file__))
-  xwalk_dir = os.path.dirname(tools_dir)
-  extensions_dir = os.path.join(xwalk_dir, 'extensions')
-  extensions_test_dir = os.path.join(extensions_dir, 'test')
-  extensions_win_test_dir = os.path.join(extensions_test_dir,
-                                         'win' + os.path.sep)
+  params = [
+    'Platform=AnyCPU',
+    'Configuration=%s' % options.build_type,
+    'OutDir=%s' % options.output_dir,
+    'BaseIntermediateOutputPath=%s\\' % options.output_dir,
+  ]
+  cmd = [
+    'msbuild',
+    '/nologo',
+    '/p:%s' % ','.join(params),
+    '/verbosity:quiet',
+    options.project,
+  ]
+  subprocess.check_call(cmd)
 
-  output = subprocess.call(['msbuild', extensions_win_test_dir
-      + options.project, '/p:Platform=AnyCPU,Configuration='
-      + options.build_type + ',OutDir=' + output_dir
-      + ',BaseIntermediateOutputPath=' + output_dir + os.path.sep],
-      cwd=extensions_win_test_dir)
-  if output != 0:
-    return output
 
 def main():
-  option_parser = optparse.OptionParser()
-  option_parser.add_option('--output-dir',
-                           help='Set the output dir for MSBuild.')
-  option_parser.add_option('--project',
-                           help='The project to build with MSBuild.')
-  option_parser.add_option('--build-type',
-                           help='The type of build : Release/Debug.')
-  options, _ = option_parser.parse_args()
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--environment-file',
+                      help='Ninja environment file to evaluate.')
+  parser.add_argument('--output-dir', required=True,
+                      help='Set the output dir for MSBuild.')
+  parser.add_argument('--project', required=True,
+                      help='The project to build with MSBuild.')
+  parser.add_argument('--build-type', required=True,
+                      choices=('Debug', 'Release'),
+                      help='The type of build : Release/Debug.')
+  options = parser.parse_args()
+  # We need to call os.path.abspath() because MSBuild seems consider the
+  # project directory the root of a relative path, not the build directory.
+  options.output_dir = os.path.abspath(options.output_dir)
   LaunchMSBuild(options)
 
 

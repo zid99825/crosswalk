@@ -13,7 +13,9 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/message_loop/message_loop.h"
+#include "base/path_service.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/strings/utf_string_conversions.h"
 #include "cc/base/switches.h"
 #include "components/devtools_http_handler/devtools_http_handler.h"
 #include "content/public/browser/browser_thread.h"
@@ -53,11 +55,6 @@
 
 #if !defined(OS_CHROMEOS) && defined(USE_AURA) && defined(OS_LINUX)
 #include "ui/base/ime/input_method_initializer.h"
-#endif
-
-#if defined(USE_WEBUI_FILE_PICKER)
-#include "xwalk/runtime/browser/ui/linux_webui/linux_webui.h"
-#include "xwalk/runtime/browser/ui/webui/xwalk_web_ui_controller_factory.h"
 #endif
 
 namespace {
@@ -143,14 +140,12 @@ void XWalkBrowserMainParts::PostMainMessageLoopStart() {
 void XWalkBrowserMainParts::PreEarlyInitialization() {
 #if !defined(OS_CHROMEOS) && defined(USE_AURA) && defined(OS_LINUX)
   ui::InitializeInputMethodForTesting();
-#if defined(USE_WEBUI_FILE_PICKER)
-  ui::LinuxShellDialog::SetInstance(BuildWebUI());
-#elif defined(USE_GTK_UI)
+#if defined(USE_GTK_UI)
   views::LinuxUI* gtk2_ui = BuildGtk2UI();
   gtk2_ui->Initialize();
   views::LinuxUI::SetInstance(gtk2_ui);
-#endif
-#endif
+#endif  // defined(USE_GTK_UI)
+#endif  // !defined(OS_CHROMEOS) && defined(USE_AURA) && defined(OS_LINUX)
 
 #if defined(USE_AURA)
   wm_state_.reset(new wm::WMState);
@@ -208,6 +203,21 @@ void XWalkBrowserMainParts::PreMainMessageLoopRun() {
 #endif
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+#if defined (OS_WIN)
+  // The manifest or startup URL was not specified, try to automatically load
+  // the manifest.json.
+  if (startup_url_.is_empty()) {
+    base::FilePath app_dir;
+    PathService::Get(base::DIR_MODULE, &app_dir);
+    DCHECK(!app_dir.empty());
+    base::FilePath path(base::UTF8ToUTF16("approot/manifest.json"));
+    if (!path.IsAbsolute()) {
+      // MakeAbsoluteFilePath is confused in Centennial.
+      path = app_dir.Append(path);
+    }
+    startup_url_ = GURL(net::FilePathToFileURL(path));
+  }
+#endif
   if (command_line->HasSwitch(switches::kRemoteDebuggingPort)) {
     std::string port_str =
         command_line->GetSwitchValueASCII(switches::kRemoteDebuggingPort);
@@ -222,11 +232,6 @@ void XWalkBrowserMainParts::PreMainMessageLoopRun() {
 #endif
 
   NativeAppWindow::Initialize();
-
-#if defined(USE_WEBUI_FILE_PICKER)
-  content::WebUIControllerFactory::RegisterFactory(
-      XWalkWebUIControllerFactory::GetInstance());
-#endif
 
   if (command_line->HasSwitch(switches::kListFeaturesFlags)) {
     XWalkRuntimeFeatures::GetInstance()->DumpFeaturesFlags();

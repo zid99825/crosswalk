@@ -4,7 +4,6 @@
 
 package org.xwalk.core.internal;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -237,7 +236,7 @@ public class XWalkResourceClientInternal {
     @XWalkAPI
     public void onReceivedLoadError(XWalkViewInternal view, int errorCode, String description,
             String failingUrl) {
-        Toast.makeText(view.getActivity(), description, Toast.LENGTH_SHORT).show();
+        Toast.makeText(view.getContext(), description, Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -386,8 +385,7 @@ public class XWalkResourceClientInternal {
         layout.addView(userNameEditText);
         layout.addView(passwordEditText);
 
-        final Activity curActivity = view.getActivity();
-        AlertDialog.Builder httpAuthDialog = new AlertDialog.Builder(curActivity);
+        AlertDialog.Builder httpAuthDialog = new AlertDialog.Builder(view.getContext());
         httpAuthDialog.setTitle(R.string.http_auth_title)
                 .setView(layout)
                 .setCancelable(false)
@@ -427,6 +425,9 @@ public class XWalkResourceClientInternal {
      * Construct an instance of XWalkWebResourceResponseInternal
      * for application usage.
      *
+     * @param mimeType the resource response's MIME type, for example text/html
+     * @param encoding the resource response's encoding
+     * @param data the input stream that provides the resource response's data
      * @return XWalkWebResourceResponseInternal.
      * @since 6.0
      */
@@ -440,6 +441,12 @@ public class XWalkResourceClientInternal {
      * Construct an instance of XWalkWebResourceResponseInternal
      * for application usage.
      *
+     * @param mimeType the resource response's MIME type, for example text/html
+     * @param encoding the resource response's encoding
+     * @param data the input stream that provides the resource response's data
+     * @param statusCode the status code needs to be in the ranges [100, 299], [400, 599]
+     * @param reasonPhrase the phrase describing the status code, for example "OK"
+     * @param responseHeaders the resource response's headers represented as a mapping of header
      * @return XWalkWebResourceResponseInternal.
      * @since 6.0
      */

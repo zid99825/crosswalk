@@ -58,7 +58,7 @@
         '../ui/shell_dialogs/shell_dialogs.gyp:shell_dialogs',
         '../ui/snapshot/snapshot.gyp:snapshot',
         '../url/url.gyp:url_lib',
-        '../v8/tools/gyp/v8.gyp:v8',
+        '../v8/src/v8.gyp:v8',
         'generate_upstream_blink_version',
         'xwalk_application_lib',
         'xwalk_pak',
@@ -132,8 +132,6 @@
         'runtime/browser/android/xwalk_cookie_access_policy.h',
         'runtime/browser/android/xwalk_dev_tools_server.cc',
         'runtime/browser/android/xwalk_dev_tools_server.h',
-        'runtime/browser/android/xwalk_download_resource_throttle.cc',
-        'runtime/browser/android/xwalk_download_resource_throttle.h',
         'runtime/browser/android/xwalk_http_auth_handler.cc',
         'runtime/browser/android/xwalk_http_auth_handler.h',
         'runtime/browser/android/xwalk_http_auth_handler_base.cc',
@@ -336,14 +334,16 @@
         'runtime/common/xwalk_localized_error.h',
         'runtime/common/xwalk_paths.cc',
         'runtime/common/xwalk_paths.h',
+        'runtime/common/xwalk_resource_delegate.cc',
+        'runtime/common/xwalk_resource_delegate.h',
         'runtime/common/xwalk_runtime_features.cc',
         'runtime/common/xwalk_runtime_features.h',
         'runtime/common/xwalk_switches.cc',
         'runtime/common/xwalk_switches.h',
         'runtime/common/xwalk_system_locale.cc',
         'runtime/common/xwalk_system_locale.h',
-        'runtime/renderer/android/xwalk_render_process_observer.cc',
-        'runtime/renderer/android/xwalk_render_process_observer.h',
+        'runtime/renderer/android/xwalk_render_thread_observer.cc',
+        'runtime/renderer/android/xwalk_render_thread_observer.h',
         'runtime/renderer/android/xwalk_permission_client.cc',
         'runtime/renderer/android/xwalk_permission_client.h',
         'runtime/renderer/android/xwalk_render_view_ext.cc',
@@ -358,8 +358,8 @@
         'runtime/renderer/pepper/xwalk_renderer_pepper_host_factory.h',
         'runtime/renderer/xwalk_content_renderer_client.cc',
         'runtime/renderer/xwalk_content_renderer_client.h',
-        'runtime/renderer/xwalk_render_process_observer_generic.cc',
-        'runtime/renderer/xwalk_render_process_observer_generic.h',
+        'runtime/renderer/xwalk_render_thread_observer_generic.cc',
+        'runtime/renderer/xwalk_render_thread_observer_generic.h',
       ],
       'includes': [
         'xwalk_jsapi.gypi',
@@ -399,8 +399,8 @@
             'runtime/browser/ui/native_app_window_desktop.h',
             'runtime/browser/xwalk_autofill_client_desktop.cc',
             'runtime/browser/xwalk_autofill_client_desktop.h',
-            'runtime/renderer/xwalk_render_process_observer_generic.cc',
-            'runtime/renderer/xwalk_render_process_observer_generic.h',
+            'runtime/renderer/xwalk_render_thread_observer_generic.cc',
+            'runtime/renderer/xwalk_render_thread_observer_generic.h',
           ],
         }],
         ['OS=="win"', {
@@ -458,30 +458,6 @@
             '../ui/aura/aura.gyp:aura',
             '../ui/wm/wm.gyp:wm',
             '../ui/base/ime/ui_base_ime.gyp:ui_base_ime',
-          ],
-        }],
-        ['use_webui_file_picker==1', {
-          'defines': ['USE_WEBUI_FILE_PICKER'],
-          'dependencies': [
-            '../content/app/resources/content_resources.gyp:content_resources',
-          ],
-          'sources': [
-            'runtime/browser/ui/browser_dialogs.h',
-            'runtime/browser/ui/xwalk_web_dialog_view.cc',
-            'runtime/browser/ui/linux_webui/select_file_dialog_impl_webui.h',
-            'runtime/browser/ui/linux_webui/select_file_dialog_impl_webui.cc',
-            'runtime/browser/ui/linux_webui/linux_webui.h',
-            'runtime/browser/ui/linux_webui/linux_webui.cc',
-            'runtime/browser/ui/webui/file_picker/file_picker_web_dialog.h',
-            'runtime/browser/ui/webui/file_picker/file_picker_web_dialog.cc',
-            'runtime/browser/ui/webui/file_picker/file_picker_ui.cc',
-            'runtime/browser/ui/webui/file_picker/file_picker_ui.h',
-            'runtime/browser/ui/webui/xwalk_web_contents_handler.cc',
-            'runtime/browser/ui/webui/xwalk_web_contents_handler.h',
-            'runtime/browser/ui/webui/xwalk_web_ui_controller_factory.cc',
-            'runtime/browser/ui/webui/xwalk_web_ui_controller_factory.h',
-            'runtime/common/url_constants.cc',
-            'runtime/common/url_constants.h',
           ],
         }],
         ['OS=="linux" and use_ozone!=1', {
@@ -617,7 +593,12 @@
       'target_name': 'xwalk_strings',
       'type': 'none',
       'variables': {
-        'grit_out_dir': '<(SHARED_INTERMEDIATE_DIR)/xwalk/locales',
+        'grit_out_dir': '<(SHARED_INTERMEDIATE_DIR)/xwalk/locales/xwalk',
+      },
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '<(SHARED_INTERMEDIATE_DIR)/xwalk/locales',
+        ],
       },
       'actions': [
         {
@@ -632,7 +613,7 @@
       ],
       'copies': [
         {
-          'destination': '<(PRODUCT_DIR)/',
+          'destination': '<(PRODUCT_DIR)/locales/',
           'files': [ '<(grit_out_dir)/' ],
         },
       ],
@@ -906,8 +887,8 @@
             'xwalk_runtime_client_test_apk',
 
             # For external testing.
-            'pack_xwalk_core_library',
-            'pack_xwalk_shared_library',
+            'xwalk_core_library',
+            'xwalk_shared_library',
             'xwalk_core_library_documentation',
             'xwalk_runtime_lib_apk',
             'xwalk_runtime_lib_lzma_apk',

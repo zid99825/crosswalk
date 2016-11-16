@@ -195,7 +195,7 @@ base::StringPiece XWalkContentClient::GetDataResource(
       resource_id, scale_factor);
 }
 
-base::RefCountedStaticMemory* XWalkContentClient::GetDataResourceBytes(
+base::RefCountedMemory* XWalkContentClient::GetDataResourceBytes(
     int resource_id) const {
   return ResourceBundle::GetSharedInstance().LoadDataResourceBytes(resource_id);
 }
@@ -212,6 +212,12 @@ void XWalkContentClient::AddAdditionalSchemes(
                                     url::SCHEME_WITHOUT_PORT};
   standard_schemes->push_back(app_scheme);
   savable_schemes->push_back(application::kApplicationScheme);
+}
+
+void XWalkContentClient::AddSecureSchemesAndOrigins(
+    std::set<std::string>* schemes,
+    std::set<GURL>* origins) {
+    schemes->insert(application::kApplicationScheme);
 }
 
 std::string XWalkContentClient::GetProcessTypeNameInEnglish(int type) {

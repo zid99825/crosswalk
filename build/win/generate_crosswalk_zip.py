@@ -14,6 +14,25 @@ import os
 import sys
 import zipfile
 
+GYP_ANDROID_DIR = os.path.join(os.path.dirname(__file__),
+                               os.pardir, os.pardir, os.pardir,
+                               'build',
+                               'android',
+                               'gyp')
+sys.path.append(GYP_ANDROID_DIR)
+from util import build_utils
+
+
+def PathInZipArchive(fs_path, root_dir):
+  # Normalize the paths because gyp and GN pass them differently.
+  # gyp in particular passes |root_dir| as a relative path and mixes "/" and
+  # "\" in the paths.
+  fs_path = os.path.abspath(os.path.normpath(fs_path))
+  root_dir = os.path.abspath(os.path.normpath(root_dir))
+  if os.path.commonprefix([fs_path, root_dir]) != root_dir:
+    raise Exception("%s must be under %s" % (fs_path, root_dir))
+  return os.path.relpath(fs_path, root_dir)
+
 
 def main():
   parser = argparse.ArgumentParser()
@@ -21,20 +40,22 @@ def main():
                       help='Top-level build directory.')
   parser.add_argument('--dest', required=True,
                       help='Name of the ZIP file that will be generated.')
-  parser.add_argument('--dirs', nargs='*',
+  parser.add_argument('--dirs', required=True,
                       help='Directories to package.')
-  parser.add_argument('--files', nargs='*',
+  parser.add_argument('--files', required=True,
                       help='Files to package.')
   args = parser.parse_args()
+  args.dirs = build_utils.ParseGypList(args.dirs)
+  args.files = build_utils.ParseGypList(args.files)
 
   with zipfile.ZipFile(args.dest, 'w', zipfile.ZIP_DEFLATED) as zip_file:
     for filename in args.files:
-      zip_file.write(filename, os.path.relpath(filename, args.build_dir))
+      zip_file.write(filename, PathInZipArchive(filename, args.build_dir))
     for dirname in args.dirs:
       for root, _, files in os.walk(dirname):
         for filename in files:
           filepath = os.path.join(root, filename)
-          zip_path = os.path.relpath(filepath, args.build_dir)
+          zip_path = PathInZipArchive(filepath, args.build_dir)
           zip_file.write(filepath, zip_path)
 
 

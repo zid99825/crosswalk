@@ -18,11 +18,15 @@ import android.os.Bundle;
 public interface XWalkExtensionContextClient {
     /**
      * Register an xwalk extension into context.
+     *
+     * @param extension the external extension to be registered
      */
     public void registerExtension(XWalkExternalExtension extension);
 
     /**
      * Unregister an xwalk extension with the given unique name from context.
+     *
+     * @param name the name of the external extension to be unregistered
      */
     public void unregisterExtension(String name);
 
@@ -64,6 +68,7 @@ public interface XWalkExtensionContextClient {
     /**
      * Get the current Android Activity.
      * @return the current Android Activity.
+     * @deprecated This method is no longer supported
      */
     public Activity getActivity();
 
@@ -71,9 +76,10 @@ public interface XWalkExtensionContextClient {
      * Start another activity to get some data back.
      * External extensions should call this function to ensure
      * they can get their onActivityResultCallback() be called correctly.
+     * @param intent the intent to start.
      * @param requestCode the request code.
-     * @param resultCode the result code.
-     * @param data the Intent data received.
+     * @param options additional options for how the Activity should be started.
+     * @deprecated This method is no longer supported
      */
     public void startActivityForResult(Intent intent, int requestCode, Bundle options);
 }

@@ -10,6 +10,7 @@
 #include "base/path_service.h"
 #include "content/public/browser/browser_main_runner.h"
 #include "content/public/common/content_switches.h"
+#include "ui/base/material_design/material_design_controller.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
@@ -18,6 +19,7 @@
 #include "xwalk/runtime/common/logging_xwalk.h"
 #include "xwalk/runtime/common/paths_mac.h"
 #include "xwalk/runtime/common/xwalk_paths.h"
+#include "xwalk/runtime/common/xwalk_resource_delegate.h"
 #include "xwalk/runtime/renderer/xwalk_content_renderer_client.h"
 
 #if !defined(DISABLE_NACL) && defined(OS_LINUX)
@@ -76,6 +78,10 @@ void XWalkMainDelegate::PreSandboxStartup() {
       command_line->GetSwitchValueASCII(switches::kProcessType);
   InitLogging(process_type);
 #endif
+
+#if !defined(OS_ANDROID)
+  ui::MaterialDesignController::Initialize();
+#endif
 }
 
 void XWalkMainDelegate::SandboxInitialized(const std::string& process_type) {
@@ -111,7 +117,6 @@ void XWalkMainDelegate::ZygoteStarting(
 
 #endif  // defined(OS_POSIX) && !defined(OS_ANDROID)
 
-// static
 void XWalkMainDelegate::InitializeResourceBundle() {
   base::FilePath pak_file;
   base::FilePath pak_dir;
@@ -124,8 +129,10 @@ void XWalkMainDelegate::InitializeResourceBundle() {
 #endif
 
 #if !defined(OS_ANDROID)
+  resource_delegate_.reset(new XWalkResourceDelegate());
   ui::ResourceBundle::InitSharedInstanceWithLocale(
-      "en-US", nullptr, ui::ResourceBundle::DO_NOT_LOAD_COMMON_RESOURCES);
+      "en-US", resource_delegate_.get(),
+      ui::ResourceBundle::DO_NOT_LOAD_COMMON_RESOURCES);
   pak_file = pak_dir.Append(FILE_PATH_LITERAL("xwalk.pak"));
   ResourceBundle::GetSharedInstance().AddDataPackFromPath(
       pak_file, ui::SCALE_FACTOR_NONE);

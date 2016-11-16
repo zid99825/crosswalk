@@ -17,6 +17,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_view_host.h"
+#include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_client.h"
 #include "content/shell/browser/shell.h"
@@ -138,7 +139,7 @@ void XWalkDevToolsFrontend::Close() {
 void XWalkDevToolsFrontend::DisconnectFromTarget() {
   if (!agent_host_)
     return;
-  agent_host_->DetachClient();
+  agent_host_->DetachClient(this);
   agent_host_ = nullptr;
 }
 
@@ -178,7 +179,7 @@ void XWalkDevToolsFrontend::DocumentAvailableInMainFrame() {
 
 void XWalkDevToolsFrontend::WebContentsDestroyed() {
   if (agent_host_)
-    agent_host_->DetachClient();
+    agent_host_->DetachClient(this);
   delete this;
 }
 
@@ -204,7 +205,7 @@ void XWalkDevToolsFrontend::HandleMessageFromDevToolsFrontend(
     if (!params->GetString(0, &protocol_message))
       return;
     if (agent_host_)
-      agent_host_->DispatchProtocolMessage(protocol_message);
+      agent_host_->DispatchProtocolMessage(this, protocol_message);
   } else if (method == "loadCompleted") {
     web_contents()->GetMainFrame()->ExecuteJavaScriptForTests(
         base::ASCIIToUTF16("DevToolsAPI.setUseSoftMenu(true);"));
@@ -230,8 +231,9 @@ void XWalkDevToolsFrontend::HandleMessageFromDevToolsFrontend(
     net::URLFetcher* fetcher =
         net::URLFetcher::Create(gurl, net::URLFetcher::GET, this).release();
     pending_requests_[fetcher] = request_id;
-    fetcher->SetRequestContext(web_contents()->GetBrowserContext()->
-        GetRequestContext());
+    fetcher->SetRequestContext(
+        content::BrowserContext::GetDefaultStoragePartition(
+            web_contents()->GetBrowserContext())->GetURLRequestContext());
     fetcher->SetExtraRequestHeaders(headers);
     fetcher->SaveResponseWithWriter(std::unique_ptr<net::URLFetcherResponseWriter>(
         new ResponseWriter(weak_factory_.GetWeakPtr(), stream_id)));

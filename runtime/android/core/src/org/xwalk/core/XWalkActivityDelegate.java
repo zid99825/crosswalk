@@ -5,9 +5,6 @@
 package org.xwalk.core;
 
 import android.app.Activity;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 import android.view.Window;
 
@@ -16,11 +13,8 @@ import org.xwalk.core.XWalkLibraryLoader.DecompressListener;
 import org.xwalk.core.XWalkUpdater.XWalkBackgroundUpdateListener;
 import org.xwalk.core.XWalkUpdater.XWalkUpdateListener;
 
-public class XWalkActivityDelegate
-            implements DecompressListener, ActivateListener {
-    private static final String TAG = "XWalkActivity";
-    private static final String META_XWALK_ENABLE_DOWNLOAD_MODE = "xwalk_enable_download_mode";
-    private static final String META_XWALK_DOWNLOAD_MODE = "xwalk_download_mode";
+public class XWalkActivityDelegate implements DecompressListener, ActivateListener {
+    private static final String TAG = "XWalkLib";
 
     private Activity mActivity;
     private XWalkDialogManager mDialogManager;
@@ -28,25 +22,15 @@ public class XWalkActivityDelegate
     private Runnable mCancelCommand;
     private Runnable mCompleteCommand;
 
-    private boolean mIsInitializing;
     private boolean mIsXWalkReady;
     private boolean mBackgroundDecorated;
     private boolean mWillDecompress;
-    private final boolean mIsDownloadMode;
-    private String mXWalkApkUrl;
 
     public XWalkActivityDelegate(Activity activity,
             Runnable cancelCommand, Runnable completeCommand) {
         mActivity = activity;
         mCancelCommand = cancelCommand;
         mCompleteCommand = completeCommand;
-
-        String enable = getApplicationMetaData(META_XWALK_DOWNLOAD_MODE);
-        if (enable == null) {
-            enable = getApplicationMetaData(META_XWALK_ENABLE_DOWNLOAD_MODE);
-        }
-        mIsDownloadMode = enable != null
-                && (enable.equalsIgnoreCase("enable") || enable.equalsIgnoreCase("true"));
 
         mDialogManager = new XWalkDialogManager(mActivity);
 
@@ -62,11 +46,11 @@ public class XWalkActivityDelegate
     }
 
     public boolean isDownloadMode() {
-        return mIsDownloadMode;
+        return mIsXWalkReady && XWalkEnvironment.isDownloadMode();
     }
 
     public void setXWalkApkUrl(String url) {
-        mXWalkApkUrl = url;
+        XWalkEnvironment.setXWalkApkUrl(url);
     }
 
     public XWalkDialogManager getDialogManager() {
@@ -74,16 +58,15 @@ public class XWalkActivityDelegate
     }
 
     public void onResume() {
-        if (mIsInitializing || mIsXWalkReady) return;
+        if (mIsXWalkReady) return;
 
-        mIsInitializing = true;
-        if (XWalkLibraryLoader.isLibraryReady()) {
-            Log.d(TAG, "Activate by XWalkActivity");
-            XWalkLibraryLoader.startActivate(this, mActivity);
-        } else {
-            Log.d(TAG, "Initialize by XWalkActivity");
-            XWalkLibraryLoader.startDecompress(this, mActivity);
+        if (XWalkLibraryLoader.isInitializing() || XWalkLibraryLoader.isDownloading()) {
+            Log.d(TAG, "Other initialization or download is proceeding");
+            return;
         }
+
+        Log.d(TAG, "Initialize by XWalkActivity");
+        XWalkLibraryLoader.startDecompress(this);
     }
 
     @Override
@@ -101,7 +84,6 @@ public class XWalkActivityDelegate
     @Override
     public void onDecompressCancelled() {
         mWillDecompress = false;
-        mIsInitializing = false;
         mCancelCommand.run();
     }
 
@@ -112,7 +94,7 @@ public class XWalkActivityDelegate
             mWillDecompress = false;
         }
 
-        XWalkLibraryLoader.startActivate(this, mActivity);
+        XWalkLibraryLoader.startActivate(this);
     }
 
     @Override
@@ -121,10 +103,8 @@ public class XWalkActivityDelegate
 
     @Override
     public void onActivateFailed() {
-        mIsInitializing = false;
-
         if (mXWalkUpdater == null) {
-            if (mIsDownloadMode) {
+            if (XWalkEnvironment.isDownloadMode()) {
                 mXWalkUpdater = new XWalkUpdater(
                     new XWalkBackgroundUpdateListener() {
                         @Override
@@ -147,7 +127,7 @@ public class XWalkActivityDelegate
 
                         @Override
                         public void onXWalkUpdateCompleted() {
-                            XWalkLibraryLoader.startActivate(XWalkActivityDelegate.this, mActivity);
+                            XWalkLibraryLoader.startActivate(XWalkActivityDelegate.this);
                         }
                     },
                     mActivity);
@@ -161,13 +141,9 @@ public class XWalkActivityDelegate
                     },
                     mActivity, mDialogManager);
             }
-
-            if (mXWalkApkUrl != null) {
-                mXWalkUpdater.setXWalkApkUrl(mXWalkApkUrl);
-            }
         }
 
-        if (mXWalkUpdater.updateXWalkRuntime() && !mIsDownloadMode) {
+        if (mXWalkUpdater.updateXWalkRuntime() && !XWalkEnvironment.isDownloadMode()) {
             // Set the background to screen_background_dark temporarily if the default background
             // is null in order to avoid the visual artifacts around the alert dialog
             Window window = mActivity.getWindow();
@@ -181,7 +157,7 @@ public class XWalkActivityDelegate
 
     @Override
     public void onActivateCompleted() {
-        if (mDialogManager != null && mDialogManager.isShowingDialog()) {
+        if (mDialogManager.isShowingDialog()) {
             mDialogManager.dismissDialog();
         }
 
@@ -191,19 +167,8 @@ public class XWalkActivityDelegate
             mBackgroundDecorated = false;
         }
 
-        mIsInitializing = false;
         mIsXWalkReady = true;
+        XWalkLibraryLoader.finishInit(mActivity);
         mCompleteCommand.run();
-    }
-
-    private String getApplicationMetaData(String name) {
-        try {
-            PackageManager packageManager = mActivity.getPackageManager();
-            ApplicationInfo appInfo = packageManager.getApplicationInfo(
-                    mActivity.getPackageName(), PackageManager.GET_META_DATA);
-            return appInfo.metaData.getString(name);
-        } catch (NameNotFoundException | NullPointerException e) {
-        }
-        return null;
     }
 }

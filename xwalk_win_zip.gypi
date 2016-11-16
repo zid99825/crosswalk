@@ -3,7 +3,7 @@
     # The files and directories will be added with the same names to the
     # generated zip file, with <(PRODUCT_DIR)/ stripped from the beginning.
     'directories_to_package': [
-      '<(PRODUCT_DIR)/locales',
+      '<(PRODUCT_DIR)/locales/xwalk',
     ],
     'files_to_package': [
       '<(PRODUCT_DIR)/VERSION',
@@ -51,8 +51,8 @@
         'python', '<(zip_script)',
         '--build-dir', '<(PRODUCT_DIR)',
         '--dest', '<(zip_name)',
-        '--dirs', '<@(directories_to_package)',
-        '--files', '<@(files_to_package)',
+        '--dirs', '<(directories_to_package)',
+        '--files', '<(files_to_package)',
       ],
     },
   ],

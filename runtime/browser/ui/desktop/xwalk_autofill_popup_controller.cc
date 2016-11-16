@@ -18,10 +18,10 @@
 #include "content/public/browser/native_web_keyboard_event.h"
 #include "grit/components_scaled_resources.h"
 #include "ui/base/resource/resource_bundle.h"
+#include "ui/display/screen.h"
 #include "ui/events/event.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/vector2d.h"
-#include "ui/gfx/screen.h"
 #include "ui/gfx/text_elider.h"
 #include "ui/gfx/text_utils.h"
 #include "xwalk/runtime/browser/ui/desktop/xwalk_autofill_popup_view.h"
@@ -105,7 +105,7 @@ XWalkAutofillPopupController::XWalkAutofillPopupController(
       base::Bind(&XWalkAutofillPopupController::HandleKeyPressEvent,
       base::Unretained(this)));
   label_font_list_ = value_font_list_.DeriveWithSizeDelta(kLabelFontSizeDelta);
-  title_font_list_ = value_font_list_.DeriveWithStyle(gfx::Font::BOLD);
+  title_font_list_ = value_font_list_.DeriveWithWeight(gfx::Font::Weight::BOLD);
 #if defined(OS_MACOSX)
   // There is no italic version of the system font.
   warning_font_list_ = value_font_list_;

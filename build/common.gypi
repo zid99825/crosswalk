@@ -73,10 +73,6 @@
       # Whether to disable NaCl support.
       'disable_nacl%': 0,
 
-      # From src/third_party/widevine/cdm/widevine_cdm.gyp.
-      # Whether to build Crosswalk with support for the Widevine CDM.
-      'enable_widevine%': 0,
-
       # From src/third_party/ffmpeg/ffmpeg.gyp.
       # Whether to build the Chromium or Google Chrome version of FFmpeg (the
       # latter contains additional codecs).
@@ -166,7 +162,6 @@
     # Copy conditionally-set variables out one scope.
     'component%': '<(component)',
     'disable_nacl%': '<(disable_nacl)',
-    'enable_widevine%': '<(enable_widevine)',
     'ffmpeg_branding%': '<(ffmpeg_branding)',
     'ffmpeg_component%': '<(ffmpeg_component)',
     'mediacodecs_EULA%': '<(mediacodecs_EULA)',
@@ -184,9 +179,6 @@
     # pulling additional dependencies into our JARs (XWALK-6597).
     'enable_webvr%': 0,
 
-    # Whether to use a WebUI-based file picker.
-    'use_webui_file_picker%': 0,
-
     # Android: whether the integrity of the Crosswalk runtime library should be
     # verified when Crosswalk is run in shared mode.
     'verify_xwalk_apk%': 0,
@@ -195,18 +187,5 @@
     # respective POM files.
     'xwalk_core_library_artifact_id%': 'xwalk_core_library_canary',
     'xwalk_shared_library_artifact_id%': 'xwalk_shared_library_canary',
-  },
-  'target_defaults': {
-    'conditions': [
-      # TODO(rakuco): Remove this once we stop supporting Ubuntu Precise or
-      # default to use_sysroot==1. This is only required because Precise's dbus
-      # 1.4.18 causes
-      # <https://bugs.chromium.org/p/chromium/issues/detail?id=263960#c6>.
-      ['clang==1 and use_sysroot==0', {
-        'cflags': [
-          '-Wno-reserved-user-defined-literal',
-        ],
-      }],
-    ],
   },
 }

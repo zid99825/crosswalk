@@ -23,7 +23,6 @@
 #include "net/url_request/url_request.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
-#include "xwalk/runtime/browser/android/xwalk_download_resource_throttle.h"
 #include "xwalk/runtime/browser/android/xwalk_login_delegate.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
@@ -233,7 +232,6 @@ void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
     content::ResourceContext* resource_context,
     int child_id,
     int route_id,
-    int request_id,
     bool is_content_initiated,
     bool must_download,
     ScopedVector<content::ResourceThrottle>* throttles) {
@@ -287,7 +285,8 @@ bool RuntimeResourceDispatcherHostDelegateAndroid::HandleExternalProtocol(
     const content::ResourceRequestInfo::WebContentsGetter& web_contents_getter,
     bool is_main_frame,
     ui::PageTransition page_transition,
-    bool has_user_gesture) {
+    bool has_user_gesture,
+    content::ResourceContext* resource_context) {
   // On Android, there are many Uris need to be handled differently.
   // e.g: sms:, tel:, mailto: and etc.
   // So here return false to let embedders to decide which protocol
