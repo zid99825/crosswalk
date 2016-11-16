@@ -47,6 +47,7 @@ void OnInstanceDestroyed(XW_Instance instance) {
 void OnMessageReceived(XW_Instance instance, const char* message) {
   char* done_message = NULL;
   void* data = NULL;
+  assert(data == NULL); // Quiet -Wno-unused-pointers
 
   // BAD: Sending messages to invalid instances.
   g_messaging->PostMessage(0, "Zero is never a valid instance");
