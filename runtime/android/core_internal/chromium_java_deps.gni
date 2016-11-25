@@ -17,4 +17,5 @@ core_internal_java_chromium_deps = [
   "//media/base/android:media_java",
   "//net/android:net_java",
   "//ui/android:ui_java",
+  "//third_party/android_swipe_refresh:android_swipe_refresh_java",
 ]

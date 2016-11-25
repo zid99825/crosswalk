@@ -182,7 +182,6 @@ generate_jni("xwalk_core_native_jni") {
   jni_package = "xwalk"
   sources = [
     "src/org/xwalk/core/internal/AndroidProtocolHandler.java",
-    "src/org/xwalk/core/internal/SwipeRefreshHandler.java",
     "src/org/xwalk/core/internal/XWalkAutofillClientAndroid.java",
     "src/org/xwalk/core/internal/XWalkContent.java",
     "src/org/xwalk/core/internal/XWalkContentLifecycleNotifier.java",

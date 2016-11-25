@@ -177,7 +177,6 @@
         'jni_gen_package': 'xwalk',
       },
       'sources': [
-        'runtime/android/core_internal/src/org/xwalk/core/internal/SwipeRefreshHandler.java',
         'runtime/android/core_internal/src/org/xwalk/core/internal/AndroidProtocolHandler.java',
         'runtime/android/core_internal/src/org/xwalk/core/internal/XWalkAutofillClientAndroid.java',
         'runtime/android/core_internal/src/org/xwalk/core/internal/XWalkContent.java',
