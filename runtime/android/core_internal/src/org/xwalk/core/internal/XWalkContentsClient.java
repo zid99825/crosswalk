@@ -88,6 +88,13 @@ abstract class XWalkContentsClient extends ContentViewClient {
             doUpdateVisitedHistory(url, isReload);
         }
 
+
+        @Override
+        public void didNavigateMainFrame(String url, String baseUrl,
+                boolean isNavigationToDifferentPage, boolean isFragmentNavigation, int statusCode) {
+            stopSwipeRefreshHandler();
+        }
+
         @Override
         public void didFinishLoad(long frameId, String validatedUrl, boolean isMainFrame) {
             // Both didStopLoading and didFinishLoad will be called once a page is finished
@@ -260,4 +267,8 @@ abstract class XWalkContentsClient extends ContentViewClient {
     public abstract void onNewPicture(Picture picture);
 
     public abstract boolean shouldCreateWebContents(String contentUrl);
+
+    public abstract void resetSwipeRefreshHandler();
+
+    public abstract void stopSwipeRefreshHandler();
 }

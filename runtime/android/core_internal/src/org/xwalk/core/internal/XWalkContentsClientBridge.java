@@ -619,6 +619,16 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @Override
+    public void resetSwipeRefreshHandler() {
+        mXWalkView.resetSwipeRefreshHandler();
+    }
+
+    @Override
+    public void stopSwipeRefreshHandler() {
+        mXWalkView.stopSwipeRefreshHandler();
+    }
+
+    @Override
     public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
         return new XWalkContentVideoViewClient(this, mXWalkView);
     }

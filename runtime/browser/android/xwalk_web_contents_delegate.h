@@ -50,6 +50,8 @@ class XWalkWebContentsDelegate
       content::WebContents* source,
       const content::NativeWebKeyboardEvent& event) override;
 
+  void ShowRepostFormWarningDialog(content::WebContents* source) override;
+
   void EnterFullscreenModeForTab(
       content::WebContents* web_contents,
       const GURL& origin) override;
