@@ -273,6 +273,10 @@ public class XWalkResourceClientInternal {
     @XWalkAPI
     public void onReceivedSslError(XWalkViewInternal view, ValueCallback<Boolean> callback,
             SslError error) {
+	callback.onReceiveValue(true);
+	// TODO overwrite onReceivedSslError
+	return;
+/*
         final ValueCallback<Boolean> valueCallback = callback;
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(view.getContext());
         dialogBuilder.setTitle(R.string.ssl_alert_title)
@@ -296,6 +300,7 @@ public class XWalkResourceClientInternal {
                     }
                 });
         dialogBuilder.create().show();
+*/
     }
 
     /**
