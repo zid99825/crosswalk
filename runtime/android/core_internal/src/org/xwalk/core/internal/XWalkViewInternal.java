@@ -666,13 +666,6 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         return mXWalkHitTestResult;
     }
 
-    @XWalkApi
-    public XWalkContent.HitTestData hackGetHitTestResult() {
-        if (mContent == null)  return null;
-        checkThreadSafety();
-	return mContent.getLastHitTestResult();
-    }
-
     /**
      * Get the content height of current web page/app.
      * NOTE: When page finished loading, it's content size info may not be updated.
