@@ -660,6 +660,9 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         XWalkContent.HitTestData data = mContent.getLastHitTestResult();
         mXWalkHitTestResult.setType(data.hitTestResultType);
         mXWalkHitTestResult.setExtra(data.hitTestResultExtraData);
+        mXWalkHitTestResult.setHref(data.href);
+        mXWalkHitTestResult.setAnchorText(data.anchorText);
+        mXWalkHitTestResult.setImgSrc(data.imgSrc);
         return mXWalkHitTestResult;
     }
 
@@ -1651,6 +1654,18 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         if (mContent == null) return;
         checkThreadSafety();
         mExternalExtensionManager = manager;
+    }
+
+    public void resetSwipeRefreshHandler() {
+        if (mContent == null) return;
+        checkThreadSafety();
+        mContent.resetSwipeRefreshHandler();
+    }
+
+    public void stopSwipeRefreshHandler() {
+        if (mContent == null) return;
+        checkThreadSafety();
+        mContent.stopSwipeRefreshHandler();
     }
 
     /**

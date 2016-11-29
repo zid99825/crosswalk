@@ -65,6 +65,7 @@ android_library("xwalk_core_internal_java") {
     "src/org/xwalk/core/internal/MixedContext.java",
     "src/org/xwalk/core/internal/PageLoadListener.java",
     "src/org/xwalk/core/internal/SslUtil.java",
+    "src/org/xwalk/core/internal/SwipeRefreshHandler.java",
     "src/org/xwalk/core/internal/UrlUtilities.java",
     "src/org/xwalk/core/internal/XWalkAPI.java",
     "src/org/xwalk/core/internal/XWalkAutofillClientAndroid.java",

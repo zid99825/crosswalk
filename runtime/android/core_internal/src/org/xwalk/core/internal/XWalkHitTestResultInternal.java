@@ -41,6 +41,11 @@ public class XWalkHitTestResultInternal {
 
     private int mType;
     private String mExtra;
+    // Used in requestFocusNodeHref(all three) and requestImageRef(only imageSrc)
+    private String mHref;
+    private String mAnchorText;
+    private String mImgSrc;
+
 
     /**
      * @hide Only for use by XWalkViewProvider implementations
@@ -61,6 +66,18 @@ public class XWalkHitTestResultInternal {
      */
     public void setExtra(String extra) {
         mExtra = extra;
+    }
+
+    public void setHref(String href) {
+        mHref = href;
+    }
+
+    public void setAnchorText(String text) {
+        mAnchorText = text;
+    }
+
+    public void setImgSrc(String imgSrc) {
+        mImgSrc = imgSrc;
     }
 
     /**
@@ -122,5 +139,18 @@ public class XWalkHitTestResultInternal {
     @XWalkAPI
     public String getExtra() {
         return mExtra;
+    }
+
+    @XWalkAPI
+    public String getHref() {
+        return mHref;
+    }
+    @XWalkAPI
+    public String getAnchorText() {
+        return mAnchorText;
+    }
+    @XWalkAPI
+    public String getImgSrc() {
+        return mImgSrc;
     }
 }
