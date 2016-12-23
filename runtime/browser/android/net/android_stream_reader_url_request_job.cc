@@ -254,7 +254,10 @@ void AndroidStreamReaderURLRequestJob::OnReaderReadCompleted(int result) {
 }
 
 base::TaskRunner* AndroidStreamReaderURLRequestJob::GetWorkerThreadRunner() {
-  return static_cast<base::TaskRunner*>(BrowserThread::GetBlockingPool());
+	return static_cast<base::TaskRunner*>(BrowserThread::GetMessageLoopProxyForThread(
+			BrowserThread::FILE_USER_BLOCKING).get());
+
+//  return static_cast<base::TaskRunner*>(BrowserThread::GetBlockingPool());
 }
 
 int AndroidStreamReaderURLRequestJob::ReadRawData(net::IOBuffer* dest,

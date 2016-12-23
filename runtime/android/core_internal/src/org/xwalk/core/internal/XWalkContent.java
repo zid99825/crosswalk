@@ -15,34 +15,23 @@ import android.net.http.SslCertificate;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
-import android.view.View;
-import android.view.WindowManager;
 import android.text.TextUtils;
-import android.util.AttributeSet;
 import android.util.Base64;
 import android.util.Log;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputConnection;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
-import android.view.ViewGroup;
+import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.webkit.ValueCallback;
-import android.webkit.WebResourceResponse;
 import android.widget.FrameLayout;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Map;
-
+import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.ThreadUtils;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
-import org.chromium.content.browser.ContentView;
 import org.chromium.content.browser.ContentViewCore;
 import org.chromium.content.browser.ContentViewRenderView;
 import org.chromium.content.browser.ContentViewRenderView.CompositingSurfaceType;
@@ -51,8 +40,8 @@ import org.chromium.content.common.CleanupReference;
 import org.chromium.content_public.browser.ContentBitmapCallback;
 import org.chromium.content_public.browser.JavaScriptCallback;
 import org.chromium.content_public.browser.LoadUrlParams;
-import org.chromium.content_public.browser.NavigationHistory;
 import org.chromium.content_public.browser.NavigationController;
+import org.chromium.content_public.browser.NavigationHistory;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.navigation_controller.UserAgentOverrideOption;
 import org.chromium.media.MediaPlayerBridge;
@@ -60,6 +49,12 @@ import org.chromium.ui.base.ActivityWindowAndroid;
 import org.chromium.ui.base.WindowAndroid;
 import org.chromium.ui.gfx.DeviceDisplayInfo;
 import org.json.JSONArray;
+
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Map;
 
 @JNINamespace("xwalk")
 /**
@@ -686,14 +681,16 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         byte[] state = nativeGetState(mNativeContent);
         if (state == null) return null;
 
-        outState.putByteArray(SAVE_RESTORE_STATE_KEY, state);
+//        final String key = SAVE_RESTORE_STATE_KEY + String.valueOf(getRoutingID());
+        
+        outState.putByteArray(getSaveRestoreBundleKey(), state);
         return getNavigationHistory();
     }
 
     public XWalkNavigationHistoryInternal restoreState(Bundle inState) {
         if (mNativeContent == 0 || inState == null) return null;
 
-        byte[] state = inState.getByteArray(SAVE_RESTORE_STATE_KEY);
+        byte[] state = inState.getByteArray(getSaveRestoreBundleKey());
         if (state == null) return null;
 
         boolean result = nativeSetState(mNativeContent, state);
@@ -706,6 +703,14 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
 
 
         return result ? getNavigationHistory() : null;
+    }
+
+    /**
+     * Bundle key for save/restore state
+     * @return SAVE_RESTORE_STATE_KEY + routingID
+     */
+    private String getSaveRestoreBundleKey(){
+        return SAVE_RESTORE_STATE_KEY + String.valueOf(getRoutingID());
     }
 
     boolean hasEnteredFullscreen() {

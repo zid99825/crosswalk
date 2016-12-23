@@ -66,6 +66,8 @@ android_library("xwalk_core_internal_java") {
     "src/org/xwalk/core/internal/PageLoadListener.java",
     "src/org/xwalk/core/internal/SslUtil.java",
     "src/org/xwalk/core/internal/SwipeRefreshHandler.java",
+    "src/org/xwalk/core/internal/DummyNativeTest.java",
+    "src/org/xwalk/core/internal/HostResolverTenta.java",
     "src/org/xwalk/core/internal/UrlUtilities.java",
     "src/org/xwalk/core/internal/XWalkAPI.java",
     "src/org/xwalk/core/internal/XWalkAutofillClientAndroid.java",
@@ -196,6 +198,8 @@ generate_jni("xwalk_core_native_jni") {
     "src/org/xwalk/core/internal/XWalkViewDelegate.java",
     "src/org/xwalk/core/internal/XWalkWebContentsDelegate.java",
     "src/org/xwalk/core/internal/XWalkWebResourceResponseInternal.java",
+    "src/org/xwalk/core/internal/DummyNativeTest.java",
+    "src/org/xwalk/core/internal/HostResolverTenta.java",
   ]
 }
 

@@ -23,6 +23,7 @@
 #include "content/public/common/result_codes.h"
 #include "media/base/media_switches.h"
 #include "net/android/network_change_notifier_factory_android.h"
+//#include "xwalk/runtime/net/tenta_network_change_notifier_factory.h"
 #include "net/base/network_change_notifier.h"
 #include "net/base/net_module.h"
 #include "net/grit/net_resources.h"
@@ -66,7 +67,9 @@ XWalkBrowserMainPartsAndroid::~XWalkBrowserMainPartsAndroid() {
 
 void XWalkBrowserMainPartsAndroid::PreEarlyInitialization() {
   net::NetworkChangeNotifier::SetFactory(
+//		  new tenta::NetworkChangeNotifierFactoryTenta());
       new net::NetworkChangeNotifierFactoryAndroid());
+
   // As Crosswalk uses in-process mode, that's easier than Chromium
   // to reach the default limit(1024) of open files per process on
   // Android. So increase the limit to 4096 explicitly.

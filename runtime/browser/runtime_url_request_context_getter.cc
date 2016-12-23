@@ -49,6 +49,7 @@
 #include "xwalk/runtime/browser/runtime_network_delegate.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+#include "xwalk/runtime/browser/android/net/host_resolver_tenta.h"
 
 #if defined(OS_ANDROID)
 #include "net/proxy/proxy_config_service_android.h"
@@ -68,25 +69,23 @@ int GetDiskCacheSize() {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
   if (!command_line->HasSwitch(switches::kDiskCacheSize))
-      return 0;
+    return 0;
 
   std::string str_value = command_line->GetSwitchValueASCII(
       switches::kDiskCacheSize);
 
   int size = 0;
   if (!base::StringToInt(str_value, &size)) {
-      LOG(ERROR) << "The value " << str_value
-                 << " can not be converted to integer, ignoring!";
+    LOG(ERROR) << "The value " << str_value
+                  << " can not be converted to integer, ignoring!";
   }
 
   return size;
 }
 
 RuntimeURLRequestContextGetter::RuntimeURLRequestContextGetter(
-    bool ignore_certificate_errors,
-    const base::FilePath& base_path,
-    base::MessageLoop* io_loop,
-    base::MessageLoop* file_loop,
+    bool ignore_certificate_errors, const base::FilePath& base_path,
+    base::MessageLoop* io_loop, base::MessageLoop* file_loop,
     content::ProtocolHandlerMap* protocol_handlers,
     content::URLRequestInterceptorScopedVector request_interceptors)
     : ignore_certificate_errors_(ignore_certificate_errors),
@@ -130,7 +129,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     storage_->set_cookie_store(base::WrapUnique(new XWalkCookieStoreWrapper));
 #else
     content::CookieStoreConfig cookie_config(base_path_.Append(
-        application::kCookieDatabaseFilename),
+            application::kCookieDatabaseFilename),
         content::CookieStoreConfig::PERSISTANT_SESSION_COOKIES,
         NULL, NULL);
 
@@ -145,15 +144,23 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     auto cookie_store = content::CreateCookieStore(cookie_config);
     storage_->set_cookie_store(std::move(cookie_store));
 #endif
-    storage_->set_channel_id_service(base::WrapUnique(new net::ChannelIDService(
-        new net::DefaultChannelIDStore(NULL),
-        base::WorkerPool::GetTaskRunner(true))));
-    storage_->set_http_user_agent_settings(base::WrapUnique(
-        new net::StaticHttpUserAgentSettings("en-us,en",
-                                             xwalk::GetUserAgent())));
+    storage_->set_channel_id_service(
+        base::WrapUnique(
+            new net::ChannelIDService(new net::DefaultChannelIDStore(NULL),
+                                      base::WorkerPool::GetTaskRunner(true))));
+    storage_->set_http_user_agent_settings(
+        base::WrapUnique(
+            new net::StaticHttpUserAgentSettings("en-us,en",
+                                                 xwalk::GetUserAgent())));
+
+    std::unique_ptr<net::HostResolver> backup =
+        net::HostResolver::CreateDefaultResolver(NULL);
 
     std::unique_ptr<net::HostResolver> host_resolver(
-        net::HostResolver::CreateDefaultResolver(NULL));
+        std::unique_ptr < net::HostResolver
+            > (new tenta::HostResolverTenta(std::move(backup))));
+//    std::unique_ptr<net::HostResolver> host_resolver(
+//        net::HostResolver::CreateDefaultResolver(NULL));
 
     storage_->set_cert_verifier(net::CertVerifier::CreateDefault());
     storage_->set_transport_security_state(
@@ -168,50 +175,47 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     // on this local HTTP proxy.
     storage_->set_proxy_service(
         net::ProxyService::CreateWithoutProxyResolver(
-        std::move(proxy_config_service_),
-        NULL));
+            std::move(proxy_config_service_), NULL));
 #else
     storage_->set_proxy_service(
         net::ProxyService::CreateUsingSystemProxyResolver(
-        std::move(proxy_config_service_),
-        0,
-        NULL));
+            std::move(proxy_config_service_),
+            0,
+            NULL));
 #endif
     storage_->set_ssl_config_service(new net::SSLConfigServiceDefaults);
     storage_->set_http_auth_handler_factory(
         net::HttpAuthHandlerFactory::CreateDefault(host_resolver.get()));
-    storage_->set_http_server_properties(std::unique_ptr<net::HttpServerProperties>(
-        new net::HttpServerPropertiesImpl));
+    storage_->set_http_server_properties(
+        std::unique_ptr < net::HttpServerProperties
+            > (new net::HttpServerPropertiesImpl));
 
     base::FilePath cache_path = base_path_.Append(FILE_PATH_LITERAL("Cache"));
     std::unique_ptr<net::HttpCache::DefaultBackend> main_backend(
         new net::HttpCache::DefaultBackend(
-            net::DISK_CACHE,
-            net::CACHE_BACKEND_DEFAULT,
-            cache_path,
+            net::DISK_CACHE, net::CACHE_BACKEND_DEFAULT, cache_path,
             GetDiskCacheSize(),
-            BrowserThread::GetMessageLoopProxyForThread(
-                BrowserThread::CACHE)));
+            BrowserThread::GetMessageLoopProxyForThread(BrowserThread::CACHE)));
 
     net::HttpNetworkSession::Params network_session_params;
     network_session_params.cert_verifier =
         url_request_context_->cert_verifier();
-    network_session_params.transport_security_state =
-        url_request_context_->transport_security_state();
-    network_session_params.cert_transparency_verifier =
-        url_request_context_->cert_transparency_verifier();
-    network_session_params.ct_policy_enforcer =
-        url_request_context_->ct_policy_enforcer();
-    network_session_params.channel_id_service =
-        url_request_context_->channel_id_service();
+    network_session_params.transport_security_state = url_request_context_
+        ->transport_security_state();
+    network_session_params.cert_transparency_verifier = url_request_context_
+        ->cert_transparency_verifier();
+    network_session_params.ct_policy_enforcer = url_request_context_
+        ->ct_policy_enforcer();
+    network_session_params.channel_id_service = url_request_context_
+        ->channel_id_service();
     network_session_params.proxy_service =
         url_request_context_->proxy_service();
-    network_session_params.ssl_config_service =
-        url_request_context_->ssl_config_service();
-    network_session_params.http_auth_handler_factory =
-        url_request_context_->http_auth_handler_factory();
-    network_session_params.http_server_properties =
-        url_request_context_->http_server_properties();
+    network_session_params.ssl_config_service = url_request_context_
+        ->ssl_config_service();
+    network_session_params.http_auth_handler_factory = url_request_context_
+        ->http_auth_handler_factory();
+    network_session_params.http_server_properties = url_request_context_
+        ->http_server_properties();
     network_session_params.ignore_certificate_errors =
         ignore_certificate_errors_;
 
@@ -223,9 +227,10 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     storage_->set_http_network_session(
         base::WrapUnique(new net::HttpNetworkSession(network_session_params)));
     storage_->set_http_transaction_factory(
-        base::WrapUnique(new net::HttpCache(storage_->http_network_session(),
-                        std::move(main_backend),
-                        false /* set_up_quic_server_info */)));
+        base::WrapUnique(
+            new net::HttpCache(storage_->http_network_session(),
+                               std::move(main_backend),
+                               false /* set_up_quic_server_info */)));
 #if defined(OS_ANDROID)
     std::unique_ptr<XWalkURLRequestJobFactory> job_factory_impl(
         new XWalkURLRequestJobFactory);
@@ -238,10 +243,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 
     // Step 1:
     // Install all the default schemes for crosswalk.
-    for (content::ProtocolHandlerMap::iterator it =
-             protocol_handlers_.begin();
-         it != protocol_handlers_.end();
-         ++it) {
+    for (content::ProtocolHandlerMap::iterator it = protocol_handlers_.begin();
+        it != protocol_handlers_.end(); ++it) {
       set_protocol = job_factory_impl->SetProtocolHandler(
           it->first, base::WrapUnique(it->second.release()));
       DCHECK(set_protocol);
@@ -251,23 +254,22 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     // Step 2:
     // Add new basic schemes.
     set_protocol = job_factory_impl->SetProtocolHandler(
-        url::kDataScheme,
-        base::WrapUnique(new net::DataProtocolHandler));
+        url::kDataScheme, base::WrapUnique(new net::DataProtocolHandler));
     DCHECK(set_protocol);
     set_protocol = job_factory_impl->SetProtocolHandler(
         url::kFileScheme,
-        base::WrapUnique(new net::FileProtocolHandler(
-            content::BrowserThread::GetBlockingPool()->
-            GetTaskRunnerWithShutdownBehavior(
-                base::SequencedWorkerPool::SKIP_ON_SHUTDOWN))));
+        base::WrapUnique(
+            new net::FileProtocolHandler(
+                content::BrowserThread::GetBlockingPool()
+                    ->GetTaskRunnerWithShutdownBehavior(
+                    base::SequencedWorkerPool::SKIP_ON_SHUTDOWN))));
     DCHECK(set_protocol);
 
     // Step 3:
     // Add the scheme interceptors.
-  // in the order in which they appear in the |request_interceptors| vector.
-  typedef std::vector<net::URLRequestInterceptor*>
-      URLRequestInterceptorVector;
-  URLRequestInterceptorVector request_interceptors;
+    // in the order in which they appear in the |request_interceptors| vector.
+    typedef std::vector<net::URLRequestInterceptor*> URLRequestInterceptorVector;
+    URLRequestInterceptorVector request_interceptors;
 
 #if defined(OS_ANDROID)
     request_interceptors.push_back(
@@ -290,23 +292,22 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     // order in which the elements of the chain are created.
     std::unique_ptr<net::URLRequestJobFactory> job_factory(
         std::move(job_factory_impl));
-    for (URLRequestInterceptorVector::reverse_iterator
-             i = request_interceptors.rbegin();
-         i != request_interceptors.rend();
-         ++i) {
-      job_factory.reset(new net::URLRequestInterceptingJobFactory(
-          std::move(job_factory), base::WrapUnique(*i)));
+    for (URLRequestInterceptorVector::reverse_iterator i = request_interceptors
+        .rbegin(); i != request_interceptors.rend(); ++i) {
+      job_factory.reset(
+          new net::URLRequestInterceptingJobFactory(std::move(job_factory),
+                                                    base::WrapUnique(*i)));
     }
 
     // Set up interceptors in the reverse order.
-    std::unique_ptr<net::URLRequestJobFactory> top_job_factory =
-        std::move(job_factory);
+    std::unique_ptr<net::URLRequestJobFactory> top_job_factory = std::move(
+        job_factory);
     for (content::URLRequestInterceptorScopedVector::reverse_iterator i =
-             request_interceptors_.rbegin();
-         i != request_interceptors_.rend();
-         ++i) {
-      top_job_factory.reset(new net::URLRequestInterceptingJobFactory(
-          std::move(top_job_factory), base::WrapUnique(*i)));
+        request_interceptors_.rbegin(); i != request_interceptors_.rend();
+        ++i) {
+      top_job_factory.reset(
+          new net::URLRequestInterceptingJobFactory(std::move(top_job_factory),
+                                                    base::WrapUnique(*i)));
     }
     request_interceptors_.weak_clear();
 
@@ -316,8 +317,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
   return url_request_context_.get();
 }
 
-scoped_refptr<base::SingleThreadTaskRunner>
-    RuntimeURLRequestContextGetter::GetNetworkTaskRunner() const {
+scoped_refptr<base::SingleThreadTaskRunner> RuntimeURLRequestContextGetter::GetNetworkTaskRunner() const {
   return BrowserThread::GetMessageLoopProxyForThread(BrowserThread::IO);
 }
 
@@ -329,9 +329,10 @@ void RuntimeURLRequestContextGetter::UpdateAcceptLanguages(
     const std::string& accept_languages) {
   if (!storage_)
     return;
-  storage_->set_http_user_agent_settings(base::WrapUnique(
-      new net::StaticHttpUserAgentSettings(accept_languages,
-                                           xwalk::GetUserAgent())));
+  storage_->set_http_user_agent_settings(
+      base::WrapUnique(
+          new net::StaticHttpUserAgentSettings(accept_languages,
+                                               xwalk::GetUserAgent())));
 }
 
 }  // namespace xwalk
