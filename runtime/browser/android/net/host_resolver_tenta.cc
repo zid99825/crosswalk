@@ -37,8 +37,7 @@ class HostResolverTenta::SavedRequest {
   SavedRequest(base::TimeTicks when_created, const RequestInfo& info,
                RequestPriority priority, const CompletionCallback& callback,
                AddressList* addresses)
-      :
-        info_(info),
+      : info_(info),
         priority_(priority),  // not used
         callback_(callback),
         addresses_(addresses),
@@ -47,43 +46,15 @@ class HostResolverTenta::SavedRequest {
   }
 
   /**
-   * Prepare final AddressList and call completion callback.
+   * Notify callback of current status
    */
-  void OnResolved(JNIEnv* env, jint status, jobjectArray result) {
-    if (!was_canceled()) {
-      if (status == OK) {
+  void OnResolved(int status, AddressList * addr_list) {
+    if (status == OK && addr_list != nullptr)
+      *addresses_ = AddressList::CopyWithPort(*addr_list, info_.port());
 
-        jsize len = env->GetArrayLength(result);  // array length
-
-        if (len > 0) {
-          // fill the addresses
-          for (jsize i = 0; i < len; ++i) {
-            ScopedJavaLocalRef<jbyteArray> ip_array(
-                env,
-                static_cast<jbyteArray>(env->GetObjectArrayElement(result, i)));
-
-            jsize ip_bytes_len = env->GetArrayLength(ip_array.obj());
-            jbyte* ip_bytes = env->GetByteArrayElements(ip_array.obj(),
-                                                        nullptr);
-
-            // new IP address
-            IPAddress ip(reinterpret_cast<const uint8_t*>(ip_bytes),
-                         ip_bytes_len);
-
-            env->ReleaseByteArrayElements(ip_array.obj(), ip_bytes, JNI_ABORT);
-
-            IPEndPoint ip_e(ip, info_.port());  // endpoint with port
-            addresses_->push_back(ip_e);  // store new ip address
-          }
-        } else {
-          status = ERR_DNS_SERVER_FAILED;
-        }
-      }
-
-      CompletionCallback callback = callback_;
-      Cancel();
-      callback.Run(status);
-    }
+    CompletionCallback callback = callback_;
+    Cancel();
+    callback.Run(status);
   }
 
   /**
@@ -163,9 +134,9 @@ class HostResolverTenta::SavedRequest {
  */
 HostResolverTenta::HostResolverTenta(
     std::unique_ptr<HostResolver> backup_resolver)
-        : weak_ptr_factory_(this)
+    : weak_ptr_factory_(this)
 //    : backup_resolver_(backup_resolver)
-    {
+{
   // TODO Auto-generated constructor stub
 
   LOG(INFO) << "HostResolverTenta::Construct begin";
@@ -181,7 +152,12 @@ HostResolverTenta::HostResolverTenta(
                                                reinterpret_cast<intptr_t>(this))
           .obj());
 
-  on_error_call_ = base::Bind(&HostResolverTenta::OnError, weak_ptr_factory_.GetWeakPtr());
+  on_error_call_ = base::Bind(&HostResolverTenta::OnError,
+                              weak_ptr_factory_.GetWeakPtr());
+
+//  orig_runner_ = base::MessageLoop::current()->task_runner();
+  orig_runner_ = base::ThreadTaskRunnerHandle::Get();
+
   LOG(INFO) << "HostResolverTenta::Construct end";
 }
 
@@ -218,6 +194,7 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
   LOG(INFO) << "new request: " << key_id;
 
   // post task and run
+//  DoResolveInJava(request, key_id);
   task_runner_->PostTask(
   FROM_HERE,
   base::Bind(&HostResolverTenta::DoResolveInJava, base::Unretained(this), request, key_id));
@@ -273,14 +250,10 @@ void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id) {
     LOG(INFO) << "resolv name java returned: " << jReturn;
 
     if (jReturn != OK) {
-      // TODO implement
-//      OnError(key_id, jReturn);
-      DetachFromVM();
-      on_error_call_.Run(key_id, jReturn);
+      OnError(key_id, jReturn);
     }
 
   } else {
-    // TODO handle!!
     OnError(key_id, ERR_DNS_SERVER_FAILED);
   }
 
@@ -296,40 +269,79 @@ int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
 }
 
 /**
- *
+ * Prepare final AddressList and call completion callback.
  */
 void HostResolverTenta::OnResolved(JNIEnv* env, jobject caller, jint status,
                                    jobjectArray result, jlong forRequestId) {
 
-// TODO search by id and call onresolved
+  AddressList *foundAddr = nullptr;  // the found addresses
 
+  if (status == OK) {
+    foundAddr = new AddressList();
+
+    jsize len = env->GetArrayLength(result);  // array length
+
+    if (len > 0) {
+      // fill the addresses
+      for (jsize i = 0; i < len; ++i) {
+        ScopedJavaLocalRef<jbyteArray> ip_array(
+            env,
+            static_cast<jbyteArray>(env->GetObjectArrayElement(result, i)));
+
+        jsize ip_bytes_len = env->GetArrayLength(ip_array.obj());
+        jbyte* ip_bytes = env->GetByteArrayElements(ip_array.obj(), nullptr);
+
+        // new IP address
+        IPAddress ip(reinterpret_cast<const uint8_t*>(ip_bytes), ip_bytes_len);
+
+        env->ReleaseByteArrayElements(ip_array.obj(), ip_bytes, JNI_ABORT);
+
+        IPEndPoint ip_e(ip, 0);  // endpoint with port info_.port()
+        foundAddr->push_back(ip_e);  // store new ip address
+      }
+    }
+  }
+
+// TODO search by id and call onresolved
+  orig_runner_->PostTask(FROM_HERE,
+    base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
+               status, base::Owned(foundAddr)));
+
+}
+
+void HostResolverTenta::origOnResolved(int error, AddressList* addr_list) {
   auto it = requests_.find(forRequestId);
   if (it != requests_.end()) {
-    it->second->OnResolved(env, status, result);
+    it->second->OnResolved(error, addr_list);
     delete it->second;
     requests_.erase(it);
   }
 }
-
 /**
- *
+ * Called when error occured (can be on any thread, will post a task to original thread
  */
 void HostResolverTenta::OnError(int64_t key_id, int error) {
+  orig_runner_->PostTask(FROM_HERE,
+  base::Bind(&HostResolverTenta::origOnError, weak_ptr_factory_.GetWeakPtr(), key_id, error));
+}
+
+/**
+ * Thread must be on original thread
+ */
+void HostResolverTenta::origOnError(int64_t key_id, int error) {
   auto it = requests_.find(key_id);
 
-  LOG(INFO) << "OnError request: " << key_id;
+  LOG(INFO) << "origOnError request: " << key_id;
 
   // cleanup the request if any
   if (it != requests_.end()) {
     it->second->OnError(error);
 
-    LOG(INFO) << "OnError delete: " << key_id;
     delete it->second;
-    LOG(INFO) << "OnError delete done: " << key_id;
     requests_.erase(it);
   }
-}
 
+}
 /**
  *
  */

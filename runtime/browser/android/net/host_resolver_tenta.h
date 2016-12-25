@@ -14,6 +14,7 @@
 #include "base/macros.h"
 #include "base/android/scoped_java_ref.h"
 #include "base/android/jni_weak_ref.h"
+#include "base/message_loop/message_loop.h"
 #include "net/dns/host_resolver.h"
 
 using base::android::ScopedJavaLocalRef;
@@ -90,6 +91,8 @@ class HostResolverTenta : public HostResolver {
  protected:
 
   typedef base::Callback<void(int64_t, int)> OnErrorCallback;
+  OnErrorCallback on_error_call_;
+
   base::WeakPtrFactory<HostResolverTenta> weak_ptr_factory_;
 
   std::unique_ptr<HostResolver> backup_resolver_;  // chromium implementation for host resolve
@@ -104,7 +107,18 @@ class HostResolverTenta : public HostResolver {
    */
   scoped_refptr<base::TaskRunner> task_runner_;
 
+  scoped_refptr<base::TaskRunner> orig_runner_;
  private:
+  /**
+   * Do Real work on original thread
+   */
+  void origOnError(int64_t key_id, int error);
+
+  /**
+   * Do real work on original thread
+   */
+  void origOnResolved(int error, AddressList* addr_list);
+
   DISALLOW_COPY_AND_ASSIGN(HostResolverTenta)
   ;
 
