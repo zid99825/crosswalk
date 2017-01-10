@@ -15,12 +15,15 @@
 #include "base/android/scoped_java_ref.h"
 #include "base/android/jni_weak_ref.h"
 #include "base/message_loop/message_loop.h"
+#include "base/synchronization/lock.h"
 #include "net/dns/host_resolver.h"
 
 using base::android::ScopedJavaLocalRef;
 using base::android::JavaParamRef;
 using net::AddressList;
 using net::HostResolver;
+
+//class base::WaitableEvent;
 
 namespace xwalk {
 namespace tenta {
@@ -88,6 +91,14 @@ class HostResolverTenta : public HostResolver {
    */
   virtual void DoResolveInJava(SavedRequest *request, int64_t key_id);
 
+  virtual void DoResolveCacheInJava(const RequestInfo& info,
+                                    AddressList* addresses,
+                                    base::WaitableEvent* completion,
+                                    bool *success);
+
+ protected:
+  AddressList * ConvertIpJava2Native(JNIEnv* env, jobjectArray ipArray);
+
  protected:
 
   typedef base::Callback<void(int64_t, int)> OnErrorCallback;
@@ -101,6 +112,7 @@ class HostResolverTenta : public HostResolver {
 // mapping id to resolver
   typedef std::map<int64_t, SavedRequest *> RequestsMap;
   RequestsMap requests_;
+  base::Lock mapGuard;
 
   /**
    * Thread to run dns requests
@@ -108,16 +120,12 @@ class HostResolverTenta : public HostResolver {
   scoped_refptr<base::TaskRunner> task_runner_;
 
   scoped_refptr<base::TaskRunner> orig_runner_;
- private:
-  /**
-   * Do Real work on original thread
-   */
-  void origOnError(int64_t key_id, int error);
 
+ private:
   /**
    * Do real work on original thread
    */
-  void origOnResolved(int error, AddressList* addr_list);
+  void origOnResolved(int64_t forRequestId, int error, AddressList* addr_list);
 
   DISALLOW_COPY_AND_ASSIGN(HostResolverTenta)
   ;

@@ -17,7 +17,10 @@
 #include "net/dns/dns_util.h"
 #include "net/base/net_errors.h"
 #include "net/base/address_list.h"
+#include "base/synchronization/waitable_event.h"
 #include "base/threading/worker_pool.h"
+
+#include "xwalk/runtime/browser/android/scoped_allow_wait_for_legacy_web_view_api.h"
 
 #include "jni/HostResolverTenta_jni.h"
 
@@ -49,23 +52,20 @@ class HostResolverTenta::SavedRequest {
    * Notify callback of current status
    */
   void OnResolved(int status, AddressList * addr_list) {
-    if (status == OK && addr_list != nullptr)
-      *addresses_ = AddressList::CopyWithPort(*addr_list, info_.port());
-
-    CompletionCallback callback = callback_;
-    Cancel();
-    callback.Run(status);
-  }
-
-  /**
-   * Called when error occured
-   */
-  void OnError(int error) {
     if (!was_canceled()) {
+      if (status == OK && addr_list != nullptr)
+        *addresses_ = AddressList::CopyWithPort(*addr_list, info_.port());
+
       CompletionCallback callback = callback_;
       Cancel();
-      callback.Run(error);
+      callback.Run(status);
     }
+
+//    if (addr_list != nullptr) {
+//      LOG(INFO) << "OnResolved delete " << addr_list;
+//      delete addr_list;
+//      LOG(INFO) << "OnResolved deleted ";
+//    }
   }
 
   /**
@@ -163,6 +163,8 @@ HostResolverTenta::HostResolverTenta(
 
 HostResolverTenta::~HostResolverTenta() {
   // if case we have unresolved requests
+  base::AutoLock lock(mapGuard);
+
   STLDeleteValues(&requests_);
 }
 
@@ -189,45 +191,81 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
   SavedRequest *request = new SavedRequest(now, info, priority, callback,
                                            addresses);
 
+  mapGuard.Acquire();
   requests_.insert(std::make_pair(key_id, request));
+  mapGuard.Release();
 
   LOG(INFO) << "new request: " << key_id;
 
   // post task and run
-//  DoResolveInJava(request, key_id);
   task_runner_->PostTask(
   FROM_HERE,
   base::Bind(&HostResolverTenta::DoResolveInJava, base::Unretained(this), request, key_id));
-
-//  return ERR_NAME_NOT_RESOLVED;
 
   if (out_req)
     *out_req = reinterpret_cast<RequestHandle>(key_id);  // for further interaction with base
 
   return ERR_IO_PENDING;
 
-  return backup_resolver_->Resolve(info, priority, addresses, callback, out_req,
-                                   net_log);
+//  return backup_resolver_->Resolve(info, priority, addresses, callback, out_req,
+//                                   net_log);
+}
 
-  // TODO
-  // addresses->push_back(IPEndPoint(it->second, info.port()));
-  //  IPEndPoint(const IPAddress& address, uint16_t port);
-  //    IPAddress(const uint8_t* address, size_t address_len);
-  //      NET_EXPORT bool ParseURLHostnameToAddress(const base::StringPiece& hostname,
-  //                                       IPAddress* ip_address)
-  // TODO use base::WorkerPool::GetTaskRunner(true /* task_is_slow */)
+/**
+ * Post task to Java and wait for response
+ */
+int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
+                                        AddressList* addresses,
+                                        const BoundNetLog& net_log) {
+  LOG(INFO) << "resolve from cache: " + info.hostname();
+  // TODO implement
 
-//	  // Prepare final AddressList and call completion callback.
-//	  void OnComplete(int error, const AddressList& addr_list) {
-//	    DCHECK(!was_canceled());
-//	    if (error == OK)
-//	      *addresses_ = EnsurePortOnAddressList(addr_list, info_.port());
-//	    CompletionCallback callback = callback_;
-//	    MarkAsCanceled();
-//	    callback.Run(error);
-//	  }
-  // TODO return ERR_IO_PENDING;
-  return ERR_NAME_NOT_RESOLVED;
+//  JNIEnv* env = AttachCurrentThread();
+//
+//  if (!j_host_resolver_.is_empty()) {
+//    ScopedJavaLocalRef<jobject> gInstance = j_host_resolver_.get(env);
+//
+//    ScopedJavaLocalRef<jstring> rHost;
+//    rHost = ConvertUTF8ToJavaString(env, info.hostname());
+//
+//    ScopedJavaLocalRef<jobjectArray> jReturn =
+//        Java_HostResolverTenta_resolveCache(env, gInstance.obj(), rHost.obj());
+//
+//    AddressList *foundAddr = ConvertIpJava2Native(env, jReturn.obj());
+//
+//    if (foundAddr != nullptr) {
+//      *addresses = AddressList::CopyWithPort(*foundAddr, info.port());
+//      LOG(INFO) << " Delete found addr" << foundAddr;
+//      delete foundAddr;
+//      LOG(INFO) << " Deleted found addr";
+//      return OK;
+//    }
+//  }
+//
+//  return ERR_DNS_CACHE_MISS;
+
+
+  base::WaitableEvent completion(
+      base::WaitableEvent::ResetPolicy::AUTOMATIC,
+      base::WaitableEvent::InitialState::NOT_SIGNALED);
+
+  bool resolved = false;
+
+  task_runner_->PostTask(
+  FROM_HERE,
+  base::Bind(&HostResolverTenta::DoResolveCacheInJava, base::Unretained(this),
+      info, addresses, &completion, &resolved));
+
+  {
+    ScopedAllowWaitForLegacyWebViewApi wait;
+    completion.Wait();
+  }
+
+  if (resolved) {
+    return OK;
+  }
+//  return backup_resolver_->ResolveFromCache(info, addresses, net_log);
+  return ERR_DNS_CACHE_MISS;
 }
 
 /**
@@ -259,13 +297,41 @@ void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id) {
 
 }
 
-int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
-                                        AddressList* addresses,
-                                        const BoundNetLog& net_log) {
-  LOG(INFO) << "resolv from cache: " + info.hostname();
-  // TODO implement
-//  return backup_resolver_->ResolveFromCache(info, addresses, net_log);
-  return ERR_DNS_CACHE_MISS;
+/**
+ * Get cached value from java
+ */
+void HostResolverTenta::DoResolveCacheInJava(const RequestInfo& info,
+                                             AddressList* addresses,
+                                             base::WaitableEvent* completion,
+                                             bool *success) {
+
+//  ScopedJavaLocalRef<jobjectArray>
+//      Java_HostResolverTenta_resolveCache(JNIEnv* env, jobject obj, jstring
+//      hostname)
+
+  JNIEnv* env = AttachCurrentThread();
+
+  *success = false;
+
+  if (!j_host_resolver_.is_empty()) {
+    ScopedJavaLocalRef<jobject> gInstance = j_host_resolver_.get(env);
+
+    ScopedJavaLocalRef<jstring> rHost;
+    rHost = ConvertUTF8ToJavaString(env, info.hostname());
+
+    ScopedJavaLocalRef<jobjectArray> jReturn =
+        Java_HostResolverTenta_resolveCache(env, gInstance.obj(), rHost.obj());
+
+    AddressList *foundAddr = ConvertIpJava2Native(env, jReturn.obj());
+
+    if (foundAddr != nullptr) {
+      *addresses = AddressList::CopyWithPort(*foundAddr, info.port());
+      delete foundAddr;
+      *success = true;
+    }
+  }
+
+  completion->Signal();
 }
 
 /**
@@ -277,16 +343,35 @@ void HostResolverTenta::OnResolved(JNIEnv* env, jobject caller, jint status,
   AddressList *foundAddr = nullptr;  // the found addresses
 
   if (status == OK) {
-    foundAddr = new AddressList();
+    foundAddr = ConvertIpJava2Native(env, result);
+  }
 
-    jsize len = env->GetArrayLength(result);  // array length
+// TODO search by id and call onresolved
+  orig_runner_->PostTask(FROM_HERE,
+  base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
+      forRequestId, status, base::Owned(foundAddr))); // bind will delete the foundAddr
+
+}
+
+/**
+ * Convert Java Ip address list to native IP's
+ */
+AddressList * HostResolverTenta::ConvertIpJava2Native(JNIEnv* env,
+                                                      jobjectArray jIpArray) {
+
+  AddressList *foundAddr = nullptr;  // the found addresses
+
+  if (jIpArray != nullptr) {
+    jsize len = env->GetArrayLength(jIpArray);  // array length
 
     if (len > 0) {
+      foundAddr = new AddressList();
+
       // fill the addresses
       for (jsize i = 0; i < len; ++i) {
         ScopedJavaLocalRef<jbyteArray> ip_array(
             env,
-            static_cast<jbyteArray>(env->GetObjectArrayElement(result, i)));
+            static_cast<jbyteArray>(env->GetObjectArrayElement(jIpArray, i)));
 
         jsize ip_bytes_len = env->GetArrayLength(ip_array.obj());
         jbyte* ip_bytes = env->GetByteArrayElements(ip_array.obj(), nullptr);
@@ -301,15 +386,14 @@ void HostResolverTenta::OnResolved(JNIEnv* env, jobject caller, jint status,
       }
     }
   }
-
-// TODO search by id and call onresolved
-  orig_runner_->PostTask(FROM_HERE,
-    base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
-               status, base::Owned(foundAddr)));
-
+  return foundAddr;
 }
 
-void HostResolverTenta::origOnResolved(int error, AddressList* addr_list) {
+void HostResolverTenta::origOnResolved(int64_t forRequestId, int error,
+                                       AddressList* addr_list) {
+
+  base::AutoLock lock(mapGuard);
+
   auto it = requests_.find(forRequestId);
   if (it != requests_.end()) {
     it->second->OnResolved(error, addr_list);
@@ -322,26 +406,9 @@ void HostResolverTenta::origOnResolved(int error, AddressList* addr_list) {
  */
 void HostResolverTenta::OnError(int64_t key_id, int error) {
   orig_runner_->PostTask(FROM_HERE,
-  base::Bind(&HostResolverTenta::origOnError, weak_ptr_factory_.GetWeakPtr(), key_id, error));
+  base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(), key_id, error, nullptr));
 }
 
-/**
- * Thread must be on original thread
- */
-void HostResolverTenta::origOnError(int64_t key_id, int error) {
-  auto it = requests_.find(key_id);
-
-  LOG(INFO) << "origOnError request: " << key_id;
-
-  // cleanup the request if any
-  if (it != requests_.end()) {
-    it->second->OnError(error);
-
-    delete it->second;
-    requests_.erase(it);
-  }
-
-}
 /**
  *
  */
@@ -351,16 +418,19 @@ void HostResolverTenta::CancelRequest(RequestHandle req) {
 
   LOG(INFO) << "CancelRequest: " << key_id;
 
+  base::AutoLock lock(mapGuard);
+
   auto it = requests_.find(key_id);
 
   // cleanup the request if any
   if (it != requests_.end()) {
-    it->second->Cancel();
+    it->second->Cancel();  // mark as cancelled
 
-    LOG(INFO) << "HostResolverTenta::CancelRequest delete: " << key_id;
-    delete it->second;
-    LOG(INFO) << "HostResolverTenta::CancelRequest delete done: " << key_id;
-    requests_.erase(it);
+    if (!it->second->was_sent_to_java()) {  // if not sent to java, it's safe to delete
+      // TODO analyse if delete is safe here!!!
+      delete it->second;
+      requests_.erase(it);
+    }
   }
 
 //  return backup_resolver_->CancelRequest(req);

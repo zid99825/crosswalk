@@ -1,8 +1,7 @@
 package org.xwalk.core.internal;
 
-import android.R.integer;
+import android.R.string;
 
-import org.apache.commons.lang.ObjectUtils.Null;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
 
@@ -34,6 +33,14 @@ public class HostResolverTenta {
      * @param requestId Id of this request
      */
     void resolve(String hostname, long requestId);
+
+    /**
+     * Resolve host from cache !Note! Blocking request!
+     * 
+     * @param hostname
+     * @return
+     */
+    byte[][] resolveCache(String hostname);
   }
 
   private static HostResolverTenta sInstance = null;
@@ -69,6 +76,21 @@ public class HostResolverTenta {
   }
 
   /**
+   * Resolve hostname from cache.
+   * !NOTE! Blocking action, don't make any network requests
+   * @param hostname
+   * @return ip list from cache
+   */
+  @CalledByNative
+  public byte[][] resolveCache(String hostname) {
+    if (delegate != null) {
+      return delegate.resolveCache(hostname);
+    }
+
+    return null;
+  }
+
+  /**
    * Try resolve host name. Return 0 if have resolvers registered Resolvers must call
    * onResolved(list<address>, requestId)
    * 
@@ -82,7 +104,6 @@ public class HostResolverTenta {
       return OK;
     } else
       return ERR_DNS_SERVER_FAILED;
-    // return OK;
   }
 
   /**
