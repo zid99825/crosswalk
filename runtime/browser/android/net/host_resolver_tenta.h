@@ -69,6 +69,14 @@ class HostResolverTenta : public HostResolver {
   virtual int ResolveFromCache(const RequestInfo& info, AddressList* addresses,
                                const BoundNetLog& net_log) override;
 
+  // Post a task to another thread to complete the request
+  int ResolveFromCacheWithTask(const RequestInfo& info, AddressList* addresses,
+                               const BoundNetLog& net_log);
+
+  // JNI direct call to complete the request
+  int ResolveFromCacheDirect(const RequestInfo& info, AddressList* addresses,
+                             const BoundNetLog& net_log);
+
 // Cancels the specified request. |req| is the handle returned by Resolve().
 // After a request is canceled, its completion callback will not be called.
 // CancelRequest must NOT be called after the request's completion callback
@@ -93,6 +101,7 @@ class HostResolverTenta : public HostResolver {
 
   virtual void DoResolveCacheInJava(const RequestInfo& info,
                                     AddressList* addresses,
+                                    const BoundNetLog& net_log,
                                     base::WaitableEvent* completion,
                                     bool *success);
 

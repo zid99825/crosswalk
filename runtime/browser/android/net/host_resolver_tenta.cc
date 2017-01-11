@@ -177,7 +177,9 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
                                RequestHandle* out_req,
                                const BoundNetLog& net_log) {
 
-  LOG(INFO) << "resolv name: " + info.hostname();
+  LOG(INFO) << "resolv name: " + info.hostname() + " flags: "
+               << info.host_resolver_flags();
+
   // Check that the caller supplied a valid hostname to resolve.
   std::string labeled_hostname;
   if (!DNSDomainFromDot(info.hostname(), &labeled_hostname))
@@ -217,34 +219,45 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
 int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
                                         AddressList* addresses,
                                         const BoundNetLog& net_log) {
-  LOG(INFO) << "resolve from cache: " + info.hostname();
-  // TODO implement
+  LOG(INFO) << "resolve from cache: " + info.hostname() + " flags: "
+               << info.host_resolver_flags();
 
-//  JNIEnv* env = AttachCurrentThread();
-//
-//  if (!j_host_resolver_.is_empty()) {
-//    ScopedJavaLocalRef<jobject> gInstance = j_host_resolver_.get(env);
-//
-//    ScopedJavaLocalRef<jstring> rHost;
-//    rHost = ConvertUTF8ToJavaString(env, info.hostname());
-//
-//    ScopedJavaLocalRef<jobjectArray> jReturn =
-//        Java_HostResolverTenta_resolveCache(env, gInstance.obj(), rHost.obj());
-//
-//    AddressList *foundAddr = ConvertIpJava2Native(env, jReturn.obj());
-//
-//    if (foundAddr != nullptr) {
-//      *addresses = AddressList::CopyWithPort(*foundAddr, info.port());
-//      LOG(INFO) << " Delete found addr" << foundAddr;
-//      delete foundAddr;
-//      LOG(INFO) << " Deleted found addr";
-//      return OK;
-//    }
-//  }
-//
-//  return ERR_DNS_CACHE_MISS;
+//  return ResolveFromCacheWithTask(info, addresses, net_log);
+  return ResolveFromCacheDirect(info, addresses, net_log);
+}
 
+int HostResolverTenta::ResolveFromCacheDirect(const RequestInfo& info,
+                                              AddressList* addresses,
+                                              const BoundNetLog& net_log) {
+  JNIEnv* env = AttachCurrentThread();
 
+  if (!j_host_resolver_.is_empty()) {
+    ScopedJavaLocalRef<jobject> gInstance = j_host_resolver_.get(env);
+
+    ScopedJavaLocalRef<jstring> rHost;
+    rHost = ConvertUTF8ToJavaString(env, info.hostname());
+
+    ScopedJavaLocalRef<jobjectArray> jReturn =
+        Java_HostResolverTenta_resolveCache(env, gInstance.obj(), rHost.obj());
+
+    AddressList *foundAddr = ConvertIpJava2Native(env, jReturn.obj());
+
+    if (foundAddr != nullptr) {
+      *addresses = AddressList::CopyWithPort(*foundAddr, info.port());
+      delete foundAddr;
+      return OK;
+    }
+  }
+
+  return ERR_DNS_CACHE_MISS;
+}
+
+/**
+ *
+ */
+int HostResolverTenta::ResolveFromCacheWithTask(const RequestInfo& info,
+                                                AddressList* addresses,
+                                                const BoundNetLog& net_log) {
   base::WaitableEvent completion(
       base::WaitableEvent::ResetPolicy::AUTOMATIC,
       base::WaitableEvent::InitialState::NOT_SIGNALED);
@@ -254,7 +267,7 @@ int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
   task_runner_->PostTask(
   FROM_HERE,
   base::Bind(&HostResolverTenta::DoResolveCacheInJava, base::Unretained(this),
-      info, addresses, &completion, &resolved));
+      info, addresses, net_log, &completion, &resolved));
 
   {
     ScopedAllowWaitForLegacyWebViewApi wait;
@@ -302,35 +315,16 @@ void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id) {
  */
 void HostResolverTenta::DoResolveCacheInJava(const RequestInfo& info,
                                              AddressList* addresses,
+                                             const BoundNetLog& net_log,
                                              base::WaitableEvent* completion,
                                              bool *success) {
+  int retVal = ResolveFromCacheDirect(info, addresses, net_log);
 
-//  ScopedJavaLocalRef<jobjectArray>
-//      Java_HostResolverTenta_resolveCache(JNIEnv* env, jobject obj, jstring
-//      hostname)
-
-  JNIEnv* env = AttachCurrentThread();
-
-  *success = false;
-
-  if (!j_host_resolver_.is_empty()) {
-    ScopedJavaLocalRef<jobject> gInstance = j_host_resolver_.get(env);
-
-    ScopedJavaLocalRef<jstring> rHost;
-    rHost = ConvertUTF8ToJavaString(env, info.hostname());
-
-    ScopedJavaLocalRef<jobjectArray> jReturn =
-        Java_HostResolverTenta_resolveCache(env, gInstance.obj(), rHost.obj());
-
-    AddressList *foundAddr = ConvertIpJava2Native(env, jReturn.obj());
-
-    if (foundAddr != nullptr) {
-      *addresses = AddressList::CopyWithPort(*foundAddr, info.port());
-      delete foundAddr;
-      *success = true;
-    }
+  if (retVal == OK) {
+    *success = true;
+  } else {
+    *success = false;
   }
-
   completion->Signal();
 }
 
@@ -349,7 +343,7 @@ void HostResolverTenta::OnResolved(JNIEnv* env, jobject caller, jint status,
 // TODO search by id and call onresolved
   orig_runner_->PostTask(FROM_HERE,
   base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
-      forRequestId, status, base::Owned(foundAddr))); // bind will delete the foundAddr
+      forRequestId, status, base::Owned(foundAddr)));  // bind will delete the foundAddr
 
 }
 

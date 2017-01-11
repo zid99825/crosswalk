@@ -707,10 +707,10 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
 
     /**
      * Bundle key for save/restore state
-     * @return SAVE_RESTORE_STATE_KEY + routingID
+     * @return SAVE_RESTORE_STATE_KEY
      */
     private String getSaveRestoreBundleKey(){
-        return SAVE_RESTORE_STATE_KEY + String.valueOf(getRoutingID());
+        return SAVE_RESTORE_STATE_KEY;
     }
 
     boolean hasEnteredFullscreen() {
