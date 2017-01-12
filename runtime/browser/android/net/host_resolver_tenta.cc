@@ -52,6 +52,8 @@ class HostResolverTenta::SavedRequest {
    * Notify callback of current status
    */
   void OnResolved(int status, AddressList * addr_list) {
+    LOG(INFO) << "resolved: " + info_.hostname() + " status: " << status;
+
     if (!was_canceled()) {
       if (status == OK && addr_list != nullptr)
         *addresses_ = AddressList::CopyWithPort(*addr_list, info_.port());
@@ -163,7 +165,7 @@ HostResolverTenta::HostResolverTenta(
 
 HostResolverTenta::~HostResolverTenta() {
   // if case we have unresolved requests
-  base::AutoLock lock(mapGuard);
+  base::AutoLock lock(reqGuard);
 
   STLDeleteValues(&requests_);
 }
@@ -193,11 +195,11 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
   SavedRequest *request = new SavedRequest(now, info, priority, callback,
                                            addresses);
 
-  mapGuard.Acquire();
+  reqGuard.Acquire();
   requests_.insert(std::make_pair(key_id, request));
-  mapGuard.Release();
+  reqGuard.Release();
 
-  LOG(INFO) << "new request: " << key_id;
+  LOG(INFO) << "Request ID: " << key_id;
 
   // post task and run
   task_runner_->PostTask(
@@ -219,11 +221,11 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
 int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
                                         AddressList* addresses,
                                         const BoundNetLog& net_log) {
-  LOG(INFO) << "resolve from cache: " + info.hostname() + " flags: "
+  LOG(INFO) << "Resolve from cache: " + info.hostname() + " flags: "
                << info.host_resolver_flags();
 
-//  return ResolveFromCacheWithTask(info, addresses, net_log);
-  return ResolveFromCacheDirect(info, addresses, net_log);
+  return ResolveFromCacheWithTask(info, addresses, net_log);
+//  return ResolveFromCacheDirect(info, addresses, net_log);
 }
 
 int HostResolverTenta::ResolveFromCacheDirect(const RequestInfo& info,
@@ -245,10 +247,14 @@ int HostResolverTenta::ResolveFromCacheDirect(const RequestInfo& info,
     if (foundAddr != nullptr) {
       *addresses = AddressList::CopyWithPort(*foundAddr, info.port());
       delete foundAddr;
+
+      LOG(INFO) << "Resolved from cache: " + info.hostname() + " ipCnt: "
+                   << addresses->size();
       return OK;
     }
   }
 
+  LOG(INFO) << "NoCache for: " + info.hostname();
   return ERR_DNS_CACHE_MISS;
 }
 
@@ -386,7 +392,7 @@ AddressList * HostResolverTenta::ConvertIpJava2Native(JNIEnv* env,
 void HostResolverTenta::origOnResolved(int64_t forRequestId, int error,
                                        AddressList* addr_list) {
 
-  base::AutoLock lock(mapGuard);
+  base::AutoLock lock(reqGuard);
 
   auto it = requests_.find(forRequestId);
   if (it != requests_.end()) {
@@ -410,9 +416,9 @@ void HostResolverTenta::CancelRequest(RequestHandle req) {
 
   int64_t key_id = reinterpret_cast<int64_t>(req);
 
-  LOG(INFO) << "CancelRequest: " << key_id;
+  LOG(INFO) << "CancelRequest ID: " << key_id;
 
-  base::AutoLock lock(mapGuard);
+  base::AutoLock lock(reqGuard);
 
   auto it = requests_.find(key_id);
 

@@ -121,7 +121,7 @@ class HostResolverTenta : public HostResolver {
 // mapping id to resolver
   typedef std::map<int64_t, SavedRequest *> RequestsMap;
   RequestsMap requests_;
-  base::Lock mapGuard;
+  base::Lock reqGuard;
 
   /**
    * Thread to run dns requests
