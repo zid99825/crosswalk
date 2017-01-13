@@ -156,11 +156,11 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     std::unique_ptr<net::HostResolver> backup =
         net::HostResolver::CreateDefaultResolver(NULL);
 
-    std::unique_ptr<net::HostResolver> host_resolver(
-        std::unique_ptr < net::HostResolver
-            > (new tenta::HostResolverTenta(std::move(backup))));
 //    std::unique_ptr<net::HostResolver> host_resolver(
-//        net::HostResolver::CreateDefaultResolver(NULL));
+//        std::unique_ptr < net::HostResolver
+//            > (new tenta::HostResolverTenta(std::move(backup))));
+    std::unique_ptr<net::HostResolver> host_resolver(
+        net::HostResolver::CreateDefaultResolver(NULL));
 
     storage_->set_cert_verifier(net::CertVerifier::CreateDefault());
     storage_->set_transport_security_state(
