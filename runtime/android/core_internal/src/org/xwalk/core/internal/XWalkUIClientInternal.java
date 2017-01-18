@@ -90,6 +90,7 @@ public class XWalkUIClientInternal {
      * Called when the theme color is changed. This works only on Android Lollipop+(5.0+).
      * @param color the new color in RGB format.
      */
+    @XWalkAPI
     public void onDidChangeThemeColor(XWalkViewInternal view, int color) {
         if (view == null || !(mContext instanceof Activity)) return;
         Activity activity = (Activity) mContext;
