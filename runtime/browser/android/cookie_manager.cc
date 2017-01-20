@@ -455,9 +455,10 @@ static jboolean RestoreCookies(JNIEnv* env,
       env->ReleaseByteArrayElements(data.obj(), _bytes, JNI_ABORT);
 
       return true;
-    }  // len zero
-  }  // data null
+    } // len zero
+  } // data null
 
+  CookieManager::GetInstance()->RemoveAllCookie();
   return false;
 }
 
