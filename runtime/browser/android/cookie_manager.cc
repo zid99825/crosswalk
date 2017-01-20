@@ -7,6 +7,7 @@
 #include <string>
 
 #include "base/android/jni_string.h"
+#include "base/android/jni_array.h"
 #include "base/android/path_utils.h"
 #include "base/bind.h"
 #include "base/bind_helpers.h"
@@ -18,6 +19,7 @@
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "base/pickle.h"
 #include "base/single_thread_task_runner.h"
 #include "base/synchronization/lock.h"
 #include "base/synchronization/waitable_event.h"
@@ -28,6 +30,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/cookie_store_factory.h"
 #include "content/public/common/url_constants.h"
+#include "net/cookies/canonical_cookie.h"
 
 #include "jni/XWalkCookieManagerInternal_jni.h"
 #include "net/cookies/cookie_monster.h"
@@ -64,19 +67,14 @@ void ImportKitkatDataIfNecessary(const base::FilePath& old_data_dir,
   if (!base::DirectoryExists(old_data_dir))
     return;
 
-  const char* possible_data_dir_names[] = {
-      "Cache",
-      "Cookies",
-      "Cookies-journal",
-      "IndexedDB",
-      "Local Storage",
-  };
+  const char* possible_data_dir_names[] = { "Cache", "Cookies",
+      "Cookies-journal", "IndexedDB", "Local Storage", };
   for (size_t i = 0; i < arraysize(possible_data_dir_names); i++) {
     base::FilePath dir = old_data_dir.Append(possible_data_dir_names[i]);
     if (base::PathExists(dir)) {
       if (!base::Move(dir, profile.Append(possible_data_dir_names[i]))) {
         NOTREACHED() << "Failed to import previous user data: "
-                     << possible_data_dir_names[i];
+                        << possible_data_dir_names[i];
       }
     }
   }
@@ -131,11 +129,25 @@ class CookieManager {
  public:
   static CookieManager* GetInstance();
 
-  // Returns the TaskRunner on which the CookieStore lives.
+// Returns the TaskRunner on which the CookieStore lives.
   base::SingleThreadTaskRunner* GetCookieStoreTaskRunner();
-  // Returns the CookieStore, creating it if necessary. This must only be called
-  // on the CookieStore TaskRunner.
+// Returns the CookieStore, creating it if necessary. This must only be called
+// on the CookieStore TaskRunner.
   net::CookieStore* GetCookieStore();
+
+  void SaveCookies(base::Pickle *dstPickle);
+  void SaveCookiesAsyncHelper(base::Pickle *dstPickle,
+                              base::WaitableEvent* completion);
+
+  void SaveCookiesCompleted(base::Pickle *dstPickle,
+                            base::WaitableEvent* completion,
+                            const net::CookieList& cookies);
+
+  void RestoreCookies(base::Pickle *pickel);
+  void RestoreCookiesAsyncHelper(base::Pickle *pickel,
+                                 base::WaitableEvent* completion);
+  void RestoreCookieCallback(base::WaitableEvent* completion, bool* isSuccess,
+                             bool success);
 
   void SetAcceptCookie(bool accept);
   bool AcceptCookie();
@@ -156,22 +168,16 @@ class CookieManager {
   ~CookieManager();
 
   typedef base::Callback<void(base::WaitableEvent*)> CookieTask;
-  void ExecCookieTask(const CookieTask& task,
-                      const bool wait_for_completion);
+  void ExecCookieTask(const CookieTask& task, const bool wait_for_completion);
 
-  void SetCookieAsyncHelper(
-      const GURL& host,
-      const std::string& value,
-      base::WaitableEvent* completion);
+  void SetCookieAsyncHelper(const GURL& host, const std::string& value,
+                            base::WaitableEvent* completion);
   void SetCookieCompleted(bool success);
 
-  void GetCookieValueAsyncHelper(
-      const GURL& host,
-      std::string* result,
-      base::WaitableEvent* completion);
+  void GetCookieValueAsyncHelper(const GURL& host, std::string* result,
+                                 base::WaitableEvent* completion);
   void GetCookieValueCompleted(base::WaitableEvent* completion,
-                               std::string* result,
-                               const std::string& value);
+                               std::string* result, const std::string& value);
 
   void RemoveSessionCookieAsyncHelper(base::WaitableEvent* completion);
   void RemoveAllCookieAsyncHelper(base::WaitableEvent* completion);
@@ -179,19 +185,17 @@ class CookieManager {
 
   void FlushCookieStoreAsyncHelper(base::WaitableEvent* completion);
 
-  void HasCookiesAsyncHelper(bool* result,
-                             base::WaitableEvent* completion);
-  void HasCookiesCompleted(base::WaitableEvent* completion,
-                           bool* result,
+  void HasCookiesAsyncHelper(bool* result, base::WaitableEvent* completion);
+  void HasCookiesCompleted(base::WaitableEvent* completion, bool* result,
                            const net::CookieList& cookies);
 
-  // This protects the following two bools, as they're used on multiple threads.
+// This protects the following two bools, as they're used on multiple threads.
   base::Lock accept_file_scheme_cookies_lock_;
-  // True if cookies should be allowed for file URLs. Can only be changed prior
-  // to creating the CookieStore.
+// True if cookies should be allowed for file URLs. Can only be changed prior
+// to creating the CookieStore.
   bool accept_file_scheme_cookies_;
-  // True once the cookie store has been created. Just used to track when
-  // |accept_file_scheme_cookies_| can no longer be modified.
+// True once the cookie store has been created. Just used to track when
+// |accept_file_scheme_cookies_| can no longer be modified.
   bool cookie_store_created_;
 
   base::Thread cookie_store_client_thread_;
@@ -200,7 +204,8 @@ class CookieManager {
   scoped_refptr<base::SingleThreadTaskRunner> cookie_store_task_runner_;
   std::unique_ptr<net::CookieStore> cookie_store_;
 
-  DISALLOW_COPY_AND_ASSIGN(CookieManager);
+  DISALLOW_COPY_AND_ASSIGN(CookieManager)
+  ;
 };
 
 base::LazyInstance<CookieManager>::Leaky g_lazy_instance;
@@ -217,9 +222,9 @@ CookieManager::CookieManager()
       cookie_store_created_(false),
       cookie_store_client_thread_("CookieMonsterClient"),
       cookie_store_backend_thread_("CookieMonsterBackend") {
-      cookie_store_client_thread_.Start();
-      cookie_store_backend_thread_.Start();
-      cookie_store_task_runner_ = cookie_store_client_thread_.task_runner();
+  cookie_store_client_thread_.Start();
+  cookie_store_backend_thread_.Start();
+  cookie_store_task_runner_ = cookie_store_client_thread_.task_runner();
 }
 
 CookieManager::~CookieManager() {
@@ -234,7 +239,7 @@ void CookieManager::ExecCookieTask(const CookieTask& task,
       base::WaitableEvent::ResetPolicy::AUTOMATIC,
       base::WaitableEvent::InitialState::NOT_SIGNALED);
   cookie_store_task_runner_->PostTask(FROM_HERE,
-      base::Bind(task, wait_for_completion ? &completion : nullptr));
+  base::Bind(task, wait_for_completion ? &completion : nullptr));
   if (wait_for_completion) {
     ScopedAllowWaitForLegacyWebViewApi wait;
     completion.Wait();
@@ -259,15 +264,15 @@ net::CookieStore* CookieManager::GetCookieStore() {
       user_data_dir = profile;
     }
 
-    FilePath cookie_store_path =
-        user_data_dir.Append(FILE_PATH_LITERAL("Cookies"));
+    FilePath cookie_store_path = user_data_dir.Append(
+        FILE_PATH_LITERAL("Cookies"));
 
     content::CookieStoreConfig cookie_config(
         cookie_store_path, content::CookieStoreConfig::RESTORED_SESSION_COOKIES,
         nullptr, nullptr);
     cookie_config.client_task_runner = cookie_store_task_runner_;
-    cookie_config.background_task_runner =
-        cookie_store_backend_thread_.task_runner();
+    cookie_config.background_task_runner = cookie_store_backend_thread_
+        .task_runner();
 
     {
       base::AutoLock lock(accept_file_scheme_cookies_lock_);
@@ -281,8 +286,8 @@ net::CookieStore* CookieManager::GetCookieStore() {
       cookie_config.cookieable_schemes.insert(
           cookie_config.cookieable_schemes.begin(),
           net::CookieMonster::kDefaultCookieableSchemes,
-          net::CookieMonster::kDefaultCookieableSchemes +
-              net::CookieMonster::kDefaultCookieableSchemesCount);
+          net::CookieMonster::kDefaultCookieableSchemes
+              + net::CookieMonster::kDefaultCookieableSchemesCount);
       if (accept_file_scheme_cookies_)
         cookie_config.cookieable_schemes.push_back(url::kFileScheme);
       cookie_store_created_ = true;
@@ -304,16 +309,15 @@ bool CookieManager::AcceptCookie() {
 
 void CookieManager::SetCookie(const GURL& host,
                               const std::string& cookie_value) {
-  ExecCookieTask(base::Bind(&CookieManager::SetCookieAsyncHelper,
-                            base::Unretained(this),
-                            host,
-                            cookie_value), false);
+  ExecCookieTask(
+      base::Bind(&CookieManager::SetCookieAsyncHelper, base::Unretained(this),
+                 host, cookie_value),
+      false);
 }
 
-void CookieManager::SetCookieAsyncHelper(
-    const GURL& host,
-    const std::string& value,
-    base::WaitableEvent* completion) {
+void CookieManager::SetCookieAsyncHelper(const GURL& host,
+                                         const std::string& value,
+                                         base::WaitableEvent* completion) {
   DCHECK(!completion);
   net::CookieOptions options;
   options.set_include_httponly();
@@ -324,24 +328,23 @@ void CookieManager::SetCookieAsyncHelper(
 }
 
 void CookieManager::SetCookieCompleted(bool success) {
-  // The CookieManager API does not return a value for SetCookie,
-  // so we don't need to propagate the |success| value back to the caller.
+// The CookieManager API does not return a value for SetCookie,
+// so we don't need to propagate the |success| value back to the caller.
 }
 
 std::string CookieManager::GetCookie(const GURL& host) {
   std::string cookie_value;
-  ExecCookieTask(base::Bind(&CookieManager::GetCookieValueAsyncHelper,
-                            base::Unretained(this),
-                            host,
-                            &cookie_value), true);
+  ExecCookieTask(
+      base::Bind(&CookieManager::GetCookieValueAsyncHelper,
+                 base::Unretained(this), host, &cookie_value),
+      true);
 
   return cookie_value;
 }
 
-void CookieManager::GetCookieValueAsyncHelper(
-    const GURL& host,
-    std::string* result,
-    base::WaitableEvent* completion) {
+void CookieManager::GetCookieValueAsyncHelper(const GURL& host,
+                                              std::string* result,
+                                              base::WaitableEvent* completion) {
   net::CookieOptions options;
   options.set_include_httponly();
 
@@ -349,9 +352,7 @@ void CookieManager::GetCookieValueAsyncHelper(
       host,
       options,
       base::Bind(&CookieManager::GetCookieValueCompleted,
-                 base::Unretained(this),
-                 completion,
-                 result));
+                 base::Unretained(this), completion, result));
 }
 
 void CookieManager::GetCookieValueCompleted(base::WaitableEvent* completion,
@@ -363,8 +364,10 @@ void CookieManager::GetCookieValueCompleted(base::WaitableEvent* completion,
 }
 
 void CookieManager::RemoveSessionCookie() {
-  ExecCookieTask(base::Bind(&CookieManager::RemoveSessionCookieAsyncHelper,
-                            base::Unretained(this)), false);
+  ExecCookieTask(
+      base::Bind(&CookieManager::RemoveSessionCookieAsyncHelper,
+                 base::Unretained(this)),
+      false);
 }
 
 void CookieManager::RemoveSessionCookieAsyncHelper(
@@ -376,14 +379,16 @@ void CookieManager::RemoveSessionCookieAsyncHelper(
 }
 
 void CookieManager::RemoveCookiesCompleted(int num_deleted) {
-  // The CookieManager API does not return a value for removeSessionCookie or
-  // removeAllCookie, so we don't need to propagate the |num_deleted| value
-  // back to the caller.
+// The CookieManager API does not return a value for removeSessionCookie or
+// removeAllCookie, so we don't need to propagate the |num_deleted| value
+// back to the caller.
 }
 
 void CookieManager::RemoveAllCookie() {
-  ExecCookieTask(base::Bind(&CookieManager::RemoveAllCookieAsyncHelper,
-                            base::Unretained(this)), false);
+  ExecCookieTask(
+      base::Bind(&CookieManager::RemoveAllCookieAsyncHelper,
+                 base::Unretained(this)),
+      false);
 }
 
 // TODO(kristianm): Pass a null callback so it will not be invoked
@@ -397,7 +402,7 @@ void CookieManager::RemoveAllCookieAsyncHelper(
 }
 
 void CookieManager::RemoveExpiredCookie() {
-  // HasCookies will call GetAllCookiesAsync, which in turn will force a GC.
+// HasCookies will call GetAllCookiesAsync, which in turn will force a GC.
   HasCookies();
 }
 
@@ -408,27 +413,200 @@ void CookieManager::FlushCookieStoreAsyncHelper(
 }
 
 void CookieManager::FlushCookieStore() {
-  ExecCookieTask(base::Bind(&CookieManager::FlushCookieStoreAsyncHelper,
-                            base::Unretained(this)), false);
+  ExecCookieTask(
+      base::Bind(&CookieManager::FlushCookieStoreAsyncHelper,
+                 base::Unretained(this)),
+      false);
+}
+
+/**
+ *
+ */
+static ScopedJavaLocalRef<jbyteArray> SaveCookies(
+    JNIEnv* env, const JavaParamRef<jobject>& jcaller) {
+
+  base::Pickle pickle;
+
+  CookieManager::GetInstance()->SaveCookies(&pickle);
+
+  return base::android::ToJavaByteArray(
+      env, reinterpret_cast<const uint8_t*>(pickle.data()), pickle.size());
+}
+
+/**
+ *
+ */
+static jboolean RestoreCookies(JNIEnv* env,
+                               const JavaParamRef<jobject>& jcaller,
+                               const JavaParamRef<jbyteArray>& data) {
+
+  jbyte* _bytes = nullptr;
+
+  if (data.obj() != nullptr) {
+    jsize len = env->GetArrayLength(data.obj());  // array length
+
+    if (len > 0) {
+      _bytes = env->GetByteArrayElements(data.obj(), nullptr);
+
+      base::Pickle pickle(reinterpret_cast<const char*>(_bytes), len);
+
+      CookieManager::GetInstance()->RestoreCookies(&pickle);
+
+      env->ReleaseByteArrayElements(data.obj(), _bytes, JNI_ABORT);
+
+      return true;
+    }  // len zero
+  }  // data null
+
+  return false;
+}
+
+/**
+ * Save cookies in pickle
+ */
+void CookieManager::SaveCookies(base::Pickle *dstPickle) {
+  FlushCookieStore();
+
+  ExecCookieTask(
+      base::Bind(&CookieManager::SaveCookiesAsyncHelper, base::Unretained(this),
+                 dstPickle),
+      true);
+
+}
+
+void CookieManager::SaveCookiesAsyncHelper(base::Pickle *dstPickle,
+                                           base::WaitableEvent* completion) {
+  GetCookieStore()->GetAllCookiesAsync(
+      base::Bind(&CookieManager::SaveCookiesCompleted, base::Unretained(this),
+                 dstPickle, completion));
+}
+
+void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
+                                         base::WaitableEvent* completion,
+                                         const net::CookieList& cookies) {
+  DCHECK(pickle != nullptr);
+
+// write list to pickle
+  pickle->WriteInt(cookies.size());
+
+  for (net::CookieList::const_iterator it = cookies.begin();
+      it != cookies.end(); ++it) {
+    const net::CanonicalCookie& cc = *it;
+
+    pickle->WriteString(cc.Source().spec());
+    pickle->WriteString(cc.Name());
+    pickle->WriteString(cc.Value());
+    pickle->WriteString(cc.Domain());
+    pickle->WriteString(cc.Path());
+    pickle->WriteInt64(cc.CreationDate().ToInternalValue());
+    pickle->WriteInt64(cc.ExpiryDate().ToInternalValue());
+    pickle->WriteInt64(cc.LastAccessDate().ToInternalValue());
+    pickle->WriteBool(cc.IsSecure());
+    pickle->WriteBool(cc.IsHttpOnly());
+    pickle->WriteInt(static_cast<int>(cc.SameSite()));
+    pickle->WriteInt(cc.Priority());
+  }
+
+// the end
+  completion->Signal();
+}
+
+/**
+ * Save cookies in pickle
+ */
+void CookieManager::RestoreCookies(base::Pickle *pickle) {
+  RemoveAllCookie();
+
+  ExecCookieTask(
+      base::Bind(&CookieManager::RestoreCookiesAsyncHelper,
+                 base::Unretained(this), pickle),
+      true);
+
+}
+
+void CookieManager::RestoreCookiesAsyncHelper(base::Pickle *pickle,
+                                              base::WaitableEvent* completion) {
+
+  net::CookieStore* cs = GetCookieStore();
+  base::PickleIterator it(*pickle);
+
+  base::WaitableEvent waitSetCookie(
+      base::WaitableEvent::ResetPolicy::AUTOMATIC,
+      base::WaitableEvent::InitialState::NOT_SIGNALED);
+  bool wasCookieSet;
+
+  net::CookieStore::SetCookiesCallback callback = base::Bind(
+      &CookieManager::RestoreCookieCallback, base::Unretained(this),
+      &waitSetCookie, &wasCookieSet);
+
+  int cnt;  // cookie count
+
+  if (it.ReadInt(&cnt) && cnt > 0) {
+
+    for (int i = 0; i < cnt; ++i) {
+      std::string name, value, domain, path, spec;
+      int64_t c_time, e_time, l_time;
+      bool secure, http_only;
+      int same_site, prio;
+// url     std::string key(cookie_util::GetEffectiveDomain(url.scheme(), url.host()));
+
+      if (it.ReadString(&spec) && it.ReadString(&name) && it.ReadString(&value)
+          && it.ReadString(&domain) && it.ReadString(&path)
+          && it.ReadInt64(&c_time) && it.ReadInt64(&e_time)
+          && it.ReadInt64(&l_time) && it.ReadBool(&secure)
+          && it.ReadBool(&http_only) && it.ReadInt(&same_site)
+          && it.ReadInt(&prio)) {
+
+        // TODO READ url!!!
+        waitSetCookie.Reset();
+        cs->SetCookieWithDetailsAsync(
+            GURL(spec), name, value, domain, path,
+            base::Time::FromInternalValue(c_time),
+            base::Time::FromInternalValue(e_time),
+            base::Time::FromInternalValue(l_time), secure, http_only,
+            static_cast<net::CookieSameSite>(same_site), false,
+            static_cast<net::CookiePriority>(prio), callback);
+        waitSetCookie.Wait();
+        if (!wasCookieSet) {
+          LOG(WARNING) << "Cookie restore failed: |" << name << "|" << domain;
+          break;  // error restoring cookie
+        }
+
+      } else {
+        LOG(WARNING) << "Pickle error: |" << name << "|" << domain;
+        break;  // if NOT all read
+      }
+    }  // for
+  } else {
+    LOG(WARNING) << "Error cookie count " << cnt;
+  }
+
+  completion->Signal();
+}
+
+void CookieManager::RestoreCookieCallback(base::WaitableEvent* waitSetCookie,
+                                          bool* isSuccess, bool success) {
+
+  *isSuccess = success;
+  waitSetCookie->Signal();
 }
 
 bool CookieManager::HasCookies() {
   bool has_cookies;
-  ExecCookieTask(base::Bind(&CookieManager::HasCookiesAsyncHelper,
-                            base::Unretained(this),
-                            &has_cookies), true);
+  ExecCookieTask(
+      base::Bind(&CookieManager::HasCookiesAsyncHelper, base::Unretained(this),
+                 &has_cookies),
+      true);
   return has_cookies;
 }
 
 // TODO(kristianm): Simplify this, copying the entire list around
 // should not be needed.
 void CookieManager::HasCookiesAsyncHelper(bool* result,
-                                  base::WaitableEvent* completion) {
+                                          base::WaitableEvent* completion) {
   GetCookieStore()->GetAllCookiesAsync(
-      base::Bind(&CookieManager::HasCookiesCompleted,
-                 base::Unretained(this),
-                 completion,
-                 result));
+      base::Bind(&CookieManager::HasCookiesCompleted, base::Unretained(this),
+                 completion, result));
 }
 
 void CookieManager::HasCookiesCompleted(base::WaitableEvent* completion,
@@ -445,15 +623,14 @@ bool CookieManager::AllowFileSchemeCookies() {
 }
 
 void CookieManager::SetAcceptFileSchemeCookies(bool accept) {
-    base::AutoLock lock(accept_file_scheme_cookies_lock_);
-    // Can only modify this before the cookie store is created.
-    if (!cookie_store_created_) {
-      accept_file_scheme_cookies_ = accept;
-    }
+  base::AutoLock lock(accept_file_scheme_cookies_lock_);
+// Can only modify this before the cookie store is created.
+  if (!cookie_store_created_) {
+    accept_file_scheme_cookies_ = accept;
+  }
 }
 
-static void SetAcceptCookie(JNIEnv* env,
-                            const JavaParamRef<jobject>& obj,
+static void SetAcceptCookie(JNIEnv* env, const JavaParamRef<jobject>& obj,
                             jboolean accept) {
   CookieManager::GetInstance()->SetAcceptCookie(accept);
 }
@@ -462,8 +639,7 @@ static jboolean AcceptCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   return CookieManager::GetInstance()->AcceptCookie();
 }
 
-static void SetCookie(JNIEnv* env,
-                      const JavaParamRef<jobject>& obj,
+static void SetCookie(JNIEnv* env, const JavaParamRef<jobject>& obj,
                       const JavaParamRef<jstring>& url,
                       const JavaParamRef<jstring>& value) {
   GURL host(ConvertJavaStringToUTF16(env, url));
@@ -472,10 +648,9 @@ static void SetCookie(JNIEnv* env,
   CookieManager::GetInstance()->SetCookie(host, cookie_value);
 }
 
-static ScopedJavaLocalRef<jstring>
-GetCookie(JNIEnv* env,
-          const JavaParamRef<jobject>& obj,
-          const JavaParamRef<jstring>& url) {
+static ScopedJavaLocalRef<jstring> GetCookie(JNIEnv* env,
+                                             const JavaParamRef<jobject>& obj,
+                                             const JavaParamRef<jstring>& url) {
   GURL host(ConvertJavaStringToUTF16(env, url));
 
   return base::android::ConvertUTF8ToJavaString(
