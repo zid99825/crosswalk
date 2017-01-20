@@ -24,27 +24,13 @@ public class XWalkCookieManagerInternal {
   private static final String TAG = "XWalkCookieManager";
 
   @XWalkAPI
-  public static final String COOKIE_BUNDLE_KEY = "XWalkCookies";
-
-  @XWalkAPI
-  public void saveCookies(Bundle dstBundle) {
-    if (dstBundle == null)
-      return;
-
-    byte[] state = nativeSaveCookies();
-    if (state == null)
-      return;
-
-    dstBundle.putByteArray(COOKIE_BUNDLE_KEY, state);
+  public byte[] saveCookies() {
+    return nativeSaveCookies();
   }
 
   @XWalkAPI
-  public boolean restoreCookies(Bundle srcBundle) {
-    if (srcBundle == null) {
-      return false;
-    }
-
-    return nativeRestoreCookies(srcBundle.getByteArray(COOKIE_BUNDLE_KEY));
+  public boolean restoreCookies(byte[] cookies) {
+    return nativeRestoreCookies(cookies);
   }
 
   /**
