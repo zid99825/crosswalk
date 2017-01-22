@@ -119,6 +119,31 @@ void GetUserDataDir(FilePath* user_data_dir) {
   }
 }
 
+class CookieByteArray {
+ public:
+  CookieByteArray(const char* buffer, int len) {
+    _data = new char[len];
+    memcpy(_data, buffer, len);
+    _len = len;
+  }
+
+  ~CookieByteArray() {
+    delete[] _data;
+    LOG(INFO) << "delete Cookie byte array " << _len;
+  }
+
+  const char * data() {
+    return _data;
+  }
+  int len() {
+    return _len;
+  }
+
+ private:
+  char * _data;
+  int _len;
+};
+
 // CookieManager creates and owns XWalkView's CookieStore, in addition to
 // handling calls into the CookieStore from Java.
 //
@@ -143,11 +168,10 @@ class CookieManager {
                             base::WaitableEvent* completion,
                             const net::CookieList& cookies);
 
-  void RestoreCookies(base::Pickle *pickel);
-  void RestoreCookiesAsyncHelper(base::Pickle *pickel,
+  void RestoreCookies(CookieByteArray * cb);
+  void RestoreCookiesAsyncHelper(CookieByteArray * cb,
                                  base::WaitableEvent* completion);
-  void RestoreCookieCallback(base::WaitableEvent* completion, bool* isSuccess,
-                             bool success);
+  void RestoreCookieCallback(bool success);
 
   void SetAcceptCookie(bool accept);
   bool AcceptCookie();
@@ -448,15 +472,16 @@ static jboolean RestoreCookies(JNIEnv* env,
     if (len > 0) {
       _bytes = env->GetByteArrayElements(data.obj(), nullptr);
 
-      base::Pickle pickle(reinterpret_cast<const char*>(_bytes), len);
+      CookieByteArray *cb = new CookieByteArray(
+          reinterpret_cast<const char*>(_bytes), len);
 
-      CookieManager::GetInstance()->RestoreCookies(&pickle);
+      CookieManager::GetInstance()->RestoreCookies(cb);
 
       env->ReleaseByteArrayElements(data.obj(), _bytes, JNI_ABORT);
 
       return true;
-    } // len zero
-  } // data null
+    }  // len zero
+  }  // data null
 
   CookieManager::GetInstance()->RemoveAllCookie();
   return false;
@@ -515,30 +540,32 @@ void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
 /**
  * Save cookies in pickle
  */
-void CookieManager::RestoreCookies(base::Pickle *pickle) {
+void CookieManager::RestoreCookies(CookieByteArray * cb) {
+  int len = cb->len();
+
+  LOG(INFO) << "RestoreCookies " << len;
+
   RemoveAllCookie();
+
 
   ExecCookieTask(
       base::Bind(&CookieManager::RestoreCookiesAsyncHelper,
-                 base::Unretained(this), pickle),
-      true);
+                 base::Unretained(this), base::Owned(cb)),
+      false);
 
+  LOG(INFO) << "RestoreCookies return " << len;
 }
 
-void CookieManager::RestoreCookiesAsyncHelper(base::Pickle *pickle,
+void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
                                               base::WaitableEvent* completion) {
 
   net::CookieStore* cs = GetCookieStore();
-  base::PickleIterator it(*pickle);
 
-  base::WaitableEvent waitSetCookie(
-      base::WaitableEvent::ResetPolicy::AUTOMATIC,
-      base::WaitableEvent::InitialState::NOT_SIGNALED);
-  bool wasCookieSet;
+  base::Pickle pickle(cb->data(), cb->len());
+  base::PickleIterator it(pickle);
 
   net::CookieStore::SetCookiesCallback callback = base::Bind(
-      &CookieManager::RestoreCookieCallback, base::Unretained(this),
-      &waitSetCookie, &wasCookieSet);
+      &CookieManager::RestoreCookieCallback, base::Unretained(this));
 
   int cnt;  // cookie count
 
@@ -559,7 +586,6 @@ void CookieManager::RestoreCookiesAsyncHelper(base::Pickle *pickle,
           && it.ReadInt(&prio)) {
 
         // TODO READ url!!!
-        waitSetCookie.Reset();
         cs->SetCookieWithDetailsAsync(
             GURL(spec), name, value, domain, path,
             base::Time::FromInternalValue(c_time),
@@ -567,11 +593,8 @@ void CookieManager::RestoreCookiesAsyncHelper(base::Pickle *pickle,
             base::Time::FromInternalValue(l_time), secure, http_only,
             static_cast<net::CookieSameSite>(same_site), false,
             static_cast<net::CookiePriority>(prio), callback);
-        waitSetCookie.Wait();
-        if (!wasCookieSet) {
-          LOG(WARNING) << "Cookie restore failed: |" << name << "|" << domain;
-          break;  // error restoring cookie
-        }
+
+        LOG(INFO) << "Cookie restored |" << name << "|" << domain;
 
       } else {
         LOG(WARNING) << "Pickle error: |" << name << "|" << domain;
@@ -581,15 +604,9 @@ void CookieManager::RestoreCookiesAsyncHelper(base::Pickle *pickle,
   } else {
     LOG(WARNING) << "Error cookie count " << cnt;
   }
-
-  completion->Signal();
 }
 
-void CookieManager::RestoreCookieCallback(base::WaitableEvent* waitSetCookie,
-                                          bool* isSuccess, bool success) {
-
-  *isSuccess = success;
-  waitSetCookie->Signal();
+void CookieManager::RestoreCookieCallback(bool success) {
 }
 
 bool CookieManager::HasCookies() {
