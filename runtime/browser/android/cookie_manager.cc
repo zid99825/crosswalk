@@ -493,6 +493,7 @@ static jboolean RestoreCookies(JNIEnv* env,
  * Save cookies in pickle
  */
 void CookieManager::SaveCookies(base::Pickle *dstPickle) {
+  LOG(INFO) << "SaveCookies";
   FlushCookieStore();
 
   ExecCookieTask(
@@ -500,6 +501,7 @@ void CookieManager::SaveCookies(base::Pickle *dstPickle) {
                  dstPickle),
       true);
 
+  LOG(INFO) << "SaveCookies return";
 }
 
 void CookieManager::SaveCookiesAsyncHelper(base::Pickle *dstPickle,
