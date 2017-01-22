@@ -123,8 +123,10 @@ class CookieByteArray {
  public:
   CookieByteArray(const char* buffer, int len) {
     _data = new char[len];
-    memcpy(_data, buffer, len);
-    _len = len;
+    if (_data != nullptr) {
+      memcpy(_data, buffer, len);
+      _len = len;
+    }
   }
 
   ~CookieByteArray() {
@@ -541,12 +543,15 @@ void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
  * Save cookies in pickle
  */
 void CookieManager::RestoreCookies(CookieByteArray * cb) {
-  int len = cb->len();
+  int len;
+
+  if ( cb != nullptr ){
+    len = cb->len();
+  }
 
   LOG(INFO) << "RestoreCookies " << len;
 
   RemoveAllCookie();
-
 
   ExecCookieTask(
       base::Bind(&CookieManager::RestoreCookiesAsyncHelper,
@@ -559,50 +564,54 @@ void CookieManager::RestoreCookies(CookieByteArray * cb) {
 void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
                                               base::WaitableEvent* completion) {
 
-  net::CookieStore* cs = GetCookieStore();
+  if ( cb != nullptr || cb->data() != nullptr ) {
+    net::CookieStore* cs = GetCookieStore();
 
-  base::Pickle pickle(cb->data(), cb->len());
-  base::PickleIterator it(pickle);
+    base::Pickle pickle(cb->data(), cb->len());
+    base::PickleIterator it(pickle);
 
-  net::CookieStore::SetCookiesCallback callback = base::Bind(
-      &CookieManager::RestoreCookieCallback, base::Unretained(this));
+    net::CookieStore::SetCookiesCallback callback = base::Bind(
+        &CookieManager::RestoreCookieCallback, base::Unretained(this));
 
-  int cnt;  // cookie count
+    int cnt;  // cookie count
 
-  if (it.ReadInt(&cnt) && cnt > 0) {
+    if (it.ReadInt(&cnt) && cnt > 0) {
 
-    for (int i = 0; i < cnt; ++i) {
-      std::string name, value, domain, path, spec;
-      int64_t c_time, e_time, l_time;
-      bool secure, http_only;
-      int same_site, prio;
-// url     std::string key(cookie_util::GetEffectiveDomain(url.scheme(), url.host()));
+      for (int i = 0; i < cnt; ++i) {
+        std::string name, value, domain, path, spec;
+        int64_t c_time, e_time, l_time;
+        bool secure, http_only;
+        int same_site, prio;
+  // url     std::string key(cookie_util::GetEffectiveDomain(url.scheme(), url.host()));
 
-      if (it.ReadString(&spec) && it.ReadString(&name) && it.ReadString(&value)
-          && it.ReadString(&domain) && it.ReadString(&path)
-          && it.ReadInt64(&c_time) && it.ReadInt64(&e_time)
-          && it.ReadInt64(&l_time) && it.ReadBool(&secure)
-          && it.ReadBool(&http_only) && it.ReadInt(&same_site)
-          && it.ReadInt(&prio)) {
+        if (it.ReadString(&spec) && it.ReadString(&name) && it.ReadString(&value)
+            && it.ReadString(&domain) && it.ReadString(&path)
+            && it.ReadInt64(&c_time) && it.ReadInt64(&e_time)
+            && it.ReadInt64(&l_time) && it.ReadBool(&secure)
+            && it.ReadBool(&http_only) && it.ReadInt(&same_site)
+            && it.ReadInt(&prio)) {
 
-        // TODO READ url!!!
-        cs->SetCookieWithDetailsAsync(
-            GURL(spec), name, value, domain, path,
-            base::Time::FromInternalValue(c_time),
-            base::Time::FromInternalValue(e_time),
-            base::Time::FromInternalValue(l_time), secure, http_only,
-            static_cast<net::CookieSameSite>(same_site), false,
-            static_cast<net::CookiePriority>(prio), callback);
+          // TODO READ url!!!
+          cs->SetCookieWithDetailsAsync(
+              GURL(spec), name, value, domain, path,
+              base::Time::FromInternalValue(c_time),
+              base::Time::FromInternalValue(e_time),
+              base::Time::FromInternalValue(l_time), secure, http_only,
+              static_cast<net::CookieSameSite>(same_site), false,
+              static_cast<net::CookiePriority>(prio), callback);
 
-        LOG(INFO) << "Cookie restored |" << name << "|" << domain;
+          LOG(INFO) << "Cookie restored |" << name << "|" << domain;
 
-      } else {
-        LOG(WARNING) << "Pickle error: |" << name << "|" << domain;
-        break;  // if NOT all read
-      }
-    }  // for
-  } else {
-    LOG(WARNING) << "Error cookie count " << cnt;
+        } else {
+          LOG(WARNING) << "Pickle error: |" << name << "|" << domain;
+          break;  // if NOT all read
+        }
+      }  // for
+    } else {
+      LOG(WARNING) << "Error cookie count " << cnt;
+    }
+  } else { // cb data null
+    LOG(WARNING) << "Restore cookie not enough memory!";
   }
 }
 
