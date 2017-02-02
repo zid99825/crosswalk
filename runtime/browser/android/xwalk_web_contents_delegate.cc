@@ -18,6 +18,7 @@
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/web_contents.h"
+#include "chrome/browser/media/media_capture_devices_dispatcher.h"
 #include "content/public/common/file_chooser_file_info.h"
 #include "content/public/common/file_chooser_params.h"
 #include "jni/XWalkWebContentsDelegate_jni.h"
@@ -34,9 +35,7 @@ using content::WebContents;
 
 namespace xwalk {
 
-XWalkWebContentsDelegate::XWalkWebContentsDelegate(
-    JNIEnv* env,
-    jobject obj)
+XWalkWebContentsDelegate::XWalkWebContentsDelegate(JNIEnv* env, jobject obj)
     : WebContentsDelegateAndroid(env, obj) {
 }
 
@@ -44,12 +43,9 @@ XWalkWebContentsDelegate::~XWalkWebContentsDelegate() {
 }
 
 void XWalkWebContentsDelegate::AddNewContents(
-    content::WebContents* source,
-    content::WebContents* new_contents,
-    WindowOpenDisposition disposition,
-    const gfx::Rect& initial_pos,
-    bool user_gesture,
-    bool* was_blocked) {
+    content::WebContents* source, content::WebContents* new_contents,
+    WindowOpenDisposition disposition, const gfx::Rect& initial_pos,
+    bool user_gesture, bool* was_blocked) {
   JNIEnv* env = AttachCurrentThread();
 
   bool is_dialog = disposition == NEW_POPUP;
@@ -57,8 +53,8 @@ void XWalkWebContentsDelegate::AddNewContents(
   bool create_popup = false;
 
   if (java_delegate.obj()) {
-    create_popup = Java_XWalkWebContentsDelegate_addNewContents(env,
-        java_delegate.obj(), is_dialog, user_gesture);
+    create_popup = Java_XWalkWebContentsDelegate_addNewContents(
+        env, java_delegate.obj(), is_dialog, user_gesture);
   }
 
   if (create_popup) {
@@ -93,14 +89,14 @@ void XWalkWebContentsDelegate::ActivateContents(content::WebContents* source) {
 }
 
 void XWalkWebContentsDelegate::UpdatePreferredSize(
-    content::WebContents* contents,
-    const gfx::Size& pref_size) {
+    content::WebContents* contents, const gfx::Size& pref_size) {
   JNIEnv* env = AttachCurrentThread();
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
   if (java_delegate.obj()) {
     Java_XWalkWebContentsDelegate_updatePreferredSize(env, java_delegate.obj(),
-        pref_size.width(), pref_size.height());
+                                                      pref_size.width(),
+                                                      pref_size.height());
   }
 }
 
@@ -116,19 +112,19 @@ void XWalkWebContentsDelegate::RunFileChooser(
   if (params.mode == FileChooserParams::Save) {
     // Save not supported, so cancel it.
     render_frame_host->FilesSelectedInChooser(
-         std::vector<content::FileChooserFileInfo>(),
-         params.mode);
+        std::vector<content::FileChooserFileInfo>(), params.mode);
     return;
   }
   int mode = static_cast<int>(params.mode);
-  Java_XWalkWebContentsDelegate_shouldOverrideRunFileChooser(env,
+  Java_XWalkWebContentsDelegate_shouldOverrideRunFileChooser(
+      env,
       java_delegate.obj(),
       render_frame_host->GetProcess()->GetID(),
       render_frame_host->GetRoutingID(),
       mode,
-      ConvertUTF16ToJavaString(env,
-          base::JoinString(params.accept_types,
-                           base::ASCIIToUTF16(","))).obj(),
+      ConvertUTF16ToJavaString(
+          env, base::JoinString(params.accept_types, base::ASCIIToUTF16(",")))
+          .obj(),
       params.capture);
 }
 
@@ -140,13 +136,44 @@ XWalkWebContentsDelegate::GetJavaScriptDialogManager(WebContents* source) {
   return javascript_dialog_manager_.get();
 }
 
+bool XWalkWebContentsDelegate::CheckMediaAccessPermission(
+    content::WebContents* web_contents, const GURL& security_origin,
+    content::MediaStreamType type) {
+  LOG(INFO) << "XWalkWebContentsDelegate::CheckMediaAccessPermission";
+
+  return false;
+//  return MediaCaptureDevicesDispatcher::GetInstance()
+//      ->CheckMediaAccessPermission(web_contents, security_origin, type);
+}
+
 void XWalkWebContentsDelegate::RequestMediaAccessPermission(
     content::WebContents* web_contents,
     const content::MediaStreamRequest& request,
     const content::MediaResponseCallback& callback) {
+
+  LOG(INFO) << "XWalkWebContentsDelegate::RequestMediaAccessPermission";
+
   XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(
       web_contents, request, callback);
 }
+/*
+ *
+ void TabWebContentsDelegateAndroid::RequestMediaAccessPermission(
+ content::WebContents* web_contents,
+ const content::MediaStreamRequest& request,
+ const content::MediaResponseCallback& callback) {
+ MediaCaptureDevicesDispatcher::GetInstance()->ProcessMediaAccessRequest(
+ web_contents, request, callback, NULL);
+ }
+
+ bool TabWebContentsDelegateAndroid::CheckMediaAccessPermission(
+ content::WebContents* web_contents,
+ const GURL& security_origin,
+ content::MediaStreamType type) {
+ return MediaCaptureDevicesDispatcher::GetInstance()
+ ->CheckMediaAccessPermission(web_contents, security_origin, type);
+ }
+ */
 
 void XWalkWebContentsDelegate::RendererUnresponsive(WebContents* source) {
   JNIEnv* env = AttachCurrentThread();
@@ -165,16 +192,13 @@ void XWalkWebContentsDelegate::RendererResponsive(WebContents* source) {
 }
 
 bool XWalkWebContentsDelegate::AddMessageToConsole(
-    content::WebContents* source,
-    int32_t level,
-    const base::string16& message,
-    int32_t line_no,
-    const base::string16& source_id) {
+    content::WebContents* source, int32_t level, const base::string16& message,
+    int32_t line_no, const base::string16& source_id) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
-    return WebContentsDelegate::AddMessageToConsole(
-        source, level, message, line_no, source_id);
+    return WebContentsDelegate::AddMessageToConsole(source, level, message,
+                                                    line_no, source_id);
   ScopedJavaLocalRef<jstring> jmessage(ConvertUTF16ToJavaString(env, message));
   ScopedJavaLocalRef<jstring> jsource_id(
       ConvertUTF16ToJavaString(env, source_id));
@@ -183,28 +207,25 @@ bool XWalkWebContentsDelegate::AddMessageToConsole(
   switch (level) {
     case logging::LOG_VERBOSE:
       jlevel =
-        web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_DEBUG;
+          web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_DEBUG;
       break;
     case logging::LOG_INFO:
       jlevel =
-        web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_LOG;
+          web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_LOG;
       break;
     case logging::LOG_WARNING:
       jlevel =
-        web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_WARNING;
+          web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_WARNING;
       break;
     case logging::LOG_ERROR:
       jlevel =
-        web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_ERROR;
+          web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_ERROR;
       break;
     default:
       NOTREACHED();
   }
-  return Java_XWalkWebContentsDelegate_addMessageToConsole(env,
-      GetJavaDelegate(env).obj(),
-      jlevel,
-      jmessage.obj(),
-      line_no,
+  return Java_XWalkWebContentsDelegate_addMessageToConsole(
+      env, GetJavaDelegate(env).obj(), jlevel, jmessage.obj(), line_no,
       jsource_id.obj());
 }
 
@@ -231,14 +252,12 @@ void XWalkWebContentsDelegate::ShowRepostFormWarningDialog(
 }
 
 void XWalkWebContentsDelegate::EnterFullscreenModeForTab(
-    content::WebContents* web_contents,
-    const GURL&) {
+    content::WebContents* web_contents, const GURL&) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_toggleFullscreen(
-      env, obj.obj(), true);
+  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj.obj(), true);
 }
 
 void XWalkWebContentsDelegate::ExitFullscreenModeForTab(
@@ -247,8 +266,7 @@ void XWalkWebContentsDelegate::ExitFullscreenModeForTab(
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_toggleFullscreen(
-      env, obj.obj(), false);
+  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj.obj(), false);
 }
 
 bool XWalkWebContentsDelegate::IsFullscreenForTabOrPending(
@@ -261,28 +279,23 @@ bool XWalkWebContentsDelegate::IsFullscreenForTabOrPending(
 }
 
 bool XWalkWebContentsDelegate::ShouldCreateWebContents(
-    content::WebContents* web_contents,
-    int32_t route_id,
-    int32_t main_frame_route_id,
-    int32_t main_frame_widget_route_id,
-    WindowContainerType window_container_type,
-    const std::string& frame_name,
-    const GURL& target_url,
-    const std::string& partition_id,
+    content::WebContents* web_contents, int32_t route_id,
+    int32_t main_frame_route_id, int32_t main_frame_widget_route_id,
+    WindowContainerType window_container_type, const std::string& frame_name,
+    const GURL& target_url, const std::string& partition_id,
     content::SessionStorageNamespace* session_storage_namespace) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return true;
-  ScopedJavaLocalRef<jstring> java_url =
-      ConvertUTF8ToJavaString(env, target_url.spec());
+  ScopedJavaLocalRef<jstring> java_url = ConvertUTF8ToJavaString(
+      env, target_url.spec());
   return Java_XWalkWebContentsDelegate_shouldCreateWebContents(env, obj.obj(),
-      java_url.obj());
+                                                               java_url.obj());
 }
 
 void XWalkWebContentsDelegate::FindReply(WebContents* web_contents,
-                                         int request_id,
-                                         int number_of_matches,
+                                         int request_id, int number_of_matches,
                                          const gfx::Rect& selection_rect,
                                          int active_match_ordinal,
                                          bool final_update) {
@@ -290,8 +303,7 @@ void XWalkWebContentsDelegate::FindReply(WebContents* web_contents,
   if (!xwalk_content)
     return;
 
-  xwalk_content->GetFindHelper()->HandleFindReply(request_id,
-                                                  number_of_matches,
+  xwalk_content->GetFindHelper()->HandleFindReply(request_id, number_of_matches,
                                                   active_match_ordinal,
                                                   final_update);
 }

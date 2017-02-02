@@ -353,6 +353,8 @@ void Runtime::RequestMediaAccessPermission(
     content::WebContents* web_contents,
     const content::MediaStreamRequest& request,
     const content::MediaResponseCallback& callback) {
+  LOG(INFO) << "xRuntime::RequestMediaAccessPermission";
+
   XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(
       web_contents, request, callback);
 }
@@ -361,6 +363,8 @@ bool Runtime::CheckMediaAccessPermission(
     content::WebContents* web_contents,
     const GURL& security_origin,
     content::MediaStreamType type) {
+  LOG(INFO) << "xRuntime::CheckMediaAccessPermission ";
+
   // Requested by Pepper Flash plugin and mediaDevices.enumerateDevices().
 #if defined (OS_ANDROID)
   return false;

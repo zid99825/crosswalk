@@ -136,12 +136,11 @@ class HostResolverTenta::SavedRequest {
  */
 HostResolverTenta::HostResolverTenta(
     std::unique_ptr<HostResolver> backup_resolver)
-    : weak_ptr_factory_(this)
+    : weak_ptr_factory_(this),
+      _use_backup(false)
 //    : backup_resolver_(backup_resolver)
 {
   // TODO Auto-generated constructor stub
-
-  LOG(INFO) << "HostResolverTenta::Construct begin";
 
   backup_resolver_ = std::move(backup_resolver);
   task_runner_ = base::WorkerPool::GetTaskRunner(true /* task_is_slow */);
@@ -160,11 +159,18 @@ HostResolverTenta::HostResolverTenta(
 //  orig_runner_ = base::MessageLoop::current()->task_runner();
   orig_runner_ = base::ThreadTaskRunnerHandle::Get();
 
-  LOG(INFO) << "HostResolverTenta::Construct end";
+  net::NetworkChangeNotifier::AddIPAddressObserver(this);
+  net::NetworkChangeNotifier::AddConnectionTypeObserver(this);
+  net::NetworkChangeNotifier::AddDNSObserver(this);
+
 }
 
 HostResolverTenta::~HostResolverTenta() {
   // if case we have unresolved requests
+  net::NetworkChangeNotifier::RemoveIPAddressObserver(this);
+  net::NetworkChangeNotifier::RemoveConnectionTypeObserver(this);
+  net::NetworkChangeNotifier::RemoveDNSObserver(this);
+
   base::AutoLock lock(reqGuard);
 
   STLDeleteValues(&requests_);
@@ -179,8 +185,15 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
                                RequestHandle* out_req,
                                const BoundNetLog& net_log) {
 
-  LOG(INFO) << "resolv name: " + info.hostname() + " flags: "
+  LOG(INFO)
+               << "resolv name: " + info.hostname() + " using "
+                   + use_backup_str() + " with flags: "
                << info.host_resolver_flags();
+
+  if (_use_backup) {
+    return backup_resolver_->Resolve(info, priority, addresses, callback,
+                                     out_req, net_log);
+  }
 
   // Check that the caller supplied a valid hostname to resolve.
   std::string labeled_hostname;
@@ -210,9 +223,6 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
     *out_req = reinterpret_cast<RequestHandle>(key_id);  // for further interaction with base
 
   return ERR_IO_PENDING;
-
-//  return backup_resolver_->Resolve(info, priority, addresses, callback, out_req,
-//                                   net_log);
 }
 
 /**
@@ -221,8 +231,14 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
 int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
                                         AddressList* addresses,
                                         const BoundNetLog& net_log) {
-  LOG(INFO) << "Resolve from cache: " + info.hostname() + " flags: "
+  LOG(INFO)
+               << "Resolve from cache: " + info.hostname() + " using "
+                   + use_backup_str() + " with flags: "
                << info.host_resolver_flags();
+
+  if (_use_backup) {
+    return backup_resolver_->ResolveFromCache(info, addresses, net_log);
+  }
 
   return ResolveFromCacheWithTask(info, addresses, net_log);
 //  return ResolveFromCacheDirect(info, addresses, net_log);
@@ -414,28 +430,69 @@ void HostResolverTenta::OnError(int64_t key_id, int error) {
  */
 void HostResolverTenta::CancelRequest(RequestHandle req) {
 
-  int64_t key_id = reinterpret_cast<int64_t>(req);
+  if (_use_backup) {
+    backup_resolver_->CancelRequest(req);
+  } else {
 
-  LOG(INFO) << "CancelRequest ID: " << key_id;
+    int64_t key_id = reinterpret_cast<int64_t>(req);
 
-  base::AutoLock lock(reqGuard);
+    LOG(INFO) << "CancelRequest ID: " << key_id;
 
-  auto it = requests_.find(key_id);
+    base::AutoLock lock(reqGuard);
 
-  // cleanup the request if any
-  if (it != requests_.end()) {
-    it->second->Cancel();  // mark as cancelled
+    auto it = requests_.find(key_id);
 
-    if (!it->second->was_sent_to_java()) {  // if not sent to java, it's safe to delete
-      // TODO analyse if delete is safe here!!!
-      delete it->second;
-      requests_.erase(it);
+    // cleanup the request if any
+    if (it != requests_.end()) {
+      it->second->Cancel();  // mark as cancelled
+
+      if (!it->second->was_sent_to_java()) {  // if not sent to java, it's safe to delete
+        // TODO analyse if delete is safe here!!!
+        delete it->second;
+        requests_.erase(it);
+      }
     }
   }
-
-//  return backup_resolver_->CancelRequest(req);
 }
 
+/**
+ * Called by system, when network ip changed
+ */
+void HostResolverTenta::OnIPAddressChanged() {
+  LOG(INFO) << "OnIPAddressChanged";
+  // TODO
+}
+
+void HostResolverTenta::OnConnectionTypeChanged(
+    NetworkChangeNotifier::ConnectionType type) {
+  LOG(INFO) << "OnConnectionTypeChanged"
+               << NetworkChangeNotifier::ConnectionTypeToString(type);
+  // TODO
+}
+
+void HostResolverTenta::OnDNSChanged() {
+  LOG(INFO) << "OnDNSChanged";
+  // TODO
+}
+
+void HostResolverTenta::OnInitialDNSConfigRead() {
+  LOG(INFO) << "OnInitialDNSConfigRead";
+  // TODO
+}
+
+/**
+ * Get use backup as string
+ */
+const char* HostResolverTenta::use_backup_str() {
+  if (_use_backup) {
+    return "native";
+  }
+  return "java";
+}
+
+/**
+ * Register native functions
+ */
 bool RegisterHostResolverTentaNative(JNIEnv* env) {
   return RegisterNativesImpl(env);
 }

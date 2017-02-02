@@ -17,6 +17,7 @@
 #include "base/message_loop/message_loop.h"
 #include "base/synchronization/lock.h"
 #include "net/dns/host_resolver.h"
+#include "net/base/network_change_notifier.h"
 
 using base::android::ScopedJavaLocalRef;
 using base::android::JavaParamRef;
@@ -30,13 +31,24 @@ namespace tenta {
 
 using namespace net;
 
-class HostResolverTenta : public HostResolver {
+class HostResolverTenta : public HostResolver,
+    public net::NetworkChangeNotifier::IPAddressObserver,
+    public net::NetworkChangeNotifier::ConnectionTypeObserver,
+    public net::NetworkChangeNotifier::DNSObserver {
  protected:
   class SavedRequest;
 
  public:
   HostResolverTenta(std::unique_ptr<HostResolver> backup_resolver);
   virtual ~HostResolverTenta();
+
+  // Use backup host resolver
+  void use_backup(bool use) {_use_backup = use; }
+  // return current setting
+  bool is_using_backup() { return _use_backup; }
+
+  // return _use_backup state as string
+  const char* use_backup_str();
 
 // Resolves the given hostname (or IP address literal), filling out the
 // |addresses| object upon success.  The |info.port| parameter will be set as
@@ -108,6 +120,17 @@ class HostResolverTenta : public HostResolver {
  protected:
   AddressList * ConvertIpJava2Native(JNIEnv* env, jobjectArray ipArray);
 
+  // from net::NetworkChangeNotifier::IPAddressObserver:
+  void OnIPAddressChanged() override;
+
+  // from net::NetworkChangeNotifier::ConnectionTypeObserver:
+  void OnConnectionTypeChanged(NetworkChangeNotifier::ConnectionType type)
+      override;
+
+  // from net::NetworkChangeNotifier::DNSObserver:
+  void OnDNSChanged() override;
+  void OnInitialDNSConfigRead() override;
+
  protected:
 
   typedef base::Callback<void(int64_t, int)> OnErrorCallback;
@@ -122,6 +145,7 @@ class HostResolverTenta : public HostResolver {
   typedef std::map<int64_t, SavedRequest *> RequestsMap;
   RequestsMap requests_;
   base::Lock reqGuard;
+  bool _use_backup; // use backup resolver instead of Java
 
   /**
    * Thread to run dns requests
