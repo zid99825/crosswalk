@@ -65,6 +65,9 @@ class XWalkContent : public FindHelper::Listener {
                                                          jobject obj);
   jboolean SetState(JNIEnv* env, jobject obj, jbyteArray state);
 
+  jboolean SaveStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
+  jboolean RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
+
   XWalkRenderViewHostExt* render_view_host_ext() {
     return render_view_host_ext_.get();
   }

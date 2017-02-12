@@ -136,16 +136,6 @@ XWalkWebContentsDelegate::GetJavaScriptDialogManager(WebContents* source) {
   return javascript_dialog_manager_.get();
 }
 
-bool XWalkWebContentsDelegate::CheckMediaAccessPermission(
-    content::WebContents* web_contents, const GURL& security_origin,
-    content::MediaStreamType type) {
-  LOG(INFO) << "XWalkWebContentsDelegate::CheckMediaAccessPermission";
-
-  return false;
-//  return MediaCaptureDevicesDispatcher::GetInstance()
-//      ->CheckMediaAccessPermission(web_contents, security_origin, type);
-}
-
 void XWalkWebContentsDelegate::RequestMediaAccessPermission(
     content::WebContents* web_contents,
     const content::MediaStreamRequest& request,

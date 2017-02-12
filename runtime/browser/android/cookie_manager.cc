@@ -131,7 +131,9 @@ class CookieByteArray {
 
   ~CookieByteArray() {
     delete[] _data;
-    LOG(INFO) << "delete Cookie byte array " << _len;
+    if (TENTA_LOG_ENABLE) {
+      LOG(INFO) << "delete Cookie byte array " << _len;
+    }
   }
 
   const char * data() {
@@ -493,15 +495,18 @@ static jboolean RestoreCookies(JNIEnv* env,
  * Save cookies in pickle
  */
 void CookieManager::SaveCookies(base::Pickle *dstPickle) {
-  LOG(INFO) << "SaveCookies";
+  if (TENTA_LOG_ENABLE) {
+    LOG(INFO) << "SaveCookies";
+  }
   FlushCookieStore();
 
   ExecCookieTask(
       base::Bind(&CookieManager::SaveCookiesAsyncHelper, base::Unretained(this),
                  dstPickle),
       true);
-
-  LOG(INFO) << "SaveCookies return";
+  if (TENTA_LOG_ENABLE) {
+    LOG(INFO) << "SaveCookies return";
+  }
 }
 
 void CookieManager::SaveCookiesAsyncHelper(base::Pickle *dstPickle,
@@ -545,14 +550,15 @@ void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
  * Save cookies in pickle
  */
 void CookieManager::RestoreCookies(CookieByteArray * cb) {
-  int len;
+  if (TENTA_LOG_ENABLE) {
+    int len;
 
-  if ( cb != nullptr ){
-    len = cb->len();
+    if (cb != nullptr) {
+      len = cb->len();
+    }
+
+    LOG(INFO) << "RestoreCookies " << len;
   }
-
-  LOG(INFO) << "RestoreCookies " << len;
-
   RemoveAllCookie();
 
   ExecCookieTask(
@@ -560,13 +566,15 @@ void CookieManager::RestoreCookies(CookieByteArray * cb) {
                  base::Unretained(this), base::Owned(cb)),
       false);
 
-  LOG(INFO) << "RestoreCookies return " << len;
+  if (TENTA_LOG_ENABLE) {
+    LOG(INFO) << "RestoreCookies return ";
+  }
 }
 
 void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
                                               base::WaitableEvent* completion) {
 
-  if ( cb != nullptr || cb->data() != nullptr ) {
+  if (cb != nullptr || cb->data() != nullptr) {
     net::CookieStore* cs = GetCookieStore();
 
     base::Pickle pickle(cb->data(), cb->len());
@@ -584,14 +592,14 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
         int64_t c_time, e_time, l_time;
         bool secure, http_only;
         int same_site, prio;
-  // url     std::string key(cookie_util::GetEffectiveDomain(url.scheme(), url.host()));
+        // url     std::string key(cookie_util::GetEffectiveDomain(url.scheme(), url.host()));
 
-        if (it.ReadString(&spec) && it.ReadString(&name) && it.ReadString(&value)
-            && it.ReadString(&domain) && it.ReadString(&path)
-            && it.ReadInt64(&c_time) && it.ReadInt64(&e_time)
-            && it.ReadInt64(&l_time) && it.ReadBool(&secure)
-            && it.ReadBool(&http_only) && it.ReadInt(&same_site)
-            && it.ReadInt(&prio)) {
+        if (it.ReadString(&spec) && it.ReadString(&name)
+            && it.ReadString(&value) && it.ReadString(&domain)
+            && it.ReadString(&path) && it.ReadInt64(&c_time)
+            && it.ReadInt64(&e_time) && it.ReadInt64(&l_time)
+            && it.ReadBool(&secure) && it.ReadBool(&http_only)
+            && it.ReadInt(&same_site) && it.ReadInt(&prio)) {
 
           // TODO READ url!!!
           cs->SetCookieWithDetailsAsync(
@@ -602,7 +610,9 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
               static_cast<net::CookieSameSite>(same_site), false,
               static_cast<net::CookiePriority>(prio), callback);
 
-          LOG(INFO) << "Cookie restored |" << name << "|" << domain;
+          if (TENTA_LOG_ENABLE) {
+            LOG(INFO) << "Cookie restored |" << name << "|" << domain;
+          }
 
         } else {
           LOG(WARNING) << "Pickle error: |" << name << "|" << domain;
@@ -612,8 +622,14 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
     } else {
       LOG(WARNING) << "Error cookie count " << cnt;
     }
-  } else { // cb data null
+  } else {  // cb data null
     LOG(WARNING) << "Restore cookie not enough memory!";
+  }
+
+  //
+  if ( completion != nullptr)
+  {
+    completion->Signal();
   }
 }
 

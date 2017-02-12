@@ -33,13 +33,6 @@ class XWalkWebContentsDelegate
   content::JavaScriptDialogManager* GetJavaScriptDialogManager(
       content::WebContents* web_contents) override;
 
-  // Checks if we have permission to access the microphone or camera. Note that
-  // this does not query the user. |type| must be MEDIA_DEVICE_AUDIO_CAPTURE
-  // or MEDIA_DEVICE_VIDEO_CAPTURE.
-  bool CheckMediaAccessPermission(content::WebContents* web_contents,
-                                  const GURL& security_origin,
-                                  content::MediaStreamType type) override;
-
   void RequestMediaAccessPermission(
       content::WebContents* web_contents,
       const content::MediaStreamRequest& request,
