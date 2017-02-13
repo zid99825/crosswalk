@@ -5,6 +5,7 @@
 
 package org.xwalk.core.internal;
 
+import android.R.string;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -732,22 +733,21 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     public static final String SAVE_RESTORE_STATE_KEY = "XWALKVIEW_STATE";
 
     /**
-     * Restore history from native db using id and encryption key
-     * 
-     * @param id
-     * @param encKey
+     * @param outState
      * @return
      */
-    public XWalkNavigationHistoryInternal restoreStateWithKey(final String id,
-            final String encKey) {
-        if (mNativeContent == 0)
+    public XWalkNavigationHistoryInternal saveState(Bundle outState) {
+        if (mNativeContent == 0 || outState == null)
             return null;
-        // return result ? getNavigationHistory() : null;
-        if (!nativeRestoreStateWithKey(mNativeContent, id, encKey)) {
-            return null;
-        }
-        mContentsClientBridge.onUpdateTitle(mWebContents.getTitle());
 
+        byte[] state = nativeGetState(mNativeContent);
+        if (state == null)
+            return null;
+
+        // final String key = SAVE_RESTORE_STATE_KEY +
+        // String.valueOf(getRoutingID());
+
+        outState.putByteArray(getSaveRestoreBundleKey(), state);
         return getNavigationHistory();
     }
 
@@ -772,25 +772,6 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     }
 
     /**
-     * @param outState
-     * @return
-     */
-    public XWalkNavigationHistoryInternal saveState(Bundle outState) {
-        if (mNativeContent == 0 || outState == null)
-            return null;
-
-        byte[] state = nativeGetState(mNativeContent);
-        if (state == null)
-            return null;
-
-        // final String key = SAVE_RESTORE_STATE_KEY +
-        // String.valueOf(getRoutingID());
-
-        outState.putByteArray(getSaveRestoreBundleKey(), state);
-        return getNavigationHistory();
-    }
-
-    /**
      * Save current history in native db, using id and encryption key
      * 
      * @param id
@@ -802,6 +783,65 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             return null;
 
         if (!nativeSaveStateWithKey(mNativeContent, id, encKey)) {
+            return null;
+        }
+        return getNavigationHistory();
+    }
+
+    /**
+     * Restore history from native db using id and encryption key
+     * 
+     * @param id
+     * @param encKey
+     * @return
+     */
+    public XWalkNavigationHistoryInternal restoreStateWithKey(final String id,
+            final String encKey) {
+        if (mNativeContent == 0)
+            return null;
+        // return result ? getNavigationHistory() : null;
+        if (!nativeRestoreStateWithKey(mNativeContent, id, encKey)) {
+            return null;
+        }
+        mContentsClientBridge.onUpdateTitle(mWebContents.getTitle());
+
+        return getNavigationHistory();
+    }
+
+    /**
+     * Save old state to new db structure
+     * 
+     * @param state
+     * @param id
+     * @param encKey
+     * @return
+     */
+    public XWalkNavigationHistoryInternal pushStateWitkKey(byte[] state, final String id,
+            final String encKey) {
+
+        if (mNativeContent == 0)
+            return null;
+        // return result ? getNavigationHistory() : null;
+        if (!nativePushStateWitkKey(mNativeContent, state, id, encKey)) {
+            return null;
+        }
+        mContentsClientBridge.onUpdateTitle(mWebContents.getTitle());
+
+        return getNavigationHistory();
+    }
+
+    /**
+     * Clear current history
+     * 
+     * @param id
+     * @param encKey
+     * @return
+     */
+    public XWalkNavigationHistoryInternal nukeStateWithKey(final String id, final String encKey) {
+        if (mNativeContent == 0) {
+            return null;
+        }
+        if (!nativeNukeStateWithKey(mNativeContent, id, encKey)) {
             return null;
         }
         return getNavigationHistory();
@@ -1326,6 +1366,11 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
 
     private native boolean nativeRestoreStateWithKey(long nativeXWalkContent, String id,
             String key);
+
+    private native boolean nativePushStateWitkKey(long nativeXWalkContent, byte[] state, String id,
+            String key);
+
+    private native boolean nativeNukeStateWithKey(long nativeXWalkContent, String id, String key);
 
     private native byte[] nativeGetState(long nativeXWalkContent);
 

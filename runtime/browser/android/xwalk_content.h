@@ -15,6 +15,7 @@
 #include "third_party/WebKit/public/platform/modules/permissions/permission_status.mojom.h"
 #include "xwalk/runtime/browser/android/find_helper.h"
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
+#include "xwalk/runtime/file_block_db/sqlite/fs_delegate_sqlite.h"
 
 using base::android::JavaParamRef;
 using base::android::ScopedJavaLocalRef;
@@ -40,24 +41,19 @@ class XWalkContent : public FindHelper::Listener {
 
   base::android::ScopedJavaLocalRef<jobject> GetWebContents(JNIEnv* env,
                                                             jobject obj);
-  void SetPendingWebContentsForPopup(std::unique_ptr<content::WebContents> pending);
+  void SetPendingWebContentsForPopup(
+      std::unique_ptr<content::WebContents> pending);
   jlong ReleasePopupXWalkContent(JNIEnv* env, jobject obj);
-  void SetJavaPeers(JNIEnv* env,
-                    jobject obj,
-                    jobject xwalk_content,
+  void SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
                     jobject web_contents_delegate,
-                    jobject contents_client_bridge,
-                    jobject io_thread_client,
+                    jobject contents_client_bridge, jobject io_thread_client,
                     jobject intercept_navigation_delegate);
   void ClearCache(JNIEnv* env, jobject obj, jboolean include_disk_files);
   void ClearCacheForSingleFile(JNIEnv* env, jobject obj, jstring url);
   ScopedJavaLocalRef<jstring> DevToolsAgentId(JNIEnv* env, jobject obj);
   void Destroy(JNIEnv* env, jobject obj);
   void UpdateLastHitTestData(JNIEnv* env, jobject obj);
-  void RequestNewHitTestDataAt(JNIEnv* env,
-                               jobject obj,
-                               jfloat x,
-                               jfloat y,
+  void RequestNewHitTestDataAt(JNIEnv* env, jobject obj, jfloat x, jfloat y,
                                jfloat touch_major);
   ScopedJavaLocalRef<jstring> GetVersion(JNIEnv* env, jobject obj);
   jint GetRoutingID(JNIEnv* env, jobject obj);
@@ -65,8 +61,19 @@ class XWalkContent : public FindHelper::Listener {
                                                          jobject obj);
   jboolean SetState(JNIEnv* env, jobject obj, jbyteArray state);
 
+  jboolean PushStateWitkKey(JNIEnv* env, jobject obj,
+                            const JavaParamRef<jbyteArray>& state, jstring id,
+                            jstring key);
+  // TODO make private
+  bool SaveArrayToDb(const char * data, int data_len, JNIEnv* env, jstring id,
+                     jstring key);
+  std::unique_ptr<xwalk::tenta::FsDelegateSqlite> InitStateDb(JNIEnv* env, jstring id,
+                                                       jstring key);
+
   jboolean SaveStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
-  jboolean RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
+  jboolean RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
+                               jstring key);
+  jboolean NukeStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
 
   XWalkRenderViewHostExt* render_view_host_ext() {
     return render_view_host_ext_.get();
@@ -77,44 +84,35 @@ class XWalkContent : public FindHelper::Listener {
   }
 
   void SetJsOnlineProperty(JNIEnv* env, jobject obj, jboolean network_up);
-  jboolean SetManifest(JNIEnv* env,
-                       jobject obj,
-                       jstring path,
+  jboolean SetManifest(JNIEnv* env, jobject obj, jstring path,
                        jstring manifest);
   void SetBackgroundColor(JNIEnv* env, jobject obj, jint color);
-  void SetOriginAccessWhitelist(JNIEnv* env, jobject obj,
-                                jstring url,
+  void SetOriginAccessWhitelist(JNIEnv* env, jobject obj, jstring url,
                                 jstring match_patterns);
 
   // Geolocation API support
   void ShowGeolocationPrompt(const GURL& origin,
-                             const base::Callback<void(bool)>& callback); // NOLINT
+                             const base::Callback<void(bool)>& callback);  // NOLINT
   void HideGeolocationPrompt(const GURL& origin);
-  void InvokeGeolocationCallback(JNIEnv* env,
-                                 jobject obj,
-                                 jboolean value,
+  void InvokeGeolocationCallback(JNIEnv* env, jobject obj, jboolean value,
                                  jstring origin);
 
   void SetXWalkAutofillClient(jobject client);
   void SetSaveFormData(bool enabled);
 
   base::android::ScopedJavaLocalRef<jbyteArray> GetCertificate(
-      JNIEnv* env,
-      const JavaParamRef<jobject>& obj);
+      JNIEnv* env, const JavaParamRef<jobject>& obj);
 
   FindHelper* GetFindHelper();
-  void FindAllAsync(JNIEnv* env,
-                    const JavaParamRef<jobject>& obj,
+  void FindAllAsync(JNIEnv* env, const JavaParamRef<jobject>& obj,
                     const JavaParamRef<jstring>& search_string);
-  void FindNext(JNIEnv* env,
-                const JavaParamRef<jobject>& obj,
+  void FindNext(JNIEnv* env, const JavaParamRef<jobject>& obj,
                 jboolean forward);
   void ClearMatches(JNIEnv* env, const JavaParamRef<jobject>& obj);
 
   // FindHelper::Listener implementation.
-  void OnFindResultReceived(int active_ordinal,
-                            int match_count,
-                            bool finished) override;
+  void OnFindResultReceived(int active_ordinal, int match_count, bool finished)
+      override;
 
  private:
   JavaObjectWeakGlobalRef java_ref_;
@@ -134,8 +132,8 @@ class XWalkContent : public FindHelper::Listener {
   // GURL is supplied by the content layer as requesting frame.
   // Callback is supplied by the content layer, and is invoked with the result
   // from the permission prompt.
-  typedef std::pair<const GURL, const base::Callback<void(bool)> >  /* NOLINT */ \
-          OriginCallback;
+  typedef std::pair<const GURL, const base::Callback<void(bool)> > /* NOLINT */
+  OriginCallback;
   // The first element in the list is always the currently pending request.
   std::list<OriginCallback> pending_geolocation_prompts_;
 };

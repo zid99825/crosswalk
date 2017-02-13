@@ -48,7 +48,6 @@
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "jni/XWalkContent_jni.h"
-#include "xwalk/runtime/file_block_db/sqlite/fs_delegate_sqlite.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertUTF8ToJavaString;
@@ -472,27 +471,76 @@ base::android::ScopedJavaLocalRef<jbyteArray> XWalkContent::GetState(
   }
 }
 
+jboolean XWalkContent::SetState(JNIEnv* env, jobject obj, jbyteArray state) {
+  std::vector<uint8_t> state_vector;
+  base::android::JavaByteArrayToByteVector(env, state, &state_vector);
+
+  base::Pickle pickle(reinterpret_cast<const char*>(&state_vector[0]),
+                      state_vector.size());
+  base::PickleIterator iterator(pickle);
+
+  return RestoreFromPickle(&iterator, web_contents_.get());
+}
+
 /**
  *
  */
-jboolean XWalkContent::SaveStateWithKey(JNIEnv* env, jobject obj, jstring id,
-                                        jstring key) {
-  // TODO make non blocking?!
-  if (!web_contents_->GetController().GetEntryCount()) {
-    return true;  // nothing to save
+jboolean XWalkContent::PushStateWitkKey(JNIEnv* env, jobject obj,
+                                        const JavaParamRef<jbyteArray>& state,
+                                        jstring id, jstring key) {
+  jbyte* _bytes = nullptr;
+
+  if (state.obj() != nullptr) {
+    jsize len = env->GetArrayLength(state.obj());  // array length
+
+    if (len > 0) {
+      _bytes = env->GetByteArrayElements(state.obj(), nullptr);
+
+      // do the dooda
+
+      bool result;
+      result = SaveArrayToDb(reinterpret_cast<const char*>(_bytes), len, env,
+                             id, key);
+
+      env->ReleaseByteArrayElements(state.obj(), _bytes, JNI_ABORT);
+      return result;
+
+    } else {
+      LOG(WARNING) << "PushStateWitkKey zero length";
+    }
+
+  } else {
+    LOG(WARNING) << "PushStateWitkKey NULL array";
   }
 
-  using namespace xwalk::tenta;
+  return false;
+}
 
-  // do the dooda
-
-  FsDelegateSqlite db;
+std::unique_ptr<xwalk::tenta::FsDelegateSqlite> XWalkContent::InitStateDb(
+    JNIEnv* env, jstring id, jstring key) {
+  // TODO implement
+  return std::unique_ptr<xwalk::tenta::FsDelegateSqlite>();
+}
+/**
+ * Save byte array as id's content to DB
+ */
+bool XWalkContent::SaveArrayToDb(const char * data, int data_len, JNIEnv* env,
+                                 jstring id, jstring key) {
   std::string strId;  // virtual filename
   std::string strKey;  // db encryption key
 
   base::android::ConvertJavaStringToUTF8(env, id, &strId);
   base::android::ConvertJavaStringToUTF8(env, key, &strKey);
 
+  if (data == nullptr || data_len == 0 || strId.empty() || strKey.empty()) {
+    LOG(WARNING) << "SaveArrayToDb Invalid data len/id/key " << data_len << "/"
+                    << strId << "/" << strKey;
+    return false;
+  }
+
+  using namespace xwalk::tenta;
+
+  FsDelegateSqlite db;
   // get application path
   base::FilePath data_path;
   bool path_ok = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &data_path);
@@ -501,15 +549,16 @@ jboolean XWalkContent::SaveStateWithKey(JNIEnv* env, jobject obj, jstring id,
     LOG(ERROR) << "Get app data failed";
     return false;
   } else {
-    if (TENTA_LOG_ENABLE)
-      LOG(INFO) << "path: " << data_path.value();
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "path: " << data_path.value();
+#endif
   }
 
   // TODO lic move safe place 73523-019-0000012-53523
   if (!strKey.empty()) {
     db.set_key(strKey, "73523-019-0000012-53523");
   } else {
-    LOG(ERROR) << "SaveStateWithKey invalid key " << strId;
+    LOG(ERROR) << "SaveArrayToDb invalid key " << strId;
     return false;
   }
   db.set_blk_size(FsDelegateSqlite::FSBlock::SIZE_4K);
@@ -518,31 +567,24 @@ jboolean XWalkContent::SaveStateWithKey(JNIEnv* env, jobject obj, jstring id,
 
   result = db.Init(data_path.value());
   if (result != 0) {  // use default flags
-    LOG(ERROR) << "SaveStateWithKey init " << result;
+    LOG(ERROR) << "SaveArrayToDb init " << result;
     return false;
-  }
-
-  // time to read the pickle
-  base::Pickle pickle;
-  if (!WriteToPickle(*web_contents_, &pickle)) {
-    LOG(ERROR) << "SaveStateWithKey pickle";
-    return false;  // error occured
   }
 
   result = db.FileOpen(strId,
                        FsDelegateSqlite::OpenMode::OM_TRUNCATE_IF_EXISTS);
   if (result == 0) {
-    result = db.WriteData(strId, static_cast<const char*>(pickle.payload()),
-                          pickle.payload_size(), 0);
+    result = db.WriteData(strId, data, data_len, 0);
   } else {
-    LOG(ERROR) << "SaveStateWithKey open file " << result;
+    LOG(ERROR) << "SaveArrayToDb open file " << result;
   }
 
   if (result != 0) {
-    LOG(ERROR) << "SaveStateWithKey write " << result << " psize: "
-                  << pickle.size();
+    LOG(ERROR) << "SaveArrayToDb write " << result << " length: " << data_len;
   } else {
-    LOG(INFO) << "SaveStateWithKey wrote to db " << pickle.payload_size();
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "SaveArrayToDb wrote to db " << data_len;
+#endif
   }
   result = db.FileClose(strId);
 
@@ -553,15 +595,88 @@ jboolean XWalkContent::SaveStateWithKey(JNIEnv* env, jobject obj, jstring id,
   return false;
 }
 
-jboolean XWalkContent::SetState(JNIEnv* env, jobject obj, jbyteArray state) {
-  std::vector<uint8_t> state_vector;
-  base::android::JavaByteArrayToByteVector(env, state, &state_vector);
+/**
+ *
+ */
+jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
+                                        jstring key) {
 
-  base::Pickle pickle(reinterpret_cast<const char*>(&state_vector[0]),
-                      state_vector.size());
-  base::PickleIterator iterator(pickle);
+  std::string strId;  // virtual filename
+  std::string strKey;  // db encryption key
 
-  return RestoreFromPickle(&iterator, web_contents_.get());
+  base::android::ConvertJavaStringToUTF8(env, id, &strId);
+  base::android::ConvertJavaStringToUTF8(env, key, &strKey);
+
+  if (strId.empty() || strKey.empty()) {
+    LOG(WARNING) << "NukeStateWithKey Invalid data id/key " << strId << "/"
+                    << strKey;
+    return false;
+  }
+
+  using namespace xwalk::tenta;
+
+  FsDelegateSqlite db;
+  // get application path
+  base::FilePath data_path;
+  bool path_ok = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &data_path);
+
+  if (!path_ok) {
+    LOG(ERROR) << "Get app data failed";
+    return false;
+  } else {
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "NukeStateWithKey path: " << data_path.value();
+#endif
+  }
+
+  // TODO lic move safe place 73523-019-0000012-53523
+  if (!strKey.empty()) {
+    db.set_key(strKey, "73523-019-0000012-53523");
+  } else {
+    LOG(ERROR) << "NukeStateWithKey invalid key " << strId;
+    return false;
+  }
+  db.set_blk_size(FsDelegateSqlite::FSBlock::SIZE_4K);
+
+  int result = 0;
+
+  result = db.Init(data_path.value());
+  if (result != 0) {  // use default flags
+    LOG(ERROR) << "NukeStateWithKey init " << result;
+    return false;
+  }
+
+  result = db.FileDelete(strId, true);
+  if (result != 0) {
+    LOG(ERROR) << "NukeStateWithKey delete result " << result;
+    return false;
+  } else {
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "NukeStateWithKey file deleted: " << strId;
+#endif
+  }
+
+  return true;
+}
+
+/**
+ *
+ */
+jboolean XWalkContent::SaveStateWithKey(JNIEnv* env, jobject obj, jstring id,
+                                        jstring key) {
+  // TODO make non blocking?!
+  if (!web_contents_->GetController().GetEntryCount()) {
+    return true;  // nothing to save
+  }
+
+  // time to read the pickle
+  base::Pickle pickle;
+  if (!WriteToPickle(*web_contents_, &pickle)) {
+    LOG(ERROR) << "SaveStateWithKey pickle";
+    return false;  // error occured
+  }
+
+  return SaveArrayToDb(pickle.payload(), pickle.payload_size(), env, id, key);
 }
 
 /**
@@ -587,8 +702,9 @@ jboolean XWalkContent::RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
     LOG(ERROR) << "RestoreStateWithKey Get app data failed";
     return false;
   } else {
-    if (TENTA_LOG_ENABLE)
-      LOG(INFO) << "path: " << data_path.value();
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "path: " << data_path.value();
+#endif
   }
 
   // TODO lic move safe place 73523-019-0000012-53523

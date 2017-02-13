@@ -131,9 +131,9 @@ class CookieByteArray {
 
   ~CookieByteArray() {
     delete[] _data;
-    if (TENTA_LOG_ENABLE) {
-      LOG(INFO) << "delete Cookie byte array " << _len;
-    }
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "delete Cookie byte array " << _len;
+#endif
   }
 
   const char * data() {
@@ -495,18 +495,18 @@ static jboolean RestoreCookies(JNIEnv* env,
  * Save cookies in pickle
  */
 void CookieManager::SaveCookies(base::Pickle *dstPickle) {
-  if (TENTA_LOG_ENABLE) {
-    LOG(INFO) << "SaveCookies";
-  }
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << "SaveCookies";
+#endif
   FlushCookieStore();
 
   ExecCookieTask(
       base::Bind(&CookieManager::SaveCookiesAsyncHelper, base::Unretained(this),
                  dstPickle),
       true);
-  if (TENTA_LOG_ENABLE) {
-    LOG(INFO) << "SaveCookies return";
-  }
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << "SaveCookies return";
+#endif
 }
 
 void CookieManager::SaveCookiesAsyncHelper(base::Pickle *dstPickle,
@@ -550,15 +550,15 @@ void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
  * Save cookies in pickle
  */
 void CookieManager::RestoreCookies(CookieByteArray * cb) {
-  if (TENTA_LOG_ENABLE) {
-    int len;
+#if TENTA_LOG_ENABLE == 1
+  int len;
 
-    if (cb != nullptr) {
-      len = cb->len();
-    }
-
-    LOG(INFO) << "RestoreCookies " << len;
+  if (cb != nullptr) {
+    len = cb->len();
   }
+
+  LOG(INFO) << "RestoreCookies " << len;
+#endif
   RemoveAllCookie();
 
   ExecCookieTask(
@@ -566,9 +566,9 @@ void CookieManager::RestoreCookies(CookieByteArray * cb) {
                  base::Unretained(this), base::Owned(cb)),
       false);
 
-  if (TENTA_LOG_ENABLE) {
-    LOG(INFO) << "RestoreCookies return ";
-  }
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << "RestoreCookies return ";
+#endif
 }
 
 void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
@@ -610,9 +610,9 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
               static_cast<net::CookieSameSite>(same_site), false,
               static_cast<net::CookiePriority>(prio), callback);
 
-          if (TENTA_LOG_ENABLE) {
-            LOG(INFO) << "Cookie restored |" << name << "|" << domain;
-          }
+#if TENTA_LOG_ENABLE == 1
+          LOG(INFO) << "Cookie restored |" << name << "|" << domain;
+#endif
 
         } else {
           LOG(WARNING) << "Pickle error: |" << name << "|" << domain;
@@ -627,8 +627,7 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
   }
 
   //
-  if ( completion != nullptr)
-  {
+  if (completion != nullptr) {
     completion->Signal();
   }
 }

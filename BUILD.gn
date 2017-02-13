@@ -361,7 +361,7 @@ source_set("xwalk_runtime") {
     public_configs = [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
   }
 
-  include_dirs = [ "$root_gen_dir/xwalk", "third_party/sqlitecrypt" ]
+  include_dirs = [ "$root_gen_dir/xwalk" ]
   defines = [
     "CHROME_VERSION=\"$chrome_version\"",
     "XWALK_VERSION=\"$xwalk_version\"",

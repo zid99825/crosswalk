@@ -8,9 +8,9 @@
 #ifndef SQLITE_FS_DELEGATE_SQLITE_H_
 #define SQLITE_FS_DELEGATE_SQLITE_H_
 
-#include "xwalk/runtime/file_block_db/base/fs_delegate.h"
-#include "sqlite3.h"
 #include <memory>
+#include "xwalk/runtime/file_block_db/base/fs_delegate.h"
+#include "xwalk/third_party/sqlitecrypt/sqlite3.h"
 
 #define SQL_ERROR(err) (-err)
 namespace base {

@@ -986,8 +986,10 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         if (mContent == null)
             return false;
 
-        mContent.saveStateWithKey(id, encKey);
-        return true;
+        if (mContent.saveStateWithKey(id, encKey) != null) {
+            return true;
+        }
+        return false;
     }
 
     @XWalkAPI
@@ -996,8 +998,35 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
             return false;
         }
 
-        mContent.restoreStateWithKey(id, encKey);
-        return true;
+        if (mContent.restoreStateWithKey(id, encKey) != null) {
+            return true;
+        }
+        return false;
+    }
+
+    @XWalkAPI
+    public boolean pushStateWitkKey(byte[] state, final String id,
+            final String encKey) {
+        if (mContent == null) {
+            return false;
+        }
+        if (mContent.pushStateWitkKey(state, id, encKey) != null) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @XWalkAPI
+    public boolean nukeStateWithKey(final String id, final String encKey) {
+        if (mContent == null) {
+            return false;
+        }
+        if (mContent.nukeStateWithKey(id, encKey) != null) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
