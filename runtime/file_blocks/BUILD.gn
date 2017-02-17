@@ -1,0 +1,15 @@
+static_library("file_blocks") {
+    sources = [ 
+        "db_block.cc",
+        "db_block.h",
+        "db_errors.h",
+        "db_file_system.cc",
+        "db_file_system.h",
+        "db_file.cc",
+        "db_file.h",
+        "db_path.cc",
+        "db_path.h",
+    ]
+    include_dirs = [ "../sqlitecrypt" ]
+    deps = [ "../sqlitecrypt"]
+}

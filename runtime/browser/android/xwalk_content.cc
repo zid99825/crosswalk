@@ -5,6 +5,7 @@
 
 #include "xwalk/runtime/browser/android/xwalk_content.h"
 
+#include <memory>
 #include <algorithm>
 #include <cctype>
 #include <string>
@@ -48,6 +49,9 @@
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "jni/XWalkContent_jni.h"
+#include "xwalk/runtime/file_block_db/sqlite/fs_delegate_sqlite.h"
+#include "xwalk/third_party/tenta/file_blocks/db_fs_manager.h"
+#include "xwalk/third_party/tenta/file_blocks/db_file.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertUTF8ToJavaString;
@@ -538,7 +542,10 @@ bool XWalkContent::SaveArrayToDb(const char * data, int data_len, JNIEnv* env,
     return false;
   }
 
+  using namespace ::tenta::fs;
   using namespace xwalk::tenta;
+
+  DbFsManager * mng  = DbFsManager::GetInstance();
 
   FsDelegateSqlite db;
   // get application path
@@ -564,6 +571,25 @@ bool XWalkContent::SaveArrayToDb(const char * data, int data_len, JNIEnv* env,
   db.set_blk_size(FsDelegateSqlite::FSBlock::SIZE_4K);
 
   int result = 0;
+
+  std::shared_ptr<DbFileSystem> fs =
+  mng->NewFs(data_path.value(), strKey, "73523-019-0000012-53523");
+
+  if ( fs.get() != nullptr ) {
+    std::weak_ptr<DbFile> f;
+    bool bResult;
+    bResult =fs->FileOpen(strId, f, (DbFileSystem::IO_CREATE_IF_NOT_EXISTS|DbFileSystem::IO_TRUNCATE_IF_EXISTS));
+
+    if ( bResult) {
+      std::shared_ptr<DbFile> sf = f.lock();
+      if ( !f.expired()) {
+        bResult = sf->Append(data, data_len);
+        sf->Close();
+      }
+    }
+  } else {
+    // TODO error
+  }
 
   result = db.Init(data_path.value());
   if (result != 0) {  // use default flags

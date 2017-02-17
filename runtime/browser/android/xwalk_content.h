@@ -15,7 +15,6 @@
 #include "third_party/WebKit/public/platform/modules/permissions/permission_status.mojom.h"
 #include "xwalk/runtime/browser/android/find_helper.h"
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
-#include "xwalk/runtime/file_block_db/sqlite/fs_delegate_sqlite.h"
 
 using base::android::JavaParamRef;
 using base::android::ScopedJavaLocalRef;
@@ -26,7 +25,9 @@ class WebContents;
 }
 
 namespace xwalk {
-
+namespace tenta {
+class FsDelegateSqlite;
+}
 class XWalkAutofillManager;
 class XWalkWebContentsDelegate;
 class XWalkContentsClientBridge;
