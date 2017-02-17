@@ -68,8 +68,6 @@ class XWalkContent : public FindHelper::Listener {
   // TODO make private
   bool SaveArrayToDb(const char * data, int data_len, JNIEnv* env, jstring id,
                      jstring key);
-  std::unique_ptr<xwalk::tenta::FsDelegateSqlite> InitStateDb(JNIEnv* env, jstring id,
-                                                       jstring key);
 
   jboolean SaveStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
   jboolean RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,

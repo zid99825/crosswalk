@@ -68,7 +68,7 @@ namespace keys = xwalk::application_manifest_keys;
 namespace xwalk {
 
 namespace {
-const int cBlkSize = 4*1024;
+const int cBlkSize = 4 * 1024;
 
 const void* kXWalkContentUserDataKey = &kXWalkContentUserDataKey;
 
@@ -528,11 +528,6 @@ jboolean XWalkContent::PushStateWitkKey(JNIEnv* env, jobject obj,
   return false;
 }
 
-std::unique_ptr<xwalk::tenta::FsDelegateSqlite> XWalkContent::InitStateDb(
-    JNIEnv* env, jstring id, jstring key) {
-  // TODO implement
-  return std::unique_ptr<xwalk::tenta::FsDelegateSqlite>();
-}
 /**
  * Save byte array as id's content to DB
  */
@@ -627,9 +622,7 @@ jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
     return false;
   }
 
-  using namespace xwalk::tenta;
-
-  FsDelegateSqlite db;
+  // TODO move to some dummy function
   // get application path
   base::FilePath data_path;
   bool path_ok = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &data_path);
@@ -644,30 +637,30 @@ jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
   }
 
   // TODO lic move safe place 73523-019-0000012-53523
-  if (!strKey.empty()) {
-    db.set_key(strKey, "73523-019-0000012-53523");
-  } else {
+  if (strKey.empty()) {
     LOG(ERROR) << "NukeStateWithKey invalid key " << strId;
     return false;
   }
-  db.set_blk_size(FsDelegateSqlite::FSBlock::SIZE_4K);
 
-  int result = 0;
+  using namespace ::tenta::fs;
 
-  result = db.Init(data_path.value());
-  if (result != 0) {  // use default flags
-    LOG(ERROR) << "NukeStateWithKey init " << result;
+  bool bResult;
+  DbFsManager * mng = DbFsManager::GetInstance();
+
+  std::weak_ptr < DbFile > file;
+  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path.value(), strKey,
+                                                "73523-019-0000012-53523");
+  // TODO lic move safe place 73523-019-0000012-53523
+
+  if (fs.get() == nullptr) {
+    LOG(ERROR) << "FileSystem not created!";
     return false;
   }
 
-  result = db.FileDelete(strId, true);
-  if (result != 0) {
-    LOG(ERROR) << "NukeStateWithKey delete result " << result;
+  bResult = fs->FileDelete(strId);
+  if (!bResult) {
+    LOG(ERROR) << "NukeStateWithKey delete result " << fs->error();
     return false;
-  } else {
-#if TENTA_LOG_ENABLE == 1
-    LOG(INFO) << "NukeStateWithKey file deleted: " << strId;
-#endif
   }
 
   return true;
@@ -773,7 +766,7 @@ jboolean XWalkContent::RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
       inOutLen = cBlkSize;
       bResult = sfile->Read(buff, &inOutLen, offset);
 
-      if ( !bResult) {
+      if (!bResult) {
         LOG(ERROR) << "Restore read error " << sfile->error();
         return false;
       }
