@@ -847,6 +847,16 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         return getNavigationHistory();
     }
 
+    public boolean rekeyStateWithKey(final String oldKey, final String newKey) {
+        if (mNativeContent == 0) {
+            return false;
+        }
+        if (!nativeRekeyStateWithKey(mNativeContent, oldKey, newKey)) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Bundle key for save/restore state
      * 
@@ -1371,6 +1381,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             String key);
 
     private native boolean nativeNukeStateWithKey(long nativeXWalkContent, String id, String key);
+
+    private native boolean nativeRekeyStateWithKey(long nativeXWalkContent, String oldKey,
+            String newKey);
 
     private native byte[] nativeGetState(long nativeXWalkContent);
 

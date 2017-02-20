@@ -1029,6 +1029,18 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         return false;
     }
 
+    @XWalkAPI
+    public boolean rekeyStateWithKey(final String oldKey, final String newKey) {
+        if (mContent == null) {
+            return false;
+        }
+        if (mContent.rekeyStateWithKey(oldKey, newKey)) {
+            return true;
+        }
+
+        return false;
+    }
+    
     /**
      * Restore the state from the saved bundle data.
      * 

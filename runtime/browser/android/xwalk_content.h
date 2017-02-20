@@ -73,6 +73,13 @@ class XWalkContent : public FindHelper::Listener {
   jboolean RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
                                jstring key);
   jboolean NukeStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
+  jboolean RekeyStateWithKey(JNIEnv* env, jobject obj, jstring oldKey, jstring newKey);
+  /**
+   * Fill |out| with app path + history.db
+   * @param out storage for file+path storage
+   * @return true if success; false otherwise
+   */
+  bool GetHistoryDbPath(std::string& out);
 
   XWalkRenderViewHostExt* render_view_host_ext() {
     return render_view_host_ext_.get();

@@ -546,20 +546,9 @@ bool XWalkContent::SaveArrayToDb(const char * data, int data_len, JNIEnv* env,
     return false;
   }
 
-  base::FilePath data_path;
-  bool path_ok = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &data_path);
-
-  if (!path_ok) {
-    LOG(ERROR) << "Get app data failed";
-    return false;
-  } else {
-#if TENTA_LOG_ENABLE == 1
-    LOG(INFO) << "path: " << data_path.value();
-#endif
-  }
-
-  if (strKey.empty()) {
-    LOG(ERROR) << "Invalid key ";
+  std::string data_path;
+  if ( !GetHistoryDbPath(data_path) )
+  {
     return false;
   }
 
@@ -569,7 +558,7 @@ bool XWalkContent::SaveArrayToDb(const char * data, int data_len, JNIEnv* env,
   DbFsManager * mng = DbFsManager::GetInstance();
 
   std::weak_ptr < DbFile > file;
-  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path.value(), strKey,
+  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, strKey,
                                                 "73523-019-0000012-53523");
   // TODO lic move safe place 73523-019-0000012-53523
 
@@ -622,23 +611,9 @@ jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
     return false;
   }
 
-  // TODO move to some dummy function
-  // get application path
-  base::FilePath data_path;
-  bool path_ok = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &data_path);
-
-  if (!path_ok) {
-    LOG(ERROR) << "Get app data failed";
-    return false;
-  } else {
-#if TENTA_LOG_ENABLE == 1
-    LOG(INFO) << "NukeStateWithKey path: " << data_path.value();
-#endif
-  }
-
-  // TODO lic move safe place 73523-019-0000012-53523
-  if (strKey.empty()) {
-    LOG(ERROR) << "NukeStateWithKey invalid key " << strId;
+  std::string data_path;
+  if ( !GetHistoryDbPath(data_path) )
+  {
     return false;
   }
 
@@ -648,7 +623,7 @@ jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
   DbFsManager * mng = DbFsManager::GetInstance();
 
   std::weak_ptr < DbFile > file;
-  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path.value(), strKey,
+  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, strKey,
                                                 "73523-019-0000012-53523");
   // TODO lic move safe place 73523-019-0000012-53523
 
@@ -660,6 +635,61 @@ jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
   bResult = fs->FileDelete(strId);
   if (!bResult) {
     LOG(ERROR) << "NukeStateWithKey delete result " << fs->error();
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ *
+ * @param env
+ * @param obj
+ * @param oldKey
+ * @param newKey
+ * @return
+ */
+jboolean XWalkContent::RekeyStateWithKey(JNIEnv* env, jobject obj, jstring oldKey, jstring newKey) {
+  std::string oldKeyStr;  // virtual filename
+  std::string newKeyStr;  // db encryption key
+
+  base::android::ConvertJavaStringToUTF8(env, oldKey, &oldKeyStr);
+  base::android::ConvertJavaStringToUTF8(env, newKey, &newKeyStr);
+
+  if (/*oldKeyStr.empty() || */newKeyStr.empty()) { // old key can be null/empty if db just created
+#if TENTA_LOG_ENABLE == 1
+    LOG(WARNING) << "RekeyStateWithKey Invalid data old/new key " << oldKeyStr << "/"
+                    << newKeyStr;
+#endif
+    return false;
+  }
+
+  std::string data_path;
+  if ( !GetHistoryDbPath(data_path) )
+  {
+    return false;
+  }
+
+  using namespace ::tenta::fs;
+
+  bool bResult;
+  DbFsManager * mng = DbFsManager::GetInstance();
+
+  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, oldKeyStr,
+                                                "73523-019-0000012-53523");
+  // TODO lic move safe place 73523-019-0000012-53523
+
+  if (fs.get() == nullptr) {
+    LOG(ERROR) << "FileSystem not created!";
+    return false;
+  }
+
+  bResult = fs->Rekey(newKeyStr);
+
+  if ( !bResult) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "Rekey failed " << fs->error();
+#endif
     return false;
   }
 
@@ -697,22 +727,14 @@ jboolean XWalkContent::RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
   base::android::ConvertJavaStringToUTF8(env, id, &strId);
   base::android::ConvertJavaStringToUTF8(env, key, &strKey);
 
-  // get application path
-  base::FilePath data_path;
-  bool path_ok = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &data_path);
-
-  if (!path_ok) {
-    LOG(ERROR) << "Get app data failed";
+  if (strKey.empty() || strId.empty()) {
+    LOG(ERROR) << "Invalid key ";
     return false;
-  } else {
-#if TENTA_LOG_ENABLE == 1
-    LOG(INFO) << "path: " << data_path.value();
-#endif
   }
 
-  // TODO lic move safe place 73523-019-0000012-53523
-  if (strKey.empty()) {
-    LOG(ERROR) << "Invalid key ";
+  std::string data_path;
+  if ( !GetHistoryDbPath(data_path) )
+  {
     return false;
   }
 
@@ -722,7 +744,7 @@ jboolean XWalkContent::RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
   DbFsManager * mng = DbFsManager::GetInstance();
 
   std::weak_ptr < DbFile > file;
-  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path.value(), strKey,
+  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, strKey,
                                                 "73523-019-0000012-53523");
   // TODO lic move safe place 73523-019-0000012-53523
 
@@ -788,6 +810,29 @@ jboolean XWalkContent::RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
   }
 
   return sfile->Close();
+}
+
+/**
+ * Fill |out| with app path + history.db
+ * @param out storage for file+path storage
+ * @return true if success; false otherwise
+ */
+bool XWalkContent::GetHistoryDbPath(std::string& out) {
+  // get application path
+  base::FilePath data_path;
+  bool path_ok = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &data_path);
+
+  if (!path_ok) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "Get app data failed";
+#endif
+    return false;
+  }
+
+  data_path = data_path.Append("history.db");
+  out.assign(data_path.value());
+
+  return true;
 }
 
 static jlong Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
