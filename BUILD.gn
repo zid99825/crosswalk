@@ -362,6 +362,8 @@ source_set("xwalk_runtime") {
   }
 
   include_dirs = [ "$root_gen_dir/xwalk" ]
+  include_dirs += [ "//third_party/sqlite" ]
+  
   defines = [
     "CHROME_VERSION=\"$chrome_version\"",
     "XWALK_VERSION=\"$xwalk_version\"",
@@ -423,6 +425,7 @@ source_set("xwalk_runtime") {
     "//xwalk/resources:xwalk_resources_300_percent_pak",
     "//xwalk/sysapps",
     "//xwalk/sysapps:xwalk_sysapps_resources",
+    "//xwalk/third_party/tenta/file_blocks"
   ]
 
   if (is_android) {

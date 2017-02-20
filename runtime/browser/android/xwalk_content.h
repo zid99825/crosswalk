@@ -15,7 +15,6 @@
 #include "third_party/WebKit/public/platform/modules/permissions/permission_status.mojom.h"
 #include "xwalk/runtime/browser/android/find_helper.h"
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
-#include "xwalk/runtime/file_block_db/sqlite/fs_delegate_sqlite.h"
 
 using base::android::JavaParamRef;
 using base::android::ScopedJavaLocalRef;
@@ -26,7 +25,9 @@ class WebContents;
 }
 
 namespace xwalk {
-
+namespace tenta {
+class FsDelegateSqlite;
+}
 class XWalkAutofillManager;
 class XWalkWebContentsDelegate;
 class XWalkContentsClientBridge;
@@ -67,13 +68,18 @@ class XWalkContent : public FindHelper::Listener {
   // TODO make private
   bool SaveArrayToDb(const char * data, int data_len, JNIEnv* env, jstring id,
                      jstring key);
-  std::unique_ptr<xwalk::tenta::FsDelegateSqlite> InitStateDb(JNIEnv* env, jstring id,
-                                                       jstring key);
 
   jboolean SaveStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
   jboolean RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
                                jstring key);
   jboolean NukeStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
+  jboolean RekeyStateWithKey(JNIEnv* env, jobject obj, jstring oldKey, jstring newKey);
+  /**
+   * Fill |out| with app path + history.db
+   * @param out storage for file+path storage
+   * @return true if success; false otherwise
+   */
+  bool GetHistoryDbPath(std::string& out);
 
   XWalkRenderViewHostExt* render_view_host_ext() {
     return render_view_host_ext_.get();

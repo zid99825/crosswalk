@@ -10,7 +10,7 @@
 
 #include <memory>
 #include "xwalk/runtime/file_block_db/base/fs_delegate.h"
-#include "xwalk/third_party/sqlitecrypt/sqlite3.h"
+#include "sqlite3.h"
 
 #define SQL_ERROR(err) (-err)
 namespace base {

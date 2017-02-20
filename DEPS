@@ -22,6 +22,7 @@ vars = {
 }
 
 deps = {
+    'src/xwalk/third_party/tenta/file_blocks': 'git@bitbucket.org:mikandi/fileblocks-sqlite.git'
 }
 
 hooks = [
