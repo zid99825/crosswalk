@@ -325,12 +325,6 @@ source_set("xwalk_runtime") {
     "runtime/net/tenta_network_change_notifier_factory.h",
     "runtime/browser/android/tenta/dummy_native_test.cc",
     "runtime/browser/android/tenta/dummy_native_test.h",
-    "runtime/file_block_db/base/fs_factory.cc",
-    "runtime/file_block_db/base/fs_factory.h",
-    "runtime/file_block_db/base/fs_delegate.cc",
-    "runtime/file_block_db/base/fs_delegate.h",
-    "runtime/file_block_db/sqlite/fs_delegate_sqlite.cc",
-    "runtime/file_block_db/sqlite/fs_delegate_sqlite.h"
   ]
   if (!is_android) {
     sources += [
