@@ -49,7 +49,6 @@
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "jni/XWalkContent_jni.h"
-#include "xwalk/runtime/file_block_db/sqlite/fs_delegate_sqlite.h"
 #include "xwalk/third_party/tenta/file_blocks/db_fs_manager.h"
 #include "xwalk/third_party/tenta/file_blocks/db_file_system.h"
 #include "xwalk/third_party/tenta/file_blocks/db_file.h"
