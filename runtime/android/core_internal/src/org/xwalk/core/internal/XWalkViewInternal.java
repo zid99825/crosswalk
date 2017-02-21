@@ -981,6 +981,13 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         return true;
     }
 
+    /**
+     * Save navigation history for ID to db
+     * 
+     * @param id Id for history (zone/location/tab)
+     * @param encKey Sqlite db encryption key
+     * @return true if success; false otherwise
+     */
     @XWalkAPI
     public boolean saveStateWithKey(final String id, final String encKey) {
         if (mContent == null)
@@ -992,6 +999,13 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         return false;
     }
 
+    /**
+     * Restore navigation history for Id from sqlite db
+     * 
+     * @param id Id for history (zone/location/tab)
+     * @param encKey Sqlite db encryption key
+     * @return true if success; false otherwise
+     */
     @XWalkAPI
     public boolean restoreStateWithKey(final String id, final String encKey) {
         if (mContent == null) {
@@ -1004,6 +1018,14 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         return false;
     }
 
+    /**
+     * Push old style (stored on Java side) navigation history to new encrypted db
+     * 
+     * @param state Old state returned by @see saveState
+     * @param id Id for history (zone/location/tab)
+     * @param encKey Sqlite db encryption key
+     * @return true if success; false otherwise
+     */
     @XWalkAPI
     public boolean pushStateWitkKey(byte[] state, final String id,
             final String encKey) {
@@ -1017,6 +1039,13 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         return false;
     }
 
+    /**
+     * Delete navigation history for Id
+     * 
+     * @param id Id for history (zone/location/tab)
+     * @param encKey Sqlite db encryption key
+     * @return true if success; false otherwise
+     */
     @XWalkAPI
     public boolean nukeStateWithKey(final String id, final String encKey) {
         if (mContent == null) {
@@ -1029,6 +1058,13 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         return false;
     }
 
+    /**
+     * Rekey navigation history database. Change encryption key
+     * 
+     * @param oldKey Old Sqlite db encryption key
+     * @param newKey New Sqlite db encryption key
+     * @return true if success; false otherwise
+     */
     @XWalkAPI
     public boolean rekeyStateWithKey(final String oldKey, final String newKey) {
         if (mContent == null) {
@@ -1040,7 +1076,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
 
         return false;
     }
-    
+
     /**
      * Restore the state from the saved bundle data.
      * 
