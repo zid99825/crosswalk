@@ -356,7 +356,6 @@ source_set("xwalk_runtime") {
   }
 
   include_dirs = [ "$root_gen_dir/xwalk" ]
-  include_dirs += [ "//third_party/sqlite" ]
   
   defines = [
     "CHROME_VERSION=\"$chrome_version\"",
