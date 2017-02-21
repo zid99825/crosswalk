@@ -546,8 +546,8 @@ bool XWalkContent::SaveArrayToDb(const char * data, int data_len, JNIEnv* env,
   }
 
   std::string data_path;
-  if ( !GetHistoryDbPath(data_path) )
-  {
+  if (!GetHistoryDbPath(data_path))
+                        {
     return false;
   }
 
@@ -555,6 +555,8 @@ bool XWalkContent::SaveArrayToDb(const char * data, int data_len, JNIEnv* env,
 
   bool bResult;
   DbFsManager * mng = DbFsManager::GetInstance();
+
+  LOG(INFO) << " got instance";
 
   std::weak_ptr < DbFile > file;
   std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, strKey,
@@ -611,8 +613,8 @@ jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
   }
 
   std::string data_path;
-  if ( !GetHistoryDbPath(data_path) )
-  {
+  if (!GetHistoryDbPath(data_path))
+                        {
     return false;
   }
 
@@ -648,24 +650,26 @@ jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
  * @param newKey
  * @return
  */
-jboolean XWalkContent::RekeyStateWithKey(JNIEnv* env, jobject obj, jstring oldKey, jstring newKey) {
+jboolean XWalkContent::RekeyStateWithKey(JNIEnv* env, jobject obj,
+                                         jstring oldKey, jstring newKey) {
   std::string oldKeyStr;  // virtual filename
   std::string newKeyStr;  // db encryption key
 
   base::android::ConvertJavaStringToUTF8(env, oldKey, &oldKeyStr);
   base::android::ConvertJavaStringToUTF8(env, newKey, &newKeyStr);
 
-  if (/*oldKeyStr.empty() || */newKeyStr.empty()) { // old key can be null/empty if db just created
+  if (/*oldKeyStr.empty() || */newKeyStr.empty()) {  // old key can be null/empty if db just created
 #if TENTA_LOG_ENABLE == 1
-    LOG(WARNING) << "RekeyStateWithKey Invalid data old/new key " << oldKeyStr << "/"
+    LOG(WARNING) << "RekeyStateWithKey Invalid data old/new key " << oldKeyStr
+                    << "/"
                     << newKeyStr;
 #endif
     return false;
   }
 
   std::string data_path;
-  if ( !GetHistoryDbPath(data_path) )
-  {
+  if (!GetHistoryDbPath(data_path))
+                        {
     return false;
   }
 
@@ -685,7 +689,7 @@ jboolean XWalkContent::RekeyStateWithKey(JNIEnv* env, jobject obj, jstring oldKe
 
   bResult = fs->Rekey(newKeyStr);
 
-  if ( !bResult) {
+  if (!bResult) {
 #if TENTA_LOG_ENABLE == 1
     LOG(ERROR) << "Rekey failed " << fs->error();
 #endif
@@ -732,8 +736,8 @@ jboolean XWalkContent::RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
   }
 
   std::string data_path;
-  if ( !GetHistoryDbPath(data_path) )
-  {
+  if (!GetHistoryDbPath(data_path))
+                        {
     return false;
   }
 
