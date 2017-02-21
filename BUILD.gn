@@ -360,13 +360,7 @@ source_set("xwalk_runtime") {
   defines = [
     "CHROME_VERSION=\"$chrome_version\"",
     "XWALK_VERSION=\"$xwalk_version\"",
-    "SQLITE_HAS_CODEC"
   ]
-  if ( tenta_debug_log ) {
-    defines += [ "TENTA_LOG_ENABLE=1" ]
-  } else {
-    defines += [ "TENTA_LOG_ENABLE=0" ]
-  }
   deps = [
     ":generate_upstream_blink_version",
     "//base",
@@ -420,6 +414,13 @@ source_set("xwalk_runtime") {
     "//xwalk/sysapps:xwalk_sysapps_resources",
     "//xwalk/third_party/tenta/file_blocks"
   ]
+
+    # TODO remove  
+#  if ( enable_tenta_log ) {
+#    defines += [ "TENTA_LOG_ENABLE=1" ]
+#  } else {
+#    defines += [ "TENTA_LOG_ENABLE=0" ]
+#  }
 
   if (is_android) {
     deps += [

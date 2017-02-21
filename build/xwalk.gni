@@ -11,7 +11,4 @@ declare_args() {
   # Android: whether the integrity of the Crosswalk runtime library should
   # be verified when Crosswalk is run in shared mode.
   verify_xwalk_apk = false
-
-  # set to true to enable log level info in tenta classes  
-  tenta_debug_log = false
 }
