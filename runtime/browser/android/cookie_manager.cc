@@ -60,6 +60,8 @@ namespace {
 
 // Are cookies allowed for file:// URLs by default?
 const bool kDefaultFileSchemeAllowed = false;
+const char kPreKitkatDataDirectory[] = "app_database";
+const char kKitkatDataDirectory[] = "app_webview";
 
 void ImportKitkatDataIfNecessary(const base::FilePath& old_data_dir,
                                  const base::FilePath& profile) {
@@ -282,7 +284,7 @@ net::CookieStore* CookieManager::GetCookieStore() {
 
   if (!cookie_store_) {
     FilePath user_data_dir;
-    xwalk::GetUserDataDir(&user_data_dir);
+    GetUserDataDir(&user_data_dir);
     base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
     if (command_line->HasSwitch(switches::kXWalkProfileName)) {
       base::FilePath profile = user_data_dir.Append(
