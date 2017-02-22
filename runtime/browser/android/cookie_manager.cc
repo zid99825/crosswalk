@@ -40,6 +40,7 @@
 #include "ui/base/resource/resource_bundle.h"
 #include "xwalk/runtime/browser/android/scoped_allow_wait_for_legacy_web_view_api.h"
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
+#include "xwalk/runtime/browser/xwalk_browser_main_parts_android.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 
 using base::FilePath;
@@ -59,8 +60,6 @@ namespace {
 
 // Are cookies allowed for file:// URLs by default?
 const bool kDefaultFileSchemeAllowed = false;
-const char kPreKitkatDataDirectory[] = "app_database";
-const char kKitkatDataDirectory[] = "app_webview";
 
 void ImportKitkatDataIfNecessary(const base::FilePath& old_data_dir,
                                  const base::FilePath& profile) {
@@ -283,7 +282,7 @@ net::CookieStore* CookieManager::GetCookieStore() {
 
   if (!cookie_store_) {
     FilePath user_data_dir;
-    GetUserDataDir(&user_data_dir);
+    xwalk::GetUserDataDir(&user_data_dir);
     base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
     if (command_line->HasSwitch(switches::kXWalkProfileName)) {
       base::FilePath profile = user_data_dir.Append(
@@ -291,9 +290,9 @@ net::CookieStore* CookieManager::GetCookieStore() {
       MoveUserDataDirIfNecessary(user_data_dir, profile);
       user_data_dir = profile;
     }
-
-    FilePath cookie_store_path = user_data_dir.Append(
-        FILE_PATH_LITERAL("Cookies"));
+    
+    FilePath cookie_store_path =
+        user_data_dir.Append(FILE_PATH_LITERAL("Cookies"));
 
     content::CookieStoreConfig cookie_config(
         cookie_store_path, content::CookieStoreConfig::RESTORED_SESSION_COOKIES,

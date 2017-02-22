@@ -132,4 +132,12 @@ TEST(XWalkDotNetExtensionTest, InvalidExtensions) {
   EXPECT_TRUE(invalid_extension_12->Initialize());
   instance = invalid_extension_12->CreateExternalInstance();
   EXPECT_FALSE(instance->GetInstanceData());
+
+  test_path = GetDotNetExtensionTestPath(
+    FILE_PATH_LITERAL("binary_extension/binary_extension_bridge.dll"));
+  TestExtension* binary_extension = new TestExtension(test_path);
+  EXPECT_TRUE(base::PathExists(test_path));
+  EXPECT_TRUE(binary_extension->Initialize());
+  instance = binary_extension->CreateExternalInstance();
+  EXPECT_TRUE(instance->GetInstanceData());
 }
