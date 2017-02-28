@@ -207,7 +207,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 
     tenta::HostResolverTenta * hrt = new tenta::HostResolverTenta(
         std::move(backup));
-    hrt->use_backup(true);
+    hrt->use_backup(false);
 
     std::unique_ptr<net::HostResolver> host_resolver(hrt);
 
