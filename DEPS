@@ -23,7 +23,8 @@ vars = {
 
 deps = {
     'src/xwalk/third_party/tenta/file_blocks': 'git@bitbucket.org:mikandi/fileblocks-sqlite.git',
-    'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:mikandi/android-database-sqlitecrypt.git'
+    'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:mikandi/android-database-sqlitecrypt.git',
+    'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:mikandi/file-metadata-sqlite.git'
 }
 
 hooks = [

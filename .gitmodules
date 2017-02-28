@@ -4,3 +4,6 @@
 [submodule "third_party/tenta/sqlitecrypt"]
 	path = third_party/tenta/sqlitecrypt
 	url = git@bitbucket.org:mikandi/android-database-sqlitecrypt.git
+[submodule "third_party/tenta/meta_fs"]
+	path = third_party/tenta/meta_fs
+	url = git@bitbucket.org:mikandi/file-metadata-sqlite.git
