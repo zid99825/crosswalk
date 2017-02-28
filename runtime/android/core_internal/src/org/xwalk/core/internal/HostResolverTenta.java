@@ -137,7 +137,7 @@ public class HostResolverTenta {
     /**
      * @author iotto
      */
-    public static abstract class IDelegate {
+    public interface IDelegate {
         /**
          * Called when new name resolution required When finished call the
          * HostResolverTenta.onResolved with requestId provided here
@@ -145,7 +145,7 @@ public class HostResolverTenta {
          * @param hostname Name to resolve
          * @param requestId Id of this request
          */
-        protected abstract void resolve(String hostname, long requestId);
+        void resolve(String hostname, long requestId);
 
         /**
          * Resolve host from cache !Note! Blocking request!
@@ -153,19 +153,15 @@ public class HostResolverTenta {
          * @param hostname
          * @return
          */
-        protected abstract byte[][] resolveCache(String hostname);
+        byte[][] resolveCache(String hostname);
 
-        protected void onIPAddressChanged() {
-        }
+        void onIPAddressChanged();
 
-        protected void onConnectionTypeChanged(int type) {
-        }
+        void onConnectionTypeChanged(int type);
 
-        protected void onDNSChanged() {
-        }
+        void onDNSChanged();
 
-        protected void onInitialDNSConfigRead() {
-        }
+        void onInitialDNSConfigRead();
     }
 
 }
