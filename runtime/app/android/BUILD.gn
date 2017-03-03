@@ -22,5 +22,6 @@ shared_library("libxwalkcore") {
     "//xwalk/extensions/android:xwalk_core_extensions_native_jni",
     "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
     "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",
+    "//xwalk/third_party/tenta/meta_fs",
   ]
 }

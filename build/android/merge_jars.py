@@ -39,6 +39,7 @@ JAR_ENTRY_WHITELIST = (
   'SevenZip/*.class',
   'org/chromium/*.class',
   'org/xwalk/*.class',
+  'com/tenta/*.class',
 )
 
 # These are the JAR files we are known to skip because they contain classes in

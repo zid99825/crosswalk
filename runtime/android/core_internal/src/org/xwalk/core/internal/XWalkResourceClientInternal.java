@@ -24,6 +24,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.xwalk.core.internal.XWalkViewDelegate;
 
 /**
  * This class notifies the embedder resource events/callbacks.

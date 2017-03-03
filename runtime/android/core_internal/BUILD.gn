@@ -55,6 +55,7 @@ android_library("xwalk_core_internal_java") {
     ":xwalk_core_internal_java_resources",
     ":xwalk_core_reflection_layer_gen",
     "//xwalk/extensions/android:xwalk_core_extensions_java",
+    "//xwalk/third_party/tenta/meta_fs/java:meta_fs_java",
   ]
   deps += core_internal_java_chromium_deps
   srcjars = [ "$reflection_gen_dir/bridge/bridge.srcjar" ]
@@ -112,6 +113,7 @@ android_library("xwalk_core_internal_java") {
     "src/org/xwalk/core/internal/extension/api/DisplayManagerJBMR1.java",
     "src/org/xwalk/core/internal/extension/api/DisplayManagerNull.java",
     "src/org/xwalk/core/internal/extension/api/XWalkDisplayManager.java",
+    "src/org/xwalk/core/internal/XWalkLoader.java",
   ]
   java_files += internal_java_files
   java_files += reflection_java_files

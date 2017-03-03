@@ -8,6 +8,11 @@ import("//third_party/ffmpeg/ffmpeg_options.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/build/xwalk.gni")
 
+declare_args() {
+    # Enable/Disable log output for tenta modules
+    enable_tenta_log = false
+}
+
 group("xwalk_builder") {
   # In GN, When a target is marked "testonly = true", it must only be depended
   # on by other test-only targets. In crosswalk project we don't need to care
@@ -419,13 +424,12 @@ source_set("xwalk_runtime") {
     "//xwalk/third_party/tenta/file_blocks",
     "//xwalk/third_party/tenta/meta_fs",
   ]
-
     # TODO remove  
-#  if ( enable_tenta_log ) {
-#    defines += [ "TENTA_LOG_ENABLE=1" ]
-#  } else {
-#    defines += [ "TENTA_LOG_ENABLE=0" ]
-#  }
+  if ( enable_tenta_log ) {
+    defines += [ "TENTA_LOG_ENABLE=1" ]
+  } else {
+    defines += [ "TENTA_LOG_ENABLE=0" ]
+  }
 
   if (is_android) {
     deps += [
