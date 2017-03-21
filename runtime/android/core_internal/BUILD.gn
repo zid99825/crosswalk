@@ -55,6 +55,7 @@ android_library("xwalk_core_internal_java") {
     ":xwalk_core_internal_java_resources",
     ":xwalk_core_reflection_layer_gen",
     "//xwalk/extensions/android:xwalk_core_extensions_java",
+    "//xwalk/third_party/tenta/meta_fs/java:meta_fs_java",
   ]
   deps += core_internal_java_chromium_deps
   srcjars = [ "$reflection_gen_dir/bridge/bridge.srcjar" ]

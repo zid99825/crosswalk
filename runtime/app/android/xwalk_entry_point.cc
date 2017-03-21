@@ -9,11 +9,15 @@
 #include "content/public/app/content_main_delegate.h"
 #include "xwalk/runtime/app/android/xwalk_jni_registrar.h"
 #include "xwalk/runtime/app/android/xwalk_main_delegate_android.h"
+#include "xwalk/third_party/tenta/meta_fs/jni/register_jni.h"
 
 namespace {
 
 bool RegisterJNI(JNIEnv* env) {
-  return xwalk::RegisterJni(env);
+  bool retVal =xwalk::RegisterJni(env);
+  retVal = retVal && tenta::fs::RegisterJni(env);
+
+  return retVal;
 }
 
 bool Init() {
