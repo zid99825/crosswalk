@@ -171,6 +171,15 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
                 mGetBitmapCallback);
     }
 
+    public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
+            XWalkGetBitmapCallbackInternal callback) {
+        if (mNativeContent == 0)
+            return;
+        mXWalkGetBitmapCallbackInternal = callback;
+        mWebContents.getContentBitmapAsync(config, scale, srcRect,
+                mGetBitmapCallback);
+    }
+
     private void setNativeContent(long newNativeContent, String animatable) {
         if (mNativeContent != 0) {
             destroy();

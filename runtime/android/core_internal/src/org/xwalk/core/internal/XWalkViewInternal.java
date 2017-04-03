@@ -1244,6 +1244,23 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
     }
 
     /**
+     * Tenta extension
+     * 
+     * @param config
+     * @param scale
+     * @param srcRect
+     * @param callback
+     */
+    @XWalkAPI
+    public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
+            XWalkGetBitmapCallbackInternal callback) {
+        if (mContent == null)
+            return;
+        checkThreadSafety();
+        mContent.captureBitmapWithParams(config, scale, srcRect, callback);
+    }
+
+    /**
      * Get XWalkSettings
      * 
      * @return the XWalkSettings object.
