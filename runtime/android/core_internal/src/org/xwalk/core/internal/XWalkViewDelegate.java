@@ -65,7 +65,8 @@ class XWalkViewDelegate {
     };
 
     private static final String[] MANDATORY_LIBRARIES = {
-        "xwalkcore"
+            "sqlite_gate",
+            "xwalkcore"
     };
     private static final String TAG = "XWalkLib";
     private static final String XWALK_RESOURCES_LIST_RES_NAME = "xwalk_resources_list";
@@ -77,8 +78,8 @@ class XWalkViewDelegate {
         InputStreamReader reader = null;
 
         try {
-            InputStream input =
-                    context.getAssets().open(COMMAND_LINE_FILE, AssetManager.ACCESS_BUFFER);
+            InputStream input = context.getAssets().open(COMMAND_LINE_FILE,
+                    AssetManager.ACCESS_BUFFER);
             int length;
             int size = 1024;
             char[] buffer = new char[size];
@@ -95,7 +96,8 @@ class XWalkViewDelegate {
             return null;
         } finally {
             try {
-                if (reader != null) reader.close();
+                if (reader != null)
+                    reader.close();
             } catch (IOException e) {
                 Log.e(TAG, "Unable to close file reader.", e);
             }
@@ -107,10 +109,11 @@ class XWalkViewDelegate {
             throw new RuntimeException("Failed to load native library");
         }
 
-        if (sInitialized) return;
+        if (sInitialized)
+            return;
 
-        Context context = libContext == null ?
-                appContext : new MixedContext(libContext, appContext);
+        Context context = libContext == null ? appContext
+                : new MixedContext(libContext, appContext);
 
         PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX, context);
 
@@ -156,7 +159,8 @@ class XWalkViewDelegate {
     // If context is null, it's running in embedded mode, otherwise in shared mode.
     public static boolean loadXWalkLibrary(Context context, String libDir)
             throws UnsatisfiedLinkError {
-        if (sLibraryLoaded) return true;
+        if (sLibraryLoaded)
+            return true;
 
         if (libDir != null && sLoadedByHoudini == false) {
             for (String library : MANDATORY_LIBRARIES) {
@@ -196,23 +200,27 @@ class XWalkViewDelegate {
             @Override
             public void run() {
                 try {
-                    LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER).ensureInitialized(context);
+                    LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER)
+                            .ensureInitialized(context);
                 } catch (ProcessInitException e) {
                     throw new RuntimeException("Cannot initialize Crosswalk Core", e);
                 }
                 DeviceUtils.addDeviceSpecificUserAgentSwitch(context);
                 CommandLine.getInstance().appendSwitchWithValue(
                         XWalkSwitches.PROFILE_NAME,
-                        XWalkPreferencesInternal.getStringValue(XWalkPreferencesInternal.PROFILE_NAME));
+                        XWalkPreferencesInternal
+                                .getStringValue(XWalkPreferencesInternal.PROFILE_NAME));
 
-                if (XWalkPreferencesInternal.getValue(XWalkPreferencesInternal.ANIMATABLE_XWALK_VIEW) &&
-                        !CommandLine.getInstance().hasSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION)) {
+                if (XWalkPreferencesInternal
+                        .getValue(XWalkPreferencesInternal.ANIMATABLE_XWALK_VIEW) &&
+                        !CommandLine.getInstance()
+                                .hasSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION)) {
                     CommandLine.getInstance().appendSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION);
                 }
 
                 try {
-                    BrowserStartupController.get(context, LibraryProcessType.PROCESS_BROWSER).
-                        startBrowserProcessesSync(true);
+                    BrowserStartupController.get(context, LibraryProcessType.PROCESS_BROWSER)
+                            .startBrowserProcessesSync(true);
                 } catch (ProcessInitException e) {
                     throw new RuntimeException("Cannot initialize Crosswalk Core", e);
                 }
@@ -221,14 +229,13 @@ class XWalkViewDelegate {
     }
 
     /**
-     * Plugs an instance of ResourceExtractor.ResourceIntercepter() into ResourceExtractor.
-     *
-     * It is responsible for loading resources from the right locations depending on whether
-     * Crosswalk is being used in shared or embedded mode.
+     * Plugs an instance of ResourceExtractor.ResourceIntercepter() into ResourceExtractor. It is
+     * responsible for loading resources from the right locations depending on whether Crosswalk is
+     * being used in shared or embedded mode.
      */
     private static void setupResourceInterceptor(final Context context) throws IOException {
-        final boolean isSharedMode =
-                !context.getPackageName().equals(context.getApplicationContext().getPackageName());
+        final boolean isSharedMode = !context.getPackageName()
+                .equals(context.getApplicationContext().getPackageName());
 
         String enable = getApplicationMetaData(context, META_XWALK_DOWNLOAD_MODE);
         if (enable == null) {
@@ -241,8 +248,8 @@ class XWalkViewDelegate {
         // Crosswalk apps: even though they use Crosswalk in embedded mode, the resources are stored
         // in assets/ with the rest of the app's assets.
         // XWalkRuntimeClientShell is the only exception, as it uses Crosswalk in shared mode.
-        final boolean isTestApk =
-                !isSharedMode && Arrays.asList(context.getAssets().list("")).contains(XWALK_PAK_NAME);
+        final boolean isTestApk = !isSharedMode
+                && Arrays.asList(context.getAssets().list("")).contains(XWALK_PAK_NAME);
 
         HashMap<String, ResourceEntry> resourceList = new HashMap<String, ResourceEntry>();
         try {
@@ -300,12 +307,12 @@ class XWalkViewDelegate {
     }
 
     /**
-     * Returns a resource identifier for a given resource name and type.
-     *
-     * Basically a wrapper around Resources.getIdentifier() that also works with applications that
-     * change their package name at build time (see XWALK-3569).
+     * Returns a resource identifier for a given resource name and type. Basically a wrapper around
+     * Resources.getIdentifier() that also works with applications that change their package name at
+     * build time (see XWALK-3569).
      */
-    private static int getResourceId(final Context context, final String resourceName, final String resourceType) {
+    private static int getResourceId(final Context context, final String resourceName,
+            final String resourceType) {
         int resourceId = context.getResources().getIdentifier(
                 resourceName, resourceType, context.getClass().getPackage().getName());
         if (resourceId == 0) {

@@ -46,6 +46,8 @@ import android.view.View;
 import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 
+import com.tenta.fs.ACancellableProgress;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -989,11 +991,11 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean saveStateWithKey(final String id, final String encKey) {
+    public boolean saveHistory(final String id, final String encKey) {
         if (mContent == null)
             return false;
 
-        if (mContent.saveStateWithKey(id, encKey) != null) {
+        if (mContent.saveHistory(id, encKey) != null) {
             return true;
         }
         return false;
@@ -1007,17 +1009,31 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean restoreStateWithKey(final String id, final String encKey) {
+    public boolean restoreHistory(final String id, final String encKey) {
         if (mContent == null) {
             return false;
         }
 
-        if (mContent.restoreStateWithKey(id, encKey) != null) {
+        if (mContent.restoreHistory(id, encKey) != null) {
             return true;
         }
         return false;
     }
 
+    /**
+     * Used to retrieve metafs errors for failed operations
+     * 
+     * @return
+     */
+    @XWalkAPI
+    public int getMetaFsError() {
+        if (mContent == null) {
+            return -6; //ERR_INVALID_POINTER
+        }
+        
+        return mContent.getMetaFsError();
+    }
+    
     /**
      * Push old style (stored on Java side) navigation history to new encrypted db
      * 
@@ -1027,12 +1043,12 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean pushStateWitkKey(byte[] state, final String id,
+    public boolean saveOldHistory(byte[] state, final String id,
             final String encKey) {
         if (mContent == null) {
             return false;
         }
-        if (mContent.pushStateWitkKey(state, id, encKey) != null) {
+        if (mContent.saveOldHistory(state, id, encKey) != null) {
             return true;
         }
 
@@ -1047,11 +1063,11 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean nukeStateWithKey(final String id, final String encKey) {
+    public boolean nukeHistory(final String id, final String encKey) {
         if (mContent == null) {
             return false;
         }
-        if (mContent.nukeStateWithKey(id, encKey) != null) {
+        if (mContent.nukeHistory(id, encKey) != null) {
             return true;
         }
 
@@ -1066,11 +1082,11 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean rekeyStateWithKey(final String oldKey, final String newKey) {
+    public boolean rekeyHistory(final String oldKey, final String newKey) {
         if (mContent == null) {
             return false;
         }
-        if (mContent.rekeyStateWithKey(oldKey, newKey)) {
+        if (mContent.rekeyHistory(oldKey, newKey)) {
             return true;
         }
 

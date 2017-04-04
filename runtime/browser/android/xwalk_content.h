@@ -15,9 +15,11 @@
 #include "third_party/WebKit/public/platform/modules/permissions/permission_status.mojom.h"
 #include "xwalk/runtime/browser/android/find_helper.h"
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
+#include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
 
 using base::android::JavaParamRef;
 using base::android::ScopedJavaLocalRef;
+using tenta::fs::MetaVirtualFile;
 
 namespace content {
 class BrowserContext;
@@ -43,7 +45,7 @@ class XWalkContent : public FindHelper::Listener {
   base::android::ScopedJavaLocalRef<jobject> GetWebContents(JNIEnv* env,
                                                             jobject obj);
   void SetPendingWebContentsForPopup(
-      std::unique_ptr<content::WebContents> pending);
+                                     std::unique_ptr<content::WebContents> pending);
   jlong ReleasePopupXWalkContent(JNIEnv* env, jobject obj);
   void SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
                     jobject web_contents_delegate,
@@ -62,24 +64,56 @@ class XWalkContent : public FindHelper::Listener {
                                                          jobject obj);
   jboolean SetState(JNIEnv* env, jobject obj, jbyteArray state);
 
-  jboolean PushStateWitkKey(JNIEnv* env, jobject obj,
-                            const JavaParamRef<jbyteArray>& state, jstring id,
-                            jstring key);
-  // TODO make private
-  bool SaveArrayToDb(const char * data, int data_len, JNIEnv* env, jstring id,
-                     jstring key);
+  /******** Using Metafs **********/
+  //TODO make this private
+  int OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
+                      const JavaParamRef<jstring>& key,
+                      std::shared_ptr<MetaVirtualFile>& out,
+                      int mode);
 
-  jboolean SaveStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
-  jboolean RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
-                               jstring key);
-  jboolean NukeStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
-  jboolean RekeyStateWithKey(JNIEnv* env, jobject obj, jstring oldKey, jstring newKey);
-  /**
-   * Fill |out| with app path + history.db
-   * @param out storage for file+path storage
-   * @return true if success; false otherwise
-   */
-  bool GetHistoryDbPath(std::string& out);
+  jint SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                      const JavaParamRef<jbyteArray>& state,
+                      const JavaParamRef<jstring>& id,
+                      const JavaParamRef<jstring>& key);
+
+  jint SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                   const JavaParamRef<jstring>& id,
+                   const JavaParamRef<jstring>& key);
+
+  jint RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                      const JavaParamRef<jstring>& id,
+                      const JavaParamRef<jstring>& key);
+
+
+  jint NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                   const JavaParamRef<jstring>& id,
+                   const JavaParamRef<jstring>& key);
+
+  jint ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                    const JavaParamRef<jstring>& oldKey,
+                    const JavaParamRef<jstring>& newKey);
+
+  /******** End Metafs **********/
+
+//  jboolean PushStateWitkKey(JNIEnv* env, jobject obj,
+//                            const JavaParamRef<jbyteArray>& state,
+//                            jstring id,
+//                            jstring key);
+//  // TODO make private
+//  bool SaveArrayToDb(const char * data, int data_len, JNIEnv* env, jstring id,
+//                     jstring key);
+//
+//  jboolean SaveStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
+//  jboolean RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
+//                               jstring key);
+//  jboolean NukeStateWithKey(JNIEnv* env, jobject obj, jstring id, jstring key);
+//  jboolean RekeyStateWithKey(JNIEnv* env, jobject obj, jstring oldKey, jstring newKey);
+//  /**
+//   * Fill |out| with app path + history.db
+//   * @param out storage for file+path storage
+//   * @return true if success; false otherwise
+//   */
+//  bool GetHistoryDbPath(std::string& out);
 
   XWalkRenderViewHostExt* render_view_host_ext() {
     return render_view_host_ext_.get();
@@ -107,7 +141,8 @@ class XWalkContent : public FindHelper::Listener {
   void SetSaveFormData(bool enabled);
 
   base::android::ScopedJavaLocalRef<jbyteArray> GetCertificate(
-      JNIEnv* env, const JavaParamRef<jobject>& obj);
+                                                               JNIEnv* env,
+                                                               const JavaParamRef<jobject>& obj);
 
   FindHelper* GetFindHelper();
   void FindAllAsync(JNIEnv* env, const JavaParamRef<jobject>& obj,

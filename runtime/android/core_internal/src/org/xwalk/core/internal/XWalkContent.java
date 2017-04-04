@@ -29,6 +29,9 @@ import android.view.inputmethod.InputConnection;
 import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 
+import com.tenta.fs.ACancellableProgress;
+import com.tenta.fs.MetaErrors;
+
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
@@ -88,6 +91,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private final HitTestData mPossiblyStaleHitTestData = new HitTestData();
     // Controls overscroll pull-to-refresh behavior.
     private SwipeRefreshHandler mSwipeRefreshHandler;
+    private int metaFsError = 0;
 
     long mNativeContent;
 
@@ -781,19 +785,32 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     }
 
     /**
+     * Returns last metafs error
+     * 
+     * @return
+     */
+    public int getMetaFsError() {
+        return metaFsError;
+    }
+
+    /**
      * Save current history in native db, using id and encryption key
      * 
      * @param id
      * @param encKey
      * @return
      */
-    public XWalkNavigationHistoryInternal saveStateWithKey(final String id, final String encKey) {
-        if (mNativeContent == 0)
-            return null;
-
-        if (!nativeSaveStateWithKey(mNativeContent, id, encKey)) {
+    public XWalkNavigationHistoryInternal saveHistory(final String id, final String encKey) {
+        if (mNativeContent == 0) {
+            metaFsError = -6; // ERR_INVALID_POINTER
             return null;
         }
+
+        metaFsError = nativeSaveHistory(mNativeContent, id, encKey);
+        if (metaFsError != MetaErrors.FS_OK) {
+            return null;
+        }
+
         return getNavigationHistory();
     }
 
@@ -804,14 +821,18 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
      * @param encKey
      * @return
      */
-    public XWalkNavigationHistoryInternal restoreStateWithKey(final String id,
-            final String encKey) {
-        if (mNativeContent == 0)
-            return null;
-        // return result ? getNavigationHistory() : null;
-        if (!nativeRestoreStateWithKey(mNativeContent, id, encKey)) {
+    public XWalkNavigationHistoryInternal restoreHistory(final String id, final String encKey) {
+        if (mNativeContent == 0) {
+            metaFsError = -6; // ERR_INVALID_POINTER
             return null;
         }
+
+        // return result ? getNavigationHistory() : null;
+        metaFsError = nativeRestoreHistory(mNativeContent, id, encKey);
+        if (metaFsError != MetaErrors.FS_OK) {
+            return null;
+        }
+
         mContentsClientBridge.onUpdateTitle(mWebContents.getTitle());
 
         return getNavigationHistory();
@@ -825,15 +846,21 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
      * @param encKey
      * @return
      */
-    public XWalkNavigationHistoryInternal pushStateWitkKey(byte[] state, final String id,
+    public XWalkNavigationHistoryInternal saveOldHistory(byte[] state, final String id,
             final String encKey) {
 
-        if (mNativeContent == 0)
-            return null;
-        // return result ? getNavigationHistory() : null;
-        if (!nativePushStateWitkKey(mNativeContent, state, id, encKey)) {
+        if (mNativeContent == 0) {
+            metaFsError = -6; // ERR_INVALID_POINTER
             return null;
         }
+        // return result ? getNavigationHistory() : null;
+
+        metaFsError = nativeSaveOldHistory(mNativeContent, state, id, encKey);
+
+        if (metaFsError != MetaErrors.FS_OK) {
+            return null;
+        }
+
         mContentsClientBridge.onUpdateTitle(mWebContents.getTitle());
 
         return getNavigationHistory();
@@ -846,23 +873,32 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
      * @param encKey
      * @return
      */
-    public XWalkNavigationHistoryInternal nukeStateWithKey(final String id, final String encKey) {
+    public XWalkNavigationHistoryInternal nukeHistory(final String id, final String encKey) {
         if (mNativeContent == 0) {
+            metaFsError = -6; // ERR_INVALID_POINTER
             return null;
         }
-        if (!nativeNukeStateWithKey(mNativeContent, id, encKey)) {
+
+        metaFsError = nativeNukeHistory(mNativeContent, id, encKey);
+
+        if (metaFsError != MetaErrors.FS_OK) {
             return null;
         }
+
         return getNavigationHistory();
     }
 
-    public boolean rekeyStateWithKey(final String oldKey, final String newKey) {
+    public boolean rekeyHistory(final String oldKey, final String newKey) {
         if (mNativeContent == 0) {
+            metaFsError = -6; // ERR_INVALID_POINTER
             return false;
         }
-        if (!nativeRekeyStateWithKey(mNativeContent, oldKey, newKey)) {
+
+        metaFsError = nativeReKeyHistory(mNativeContent, oldKey, newKey);
+        if (metaFsError != MetaErrors.FS_OK) {
             return false;
         }
+
         return true;
     }
 
@@ -1381,17 +1417,20 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private native void nativeInvokeGeolocationCallback(long nativeXWalkContent, boolean value,
             String requestingFrame);
 
-    private native boolean nativeSaveStateWithKey(long nativeXWalkContent, String id, String key);
+    /****** MetaFS ********/
+    private native int nativeSaveOldHistory(long nativeXWalkContent, byte[] state, final String id,
+            final String key);
 
-    private native boolean nativeRestoreStateWithKey(long nativeXWalkContent, String id,
+    private native int nativeSaveHistory(long nativeXWalkContent, String id, String key);
+
+    private native int nativeRestoreHistory(long nativeXWalkContent, String id,
             String key);
 
-    private native boolean nativePushStateWitkKey(long nativeXWalkContent, byte[] state, String id,
-            String key);
+    private native int nativeNukeHistory(long nativeXWalkContent, String id, String key);
 
-    private native boolean nativeNukeStateWithKey(long nativeXWalkContent, String id, String key);
+    /******* end MetaFs **********/
 
-    private native boolean nativeRekeyStateWithKey(long nativeXWalkContent, String oldKey,
+    private native int nativeReKeyHistory(long nativeXWalkContent, String oldKey,
             String newKey);
 
     private native byte[] nativeGetState(long nativeXWalkContent);
