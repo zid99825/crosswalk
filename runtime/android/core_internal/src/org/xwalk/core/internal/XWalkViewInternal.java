@@ -17,6 +17,7 @@
 
 package org.xwalk.core.internal;
 
+import android.R.integer;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ApplicationErrorReport;
@@ -25,6 +26,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.net.http.SslCertificate;
@@ -1262,18 +1264,26 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
     /**
      * Tenta extension
      * 
-     * @param config
      * @param scale
      * @param srcRect
      * @param callback
      */
     @XWalkAPI
-    public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
+    public void captureBitmapWithParams(float scale, Rect srcRect,
             XWalkGetBitmapCallbackInternal callback) {
         if (mContent == null)
             return;
         checkThreadSafety();
-        mContent.captureBitmapWithParams(config, scale, srcRect, callback);
+        mContent.captureBitmapWithParams(Bitmap.Config.ARGB_8888, scale, srcRect, callback);
+    }
+
+    @XWalkAPI
+    public void captureBitmapWithParamsRGB565(float scale, Rect srcRect,
+            XWalkGetBitmapCallbackInternal callback) {
+        if (mContent == null)
+            return;
+        checkThreadSafety();
+        mContent.captureBitmapWithParams(Bitmap.Config.RGB_565, scale, srcRect, callback);
     }
 
     /**

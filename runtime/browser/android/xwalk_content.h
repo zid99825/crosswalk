@@ -19,7 +19,7 @@
 
 using base::android::JavaParamRef;
 using base::android::ScopedJavaLocalRef;
-using tenta::fs::MetaVirtualFile;
+using tenta::fs::MetaFile;
 
 namespace content {
 class BrowserContext;
@@ -68,7 +68,7 @@ class XWalkContent : public FindHelper::Listener {
   //TODO make this private
   int OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
                       const JavaParamRef<jstring>& key,
-                      std::shared_ptr<MetaVirtualFile>& out,
+                      std::shared_ptr<MetaFile>& out,
                       int mode);
 
   jint SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,

@@ -54,10 +54,12 @@
 //#include "xwalk/third_party/tenta/file_blocks/db_file.h"
 #include "xwalk/third_party/tenta/meta_fs/meta_errors.h"
 #include "xwalk/third_party/tenta/meta_fs/meta_db.h"
-#include "xwalk/third_party/tenta/meta_fs/meta_read_listener.h"
+#include "xwalk/third_party/tenta/meta_fs/meta_file.h"
+#include "xwalk/third_party/tenta/meta_fs/a_cancellable_read_listener.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_fs_manager.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_file_system.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
+#include "xwalk/third_party/tenta/meta_fs/jni/java_byte_array.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertUTF8ToJavaString;
@@ -75,25 +77,32 @@ namespace xwalk {
 
 namespace {
 // TODO make a template AutoCallClose
-class AutoCloseVirtualFile {
+/**
+ *
+ */
+class AutoCloseMetaFile {
  public:
-  AutoCloseVirtualFile(std::shared_ptr<metafs::MetaVirtualFile>& mvf)
+  AutoCloseMetaFile(std::shared_ptr<metafs::MetaFile>& mvf)
       : _mvf(mvf) {
   }
-  ~AutoCloseVirtualFile() {
+  ~AutoCloseMetaFile() {
     if (_mvf.get() != nullptr) {
       _mvf->Close();
     }
   }
  private:
-  std::shared_ptr<metafs::MetaVirtualFile>& _mvf;
+  std::shared_ptr<metafs::MetaFile>& _mvf;
 };
 
+/**
+ *
+ */
 class MetaReadToPickle :
-    public metafs::MetaReadListener {
+    public metafs::ACancellableReadListener {
  public:
   MetaReadToPickle(base::Pickle& pickle)
-      : _pickle_to_fill(pickle) {
+      : ACancellableReadListener(ScopedJavaGlobalRef<jobject>()),
+        _pickle_to_fill(pickle) {
 
   }
 
@@ -558,34 +567,65 @@ jboolean XWalkContent::SetState(JNIEnv* env, jobject obj, jbyteArray state) {
  */
 int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
                                   const JavaParamRef<jstring>& key,
-                                  std::shared_ptr<metafs::MetaVirtualFile>& out,
+                                  std::shared_ptr<metafs::MetaFile>& out,
                                   int mode) {
 
-  using namespace ::tenta::fs;
+  using namespace metafs;
   using namespace ::base::android;
 
   MetaFsManager * mng = MetaFsManager::GetInstance();
   if (mng == nullptr) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "MetaFsManager::GetInstance() NULL";
+#endif
     return ERR_NULL_POINTER;
   }
 
-  std::string idStr, keyStr;
+  std::string keyStr;
 
-  ConvertJavaStringToUTF8(env, id, &idStr);
   ConvertJavaStringToUTF8(env, key, &keyStr);
 
-  std::shared_ptr<MetaFileSystem> mfs = mng->OpenFs(cHistoryDb, keyStr, cHistoryBlockSize);
+  std::weak_ptr<MetaDb> weak;
+  int result;
 
-  if (mfs.get() == nullptr) {
-    // TODO log error
+  result = mng->OpenDb(cHistoryDb, keyStr, cHistoryBlockSize, weak);
+  if (result != FS_OK) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "OpenDb failed";
+#endif
     return mng->error();
   }
 
-  out = mfs->OpenFile(idStr, "", mode);
+  std::shared_ptr<MetaDb> db = weak.lock();
 
+  if (db.get() == nullptr) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "MetaDb NULL";
+#endif
+    return ERR_INVALID_POINTER;
+  }
+
+  std::string idStr;
+  ConvertJavaStringToUTF8(env, id, &idStr);
+
+  std::weak_ptr<MetaFile> weak_file;
+
+  int status;
+  status = db->OpenFile(idStr, "", weak_file, mode);
+
+  if (status != FS_OK) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "OpenFile '" << idStr << "' failed " << status;
+#endif
+    return status;
+  }
+
+  out = weak_file.lock();
   if (out.get() == nullptr) {
-    // TODO log error
-    return mfs->error();
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "File pointer NULL";
+#endif
+    return ERR_INVALID_POINTER;
   }
 
   return FS_OK;
@@ -600,20 +640,35 @@ jint XWalkContent::SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& jcal
                                   const JavaParamRef<jstring>& key) {
   using namespace metafs;
 
-  std::shared_ptr<MetaVirtualFile> vFile;
-  AutoCloseVirtualFile mvfClose(vFile);
+  std::shared_ptr<MetaFile> file;
+  AutoCloseMetaFile mvfClose(file);
 
   int status;
-  status = OpenHistoryFile(env, id, key, vFile,
+  status = OpenHistoryFile(env, id, key, file,
                            MetaDb::IO_CREATE_IF_NOT_EXISTS | MetaDb::IO_TRUNCATE_IF_EXISTS);
 
   if (status != FS_OK) {
     return status;
   }
 
-  // TODO also restore
+  std::unique_ptr<JavaByteArray> data(new JavaByteArray());
+  if (data.get() == nullptr) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "SaveOldHistory: JavaByteArray not created, out of memory";
+#endif
+    return ERR_OUT_MEMORY;
+  }
 
-  return vFile->Append(env, jcaller, state, JavaParamRef<jobject>(nullptr));
+  status = data->init(env, state);
+  if (status != FS_OK) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "SaveOldHistory: JavaByteArray init failed " << status;
+#endif
+    return status;
+  }
+
+  int iolen = data->len();
+  return file->Append(data->data(), iolen);
 }
 
 /**
@@ -624,10 +679,14 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                const JavaParamRef<jstring>& key) {
 
   using namespace metafs;
+  using namespace ::base::android;
 
   std::unique_ptr<base::Pickle> pickle(new base::Pickle());
 
   if (pickle.get() == nullptr) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(ERROR) << "SaveHistory: Pickle not created, out of memory";
+#endif
     return ERR_OUT_MEMORY;
   }
 
@@ -638,22 +697,23 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
     return ERR_XWALK_INTERNAL;  // error occured
   }
 
-  std::shared_ptr<MetaVirtualFile> vFile;
-  AutoCloseVirtualFile mvfClose(vFile);
+  std::shared_ptr<MetaFile> file;
+  AutoCloseMetaFile mvfClose(file);
 
   int status;
-  status = OpenHistoryFile(env, id, key, vFile,
+  status = OpenHistoryFile(env, id, key, file,
                            MetaDb::IO_CREATE_IF_NOT_EXISTS | MetaDb::IO_TRUNCATE_IF_EXISTS);
 
   if (status != FS_OK) {
     return status;
   }
 
-  if (pickle->payload_size() == 0) {
+  if (pickle->payload_size() == 0) { // file truncated allready
     return FS_OK;  // no data to save
   }
 
-  return vFile->Append(pickle->payload(), pickle->payload_size());
+  int iolen = pickle->payload_size();
+  return file->Append(pickle->payload(), iolen);
 }
 
 /**
@@ -663,22 +723,20 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                   const JavaParamRef<jstring>& id,
                                   const JavaParamRef<jstring>& key) {
   using namespace metafs;
+  using namespace ::base::android;
 
-  std::shared_ptr<MetaVirtualFile> vFile;
-  AutoCloseVirtualFile mvfClose(vFile);
+  std::shared_ptr<MetaFile> file;
+  AutoCloseMetaFile mvfClose(file);
 
   int status;
-  status = OpenHistoryFile(env, id, key, vFile,
+  status = OpenHistoryFile(env, id, key, file,
                            MetaDb::IO_CREATE_IF_NOT_EXISTS | MetaDb::IO_OPEN_EXISTING);
 
   if (status != FS_OK) {
-#if TENTA_LOG_ENABLE == 1
-    LOG(ERROR) << "RestoreHistory Open file" << status;
-#endif
     return status;
   }
 
-  int length = vFile->GetLength();
+  int length = file->length();
 
   if (length < 0) {
 #if TENTA_LOG_ENABLE == 1
@@ -688,7 +746,12 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
   }
 
   if (length == 0) {
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "RestoreHistory empty " << length;
+#endif
     return FS_OK;  // zero data
+    // Safe to return since this webView was just created
+    // so it has no history to be cleared
   }
 
   base::Pickle pickle;
@@ -696,7 +759,7 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
 
   pickle.Reserve(length);  // makes write faster
 
-  status = vFile->Read(0, nullptr, length, &intoPickle);
+  status = file->Read(0, nullptr, length, &intoPickle);
   if (status != FS_OK) {
 #if TENTA_LOG_ENABLE == 1
     LOG(ERROR) << "RestoreHistory read error " << status;
@@ -708,7 +771,7 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
   if (!RestoreFromPickle(&iterator, web_contents_.get())) {
 #if TENTA_LOG_ENABLE == 1
     LOG(ERROR) << "Restore pickle error "
-                  << pickle.size() << " pl: " << pickle.payload_size();
+                  << pickle.size() << " payLoad: " << pickle.payload_size();
 #endif
     return ERR_XWALK_INTERNAL;
   }
@@ -724,14 +787,17 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                const JavaParamRef<jstring>& key) {
   using namespace metafs;
 
-  std::shared_ptr<MetaVirtualFile> vFile;
-  AutoCloseVirtualFile mvfClose(vFile);
+  std::shared_ptr<MetaFile> file;
+  AutoCloseMetaFile mvfClose(file);
 
   int status;
-  status = OpenHistoryFile(env, id, key, vFile,
-                           MetaDb::IO_CREATE_IF_NOT_EXISTS | MetaDb::IO_TRUNCATE_IF_EXISTS);
+  status = OpenHistoryFile(env, id, key, file, MetaDb::IO_OPEN_EXISTING);
 
-  return status;
+  if (status != FS_OK) {
+    return status;
+  }
+
+  return file->Delete();
 }
 
 /**
@@ -752,14 +818,26 @@ jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
 
   ConvertJavaStringToUTF8(env, oldKey, &oldKeyStr);
 
-  std::shared_ptr<MetaFileSystem> mfs = mng->OpenFs(cHistoryDb, oldKeyStr, cHistoryBlockSize);
+  std::weak_ptr<MetaDb> weak;
+  int result;
 
-  if (mfs.get() == nullptr) {
-    // TODO log error
+  result = mng->OpenDb(cHistoryDb, oldKeyStr, cHistoryBlockSize, weak);
+  if (result != FS_OK) {
     return mng->error();
   }
 
-  return mfs->ReKey(env, obj, newKey);
+  std::shared_ptr<MetaDb> db = weak.lock();
+
+  if (db.get() == nullptr) {
+    // TODO log error
+    return ERR_INVALID_POINTER;
+  }
+
+  std::string newKeyStr;
+
+  ConvertJavaStringToUTF8(env, newKey, &newKeyStr);
+
+  return db->ReKey(newKeyStr);
 }
 
 /************ End MetaFS ****************/
@@ -1114,7 +1192,6 @@ jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
 //
 //  return true;
 //}
-
 static jlong Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   std::unique_ptr<WebContents> web_contents(
       content::WebContents::Create(
