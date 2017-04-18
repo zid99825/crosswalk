@@ -39,9 +39,11 @@ XWalkExtensionRendererController::XWalkExtensionRendererController(
   SetupBrowserProcessClient(browser_channel);
 
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
-  if (cmd_line->HasSwitch(switches::kXWalkDisableExtensionProcess))
+  if (cmd_line->HasSwitch(switches::kXWalkDisableExtensionProcess)){
+#if TENTA_LOG_ENABLE == 1
     LOG(INFO) << "EXTENSION PROCESS DISABLED.";
-  else
+#endif
+  }  else
     SetupExtensionProcessClient(browser_channel);
 }
 

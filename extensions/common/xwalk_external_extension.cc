@@ -45,19 +45,23 @@ bool XWalkExternalExtension::Initialize() {
   base::ScopedNativeLibrary library(
       base::LoadNativeLibrary(library_path_, &error));
   if (!library.is_valid()) {
+#if TENTA_LOG_ENABLE == 1
     LOG(WARNING) << "Error loading extension '"
                  << library_path_.AsUTF8Unsafe()
                  << "': "
                  << error.ToString();
+#endif
     return false;
   }
 
   XW_Initialize_Func initialize = reinterpret_cast<XW_Initialize_Func>(
       library.GetFunctionPointer("XW_Initialize"));
   if (!initialize) {
+#if TENTA_LOG_ENABLE == 1
     LOG(WARNING) << "Error loading extension '"
                  << library_path_.AsUTF8Unsafe() << "': "
                  << "couldn't get XW_Initialize function.";
+#endif
     return false;
   }
 
@@ -66,9 +70,11 @@ bool XWalkExternalExtension::Initialize() {
   external_adapter->RegisterExtension(this);
   int ret = initialize(xw_extension_, XWalkExternalAdapter::GetInterface);
   if (ret != XW_OK) {
+#if TENTA_LOG_ENABLE == 1
     LOG(WARNING) << "Error loading extension '"
                  << library_path_.AsUTF8Unsafe() << "': "
                  << "XW_Initialize function returned error value.";
+#endif
     return false;
   }
   library_.Reset(library.Release());
