@@ -5,7 +5,6 @@
 
 package org.xwalk.core.internal;
 
-import android.R.string;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -29,7 +28,6 @@ import android.view.inputmethod.InputConnection;
 import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 
-import com.tenta.fs.ACancellableProgress;
 import com.tenta.fs.MetaErrors;
 
 import org.chromium.base.ThreadUtils;
@@ -1342,6 +1340,28 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             return null;
         return SslUtil.getCertificateFromDerBytes(nativeGetCertificate(mNativeContent));
     }
+    
+    /**
+     * 
+     * @return
+     */
+    public SslCertificate[] getCertificateChain() {
+        if (mNativeContent == 0)
+            return null;
+        //TODO implement
+        byte[][] d = nativeGetCertificateChain(mNativeContent);
+        if ( d == null || d.length == 0) {
+            return null;
+        }
+        
+        SslCertificate[] retVal = new SslCertificate[d.length];
+        
+        for (int i = 0; i < d.length; i++) {
+            retVal[i] = SslUtil.getCertificateFromDerBytes(d[i]);
+        }
+        
+        return retVal;
+    }
 
     public boolean hasPermission(final String permission) {
         if (mNativeContent == 0)
@@ -1448,6 +1468,8 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private native void nativeUpdateLastHitTestData(long nativeXWalkContent);
 
     private native byte[] nativeGetCertificate(long nativeXWalkContent);
+    
+    private native byte[][] nativeGetCertificateChain(long nativeXWalkContent);
 
     private native void nativeFindAllAsync(long nativeXWalkContent, String searchString);
 

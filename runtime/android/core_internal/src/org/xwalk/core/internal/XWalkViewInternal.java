@@ -1970,6 +1970,14 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         return mContent.getCertificate();
     }
 
+    @XWalkAPI
+    public SslCertificate[] getCertificateChain() {
+        if (mContent == null)
+            return null;
+        checkThreadSafety();
+        return mContent.getCertificateChain();
+    }
+    
     /**
      * Registers the listener to be notified as find-on-page operations progress.
      *

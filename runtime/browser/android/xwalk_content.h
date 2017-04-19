@@ -84,7 +84,6 @@ class XWalkContent : public FindHelper::Listener {
                       const JavaParamRef<jstring>& id,
                       const JavaParamRef<jstring>& key);
 
-
   jint NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
                    const JavaParamRef<jstring>& id,
                    const JavaParamRef<jstring>& key);
@@ -114,7 +113,6 @@ class XWalkContent : public FindHelper::Listener {
 //   * @return true if success; false otherwise
 //   */
 //  bool GetHistoryDbPath(std::string& out);
-
   XWalkRenderViewHostExt* render_view_host_ext() {
     return render_view_host_ext_.get();
   }
@@ -143,6 +141,10 @@ class XWalkContent : public FindHelper::Listener {
   base::android::ScopedJavaLocalRef<jbyteArray> GetCertificate(
                                                                JNIEnv* env,
                                                                const JavaParamRef<jobject>& obj);
+
+  base::android::ScopedJavaLocalRef<jobjectArray> GetCertificateChain(
+      JNIEnv* env,
+      const JavaParamRef<jobject>& obj);
 
   FindHelper* GetFindHelper();
   void FindAllAsync(JNIEnv* env, const JavaParamRef<jobject>& obj,

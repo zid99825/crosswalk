@@ -640,7 +640,7 @@ jint XWalkContent::SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& jcal
                                   const JavaParamRef<jstring>& key) {
   using namespace metafs;
 
-  std::shared_ptr<MetaFile> file;
+  std::shared_ptr < MetaFile > file;
   AutoCloseMetaFile mvfClose(file);
 
   int status;
@@ -697,7 +697,7 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
     return ERR_XWALK_INTERNAL;  // error occured
   }
 
-  std::shared_ptr<MetaFile> file;
+  std::shared_ptr < MetaFile > file;
   AutoCloseMetaFile mvfClose(file);
 
   int status;
@@ -708,7 +708,7 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
     return status;
   }
 
-  if (pickle->payload_size() == 0) { // file truncated allready
+  if (pickle->payload_size() == 0) {  // file truncated allready
     return FS_OK;  // no data to save
   }
 
@@ -725,7 +725,7 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
   using namespace metafs;
   using namespace ::base::android;
 
-  std::shared_ptr<MetaFile> file;
+  std::shared_ptr < MetaFile > file;
   AutoCloseMetaFile mvfClose(file);
 
   int status;
@@ -787,7 +787,7 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                const JavaParamRef<jstring>& key) {
   using namespace metafs;
 
-  std::shared_ptr<MetaFile> file;
+  std::shared_ptr < MetaFile > file;
   AutoCloseMetaFile mvfClose(file);
 
   int status;
@@ -1320,6 +1320,45 @@ base::android::ScopedJavaLocalRef<jbyteArray> XWalkContent::GetCertificate(
                                         env,
                                         reinterpret_cast<const uint8_t*>(der_string.data()),
                                         der_string.length());
+}
+
+/**
+ *
+ */
+base::android::ScopedJavaLocalRef<jobjectArray> XWalkContent::GetCertificateChain(
+    JNIEnv* env,
+    const JavaParamRef<jobject>& obj) {
+
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  content::NavigationEntry* entry = web_contents_->GetController()
+      .GetLastCommittedEntry();
+  if (!entry)
+    return ScopedJavaLocalRef<jobjectArray>();
+  // Get the certificate
+  int cert_id = entry->GetSSL().cert_id;
+  scoped_refptr<net::X509Certificate> cert;
+  bool ok = content::CertStore::GetInstance()->RetrieveCert(cert_id, &cert);
+  if (!ok)
+    return ScopedJavaLocalRef<jobjectArray>();
+
+  std::vector < std::string > cert_chain;
+  // Convert the certificate and return it
+  std::string der_string;
+  net::X509Certificate::GetDEREncoded(cert->os_cert_handle(), &der_string);
+
+  cert_chain.push_back(der_string);  // store main cert
+
+  // iterate over the list of intermediates
+  const net::X509Certificate::OSCertHandles& intermediates = cert->GetIntermediateCertificates();
+
+  for (size_t i = 0; i < intermediates.size(); ++i) {
+    der_string.clear();
+
+    net::X509Certificate::GetDEREncoded(intermediates[i], &der_string);
+    cert_chain.push_back(der_string);  // store intermediates
+
+  }
+  return base::android::ToJavaArrayOfByteArray(env, cert_chain);
 }
 
 FindHelper* XWalkContent::GetFindHelper() {
