@@ -60,9 +60,12 @@
 #include "xwalk/runtime/browser/android/net/xwalk_cookie_store_wrapper.h"
 #include "xwalk/runtime/browser/android/net/xwalk_url_request_job_factory.h"
 #include "xwalk/runtime/browser/android/xwalk_request_interceptor.h"
+#include "xwalk/third_party/tenta/chromium_cache/meta_fs_cache_factory.h"
 #endif
 
 using content::BrowserThread;
+
+namespace tenta_cache = tenta::chromium::cache;
 
 namespace xwalk {
 
@@ -252,6 +255,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
             > (new net::HttpServerPropertiesImpl));
 
     base::FilePath cache_path = base_path_.Append(FILE_PATH_LITERAL("Cache"));
+    std::unique_ptr<tenta_cache::MetaFsCacheFactory> tenta_backend(new tenta_cache::MetaFsCacheFactory());
+
     std::unique_ptr<net::HttpCache::DefaultBackend> main_backend(
         new net::HttpCache::DefaultBackend(
             net::DISK_CACHE, net::CACHE_BACKEND_DEFAULT, cache_path,
@@ -290,6 +295,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     storage_->set_http_transaction_factory(
         base::WrapUnique(
             new net::HttpCache(storage_->http_network_session(),
+//                               std::move(tenta_backend),
                                std::move(main_backend),
                                false /* set_up_quic_server_info */)));
 #if defined(OS_ANDROID)

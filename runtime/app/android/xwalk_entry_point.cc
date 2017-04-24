@@ -10,12 +10,14 @@
 #include "xwalk/runtime/app/android/xwalk_jni_registrar.h"
 #include "xwalk/runtime/app/android/xwalk_main_delegate_android.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/register_jni.h"
+#include "xwalk/third_party/tenta/chromium_cache/register_jni.h"
 
 namespace {
 
 bool RegisterJNI(JNIEnv* env) {
   bool retVal =xwalk::RegisterJni(env);
   retVal = retVal && tenta::fs::RegisterJni(env);
+  retVal = retVal && tenta::fs::cache::RegisterJni(env);
 
   return retVal;
 }
