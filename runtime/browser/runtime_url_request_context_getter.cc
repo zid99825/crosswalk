@@ -295,8 +295,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     storage_->set_http_transaction_factory(
         base::WrapUnique(
             new net::HttpCache(storage_->http_network_session(),
-//                               std::move(tenta_backend),
-                               std::move(main_backend),
+                               std::move(tenta_backend),
+//                               std::move(main_backend),
                                false /* set_up_quic_server_info */)));
 #if defined(OS_ANDROID)
     std::unique_ptr<XWalkURLRequestJobFactory> job_factory_impl(
