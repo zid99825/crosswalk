@@ -6,6 +6,7 @@
 package org.xwalk.core.internal;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.ViewGroup.LayoutParams;
 
 import org.chromium.base.TraceEvent;
@@ -96,7 +97,7 @@ public class SwipeRefreshHandler implements OverscrollRefreshHandler {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
                     mSwipeRefreshLayout.announceForAccessibility(mAccessibilityRefreshString);
                 }
-                contentViewCore.getWebContents().getNavigationController().reload(true);
+                contentViewCore.getWebContents().getNavigationController().reloadBypassingCache(true);
                 RecordUserAction.record("MobilePullGestureReload");
             }
         });
