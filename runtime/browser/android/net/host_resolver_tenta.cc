@@ -166,6 +166,9 @@ HostResolverTenta::HostResolverTenta(
 }
 
 HostResolverTenta::~HostResolverTenta() {
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << "~HostResolverTenta";
+#endif
   // if case we have unresolved requests
   net::NetworkChangeNotifier::RemoveIPAddressObserver(this);
   net::NetworkChangeNotifier::RemoveConnectionTypeObserver(this);

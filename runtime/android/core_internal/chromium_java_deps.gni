@@ -19,4 +19,5 @@ core_internal_java_chromium_deps = [
   "//ui/android:ui_java",
   "//third_party/android_swipe_refresh:android_swipe_refresh_java",
   "//xwalk/third_party/tenta/meta_fs/java:meta_fs_java",
+  "//xwalk/third_party/tenta/chromium_cache:chromium_cache_java",
 ]
