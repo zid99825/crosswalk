@@ -40,7 +40,6 @@
 #include "xwalk/runtime/common/xwalk_paths.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 
-
 #if defined(OS_ANDROID)
 #include "base/strings/string_split.h"
 #elif defined(OS_WIN)
@@ -59,8 +58,11 @@ namespace xwalk {
 class XWalkBrowserContext::RuntimeResourceContext :
     public content::ResourceContext {
  public:
-  RuntimeResourceContext() : getter_(NULL) {}
-  ~RuntimeResourceContext() override {}
+  RuntimeResourceContext()
+      : getter_(NULL) {
+  }
+  ~RuntimeResourceContext() override {
+  }
 
   // ResourceContext implementation:
   net::HostResolver* GetHostResolver() override {
@@ -79,18 +81,21 @@ class XWalkBrowserContext::RuntimeResourceContext :
  private:
   RuntimeURLRequestContextGetter* getter_;
 
-  DISALLOW_COPY_AND_ASSIGN(RuntimeResourceContext);
+  DISALLOW_COPY_AND_ASSIGN(RuntimeResourceContext)
+  ;
 };
 
 XWalkBrowserContext* g_browser_context = nullptr;
 
 void HandleReadError(PersistentPrefStore::PrefReadError error) {
-  LOG(ERROR) << "Failed to read preference, error num: " << error;
+  if (error != PersistentPrefStore::PREF_READ_ERROR_NONE) {
+    LOG(ERROR) << "Failed to read preference, error num: " << error;
+  }
 }
 
 XWalkBrowserContext::XWalkBrowserContext()
     : resource_context_(new RuntimeResourceContext),
-    save_form_data_(true) {
+      save_form_data_(true) {
   InitWhileIOAllowed();
   InitFormDatabaseService();
   InitVisitedLinkMaster();
@@ -104,7 +109,8 @@ XWalkBrowserContext::~XWalkBrowserContext() {
 #endif
   if (resource_context_.get()) {
     BrowserThread::DeleteSoon(
-        BrowserThread::IO, FROM_HERE, resource_context_.release());
+                              BrowserThread::IO,
+                              FROM_HERE, resource_context_.release());
   }
   DCHECK_EQ(this, g_browser_context);
   g_browser_context = nullptr;
@@ -119,10 +125,10 @@ XWalkBrowserContext* XWalkBrowserContext::GetDefault() {
 
 // static
 XWalkBrowserContext* XWalkBrowserContext::FromWebContents(
-    content::WebContents* web_contents) {
+                                                          content::WebContents* web_contents) {
   // This is safe; this is the only implementation of the browser context.
   return static_cast<XWalkBrowserContext*>(
-      web_contents->GetBrowserContext());
+  web_contents->GetBrowserContext());
 }
 
 void XWalkBrowserContext::InitWhileIOAllowed() {
@@ -131,7 +137,8 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
   if (cmd_line->HasSwitch(switches::kXWalkDataPath)) {
     path = cmd_line->GetSwitchValuePath(switches::kXWalkDataPath);
     PathService::OverrideAndCreateIfNeeded(
-        DIR_DATA_PATH, path, false, true);
+                                           DIR_DATA_PATH,
+                                           path, false, true);
     BrowserContext::Initialize(this, path);
   } else {
     base::FilePath::StringType xwalk_suffix;
@@ -143,8 +150,8 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
     std::unique_ptr<base::Environment> env(base::Environment::Create());
     base::FilePath config_dir(
         base::nix::GetXDGDirectory(env.get(),
-                                   base::nix::kXdgConfigHomeEnvVar,
-                                   base::nix::kDotConfigDir));
+            base::nix::kXdgConfigHomeEnvVar,
+            base::nix::kDotConfigDir));
     path = config_dir.Append(xwalk_suffix);
 #elif defined(OS_MACOSX)
     CHECK(PathService::Get(base::DIR_APP_DATA, &path));
@@ -165,7 +172,7 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
 
 std::unique_ptr<content::ZoomLevelDelegate>
 XWalkBrowserContext::CreateZoomLevelDelegate(
-    const base::FilePath& partition_path) {
+                                             const base::FilePath& partition_path) {
   return nullptr;
 }
 
@@ -179,7 +186,7 @@ base::FilePath XWalkBrowserContext::GetPath() const {
     CHECK(PathService::Get(base::DIR_ANDROID_APP_DATA, &result));
   if (cmd_line->HasSwitch(switches::kXWalkProfileName))
     result = result.Append(
-        cmd_line->GetSwitchValuePath(switches::kXWalkProfileName));
+                           cmd_line->GetSwitchValuePath(switches::kXWalkProfileName));
 #else
   CHECK(PathService::Get(DIR_DATA_PATH, &result));
 #endif
@@ -203,7 +210,7 @@ XWalkBrowserContext::GetDownloadManagerDelegate() {
   return download_manager_delegate_.get();
 }
 
-content::ResourceContext* XWalkBrowserContext::GetResourceContext()  {
+content::ResourceContext* XWalkBrowserContext::GetResourceContext() {
   return resource_context_.get();
 }
 
@@ -214,7 +221,7 @@ XWalkBrowserContext::GetGuestManager() {
 
 storage::SpecialStoragePolicy* XWalkBrowserContext::GetSpecialStoragePolicy() {
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kUnlimitedStorage)) {
+                                                        switches::kUnlimitedStorage)) {
     if (!special_storage_policy_.get())
       special_storage_policy_ = new XWalkSpecialStoragePolicy();
     return special_storage_policy_.get();
@@ -246,9 +253,9 @@ XWalkBrowserContext::GetBackgroundSyncController() {
 
 RuntimeURLRequestContextGetter*
 XWalkBrowserContext::GetURLRequestContextGetterById(
-    const std::string& pkg_id) {
+                                                    const std::string& pkg_id) {
   for (PartitionPathContextGetterMap::iterator it = context_getters_.begin();
-       it != context_getters_.end(); ++it) {
+      it != context_getters_.end(); ++it) {
 #if defined(OS_WIN)
     if (it->first.find(base::UTF8ToWide(pkg_id)))
 #else
@@ -265,40 +272,42 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
   if (url_request_getter_)
     return url_request_getter_.get();
 
-  protocol_handlers->insert(std::pair<std::string,
-        linked_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
+  protocol_handlers->insert(
+      std::pair<std::string,
+          linked_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
           application::kApplicationScheme,
           application::CreateApplicationProtocolHandler(
-              application_service_)));
+                                                        application_service_)));
 
   url_request_getter_ = new RuntimeURLRequestContextGetter(
       false, /* ignore_certificate_error = false */
       GetPath(),
       BrowserThread::UnsafeGetMessageLoopForThread(BrowserThread::IO),
       BrowserThread::UnsafeGetMessageLoopForThread(BrowserThread::FILE),
-      protocol_handlers, std::move(request_interceptors));
+      protocol_handlers,
+      std::move(request_interceptors));
   resource_context_->set_url_request_context_getter(url_request_getter_.get());
   return url_request_getter_.get();
 }
 
 net::URLRequestContextGetter*
-  XWalkBrowserContext::CreateRequestContextForStoragePartition(
-      const base::FilePath& partition_path,
-      bool in_memory,
-      content::ProtocolHandlerMap* protocol_handlers,
-      content::URLRequestInterceptorScopedVector request_interceptors) {
+XWalkBrowserContext::CreateRequestContextForStoragePartition(
+    const base::FilePath& partition_path,
+    bool in_memory,
+    content::ProtocolHandlerMap* protocol_handlers,
+    content::URLRequestInterceptorScopedVector request_interceptors) {
 #if defined(OS_ANDROID)
-    return NULL;
+  return NULL;
 #else
   PartitionPathContextGetterMap::iterator iter =
-    context_getters_.find(partition_path.value());
+  context_getters_.find(partition_path.value());
   if (iter != context_getters_.end())
-    return iter->second.get();
+  return iter->second.get();
 
   application::ApplicationService* service =
-      XWalkRunner::GetInstance()->app_system()->application_service();
+  XWalkRunner::GetInstance()->app_system()->application_service();
   protocol_handlers->insert(std::pair<std::string,
-        linked_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
+      linked_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
           application::kApplicationScheme,
           application::CreateApplicationProtocolHandler(service)));
 
@@ -316,7 +325,7 @@ net::URLRequestContextGetter*
   // please refer to https://crosswalk-project.org/jira/browse/XWALK-2890
   // for more details.
   if (!url_request_getter_)
-    CreateRequestContext(protocol_handlers, std::move(request_interceptors));
+  CreateRequestContext(protocol_handlers, std::move(request_interceptors));
 
   return context_getter.get();
 #endif
@@ -334,7 +343,7 @@ XWalkBrowserContext::CreateMediaRequestContextForStoragePartition(
   return url_request_getter_.get();
 #else
   PartitionPathContextGetterMap::iterator iter =
-      context_getters_.find(partition_path.value());
+  context_getters_.find(partition_path.value());
   CHECK(iter != context_getters_.end());
   return iter->second.get();
 #endif
@@ -346,7 +355,8 @@ XWalkFormDatabaseService* XWalkBrowserContext::GetFormDatabaseService() {
 
 // Create user pref service for autofill functionality.
 void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
-  if (user_pref_service_) return;
+  if (user_pref_service_)
+    return;
 
   PrefRegistrySimple* pref_registry = new PrefRegistrySimple();
   pref_registry->RegisterStringPref("intl.accept_languages", "");
@@ -355,7 +365,8 @@ void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
   // controlled via the manager_delegate. We don't use the rest
   // of autofill, which is why it is hardcoded as disabled here.
   pref_registry->RegisterBooleanPref(
-    autofill::prefs::kAutofillEnabled, false);
+                                     autofill::prefs::kAutofillEnabled,
+                                     false);
 
   PrefServiceFactory pref_service_factory;
   pref_service_factory.set_user_prefs(make_scoped_refptr(new XWalkPrefStore()));
@@ -366,7 +377,7 @@ void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
 }
 
 void XWalkBrowserContext::UpdateAcceptLanguages(
-    const std::string& accept_languages) {
+                                                const std::string& accept_languages) {
   if (url_request_getter_)
     url_request_getter_->UpdateAcceptLanguages(accept_languages);
 }
@@ -385,7 +396,9 @@ void XWalkBrowserContext::InitFormDatabaseService() {
 void XWalkBrowserContext::SetCSPString(const std::string& csp) {
   // Check format of csp string.
   std::vector<std::string> policies = base::SplitString(
-      csp, ";", base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
+                                                        csp,
+                                                        ";", base::TRIM_WHITESPACE,
+                                                        base::SPLIT_WANT_ALL);
   for (size_t i = 0; i < policies.size(); ++i) {
     size_t found = policies[i].find(' ');
     if (found == std::string::npos) {
@@ -403,7 +416,7 @@ std::string XWalkBrowserContext::GetCSPString() const {
 
 void XWalkBrowserContext::InitVisitedLinkMaster() {
   visitedlink_master_.reset(
-      new visitedlink::VisitedLinkMaster(this, this, false));
+                            new visitedlink::VisitedLinkMaster(this, this, false));
   visitedlink_master_->Init();
 }
 
@@ -413,7 +426,7 @@ void XWalkBrowserContext::AddVisitedURLs(const std::vector<GURL>& urls) {
 }
 
 void XWalkBrowserContext::RebuildTable(
-    const scoped_refptr<URLEnumerator>& enumerator) {
+                                       const scoped_refptr<URLEnumerator>& enumerator) {
   // XWalkView rebuilds from XWalkWebChromeClient.getVisitedHistory. The client
   // can change in the lifetime of this XWalkView and may not yet be set here.
   // Therefore this initialization path is not used.
