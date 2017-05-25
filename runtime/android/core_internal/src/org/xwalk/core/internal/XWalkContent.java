@@ -391,6 +391,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             return;
 
         switch (mode) {
+            case XWalkViewInternal.RELOAD_TO_REFRESH:
+                mNavigationController.reloadToRefreshContent(true);
+                break;
             case XWalkViewInternal.RELOAD_IGNORE_CACHE:
                 mNavigationController.reloadBypassingCache(true);
                 break;

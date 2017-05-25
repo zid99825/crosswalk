@@ -270,6 +270,12 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      */
     @XWalkAPI
     public static final int RELOAD_IGNORE_CACHE = 1;
+    
+    /**
+     * Reload to refresh content
+     */
+    @XWalkAPI
+    public static final int RELOAD_TO_REFRESH = 2;
     /**
      * SurfaceView is the default compositing surface which has a bit performance advantage, such as
      * it has less latency and uses less memory.
