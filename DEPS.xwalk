@@ -17,7 +17,7 @@
 # Edit these when rolling DEPS.xwalk.
 # -----------------------------------
 
-chromium_crosswalk_rev = '4b5ea016931eaa2b8f1908d41102fee4bf07440c'
+chromium_crosswalk_rev = '768dde8efa71169f1c1113ca6ef322f1e8c9e7de'
 v8_crosswalk_rev = 'a48e44faef59edeb1fb254233a1c12b5d5999432'
 
 # We need our own copy of src/buildtools in order to have the gn and
@@ -25,7 +25,7 @@ v8_crosswalk_rev = 'a48e44faef59edeb1fb254233a1c12b5d5999432'
 # our bots as well as locally for our developers. Its hash does not necessarily
 # need to be rolled together with |chromium_crosswalk_rev|, but it is good
 # practice to not have it lag behind too much.
-buildtools_rev = '104574186c17cd4701857454feba8872e52a7d82'
+buildtools_rev = 'b3771b1935ea74c388b6fb1750e83f5d83b39dec'
 
 chromium_git = 'https://chromium.googlesource.com'
 tenta_git = 'https://github.com/tenta-browser'
