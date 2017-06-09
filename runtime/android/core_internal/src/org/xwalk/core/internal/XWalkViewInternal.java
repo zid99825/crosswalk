@@ -746,6 +746,33 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
     }
 
     /**
+     * @return
+     * @since Tenta
+     */
+    @XWalkAPI
+    public int getLastCommittedEntryIndex() {
+        if (mContent == null)
+            return -1;
+        checkThreadSafety();
+        return mContent.getLastCommittedEntryIndex();
+        
+    }
+    
+    /**
+     * 
+     * @return
+     * @since Tenta
+     */
+    @XWalkAPI
+    public int getPendingEntryIndex() {
+        if (mContent == null)
+            return -1;
+        checkThreadSafety();
+        return mContent.getPendingEntryIndex();
+        
+    }
+    
+    /**
      * Injects the supplied Java object into this XWalkViewInternal. Each method defined in the
      * class of the object should be marked with {@link JavascriptInterface} if it's called by
      * JavaScript.
