@@ -43,6 +43,7 @@ import org.chromium.content_public.browser.ContentBitmapCallback;
 import org.chromium.content_public.browser.JavaScriptCallback;
 import org.chromium.content_public.browser.LoadUrlParams;
 import org.chromium.content_public.browser.NavigationController;
+import org.chromium.content_public.browser.NavigationEntry;
 import org.chromium.content_public.browser.NavigationHistory;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.navigation_controller.UserAgentOverrideOption;
@@ -744,6 +745,26 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
                 mNavigationController.getNavigationHistory());
     }
 
+    public int getLastCommittedEntryIndex() {
+        if (mNativeContent == 0)
+            return -1;
+        
+        return mNavigationController.getLastCommittedEntryIndex();
+    }
+    
+    public int getPendingEntryIndex() {
+        if (mNativeContent == 0)
+            return -1;
+        
+        NavigationEntry pending = mNavigationController.getPendingEntry();
+        if ( pending == null ) {
+            return -1;
+        }
+        
+        return pending.getIndex();
+        
+    }
+    
     public static final String SAVE_RESTORE_STATE_KEY = "XWALKVIEW_STATE";
 
     /**
