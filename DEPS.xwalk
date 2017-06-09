@@ -23,7 +23,7 @@ chromium_crosswalk_rev = 'dd39e4fbbc1e4417cef2f908cc0a42af1e2120aa'
 #the new chromium 58
 chromium_58 = '7be1b4e0dfd21ba79c0bf4424fe3534efe55273d'
 
-chromium_crosswalk_rev = '768dde8efa71169f1c1113ca6ef322f1e8c9e7de'
+chromium_crosswalk_rev = '65a816c90d6017daec24a95787c0784fa464af70'
 v8_crosswalk_rev = 'a48e44faef59edeb1fb254233a1c12b5d5999432'
 
 # We need our own copy of src/buildtools in order to have the gn and
