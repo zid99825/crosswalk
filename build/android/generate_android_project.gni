@@ -167,7 +167,8 @@ template("generate_android_project") {
     deps = [
       ":$_build_config_target",
     ]
-    r_text_path = _r_file_path
+#    r_text_path = _r_file_path
+    r_text_out_path = _r_file_path
     resource_dirs = [ "//build/android/ant/empty/res" ]
     srcjar_path = "$target_gen_dir/$target_name.srcjar"
 
