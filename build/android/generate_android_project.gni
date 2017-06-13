@@ -231,7 +231,9 @@ template("generate_android_project") {
       jar_excluded_patterns = invoker.resource_excluded_patterns
     }
     jar_path = _resource_jar_path
-    java_files = []
+    if (defined(invoker.java_files)) {
+        java_files = invoker.java_files
+    }
     override_build_config = _build_config
     requires_android = true
     srcjar_deps = _srcjar_deps
