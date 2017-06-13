@@ -20,7 +20,7 @@
 #orig 
 #chromium_crosswalk_rev = 'dd39e4fbbc1e4417cef2f908cc0a42af1e2120aa'
 
-chromium_crosswalk_rev = 'cd9157c6e4704c61b97c3b3e09eb7b4374ccacef'
+chromium_crosswalk_rev = '6bfee22b6f4e28d76c96a002a27e6b594dd2c711'
 v8_crosswalk_rev = 'b6983eca781af7c6c74bfe1b7574588a063f8825'
 
 # We need our own copy of src/buildtools in order to have the gn and
