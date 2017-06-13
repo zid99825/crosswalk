@@ -9,7 +9,7 @@ shared_library("libxwalkcore") {
     "xwalk_jni_registrar.h",
   ]
   deps = [
-    "//components/auto_login_parser",
+#    "//components/auto_login_parser",
     "//components/cdm/browser",
     "//components/cdm/renderer",
     "//components/navigation_interception",
