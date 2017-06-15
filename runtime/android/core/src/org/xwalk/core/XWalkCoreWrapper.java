@@ -341,7 +341,7 @@ class XWalkCoreWrapper {
                 // version is lower than 4.2. Android enables a system path /data/app-lib to store
                 // native libraries starting from 4.2 and load them automatically.
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    libDir = "/data/data/" + mBridgeContext.getPackageName() + "/lib";
+                    libDir = mBridgeContext.getApplicationInfo().dataDir + "/lib";
                 }
                 architectureMatched = (boolean) method.invoke(mBridgeContext, libDir);
             } else {

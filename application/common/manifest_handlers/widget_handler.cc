@@ -65,7 +65,7 @@ const KeyMap& GetWidgetKeyPairs() {
 bool ParsePreferenceItem(const base::DictionaryValue* in_value,
                          base::DictionaryValue* out_value,
                          std::set<std::string>* used) {
-  DCHECK(in_value && in_value->IsType(base::Value::TYPE_DICTIONARY));
+  DCHECK(in_value && in_value->IsType(base::Value::Type::DICTIONARY));
 
   std::string pref_name;
   std::string pref_value;
@@ -141,13 +141,13 @@ bool WidgetHandler::Parse(scoped_refptr<ApplicationData> application,
   manifest->Get(keys::kPreferencesKey, &pref_value);
 
   std::set<std::string> preference_names_used;
-  if (pref_value && pref_value->IsType(base::Value::TYPE_DICTIONARY)) {
+  if (pref_value && pref_value->IsType(base::Value::Type::DICTIONARY)) {
     std::unique_ptr<base::DictionaryValue> preferences(new base::DictionaryValue);
     base::DictionaryValue* dict;
     pref_value->GetAsDictionary(&dict);
     if (ParsePreferenceItem(dict, preferences.get(), &preference_names_used))
       widget_info->Set(kPreferences, std::move(preferences));
-  } else if (pref_value && pref_value->IsType(base::Value::TYPE_LIST)) {
+  } else if (pref_value && pref_value->IsType(base::Value::Type::LIST)) {
     std::unique_ptr<base::ListValue> preferences(new base::ListValue);
     base::ListValue* list;
     pref_value->GetAsList(&list);

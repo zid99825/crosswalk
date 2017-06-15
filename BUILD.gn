@@ -373,6 +373,7 @@ source_set("xwalk_runtime") {
     "//base:i18n",
     "//base/third_party/dynamic_annotations",
     "//cc",
+    "//components/autofill/android:autofill_java",
     "//components/autofill/content/browser",
     "//components/autofill/content/renderer",
     "//components/autofill/core/browser",

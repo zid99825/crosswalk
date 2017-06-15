@@ -8,6 +8,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.SparseArray;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -70,7 +71,8 @@ public class XWalkExternalExtension {
         mJsApi = jsApi;
         mEntryPoints = entryPoints;
         mExtensionContext = context;
-        instanceHelpers = new HashMap<Integer, ExtensionInstanceHelper>();
+        instanceHelpers = new SparseArray<ExtensionInstanceHelper>();
+//new HashMap<Integer, ExtensionInstanceHelper>();
         mHandler = new MessageHandler();
 
         if (mJsApi == null || mJsApi.length() == 0) {

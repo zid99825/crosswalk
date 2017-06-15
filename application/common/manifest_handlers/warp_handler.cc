@@ -37,7 +37,7 @@ bool WARPHandler::Parse(scoped_refptr<ApplicationData> application,
   }
 
   std::unique_ptr<base::ListValue> warp_list;
-  if (value->IsType(base::Value::TYPE_DICTIONARY)) {
+  if (value->IsType(base::Value::Type::DICTIONARY)) {
     warp_list.reset(new base::ListValue);
     warp_list->Append(value->DeepCopy());
   } else {

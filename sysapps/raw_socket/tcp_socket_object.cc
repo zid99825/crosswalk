@@ -8,6 +8,7 @@
 #include "base/logging.h"
 #include "base/numerics/safe_conversions.h"
 #include "net/base/net_errors.h"
+#include "net/log/net_log_source.h"
 #include "xwalk/sysapps/raw_socket/tcp_socket.h"
 
 using namespace xwalk::jsapi::tcp_socket; // NOLINT
@@ -28,8 +29,7 @@ TCPSocketObject::TCPSocketObject()
       is_half_closed_(false),
       read_buffer_(new net::IOBuffer(kBufferSize)),
       write_buffer_(new net::IOBuffer(kBufferSize)),
-      resolver_(net::HostResolver::CreateDefaultResolver(NULL)),
-      single_resolver_(new net::SingleRequestHostResolver(resolver_.get())) {
+      resolver_(net::HostResolver::CreateDefaultResolver(NULL)) {
   RegisterHandlers();
 }
 
@@ -90,11 +90,12 @@ void TCPSocketObject::OnInit(std::unique_ptr<XWalkExtensionFunctionInfo> info) {
   net::HostResolver::RequestInfo request_info(
       net::HostPortPair(params->remote_address, params->remote_port));
 
-  int ret = single_resolver_->Resolve(
+  int ret = resolver_->Resolve(
       request_info, net::DEFAULT_PRIORITY, &addresses_,
       base::Bind(&TCPSocketObject::OnResolved,
                  base::Unretained(this)),
-                 net::BoundNetLog());
+                 &request_,
+                 net::NetLogWithSource());
 
   if (ret != net::ERR_IO_PENDING)
     OnResolved(ret);
@@ -212,7 +213,7 @@ void TCPSocketObject::OnResolved(int status) {
   socket_.reset(new net::TCPClientSocket(addresses_,
                                          nullptr,
                                          nullptr,
-                                         net::NetLog::Source()));
+                                         net::NetLogSource()));
 
   socket_->Connect(base::Bind(&TCPSocketObject::OnConnect,
                               base::Unretained(this)));

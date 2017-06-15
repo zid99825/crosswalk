@@ -313,12 +313,12 @@ base::DictionaryValue* LoadXMLNode(
     value->Get(sub_node_name, &temp);
     DCHECK(temp);
 
-    if (temp->IsType(base::Value::TYPE_LIST)) {
+    if (temp->IsType(base::Value::Type::LIST)) {
       base::ListValue* list;
       temp->GetAsList(&list);
       list->Append(sub_value);
     } else {
-      DCHECK(temp->IsType(base::Value::TYPE_DICTIONARY));
+      DCHECK(temp->IsType(base::Value::Type::DICTIONARY));
       base::DictionaryValue* dict;
       temp->GetAsDictionary(&dict);
       base::DictionaryValue* prev_value = dict->DeepCopy();
@@ -375,7 +375,7 @@ std::unique_ptr<Manifest> LoadManifest<Manifest::TYPE_MANIFEST>(
     return std::unique_ptr<Manifest>();
   }
 
-  if (!root->IsType(base::Value::TYPE_DICTIONARY)) {
+  if (!root->IsType(base::Value::Type::DICTIONARY)) {
     *error = base::StringPrintf("%s", errors::kManifestUnreadable);
     return std::unique_ptr<Manifest>();
   }

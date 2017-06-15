@@ -214,10 +214,10 @@ void Manifest::ParseWGTI18nEachPath(const std::string& path) {
   if (!data_->Get(path, &value))
     return;
 
-  if (value->IsType(base::Value::TYPE_DICTIONARY)) {
+  if (value->IsType(base::Value::Type::DICTIONARY)) {
     ParseWGTI18nEachElement(value, path);
     ParseWGTI18nEachElement(value, path, kLocaleFirstOne);
-  } else if (value->IsType(base::Value::TYPE_LIST)) {
+  } else if (value->IsType(base::Value::Type::LIST)) {
     base::ListValue* list;
     value->GetAsList(&list);
 

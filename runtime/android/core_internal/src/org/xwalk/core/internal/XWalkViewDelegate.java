@@ -115,7 +115,7 @@ class XWalkViewDelegate {
         Context context = libContext == null ? appContext
                 : new MixedContext(libContext, appContext);
 
-        PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX, context);
+        PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
 
         // Initialize chromium resources. Assign them the correct ids in xwalk core.
         XWalkInternalResources.resetIds(context);
@@ -136,7 +136,7 @@ class XWalkViewDelegate {
 
         // Use MixedContext to initialize the ResourceExtractor, as the pak file
         // is in the library apk if in shared apk mode.
-        ResourceExtractor.get(context);
+        ResourceExtractor.get();
 
         startBrowserProcess(context);
 
@@ -176,7 +176,7 @@ class XWalkViewDelegate {
         // with System.loadLibrary("xwalkcore") above, but same library won't be loaded repeatedly.
         try {
             LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
-            libraryLoader.loadNow(context);
+            libraryLoader.loadNow();
         } catch (ProcessInitException e) {
         }
 
@@ -200,8 +200,7 @@ class XWalkViewDelegate {
             @Override
             public void run() {
                 try {
-                    LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER)
-                            .ensureInitialized(context);
+                    LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER).ensureInitialized();
                 } catch (ProcessInitException e) {
                     throw new RuntimeException("Cannot initialize Crosswalk Core", e);
                 }
@@ -219,7 +218,7 @@ class XWalkViewDelegate {
                 }
 
                 try {
-                    BrowserStartupController.get(context, LibraryProcessType.PROCESS_BROWSER)
+                    BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
                             .startBrowserProcessesSync(true);
                 } catch (ProcessInitException e) {
                     throw new RuntimeException("Cannot initialize Crosswalk Core", e);

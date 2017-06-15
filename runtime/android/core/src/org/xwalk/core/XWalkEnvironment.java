@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Locale;
 
 class XWalkEnvironment {
     private static final String TAG = "XWalkLib";
@@ -176,7 +177,7 @@ class XWalkEnvironment {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     throw new NoSuchFieldError();
                 }
-                String abi = Build.CPU_ABI.toLowerCase();
+                String abi = Build.CPU_ABI.toLowerCase(Locale.US);
                 switch (abi) {
                     case "armeabi":
                     case "armeabi-v7a":
@@ -195,7 +196,7 @@ class XWalkEnvironment {
                         throw new RuntimeException("Unexpected CPU_ABI: " + abi);
                 }
             } catch (NoSuchFieldError e) {
-                String arch = System.getProperty("os.arch").toLowerCase();
+                String arch = System.getProperty("os.arch").toLowerCase(Locale.US);
                 switch (arch) {
                     case "x86":
                     case "i686":
@@ -249,13 +250,13 @@ class XWalkEnvironment {
     public static String getDeviceAbi() {
         if (sDeviceAbi == null) {
             try {
-                sDeviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase();
+                sDeviceAbi = Build.CPU_ABI.toLowerCase(Locale.US);
             } catch (NoSuchFieldError e) {
                 try {
                     Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");
                     InputStreamReader ir = new InputStreamReader(process.getInputStream());
                     BufferedReader input = new BufferedReader(ir);
-                    sDeviceAbi = input.readLine().toLowerCase();
+                    sDeviceAbi = input.readLine().toLowerCase(Locale.US);
                     input.close();
                     ir.close();
                 } catch (IOException ex) {

@@ -90,7 +90,7 @@ bool XPKPackage::VerifySignature() {
 
 bool XPKPackage::ExtractToTemporaryDir(base::FilePath* target_path) {
   if (is_extracted_) {
-    *target_path = temp_dir_.path();
+    *target_path = temp_dir_.GetPath();
     return true;
   }
 

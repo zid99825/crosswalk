@@ -38,7 +38,7 @@ import org.chromium.content.browser.ContentViewCore;
 import org.chromium.content.browser.ContentViewRenderView;
 import org.chromium.content.browser.ContentViewRenderView.CompositingSurfaceType;
 import org.chromium.content.browser.ContentViewStatics;
-import org.chromium.content.common.CleanupReference;
+import org.chromium.android_webview.CleanupReference;
 import org.chromium.content_public.browser.ContentBitmapCallback;
 import org.chromium.content_public.browser.JavaScriptCallback;
 import org.chromium.content_public.browser.LoadUrlParams;

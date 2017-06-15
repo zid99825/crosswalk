@@ -41,7 +41,6 @@ class BindingObjectStore {
 
   typedef std::map<std::string, BindingObject*> BindingObjectMap;
   BindingObjectMap objects_;
-  STLValueDeleter<BindingObjectMap> objects_deleter_;
 };
 
 }  // namespace sysapps

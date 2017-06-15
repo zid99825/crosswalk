@@ -12,8 +12,7 @@ using namespace xwalk::jsapi::common; // NOLINT
 namespace xwalk {
 namespace sysapps {
 
-BindingObjectStore::BindingObjectStore(XWalkExtensionFunctionHandler* handler)
-    : objects_deleter_(&objects_) {
+BindingObjectStore::BindingObjectStore(XWalkExtensionFunctionHandler* handler) {
   handler->Register("JSObjectCollected",
       base::Bind(&BindingObjectStore::OnJSObjectCollected,
                  base::Unretained(this)));
@@ -26,7 +25,7 @@ BindingObjectStore::~BindingObjectStore() {}
 
 void BindingObjectStore::AddBindingObject(const std::string& id,
                                           std::unique_ptr<BindingObject> obj) {
-  if (ContainsKey(objects_, id)) {
+  if (base::ContainsKey(objects_, id)) {
     LOG(WARNING) << "The object with the ID " << id << " already exists.";
     return;
   }
@@ -35,7 +34,7 @@ void BindingObjectStore::AddBindingObject(const std::string& id,
 }
 
 bool BindingObjectStore::HasObjectForTesting(const std::string& id) const {
-  return ContainsKey(objects_, id);
+  return base::ContainsKey(objects_, id);
 }
 
 void BindingObjectStore::OnJSObjectCollected(
@@ -73,7 +72,7 @@ void BindingObjectStore::OnPostMessageToObject(
   if (it == objects_.end())
     return;
 
-  if (!params->arguments->IsType(base::Value::TYPE_LIST)) {
+  if (!params->arguments->IsType(base::Value::Type::LIST)) {
     LOG(WARNING) << "Malformed message sent to the object with the ID "
         << params->object_id << ".";
     return;

@@ -16,7 +16,7 @@ import org.chromium.base.TraceEvent;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.metrics.RecordUserAction;
 import org.chromium.content.browser.ContentViewCore;
-import org.chromium.content.browser.OverscrollRefreshHandler;
+import org.chromium.ui.OverscrollRefreshHandler;
 import org.chromium.third_party.android.swiperefresh.SwipeRefreshLayout;
 
 import org.xwalk.core.internal.R;
