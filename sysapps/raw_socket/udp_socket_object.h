@@ -52,6 +52,7 @@ class UDPSocketObject : public RawSocketObject {
   size_t write_buffer_size_;
 
   std::unique_ptr<net::HostResolver> resolver_;
+  std::unique_ptr<net::HostResolver::Request> request_;
   net::AddressList addresses_;
   net::IPEndPoint from_;
 };

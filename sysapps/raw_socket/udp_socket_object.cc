@@ -10,6 +10,7 @@
 #include "base/logging.h"
 #include "base/numerics/safe_conversions.h"
 #include "net/base/net_errors.h"
+#include "net/log/net_log_source.h"
 #include "xwalk/sysapps/raw_socket/udp_socket.h"
 
 using namespace xwalk::jsapi::udp_socket; // NOLINT
@@ -78,7 +79,7 @@ void UDPSocketObject::OnInit(std::unique_ptr<XWalkExtensionFunctionInfo> info) {
   socket_.reset(new net::UDPSocket(net::DatagramSocket::DEFAULT_BIND,
                                    net::RandIntCallback(),
                                    NULL,
-                                   net::NetLog::Source()));
+                                   net::NetLogSource()));
 
   if (!params->options) {
     OnConnectionOpen(net::OK);
@@ -134,7 +135,8 @@ void UDPSocketObject::OnInit(std::unique_ptr<XWalkExtensionFunctionInfo> info) {
       &addresses_,
       base::Bind(&UDPSocketObject::OnConnectionOpen,
                  base::Unretained(this)),
-      net::BoundNetLog());
+      &request_,
+      net::NetLogWithSource());
 
   if (ret != net::ERR_IO_PENDING)
     OnConnectionOpen(ret);
@@ -188,13 +190,14 @@ void UDPSocketObject::OnSendString(
   net::HostResolver::RequestInfo request_info(net::HostPortPair(
       *params->remote_address, *params->remote_port));
 
-  int ret = single_resolver_->Resolve(
+  int ret = resolver_->Resolve(
       request_info,
       net::DEFAULT_PRIORITY,
       &addresses_,
       base::Bind(&UDPSocketObject::OnSend,
                  base::Unretained(this)),
-      net::BoundNetLog());
+      &request_,
+      net::NetLogWithSource());
 
   if (ret != net::ERR_IO_PENDING)
     OnSend(ret);
