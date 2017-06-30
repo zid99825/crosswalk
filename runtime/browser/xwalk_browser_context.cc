@@ -282,8 +282,8 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
   url_request_getter_ = new RuntimeURLRequestContextGetter(
       false, /* ignore_certificate_error = false */
       GetPath(),
-      BrowserThread::UnsafeGetMessageLoopForThread(BrowserThread::IO),
-      BrowserThread::UnsafeGetMessageLoopForThread(BrowserThread::FILE),
+      content::BrowserThread::GetTaskRunnerForThread(BrowserThread::IO),
+      content::BrowserThread::GetTaskRunnerForThread(BrowserThread::FILE),
       protocol_handlers,
       std::move(request_interceptors));
   resource_context_->set_url_request_context_getter(url_request_getter_.get());

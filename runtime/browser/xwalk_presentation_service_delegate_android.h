@@ -16,7 +16,7 @@ class XWalkPresentationServiceDelegateAndroid
           XWalkPresentationServiceDelegateAndroid>,
       public base::SupportsWeakPtr<XWalkPresentationServiceDelegateAndroid> {
  public:
-  static content::PresentationServiceDelegate* GetOrCreateForWebContents(
+  static content::ControllerPresentationServiceDelegate* GetOrCreateForWebContents(
       content::WebContents* web_contents);
 
   ~XWalkPresentationServiceDelegateAndroid() override;
@@ -32,7 +32,7 @@ class XWalkPresentationServiceDelegateAndroid
   void StartSession(
       int render_process_id,
       int render_frame_id,
-      const std::string& presentation_url,
+      const std::vector<GURL>& presentation_urls,
       const content::PresentationSessionStartedCallback& success_cb,
       const content::PresentationSessionErrorCallback& error_cb) override;
 };

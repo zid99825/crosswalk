@@ -25,13 +25,6 @@ bool XWalkSpecialStoragePolicy::IsStorageDurable(const GURL& origin) {
   return true;
 }
 
-bool XWalkSpecialStoragePolicy::CanQueryDiskSize(const GURL& origin) {
-  // Let anything query remaining disk size.  This could potentially allow for
-  // fingerprinting of a user, but seems less of a risk in a crosswalk app than
-  // it would in a more general browser.
-  return true;
-}
-
 bool XWalkSpecialStoragePolicy::HasIsolatedStorage(const GURL& origin) {
   // I don't actually know if Crosswalk can guarantee if there is isolated
   // storage or not.  Chrome seems to implement this through a special plugin,

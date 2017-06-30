@@ -109,7 +109,7 @@ def main():
   options = parser.parse_args(build_utils.ExpandFileArgs(sys.argv[1:]))
   jars = []
   for j in options.jars:
-    jars.extend(build_utils.ParseGypList(j))
+    jars.extend(build_utils.ParseGnList(j))
   options.jars = jars
 
   if options.validate_skipped_jars_list:

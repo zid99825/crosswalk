@@ -6,6 +6,9 @@
 package org.xwalk.core.internal;
 
 import android.view.ViewGroup;
+import android.view.View;
+import android.content.Context;
+import android.graphics.Color;
 
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
@@ -14,6 +17,7 @@ import org.chromium.components.autofill.AutofillDelegate;
 import org.chromium.components.autofill.AutofillPopup;
 import org.chromium.components.autofill.AutofillSuggestion;
 import org.chromium.ui.DropdownItem;
+import org.chromium.ui.base.WindowAndroid;
 
 /**
  * Java counterpart to the XWalkAutofillClient. This class is owned by XWalkContent and has
@@ -40,12 +44,34 @@ public class XWalkAutofillClientAndroid {
     }
 
     @CalledByNative
-    private void showAutofillPopup(float x, float y, float width, float height,
-            boolean isRtl, AutofillSuggestion[] suggestions) {
+    private void showAutofillPopup(View anchorView, boolean isRtl,
+            AutofillSuggestion[] suggestions) {
 
         if (mContentViewCore == null) return;
 
         if (mAutofillPopup == null) {
+            Context context = mContentViewCore.getContext();
+            if (WindowAndroid.activityFromContext(context) == null) {
+                nativeDismissed(mNativeXWalkAutofillClientAndroid);
+                return;
+            }
+            mAutofillPopup = new AutofillPopup(context, anchorView, new AutofillDelegate() {
+                @Override
+                public void dismissed() {
+                    nativeDismissed(mNativeXWalkAutofillClientAndroid);
+                }
+                @Override
+                public void suggestionSelected(int listIndex) {
+                    nativeSuggestionSelected(mNativeXWalkAutofillClientAndroid, listIndex);
+                }
+                @Override
+                public void deleteSuggestion(int listIndex) {}
+            });
+        }
+        mAutofillPopup.filterAndShow(suggestions, isRtl, Color.TRANSPARENT /* backgroundColor */,
+                Color.TRANSPARENT /* dividerColor */, 0 /* dropdownItemHeight */, 0 /* margin */);
+
+/*        if (mAutofillPopup == null) {
             mAutofillPopup = new AutofillPopup(
                 mContentViewCore.getContext(),
                 mContentViewCore.getViewAndroidDelegate(),
@@ -62,6 +88,7 @@ public class XWalkAutofillClientAndroid {
         }
         mAutofillPopup.setAnchorRect(x, y, width, height);
         mAutofillPopup.filterAndShow(suggestions, isRtl);
+*/
     }
 
     @CalledByNative
@@ -86,9 +113,14 @@ public class XWalkAutofillClientAndroid {
     @CalledByNative
     private static void addToAutofillSuggestionArray(AutofillSuggestion[] array, int index,
             String name, String label, int uniqueId) {
-        array[index] = new AutofillSuggestion(name, label, DropdownItem.NO_ICON, uniqueId, false, false);
+        array[index] = new AutofillSuggestion(name, label, DropdownItem.NO_ICON,
+                false /* isIconAtLeft */, uniqueId, false /* isDeletable */,
+                false /* isMultilineLabel */, false /* isBoldLabel */);
+
+//        array[index] = new AutofillSuggestion(name, label, DropdownItem.NO_ICON, uniqueId, false, false);
     }
 
+    private native void nativeDismissed(long nativeXWalkAutofillClientAndroid);
     private native void nativeSuggestionSelected(long nativeXWalkAutofillClientAndroid,
             int position);
 }

@@ -36,7 +36,6 @@ using application::Application;
 using application::ApplicationService;
 
 using content::PresentationScreenAvailabilityListener;
-using content::PresentationSessionMessage;
 using content::RenderFrameHost;
 using content::PresentationConnectionStateChangedCallback;
 

@@ -14,6 +14,8 @@
 #include "base/macros.h"
 #include "base/memory/weak_ptr.h"
 #include "content/public/browser/permission_manager.h"
+#include "content/public/browser/permission_type.h"
+#include "components/content_settings/core/common/content_settings_types.h"
 #include "xwalk/runtime/browser/runtime_geolocation_permission_context.h"
 #include "xwalk/runtime/browser/runtime_notification_permission_context.h"
 
@@ -30,19 +32,22 @@ class XWalkPermissionManager : public content::PermissionManager {
   ~XWalkPermissionManager() override;
 
   // PermissionManager implementation.
+
   int RequestPermission(
       content::PermissionType permission,
       content::RenderFrameHost* render_frame_host,
       const GURL& requesting_origin,
-      const base::Callback<void(blink::mojom::PermissionStatus)>& callback)
-      override;
+      bool user_gesture,
+      const base::Callback<void(blink::mojom::PermissionStatus)>& callback) override;
+
   int RequestPermissions(
-      const std::vector<content::PermissionType>& permissions,
+      const std::vector<content::PermissionType>& permission,
       content::RenderFrameHost* render_frame_host,
       const GURL& requesting_origin,
+      bool user_gesture,
       const base::Callback<void(
-          const std::vector<blink::mojom::PermissionStatus>&)>& callback)
-          override;
+          const std::vector<blink::mojom::PermissionStatus>&)>& callback) override;
+
   void CancelPermissionRequest(int request_id) override;
   void ResetPermission(content::PermissionType permission,
                        const GURL& requesting_origin,
@@ -51,9 +56,7 @@ class XWalkPermissionManager : public content::PermissionManager {
       content::PermissionType permission,
       const GURL& requesting_origin,
       const GURL& embedding_origin) override;
-  void RegisterPermissionUsage(content::PermissionType permission,
-                               const GURL& requesting_origin,
-                               const GURL& embedding_origin) override;
+
   int SubscribePermissionStatusChange(
       content::PermissionType permission,
       const GURL& requesting_origin,
@@ -64,7 +67,7 @@ class XWalkPermissionManager : public content::PermissionManager {
 
  private:
   struct PendingRequest;
-  using PendingRequestsMap = IDMap<PendingRequest, IDMapOwnPointer>;
+  using PendingRequestsMap = IDMap<std::unique_ptr<PendingRequest>>;
 
   void GetApplicationName(
       content::RenderFrameHost* render_frame_host,

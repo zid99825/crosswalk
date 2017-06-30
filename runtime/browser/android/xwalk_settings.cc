@@ -238,8 +238,6 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, jobject obj) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   prefs.allow_running_insecure_content =
       command_line->HasSwitch(switches::kAllowRunningInsecureContent);
-  prefs.allow_displaying_insecure_content =
-      !command_line->HasSwitch(switches::kNoDisplayingInsecureContent);
 
   ScopedJavaLocalRef<jstring> str;
   str.Reset(

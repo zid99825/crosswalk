@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "base/callback_forward.h"
-#include "base/containers/scoped_ptr_hash_map.h"
 #include "base/files/file_path.h"
 #include "base/threading/thread.h"
 #include "base/values.h"
@@ -76,7 +75,7 @@ class XWalkExtensionService : public content::NotificationObserver,
       content::RenderProcessHost* host,
       XWalkExtensionVector* ui_thread_extensions,
       XWalkExtensionVector* extension_thread_extensions,
-      std::unique_ptr<base::DictionaryValue::Storage> runtime_variables);
+      std::unique_ptr<base::DictionaryValue::DictStorage> runtime_variables);
 
   // To be called when a RenderProcess died, so we can gracefully shutdown the
   // associated ExtensionProcess. See Runtime::RenderProcessGone() and
@@ -98,7 +97,7 @@ class XWalkExtensionService : public content::NotificationObserver,
       content::RenderProcessHost* host,
       XWalkExtensionVector* ui_thread_extensions,
       XWalkExtensionVector* extension_thread_extensions,
-      std::unique_ptr<base::DictionaryValue::Storage> runtime_variables);
+      std::unique_ptr<base::DictionaryValue::DictStorage> runtime_variables);
 
   // XWalkExtensionProcessHost::Delegate implementation.
   void OnExtensionProcessDied(XWalkExtensionProcessHost* eph,
@@ -130,7 +129,7 @@ class XWalkExtensionService : public content::NotificationObserver,
       XWalkExtensionVector* extension_thread_extensions);
 
   void CreateExtensionProcessHost(content::RenderProcessHost* host,
-      XWalkExtensionData* data, std::unique_ptr<base::DictionaryValue::Storage> runtime_variables);
+      XWalkExtensionData* data, std::unique_ptr<base::DictionaryValue::DictStorage> runtime_variables);
 
   // The server that handles in process extensions will live in the
   // extension_thread_.
@@ -176,7 +175,7 @@ private:
       std::vector<XWalkExtensionServerMsg_ExtensionRegisterParams>* reply);
 
   // IPC::ChannelProxy::MessageFilter implementation.
-  void OnFilterAdded(IPC::Sender* sender) override;
+  void OnFilterAdded(IPC::Channel* channel) override;
   void OnFilterRemoved() override;
   void OnChannelClosing() override;
   void OnChannelError() override;

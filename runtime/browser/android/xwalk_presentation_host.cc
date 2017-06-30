@@ -13,6 +13,8 @@
 #include "jni/XWalkPresentationHost_jni.h"
 
 using base::android::AttachCurrentThread;
+using base::android::JavaParamRef;
+using base::android::ScopedJavaLocalRef;
 
 namespace xwalk {
 
@@ -69,8 +71,9 @@ void XWalkPresentationHost::OnPresentationClosed(JNIEnv* env, jobject obj,
     const int render_process_id, const int render_frame_id) {
   DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
 
-  FOR_EACH_OBSERVER(SessionObserver, observers_,
-    OnPresentationClosed(render_process_id, render_frame_id));
+  for ( auto& observer : observers_ ) {
+    observer.OnPresentationClosed(render_process_id, render_frame_id);
+  }
 }
 
 std::vector<XWalkPresentationHost::AndroidDisplay> XWalkPresentationHost::

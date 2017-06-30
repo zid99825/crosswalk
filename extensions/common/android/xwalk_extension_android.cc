@@ -15,6 +15,9 @@
 #include "xwalk/runtime/browser/xwalk_browser_main_parts_android.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
 
+using base::android::ScopedJavaLocalRef;
+using base::android::JavaParamRef;
+
 namespace xwalk {
 namespace extensions {
 

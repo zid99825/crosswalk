@@ -39,7 +39,7 @@ class XWalkInternalResources {
                     try {
                         generatedInnerClazz = appClassLoader.loadClass(generatedInnerClassName);
                     } catch (ClassNotFoundException e) {
-                        Log.w(TAG, generatedInnerClassName + "is not found.");
+                        Log.w(TAG, generatedInnerClassName + " is not found.");
                         continue;
                     }
                     Field[] fields = innerClazz.getFields();
@@ -63,7 +63,7 @@ class XWalkInternalResources {
                     }
                 }
             } catch (ClassNotFoundException e) {
-                Log.w(TAG, resourceClass + "is not found.");
+                Log.w(TAG, resourceClass + " is not found.");
             }
         }
     }

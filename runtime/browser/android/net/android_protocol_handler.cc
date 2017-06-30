@@ -33,6 +33,7 @@ using base::android::ClearException;
 using base::android::ConvertUTF8ToJavaString;
 using base::android::ScopedJavaGlobalRef;
 using base::android::ScopedJavaLocalRef;
+using base::android::JavaParamRef;
 using xwalk::InputStream;
 using xwalk::InputStreamImpl;
 
@@ -138,7 +139,7 @@ static ScopedJavaLocalRef<jobject> GetResourceContext(JNIEnv* env) {
   // We have to reset as GetApplicationContext() returns a jobject with a
   // global ref. The constructor that takes a jobject would expect a local ref
   // and would assert.
-  context.Reset(env, base::android::GetApplicationContext());
+  context.Reset(env, base::android::GetApplicationContext().obj());
   return context;
 }
 

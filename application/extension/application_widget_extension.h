@@ -37,14 +37,14 @@ class AppWidgetExtensionInstance : public XWalkExtensionInstance {
 
  private:
   std::unique_ptr<base::StringValue> GetWidgetInfo(std::unique_ptr<base::Value> msg);
-  std::unique_ptr<base::FundamentalValue> SetPreferencesItem(
+  std::unique_ptr<base::Value> SetPreferencesItem(
       std::unique_ptr<base::Value> mgs);
-  std::unique_ptr<base::FundamentalValue> RemovePreferencesItem(
+  std::unique_ptr<base::Value> RemovePreferencesItem(
       std::unique_ptr<base::Value> mgs);
-  std::unique_ptr<base::FundamentalValue> ClearAllItems(std::unique_ptr<base::Value> mgs);
+  std::unique_ptr<base::Value> ClearAllItems(std::unique_ptr<base::Value> mgs);
   std::unique_ptr<base::DictionaryValue> GetAllItems(std::unique_ptr<base::Value> mgs);
   std::unique_ptr<base::StringValue> GetItemValueByKey(std::unique_ptr<base::Value> mgs);
-  std::unique_ptr<base::FundamentalValue> KeyExists(
+  std::unique_ptr<base::Value> KeyExists(
       std::unique_ptr<base::Value> mgs) const;
   void PostMessageToOtherFrames(std::unique_ptr<base::DictionaryValue> msg);
 

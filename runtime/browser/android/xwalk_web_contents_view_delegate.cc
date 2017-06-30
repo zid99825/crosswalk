@@ -27,8 +27,7 @@ void XWalkWebContentsViewDelegate::ShowContextMenu(
     content::ContentViewCore* content_view_core =
         content::ContentViewCore::FromWebContents(web_contents_);
     if (content_view_core) {
-      content_view_core->ShowPastePopup(params.selection_start.x(),
-                                        params.selection_start.y());
+      content_view_core->ShowPastePopup(params);
     }
   }
 }

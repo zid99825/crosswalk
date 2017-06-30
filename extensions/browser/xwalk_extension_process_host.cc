@@ -16,13 +16,20 @@
 #include "content/public/common/process_type.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/sandboxed_process_launcher_delegate.h"
+#include "content/public/browser/zygote_handle_linux.h"
+#include "components/nacl/common/nacl_constants.h"
 #include "ipc/ipc_message.h"
-#include "ipc/ipc_switches.h"
 #include "ipc/message_filter.h"
 #include "xwalk/extensions/common/xwalk_extension_messages.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+
+// TODO(iotto) for implementation details see components/nacl/browser/nacl_process_host.cc
+// content/browser/gpu/gpu_process_host.cc
+// content/browser/ppapi_plugin_process_host.cc
+// content/browser/renderer_host/render_process_host_impl.cc
+// content/browser/utility_process_host_impl.cc
 
 using content::BrowserThread;
 
@@ -80,26 +87,29 @@ class ExtensionSandboxedProcessLauncherDelegate
  public:
   explicit ExtensionSandboxedProcessLauncherDelegate(
       content::ChildProcessHost* host)
-#if defined(OS_POSIX)
-      : ipc_fd_(host->TakeClientFileDescriptor())
-#endif
   {}
   ~ExtensionSandboxedProcessLauncherDelegate() override {}
 
 #if defined(OS_WIN)
-  bool ShouldSandbox() override {
-    return false;
+  void PostSpawnTarget(base::ProcessHandle process) override {
+    // For Native Client sel_ldr processes on 32-bit Windows, reserve 1 GB of
+    // address space to prevent later failure due to address space fragmentation
+    // from .dll loading. The NaCl process will attempt to locate this space by
+    // scanning the address space using VirtualQuery.
+    // TODO(bbudge) Handle the --no-sandbox case.
+    // http://code.google.com/p/nativeclient/issues/detail?id=2131
+    const SIZE_T kNaClSandboxSize = 1 << 30;
+    if (!nacl::AllocateAddressSpaceASLR(process, kNaClSandboxSize)) {
+      DLOG(WARNING) << "Failed to reserve address space for Native Client";
+    }
   }
-#elif defined(OS_POSIX)
-  base::ScopedFD TakeIpcFd() override {
-    return std::move(ipc_fd_);
+/*#elif defined(OS_POSIX) && !defined(OS_MACOSX)
+  content::ZygoteHandle* GetZygote() override {
+    return content::GetGenericZygote();
   }
-#endif
-
- private:
-#if defined(OS_POSIX)
-  base::ScopedFD ipc_fd_;
-#endif
+*/
+#endif  // OS_WIN
+private:
 
   DISALLOW_COPY_AND_ASSIGN(ExtensionSandboxedProcessLauncherDelegate);
 };
@@ -115,8 +125,8 @@ XWalkExtensionProcessHost::XWalkExtensionProcessHost(
     content::RenderProcessHost* render_process_host,
     const base::FilePath& external_extensions_path,
     XWalkExtensionProcessHost::Delegate* delegate,
-    std::unique_ptr<base::DictionaryValue::Storage> runtime_variables)
-    : ep_rp_channel_handle_(""),
+    std::unique_ptr<base::DictionaryValue::DictStorage> runtime_variables)
+    : ep_rp_channel_handle_(),
       render_process_host_(render_process_host),
       render_process_message_filter_(new RenderProcessMessageFilter(this)),
       external_extensions_path_(external_extensions_path),
@@ -138,10 +148,10 @@ XWalkExtensionProcessHost::~XWalkExtensionProcessHost() {
 
 namespace {
 
-void ToListValue(base::DictionaryValue::Storage* vm, base::ListValue* lv) {
+void ToListValue(base::DictionaryValue::DictStorage* vm, base::ListValue* lv) {
   lv->Clear();
 
-  for (base::DictionaryValue::Storage::iterator it = vm->begin(); it != vm->end(); it++) {
+  for (base::DictionaryValue::DictStorage::iterator it = vm->begin(); it != vm->end(); it++) {
     base::DictionaryValue* dv = new base::DictionaryValue();
     dv->Set(it->first, std::move(it->second));
     lv->Append(dv);
@@ -152,13 +162,15 @@ void ToListValue(base::DictionaryValue::Storage* vm, base::ListValue* lv) {
 
 void XWalkExtensionProcessHost::StartProcess() {
   CHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
-  CHECK(!process_ || !channel_);
+//  CHECK(!process_ || !channel_);
 
   process_.reset(content::BrowserChildProcessHost::Create(
       content::PROCESS_TYPE_CONTENT_END, this));
 
-  std::string channel_id = process_->GetHost()->CreateChannel();
-  CHECK(!channel_id.empty());
+  process_->GetHost()->CreateChannelMojo();
+
+//  std::string channel_id = process_->GetHost()->CreateChannel();
+//  CHECK(!channel_id.empty());
 
   base::CommandLine::StringType extension_cmd_prefix;
 #if defined(OS_POSIX)
@@ -183,16 +195,16 @@ void XWalkExtensionProcessHost::StartProcess() {
   std::unique_ptr<base::CommandLine> cmd_line(new base::CommandLine(exe_path));
   cmd_line->AppendSwitchASCII(switches::kProcessType,
                                 switches::kXWalkExtensionProcess);
-  cmd_line->AppendSwitchASCII(switches::kProcessChannelID, channel_id);
+//  cmd_line->AppendSwitchASCII(switches::kProcessChannelID, channel_id);
   if (!extension_cmd_prefix.empty())
     cmd_line->PrependWrapper(extension_cmd_prefix);
 
   process_->Launch(
-      new ExtensionSandboxedProcessLauncherDelegate(process_->GetHost()),
-      cmd_line.release(), true);
+      base::WrapUnique(new ExtensionSandboxedProcessLauncherDelegate(process_->GetHost())),
+      std::move(cmd_line), true);
 
   base::ListValue runtime_variables_lv;
-  ToListValue(&const_cast<base::DictionaryValue::Storage&>(*runtime_variables_),
+  ToListValue(&const_cast<base::DictionaryValue::DictStorage&>(*runtime_variables_),
       &runtime_variables_lv);
   Send(new XWalkExtensionProcessMsg_RegisterExtensions(
         external_extensions_path_, runtime_variables_lv));

@@ -38,10 +38,12 @@ class XWalkWebContentsDelegate
       const content::MediaStreamRequest& request,
       const content::MediaResponseCallback& callback) override;
 
-  void RendererUnresponsive(content::WebContents* source) override;
+  void RendererUnresponsive(
+      content::WebContents* source,
+      const content::WebContentsUnresponsiveState& unresponsive_state) override;
   void RendererResponsive(content::WebContents* source) override;
 
-  bool AddMessageToConsole(content::WebContents* source,
+  bool DidAddMessageToConsole(content::WebContents* source,
                            int32_t level,
                            const base::string16& message,
                            int32_t line_no,
@@ -62,10 +64,12 @@ class XWalkWebContentsDelegate
 
   bool ShouldCreateWebContents(
       content::WebContents* web_contents,
+      content::SiteInstance* source_site_instance,
       int32_t route_id,
       int32_t main_frame_route_id,
       int32_t main_frame_widget_route_id,
-      WindowContainerType window_container_type,
+      content::mojom::WindowContainerType window_container_type,
+      const GURL& opener_url,
       const std::string& frame_name,
       const GURL& target_url,
       const std::string& partition_id,

@@ -18,9 +18,10 @@
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "blink_upstream_version.h"  // NOLINT
-#include "components/devtools_http_handler/devtools_http_handler.h"
-#include "components/devtools_http_handler/devtools_http_handler_delegate.h"
+#include "content/browser/devtools/devtools_http_handler.h"
+//#include "components/devtools_http_handler/devtools_http_handler_delegate.h"
 #include "content/public/browser/android/devtools_auth.h"
+#include "content/public/browser/devtools_socket_factory.h"
 #include "content/public/browser/devtools_agent_host.h"
 #include "content/public/browser/devtools_manager_delegate.h"
 #include "content/public/browser/favicon_status.h"
@@ -37,6 +38,7 @@
 using content::DevToolsAgentHost;
 using content::RenderViewHost;
 using content::WebContents;
+using base::android::JavaParamRef;
 
 namespace {
 
@@ -59,7 +61,7 @@ bool AuthorizeSocketAccessWithDebugPermission(
 // Delegate implementation for the devtools http handler on android. A new
 // instance of this gets created each time devtools is enabled.
 class XWalkAndroidDevToolsHttpHandlerDelegate
-  : public devtools_http_handler::DevToolsHttpHandlerDelegate {
+  : public content::DevToolsManagerDelegate {
  public:
   XWalkAndroidDevToolsHttpHandlerDelegate() {
   }
@@ -73,6 +75,7 @@ class XWalkAndroidDevToolsHttpHandlerDelegate
     return std::string();
   }
 
+/* TODO(iotto) check replacement
   std::string GetPageThumbnailData(const GURL& url) override {
     return std::string();
   }
@@ -80,6 +83,7 @@ class XWalkAndroidDevToolsHttpHandlerDelegate
       HandleWebSocketConnection(const std::string& path) override {
     return nullptr;
   }
+*/
 
  private:
   DISALLOW_COPY_AND_ASSIGN(XWalkAndroidDevToolsHttpHandlerDelegate);
@@ -87,7 +91,7 @@ class XWalkAndroidDevToolsHttpHandlerDelegate
 
 // Factory for UnixDomainServerSocket.
 class UnixDomainServerSocketFactory
-    : public devtools_http_handler::DevToolsHttpHandler::ServerSocketFactory {
+    : public content::DevToolsSocketFactory {
  public:
   explicit UnixDomainServerSocketFactory(
       const std::string& socket_name,
@@ -106,6 +110,13 @@ class UnixDomainServerSocketFactory
       return std::unique_ptr<net::ServerSocket>();
 
     return std::move(socket);
+  }
+
+  // Creates a named socket for reversed tethering implementation (used with
+  // remote debugging, primarily for mobile).
+  virtual std::unique_ptr<net::ServerSocket> CreateForTethering(
+      std::string* out_name) override {
+    return std::unique_ptr<net::ServerSocket>();
   }
 
   const std::string socket_name_;
@@ -150,12 +161,12 @@ void XWalkDevToolsServer::Start(bool allow_debug_permission,
       base::Bind(&XWalkDevToolsServer::CanUserConnectToDevTools,
                  base::Unretained(this));
 
-  std::unique_ptr<devtools_http_handler::DevToolsHttpHandler::ServerSocketFactory>
+  std::unique_ptr<content::DevToolsSocketFactory>
       factory(new UnixDomainServerSocketFactory(socket_name_, auth_callback));
-  devtools_http_handler_.reset(new devtools_http_handler::DevToolsHttpHandler(
+  devtools_http_handler_.reset(new content::DevToolsHttpHandler(
+      new XWalkAndroidDevToolsHttpHandlerDelegate(),
       std::move(factory),
       base::StringPrintf(kFrontEndURL, BLINK_UPSTREAM_REVISION),
-      new XWalkAndroidDevToolsHttpHandlerDelegate(),
       base::FilePath(),
       base::FilePath(),
       std::string(),

@@ -66,8 +66,9 @@ Application* ApplicationService::Launch(
       base::ASCIIToUTF16(application->data()->Name()).c_str());
 #endif
 
-  FOR_EACH_OBSERVER(Observer, observers_,
-                    DidLaunchApplication(application));
+  for ( auto& observer : observers_ ) {
+    observer.DidLaunchApplication(application);
+  }
 
   return application;
 }
@@ -230,8 +231,11 @@ void ApplicationService::OnApplicationTerminated(
   ScopedVector<Application>::iterator found = std::find(
       applications_.begin(), applications_.end(), application);
   CHECK(found != applications_.end());
-  FOR_EACH_OBSERVER(Observer, observers_,
-                    WillDestroyApplication(application));
+  for ( auto& observer : observers_ ) {
+    observer.WillDestroyApplication(application);
+  }
+
+
   scoped_refptr<ApplicationData> app_data = application->data();
   applications_.erase(found);
 
@@ -250,7 +254,7 @@ void ApplicationService::OnApplicationTerminated(
   }
 
   if (applications_.empty()) {
-    base::MessageLoop::current()->PostTask(
+    base::MessageLoop::current()->task_runner()->PostTask(
           FROM_HERE, base::MessageLoop::QuitWhenIdleClosure());
   }
 }

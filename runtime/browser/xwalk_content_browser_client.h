@@ -22,6 +22,7 @@ class QuotaPermissionContext;
 class SpeechRecognitionManagerDelegate;
 class WebContents;
 class WebContentsViewDelegate;
+class PresentationServiceDelegate;
 }
 
 namespace net {
@@ -33,6 +34,7 @@ namespace xwalk {
 class XWalkBrowserContext;
 class XWalkBrowserMainParts;
 class XWalkRunner;
+class XWalkDevToolsManagerDelegate;
 
 class XWalkContentBrowserClient : public content::ContentBrowserClient {
  public:
@@ -48,7 +50,6 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
                                       int child_process_id) override;
   content::QuotaPermissionContext*
       CreateQuotaPermissionContext() override;
-  content::GeolocationDelegate* CreateGeolocationDelegate() override;
   content::WebContentsViewDelegate* GetWebContentsViewDelegate(
       content::WebContents* web_contents) override;
   void RenderProcessWillLaunch(
@@ -78,8 +79,7 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
       bool overridable,
       bool strict_enforcement,
       bool expired_previous_decision,
-      const base::Callback<void(bool)>& callback, // NOLINT
-      content::CertificateRequestResultType* result) override;
+      const base::Callback<void(content::CertificateRequestResultType)>& callback) override;
 
   void SelectClientCertificate(
       content::WebContents* web_contents,
@@ -130,12 +130,13 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   void GetAdditionalAllowedSchemesForFileSystem(
       std::vector<std::string>* additional_schemes) override;
 
+  content::DevToolsManagerDelegate* GetDevToolsManagerDelegate() override;
+
 #if defined(OS_ANDROID)
   virtual void GetAdditionalMappedFilesForChildProcess(
       const base::CommandLine& command_line,
       int child_process_id,
-      content::FileDescriptorInfo* mappings,
-      std::map<int, base::MemoryMappedFile::Region>* regions) override {}
+      content::FileDescriptorInfo* mappings) override {}
 #elif defined(OS_POSIX) && !defined(OS_MACOSX)
   void GetAdditionalMappedFilesForChildProcess(
       const base::CommandLine& command_line,
@@ -145,8 +146,8 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
 
   XWalkBrowserMainParts* main_parts() { return main_parts_; }
 
-  content::PresentationServiceDelegate* GetPresentationServiceDelegate(
-      content::WebContents* web_contents) override;
+  content::ControllerPresentationServiceDelegate*
+    GetControllerPresentationServiceDelegate(content::WebContents* web_contents) override;
 
 #if defined(OS_ANDROID)
   RuntimeResourceDispatcherHostDelegate* resource_dispatcher_host_delegate() {
@@ -157,7 +158,7 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   std::string GetApplicationLocale() override;
 
 #if defined(OS_ANDROID)
-  ScopedVector<content::NavigationThrottle> CreateThrottlesForNavigation(
+  std::vector<std::unique_ptr<content::NavigationThrottle>> CreateThrottlesForNavigation(
       content::NavigationHandle* navigation_handle) override;
 #endif
 

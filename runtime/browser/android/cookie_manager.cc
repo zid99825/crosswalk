@@ -46,6 +46,8 @@
 using base::FilePath;
 using base::android::ConvertJavaStringToUTF8;
 using base::android::ConvertJavaStringToUTF16;
+using base::android::JavaParamRef;
+using base::android::ScopedJavaLocalRef;
 using content::BrowserThread;
 using net::CookieList;
 
@@ -529,7 +531,7 @@ void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
       it != cookies.end(); ++it) {
     const net::CanonicalCookie& cc = *it;
 
-    pickle->WriteString(cc.Source().spec());
+//    pickle->WriteString(cc.Source().spec());
     pickle->WriteString(cc.Name());
     pickle->WriteString(cc.Value());
     pickle->WriteString(cc.Domain());
@@ -589,13 +591,13 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
     if (it.ReadInt(&cnt) && cnt > 0) {
 
       for (int i = 0; i < cnt; ++i) {
-        std::string name, value, domain, path, spec;
+        std::string name, value, domain, path/*, spec*/;
         int64_t c_time, e_time, l_time;
         bool secure, http_only;
         int same_site, prio;
         // url     std::string key(cookie_util::GetEffectiveDomain(url.scheme(), url.host()));
 
-        if (it.ReadString(&spec) && it.ReadString(&name)
+        if (/*it.ReadString(&spec) && */it.ReadString(&name)
             && it.ReadString(&value) && it.ReadString(&domain)
             && it.ReadString(&path) && it.ReadInt64(&c_time)
             && it.ReadInt64(&e_time) && it.ReadInt64(&l_time)
@@ -604,11 +606,11 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
 
           // TODO READ url!!!
           cs->SetCookieWithDetailsAsync(
-              GURL(spec), name, value, domain, path,
+              GURL(/*spec*/), name, value, domain, path,
               base::Time::FromInternalValue(c_time),
               base::Time::FromInternalValue(e_time),
               base::Time::FromInternalValue(l_time), secure, http_only,
-              static_cast<net::CookieSameSite>(same_site), false,
+              static_cast<net::CookieSameSite>(same_site),
               static_cast<net::CookiePriority>(prio), callback);
 
 #if TENTA_LOG_ENABLE == 1

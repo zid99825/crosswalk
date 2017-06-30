@@ -13,10 +13,12 @@
 #include "base/logging.h"
 #include "base/stl_util.h"
 #include "base/android/jni_string.h"
+#include "base/memory/ptr_util.h"
 #include "base/time/time.h"
 #include "net/dns/dns_util.h"
 #include "net/base/net_errors.h"
 #include "net/base/address_list.h"
+#include "net/log/net_log_with_source.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/threading/worker_pool.h"
 
@@ -27,37 +29,43 @@
 using base::android::AttachCurrentThread;
 using base::android::ConvertUTF8ToJavaString;
 
-namespace xwalk {
-namespace tenta {
+namespace xwalk
+{
+namespace tenta
+{
 
 using namespace net;
 
 /**********************************
  * class SavedRequest
  */
-class HostResolverTenta::SavedRequest {
- public:
+class HostResolverTenta::SavedRequest
+{
+public:
   SavedRequest(base::TimeTicks when_created, const RequestInfo& info,
                RequestPriority priority,
                const CompletionCallback& callback,
                AddressList* addresses)
-      : info_(info),
-        priority_(priority),  // not used
-        callback_(callback),
-        addresses_(addresses),
-        sent_to_java_(false) {
+    : info_(info),
+      priority_(priority),  // not used
+      callback_(callback),
+      addresses_(addresses),
+      sent_to_java_(false)
+  {
     when_created_ = when_created;
   }
 
   /**
    * Notify callback of current status
    */
-  void OnResolved(int status, AddressList * addr_list) {
+  void OnResolved(int status, AddressList * addr_list)
+  {
 #if TENTA_LOG_ENABLE == 1
     LOG(INFO) << "resolved: " + info_.hostname() + " status: " << status;
 #endif
 
-    if (!was_canceled()) {
+    if (!was_canceled())
+    {
       if (status == OK && addr_list != nullptr)
         *addresses_ = AddressList::CopyWithPort(*addr_list, info_.port());
 
@@ -70,43 +78,49 @@ class HostResolverTenta::SavedRequest {
   /**
    * Cancel this request
    */
-  void Cancel() {
+  void Cancel()
+  {
     callback_.Reset();
   }
 
   /**
    * return true if has been canceled
    */
-  bool was_canceled() const {
+  bool was_canceled() const
+  {
     return callback_.is_null();
   }
 
   /**
    * Mark as being sent to java, so we expect some results in OnResolved
    */
-  void sent_to_java() {
+  void sent_to_java()
+  {
     sent_to_java_ = true;
   }
 
   /**
    * True if request was sent to java through jni
    */
-  bool was_sent_to_java() {
+  bool was_sent_to_java()
+  {
     return sent_to_java_;
   }
 
   /**
    * Returns this requests age (time passed since created)
    */
-  base::TimeDelta age() {
+  base::TimeDelta age()
+  {
     return base::TimeTicks::Now() - when_created_;
   }
 
-  const RequestInfo& info() const {
+  const RequestInfo& info() const
+  {
     return info_;
   }
 
- private:
+private:
   // The request info that started the request.
   const RequestInfo info_;
 
@@ -132,9 +146,10 @@ class HostResolverTenta::SavedRequest {
  * class HostResolverTenta
  */
 HostResolverTenta::HostResolverTenta(
-    std::unique_ptr<HostResolver> backup_resolver)
-    : weak_ptr_factory_(this),
-      _use_backup(false) {
+  std::unique_ptr<HostResolver> backup_resolver)
+  : weak_ptr_factory_(this),
+    _use_backup(false)
+{
 
   backup_resolver_ = std::move(backup_resolver);
   task_runner_ = base::WorkerPool::GetTaskRunner(true /* task_is_slow */);
@@ -142,10 +157,10 @@ HostResolverTenta::HostResolverTenta(
   JNIEnv* env = AttachCurrentThread();
 
   j_host_resolver_ = JavaObjectWeakGlobalRef(
-      env,
-      Java_HostResolverTenta_getInstanceNative(env,
-                                               reinterpret_cast<intptr_t>(this))
-          .obj());
+                       env,
+                       Java_HostResolverTenta_getInstanceNative(env,
+                           reinterpret_cast<intptr_t>(this))
+                       .obj());
 
   on_error_call_ = base::Bind(&HostResolverTenta::OnError,
                               weak_ptr_factory_.GetWeakPtr());
@@ -155,8 +170,8 @@ HostResolverTenta::HostResolverTenta(
 
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "HostResolverTenta register "
-               << NetworkChangeNotifier::ConnectionTypeToString(
-                   NetworkChangeNotifier::GetConnectionType());
+            << NetworkChangeNotifier::ConnectionTypeToString(
+              NetworkChangeNotifier::GetConnectionType());
 #endif
 
   net::NetworkChangeNotifier::AddIPAddressObserver(this);
@@ -165,7 +180,8 @@ HostResolverTenta::HostResolverTenta(
 
 }
 
-HostResolverTenta::~HostResolverTenta() {
+HostResolverTenta::~HostResolverTenta()
+{
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "~HostResolverTenta";
 #endif
@@ -176,7 +192,7 @@ HostResolverTenta::~HostResolverTenta() {
 
   base::AutoLock lock(reqGuard);
 
-  STLDeleteValues(&requests_);
+  //STLDeleteValues(&requests_);
 }
 
 /**
@@ -186,18 +202,20 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
                                RequestPriority priority,
                                AddressList* addresses,
                                const CompletionCallback& callback,
-                               RequestHandle* out_req,
-                               const BoundNetLog& net_log) {
+                               std::unique_ptr<Request>* out_req,
+                               const NetLogWithSource& net_log)
+{
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO)
-               << "resolv name: " + info.hostname() + " using "
-                   + use_backup_str() + " onCon "
-                   + NetworkChangeNotifier::ConnectionTypeToString(
-                       NetworkChangeNotifier::GetConnectionType())
-                   + " with flags: " << info.host_resolver_flags();
+      << "resolv name: " + info.hostname() + " using "
+      + use_backup_str() + " onCon "
+      + NetworkChangeNotifier::ConnectionTypeToString(
+        NetworkChangeNotifier::GetConnectionType())
+      + " with flags: " << info.host_resolver_flags();
 #endif
 
-  if (_use_backup) {
+  if (_use_backup)
+  {
     return backup_resolver_->Resolve(info, priority, addresses, callback,
                                      out_req,
                                      net_log);
@@ -213,11 +231,14 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
   base::TimeTicks now = base::TimeTicks::Now();
   int64_t key_id = now.ToInternalValue();
 
-  SavedRequest *request = new SavedRequest(now, info, priority, callback,
-                                           addresses);
+  SavedRequest * the_request = new SavedRequest(now, info, priority, callback,
+      addresses);
+
+  std::unique_ptr<SavedRequest> request(the_request);
+  std::unique_ptr<Request> response(new RequestForCaller(key_id, weak_ptr_factory_.GetWeakPtr()));
 
   reqGuard.Acquire();
-  requests_.insert(std::make_pair(key_id, request));
+  requests_.insert(std::make_pair(key_id, std::move(request)));
   reqGuard.Release();
 
 #if TENTA_LOG_ENABLE == 1
@@ -226,11 +247,11 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
 
   // post task and run
   task_runner_->PostTask(
-  FROM_HERE,
-  base::Bind(&HostResolverTenta::DoResolveInJava, base::Unretained(this), request, key_id));
+    FROM_HERE,
+    base::Bind(&HostResolverTenta::DoResolveInJava, base::Unretained(this), the_request, key_id));
 
   if (out_req)
-    *out_req = reinterpret_cast<RequestHandle>(key_id);  // for further interaction with base
+    *out_req = std::move(response);  // for further interaction with base
 
   return ERR_IO_PENDING;
 }
@@ -240,15 +261,17 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
  */
 int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
                                         AddressList* addresses,
-                                        const BoundNetLog& net_log) {
+                                        const NetLogWithSource& net_log)
+{
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO)
-               << "Resolve from cache: " + info.hostname() + " using "
-                   + use_backup_str() + " with flags: "
-               << info.host_resolver_flags();
+      << "Resolve from cache: " + info.hostname() + " using "
+      + use_backup_str() + " with flags: "
+      << info.host_resolver_flags();
 #endif
 
-  if (_use_backup) {
+  if (_use_backup)
+  {
     return backup_resolver_->ResolveFromCache(info, addresses, net_log);
   }
 
@@ -257,28 +280,31 @@ int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
 }
 
 int HostResolverTenta::ResolveFromCacheDirect(const RequestInfo& info,
-                                              AddressList* addresses,
-                                              const BoundNetLog& net_log) {
+    AddressList* addresses,
+    const NetLogWithSource& net_log)
+{
   JNIEnv* env = AttachCurrentThread();
 
-  if (!j_host_resolver_.is_empty()) {
+  if (!j_host_resolver_.is_uninitialized())
+  {
     ScopedJavaLocalRef<jobject> gInstance = j_host_resolver_.get(env);
 
     ScopedJavaLocalRef<jstring> rHost;
     rHost = ConvertUTF8ToJavaString(env, info.hostname());
 
     ScopedJavaLocalRef<jobjectArray> jReturn =
-        Java_HostResolverTenta_resolveCache(env, gInstance.obj(), rHost.obj());
+      Java_HostResolverTenta_resolveCache(env, gInstance.obj(), rHost.obj());
 
     AddressList *foundAddr = ConvertIpJava2Native(env, jReturn.obj());
 
-    if (foundAddr != nullptr) {
+    if (foundAddr != nullptr)
+    {
       *addresses = AddressList::CopyWithPort(*foundAddr, info.port());
       delete foundAddr;
 
 #if TENTA_LOG_ENABLE == 1
       LOG(INFO) << "Resolved from cache: " + info.hostname() + " ipCnt: "
-                   << addresses->size();
+                << addresses->size();
 #endif
       return OK;
     }
@@ -295,25 +321,27 @@ int HostResolverTenta::ResolveFromCacheDirect(const RequestInfo& info,
  *
  */
 int HostResolverTenta::ResolveFromCacheWithTask(const RequestInfo& info,
-                                                AddressList* addresses,
-                                                const BoundNetLog& net_log) {
+    AddressList* addresses,
+    const NetLogWithSource& net_log)
+{
   base::WaitableEvent completion(
-      base::WaitableEvent::ResetPolicy::AUTOMATIC,
-      base::WaitableEvent::InitialState::NOT_SIGNALED);
+    base::WaitableEvent::ResetPolicy::AUTOMATIC,
+    base::WaitableEvent::InitialState::NOT_SIGNALED);
 
   bool resolved = false;
 
   task_runner_->PostTask(
-  FROM_HERE,
-  base::Bind(&HostResolverTenta::DoResolveCacheInJava, base::Unretained(this),
-      info, addresses, net_log, &completion, &resolved));
+    FROM_HERE,
+    base::Bind(&HostResolverTenta::DoResolveCacheInJava, base::Unretained(this),
+               info, addresses, net_log, &completion, &resolved));
 
   {
     ScopedAllowWaitForLegacyWebViewApi wait;
     completion.Wait();
   }
 
-  if (resolved) {
+  if (resolved)
+  {
     return OK;
   }
 //  return backup_resolver_->ResolveFromCache(info, addresses, net_log);
@@ -323,18 +351,20 @@ int HostResolverTenta::ResolveFromCacheWithTask(const RequestInfo& info,
 /**
  * Calls java to resolve the name
  */
-void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id) {
+void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id)
+{
   JNIEnv* env = AttachCurrentThread();
 
-  if (!j_host_resolver_.is_empty()) {
+  if (!j_host_resolver_.is_uninitialized())
+  {
     ScopedJavaLocalRef<jobject> gInstance = j_host_resolver_.get(env);
 
     ScopedJavaLocalRef<jstring> rHost;
     rHost = ConvertUTF8ToJavaString(env, request->info().hostname());
 
     jint jReturn = Java_HostResolverTenta_resolve(env, gInstance.obj(),
-                                                  rHost.obj(),
-                                                  key_id);
+                   rHost.obj(),
+                   key_id);
 
     request->sent_to_java();
 
@@ -342,11 +372,14 @@ void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id) {
     LOG(INFO) << "resolv name java returned: " << jReturn;
 #endif
 
-    if (jReturn != OK) {
+    if (jReturn != OK)
+    {
       OnError(key_id, jReturn);
     }
 
-  } else {
+  }
+  else
+  {
     OnError(key_id, ERR_DNS_SERVER_FAILED);
   }
 
@@ -356,15 +389,19 @@ void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id) {
  * Get cached value from java
  */
 void HostResolverTenta::DoResolveCacheInJava(const RequestInfo& info,
-                                             AddressList* addresses,
-                                             const BoundNetLog& net_log,
-                                             base::WaitableEvent* completion,
-                                             bool *success) {
+    AddressList* addresses,
+    const NetLogWithSource& net_log,
+    base::WaitableEvent* completion,
+    bool *success)
+{
   int retVal = ResolveFromCacheDirect(info, addresses, net_log);
 
-  if (retVal == OK) {
+  if (retVal == OK)
+  {
     *success = true;
-  } else {
+  }
+  else
+  {
     *success = false;
   }
   completion->Signal();
@@ -375,18 +412,20 @@ void HostResolverTenta::DoResolveCacheInJava(const RequestInfo& info,
  */
 void HostResolverTenta::OnResolved(JNIEnv* env, jobject caller, jint status,
                                    jobjectArray result,
-                                   jlong forRequestId) {
+                                   jlong forRequestId)
+{
 
   AddressList *foundAddr = nullptr;  // the found addresses
 
-  if (status == OK) {
+  if (status == OK)
+  {
     foundAddr = ConvertIpJava2Native(env, result);
   }
 
 // TODO search by id and call onresolved
   orig_runner_->PostTask(FROM_HERE,
-  base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
-      forRequestId, status, base::Owned(foundAddr)));  // bind will delete the foundAddr
+                         base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
+                                    forRequestId, status, base::Owned(foundAddr)));  // bind will delete the foundAddr
 
 }
 
@@ -394,21 +433,25 @@ void HostResolverTenta::OnResolved(JNIEnv* env, jobject caller, jint status,
  * Convert Java Ip address list to native IP's
  */
 AddressList * HostResolverTenta::ConvertIpJava2Native(JNIEnv* env,
-                                                      jobjectArray jIpArray) {
+    jobjectArray jIpArray)
+{
 
   AddressList *foundAddr = nullptr;  // the found addresses
 
-  if (jIpArray != nullptr) {
+  if (jIpArray != nullptr)
+  {
     jsize len = env->GetArrayLength(jIpArray);  // array length
 
-    if (len > 0) {
+    if (len > 0)
+    {
       foundAddr = new AddressList();
 
       // fill the addresses
-      for (jsize i = 0; i < len; ++i) {
+      for (jsize i = 0; i < len; ++i)
+      {
         ScopedJavaLocalRef<jbyteArray> ip_array(
-            env,
-            static_cast<jbyteArray>(env->GetObjectArrayElement(jIpArray, i)));
+          env,
+          static_cast<jbyteArray>(env->GetObjectArrayElement(jIpArray, i)));
 
         jsize ip_bytes_len = env->GetArrayLength(ip_array.obj());
         jbyte* ip_bytes = env->GetByteArrayElements(ip_array.obj(), nullptr);
@@ -427,81 +470,91 @@ AddressList * HostResolverTenta::ConvertIpJava2Native(JNIEnv* env,
 }
 
 void HostResolverTenta::origOnResolved(int64_t forRequestId, int error,
-                                       AddressList* addr_list) {
+                                       AddressList* addr_list)
+{
 
   base::AutoLock lock(reqGuard);
 
   auto it = requests_.find(forRequestId);
-  if (it != requests_.end()) {
+  if (it != requests_.end())
+  {
     it->second->OnResolved(error, addr_list);
-    delete it->second;
+//    delete it->second;
     requests_.erase(it);
   }
 }
 /**
  * Called when error occured (can be on any thread, will post a task to original thread
  */
-void HostResolverTenta::OnError(int64_t key_id, int error) {
+void HostResolverTenta::OnError(int64_t key_id, int error)
+{
   orig_runner_->PostTask(FROM_HERE,
-  base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(), key_id, error, nullptr));
+                         base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(), key_id, error, nullptr));
 }
 
 /**
  *
  */
-void HostResolverTenta::CancelRequest(RequestHandle req) {
-
-  if (_use_backup) {
-    backup_resolver_->CancelRequest(req);
-  } else {
-
-    int64_t key_id = reinterpret_cast<int64_t>(req);
+void HostResolverTenta::CancelRequest(int64_t key_id)
+{
+//
+//  if (_use_backup) {
+//    backup_resolver_->CancelRequest(req);
+//  } else {
+//
+//    int64_t key_id = reinterpret_cast<int64_t>(req);
 
 #if TENTA_LOG_ENABLE == 1
-    LOG(INFO) << "CancelRequest ID: " << key_id;
+  LOG(INFO) << "CancelRequest ID: " << key_id;
 #endif
 
-    base::AutoLock lock(reqGuard);
+  base::AutoLock lock(reqGuard);
 
-    auto it = requests_.find(key_id);
+  auto it = requests_.find(key_id);
 
-    // cleanup the request if any
-    if (it != requests_.end()) {
-      it->second->Cancel();  // mark as cancelled
+  // cleanup the request if any
+  if (it != requests_.end())
+  {
+    it->second->Cancel();  // mark as cancelled
 
-      if (!it->second->was_sent_to_java()) {  // if not sent to java, it's safe to delete
-        // TODO analyse if delete is safe here!!!
-        delete it->second;
-        requests_.erase(it);
-      }
+    if (!it->second->was_sent_to_java())    // if not sent to java, it's safe to delete
+    {
+      // TODO analyse if delete is safe here!!!
+//      delete it->second;
+      requests_.erase(it);
     }
   }
+//  }
 }
 
 /**
  * Called by system, when network ip changed
  */
-void HostResolverTenta::OnIPAddressChanged() {
+void HostResolverTenta::OnIPAddressChanged()
+{
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "OnIPAddressChanged";
 #endif
 }
 
 void HostResolverTenta::OnConnectionTypeChanged(
-    NetworkChangeNotifier::ConnectionType type) {
+  NetworkChangeNotifier::ConnectionType type)
+{
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "OnConnectionTypeChanged "
-               << NetworkChangeNotifier::ConnectionTypeToString(type);
+            << NetworkChangeNotifier::ConnectionTypeToString(type);
 #endif
 }
 
-void HostResolverTenta::OnDNSChanged() {
+void HostResolverTenta::OnDNSChanged()
+{
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "OnDNSChanged";
 #endif
 }
 
-void HostResolverTenta::OnInitialDNSConfigRead() {
+void HostResolverTenta::OnInitialDNSConfigRead()
+{
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "OnInitialDNSConfigRead";
 #endif
@@ -510,8 +563,10 @@ void HostResolverTenta::OnInitialDNSConfigRead() {
 /**
  * Get use backup as string
  */
-const char* HostResolverTenta::use_backup_str() {
-  if (_use_backup) {
+const char* HostResolverTenta::use_backup_str()
+{
+  if (_use_backup)
+  {
     return "native";
   }
   return "java";
@@ -520,7 +575,8 @@ const char* HostResolverTenta::use_backup_str() {
 /**
  * Register native functions
  */
-bool RegisterHostResolverTentaNative(JNIEnv* env) {
+bool RegisterHostResolverTentaNative(JNIEnv* env)
+{
   return RegisterNativesImpl(env);
 }
 

@@ -120,11 +120,11 @@ bool AppWidgetStorage::SaveConfigInfoInDB() {
   base::Value* pref_value = NULL;
   widget_info->Get(kPreferences, &pref_value);
 
-  if (pref_value && pref_value->IsType(base::Value::TYPE_DICTIONARY)) {
+  if (pref_value && pref_value->IsType(base::Value::Type::DICTIONARY)) {
     base::DictionaryValue* dict;
     pref_value->GetAsDictionary(&dict);
     return SaveConfigInfoItem(dict);
-  } else if (pref_value && pref_value->IsType(base::Value::TYPE_LIST)) {
+  } else if (pref_value && pref_value->IsType(base::Value::Type::LIST)) {
     base::ListValue* list;
     pref_value->GetAsList(&list);
 

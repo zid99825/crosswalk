@@ -11,7 +11,8 @@
 #include "base/values.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/threading/thread.h"
-#include "ipc/ipc_channel_handle.h"
+#include "mojo/edk/embedder/named_platform_handle.h"
+#include "mojo/edk/embedder/scoped_platform_handle.h"
 #include "ipc/ipc_listener.h"
 #include "xwalk/extensions/common/xwalk_extension_permission_types.h"
 #include "xwalk/extensions/common/xwalk_extension_server.h"
@@ -41,7 +42,7 @@ class XWalkExtensionProcess : public IPC::Listener,
                               public XWalkExtension::PermissionsDelegate {
  public:
   XWalkExtensionProcess(
-      const IPC::ChannelHandle& channel_handle = IPC::ChannelHandle());
+      const mojo::edk::NamedPlatformHandle& channel_handle = mojo::edk::NamedPlatformHandle());
 
   ~XWalkExtensionProcess() override;
   bool CheckAPIAccessControl(const std::string& extension_name,
@@ -57,7 +58,7 @@ class XWalkExtensionProcess : public IPC::Listener,
   void OnRegisterExtensions(const base::FilePath& extension_path,
                             const base::ListValue& browser_variables);
 
-  void CreateBrowserProcessChannel(const IPC::ChannelHandle& channel_handle);
+  void CreateBrowserProcessChannel(const mojo::edk::NamedPlatformHandle& channel_handle);
 
   void CreateRenderProcessChannel();
 
@@ -67,6 +68,7 @@ class XWalkExtensionProcess : public IPC::Listener,
   XWalkExtensionServer extensions_server_;
   std::unique_ptr<IPC::SyncChannel> render_process_channel_;
   IPC::ChannelHandle rp_channel_handle_;
+  mojo::edk::NamedPlatformHandle rp_channel_handle_new_;
   typedef std::map<std::string, RuntimePermission> PermissionCacheType;
   PermissionCacheType permission_cache_;
 

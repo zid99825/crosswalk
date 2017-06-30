@@ -9,17 +9,18 @@
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/message_loop/message_loop.h"
-#include "ipc/attachment_broker_privileged.h"
-#include "ipc/ipc_switches.h"
+#include "content/public/common/mojo_channel_switches.h"
 #include "ipc/ipc_message_macros.h"
 #include "ipc/ipc_sync_channel.h"
 #include "xwalk/extensions/common/xwalk_extension_messages.h"
+#include "services/service_manager/public/cpp/service_context.h"
+#include "mojo/edk/embedder/embedder.h"
 
 namespace xwalk {
 namespace extensions {
 
 XWalkExtensionProcess::XWalkExtensionProcess(
-    const IPC::ChannelHandle& channel_handle)
+    const mojo::edk::NamedPlatformHandle& channel_handle)
     : shutdown_event_(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                       base::WaitableEvent::InitialState::NOT_SIGNALED),
       io_thread_("XWalkExtensionProcess_IOThread") {
@@ -51,7 +52,7 @@ bool XWalkExtensionProcess::OnMessageReceived(const IPC::Message& message) {
 
 namespace {
 
-void ToValueMap(base::ListValue* lv, base::DictionaryValue::Storage* vm) {
+void ToValueMap(base::ListValue* lv, base::DictionaryValue::DictStorage* vm) {
   vm->clear();
 
   for (base::ListValue::iterator it = lv->begin(); it != lv->end(); it++) {
@@ -69,8 +70,8 @@ void ToValueMap(base::ListValue* lv, base::DictionaryValue::Storage* vm) {
 void XWalkExtensionProcess::OnRegisterExtensions(
     const base::FilePath& path, const base::ListValue& browser_variables_lv) {
   if (!path.empty()) {
-    std::unique_ptr<base::DictionaryValue::Storage> browser_variables(
-      new base::DictionaryValue::Storage);
+    std::unique_ptr<base::DictionaryValue::DictStorage> browser_variables(
+      new base::DictionaryValue::DictStorage);
 
     ToValueMap(&const_cast<base::ListValue&>(browser_variables_lv),
           browser_variables.get());
@@ -82,11 +83,8 @@ void XWalkExtensionProcess::OnRegisterExtensions(
 }
 
 void XWalkExtensionProcess::CreateBrowserProcessChannel(
-    const IPC::ChannelHandle& channel_handle) {
-#if USE_ATTACHMENT_BROKER
-  IPC::AttachmentBrokerPrivileged::CreateBrokerIfNeeded();
-#endif  // USE_ATTACHMENT_BROKER
-  if (channel_handle.name.empty()) {
+    const mojo::edk::NamedPlatformHandle& channelHandle) {
+/*  if (channel_handle.name.empty()) {
     std::string channel_id =
         base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
             switches::kProcessChannelID);
@@ -94,34 +92,61 @@ void XWalkExtensionProcess::CreateBrowserProcessChannel(
         channel_id, IPC::Channel::MODE_CLIENT, this,
         io_thread_.task_runner(), true, &shutdown_event_);
   } else {
+
     browser_process_channel_ = IPC::SyncChannel::Create(
         channel_handle, IPC::Channel::MODE_CLIENT, this,
         io_thread_.task_runner(), true, &shutdown_event_);
   }
+*/
+
+ // TODO(iotto) see implementation details in content/child/child_thread_impl.cc
+  // ChildThreadImpl::ConnectChannel()
+  // ChildThreadImpl::Init
+  std::string channel_token;
+  mojo::ScopedMessagePipeHandle handle;
+
+  channel_token = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(switches::kMojoChannelToken);
+  handle = mojo::edk::CreateChildMessagePipe(channel_token);
+
+  browser_process_channel_ = IPC::SyncChannel::Create(handle.release(),
+                                      IPC::Channel::MODE_CLIENT,
+                                      this,  // As a Listener.
+                                      io_thread_.task_runner(),
+                                      true,  // Create pipe now.
+                                      &shutdown_event_);
+
 }
 
 void XWalkExtensionProcess::CreateRenderProcessChannel() {
-  IPC::ChannelHandle handle(IPC::Channel::GenerateVerifiedChannelID(
+/*  IPC::ChannelHandle handle(IPC::Channel::GenerateVerifiedChannelID(
       std::string()));
   rp_channel_handle_ = handle;
 
   render_process_channel_ = IPC::SyncChannel::Create(rp_channel_handle_,
       IPC::Channel::MODE_SERVER, &extensions_server_,
       io_thread_.task_runner(), true, &shutdown_event_);
+*/
+  mojo::MessagePipe pipe;
 
-#if defined(OS_POSIX)
+  render_process_channel_ = IPC::SyncChannel::Create(pipe.handle0.release(),
+                                      IPC::Channel::MODE_SERVER,
+                                      &extensions_server_,
+                                      io_thread_.task_runner(), true, &shutdown_event_);
+
+
+/*#if defined(OS_POSIX)
     // On POSIX, pass the server-side file descriptor. We use
     // TakeClientFileDescriptor() instead of GetClientFileDescriptor()
     // since the client-side channel will take ownership of the fd.
     rp_channel_handle_.socket = base::FileDescriptor(
       render_process_channel_->TakeClientFileDescriptor());
 #endif
-
+*/
   extensions_server_.Initialize(render_process_channel_.get());
 
   browser_process_channel_->Send(
       new XWalkExtensionProcessHostMsg_RenderProcessChannelCreated(
-          rp_channel_handle_));
+          pipe.handle1.release()));
 }
 
 bool XWalkExtensionProcess::CheckAPIAccessControl(

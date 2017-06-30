@@ -328,8 +328,8 @@ source_set("xwalk_runtime") {
     "runtime/renderer/xwalk_content_renderer_client.h",
     "runtime/net/tenta_network_change_notifier_factory.cc",
     "runtime/net/tenta_network_change_notifier_factory.h",
-    "runtime/browser/android/tenta/dummy_native_test.cc",
-    "runtime/browser/android/tenta/dummy_native_test.h",
+    "//android_webview/browser/renderer_host/auto_login_parser.cc",
+    "//android_webview/browser/renderer_host/auto_login_parser.h",
   ]
   if (!is_android) {
     sources += [
@@ -391,6 +391,7 @@ source_set("xwalk_runtime") {
     "//content/public/child",
     "//content/public/common",
     "//content/public/utility",
+    "//content/public/android:content_java",
     "//gin",
     "//ipc",
     "//media",

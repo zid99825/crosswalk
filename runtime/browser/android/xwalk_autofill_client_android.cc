@@ -45,7 +45,8 @@ void XWalkAutofillClientAndroid::ShowAutofillPopupImpl(
     const std::vector<autofill::Suggestion>& suggestions) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
-  if (obj.is_null()) return;
+  if (obj.is_null())
+    return;
 
   // We need an array of AutofillSuggestion.
   size_t count = suggestions.size();
@@ -59,19 +60,24 @@ void XWalkAutofillClientAndroid::ShowAutofillPopupImpl(
     ScopedJavaLocalRef<jstring> label =
         ConvertUTF16ToJavaString(env, suggestions[i].label);
     Java_XWalkAutofillClientAndroid_addToAutofillSuggestionArray(
-        env, data_array.obj(), i, name.obj(), label.obj(),
-        suggestions[i].frontend_id);
+        env, data_array, i, name, label, suggestions[i].frontend_id);
   }
+  ui::ViewAndroid* view_android = web_contents_->GetNativeView();
+  if (!view_android)
+    return;
 
-  Java_XWalkAutofillClientAndroid_showAutofillPopup(
-      env,
-      obj.obj(),
-      element_bounds.x(),
-      element_bounds.y(),
-      element_bounds.width(),
-      element_bounds.height(),
-      text_direction == base::i18n::RIGHT_TO_LEFT,
-      data_array.obj());
+  const ScopedJavaLocalRef<jobject> current_view = anchor_view_.view();
+  if (current_view.is_null())
+    anchor_view_ = view_android->AcquireAnchorView();
+
+  const ScopedJavaLocalRef<jobject> view = anchor_view_.view();
+  if (view.is_null())
+    return;
+
+  view_android->SetAnchorRect(view, element_bounds);
+
+  bool is_rtl = text_direction == base::i18n::RIGHT_TO_LEFT;
+  Java_XWalkAutofillClientAndroid_showAutofillPopup(env, obj, view, is_rtl, data_array);
 }
 
 void XWalkAutofillClientAndroid::HideAutofillPopupImpl() {

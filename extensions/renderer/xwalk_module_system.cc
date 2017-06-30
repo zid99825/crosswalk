@@ -84,7 +84,6 @@ XWalkModuleSystem::XWalkModuleSystem(v8::Handle<v8::Context> context) {
 
 XWalkModuleSystem::~XWalkModuleSystem() {
   DeleteExtensionModules();
-  STLDeleteValues(&native_modules_);
 
   v8::Isolate* isolate = v8::Isolate::GetCurrent();
   v8::HandleScope handle_scope(isolate);
@@ -155,8 +154,12 @@ void XWalkModuleSystem::RegisterExtensionModule(
 
 void XWalkModuleSystem::RegisterNativeModule(
     const std::string& name, std::unique_ptr<XWalkNativeModule> module) {
-  CHECK(!ContainsKey(native_modules_, name));
-  native_modules_[name] = module.release();
+  auto it = native_modules_.find(name);
+  if ( it == native_modules_.end() ) {
+    native_modules_[name] = std::move(module);
+  } else {
+    //TODO log error message
+  }
 }
 
 namespace {

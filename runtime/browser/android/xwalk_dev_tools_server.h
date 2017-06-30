@@ -12,7 +12,7 @@
 
 #include "net/socket/unix_domain_server_socket_posix.h"
 
-namespace devtools_http_handler {
+namespace content {
 class DevToolsHttpHandler;
 }
 
@@ -39,7 +39,7 @@ class XWalkDevToolsServer {
     const net::UnixDomainServerSocket::Credentials& credentials);
 
   std::string socket_name_;
-  std::unique_ptr<devtools_http_handler::DevToolsHttpHandler> devtools_http_handler_;
+  std::unique_ptr<content::DevToolsHttpHandler> devtools_http_handler_;
   bool allow_debug_permission_;
   bool allow_socket_access_;
 

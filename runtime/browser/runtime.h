@@ -15,6 +15,7 @@
 #include "content/public/browser/notification_registrar.h"
 #include "content/public/browser/web_contents_delegate.h"
 #include "content/public/browser/web_contents_observer.h"
+#include "content/public/browser/navigation_handle.h"
 #include "content/public/common/favicon_url.h"
 #include "url/gurl.h"
 #include "ui/gfx/image/image.h"
@@ -123,6 +124,7 @@ class Runtime : public content::WebContentsDelegate,
                           bool last_unlocked_by_target) override;
   void CloseContents(content::WebContents* source) override;
   void WebContentsCreated(content::WebContents* source_contents,
+                          int opener_render_process_id,
                           int opener_render_frame_id,
                           const std::string& frame_name,
                           const GURL& target_url,
@@ -164,10 +166,7 @@ class Runtime : public content::WebContentsDelegate,
   void DidUpdateFaviconURL(
       const std::vector<content::FaviconURL>& candidates) override;
   void TitleWasSet(content::NavigationEntry* entry, bool explicit_set) override;
-  void DidNavigateAnyFrame(
-      content::RenderFrameHost* render_frame_host,
-      const content::LoadCommittedDetails& details,
-      const content::FrameNavigateParams& params) override;
+  void DidFinishNavigation(content::NavigationHandle* navigation_handle) override;
 
   // Callback method for WebContents::DownloadImage.
   void DidDownloadFavicon(int id,

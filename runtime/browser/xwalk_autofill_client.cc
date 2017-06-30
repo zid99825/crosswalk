@@ -18,12 +18,13 @@
 #include "components/user_prefs/user_prefs.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/web_contents.h"
-#include "content/public/common/ssl_status.h"
+#include "content/public/browser/ssl_status.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
 
 using content::WebContents;
+using base::android::JavaParamRef;
 
 namespace xwalk {
 
@@ -47,7 +48,7 @@ PrefService* XWalkAutofillClient::GetPrefs() {
       XWalkBrowserContext::GetDefault());
 }
 
-sync_driver::SyncService* XWalkAutofillClient::GetSyncService() {
+syncer::SyncService* XWalkAutofillClient::GetSyncService() {
   NOTIMPLEMENTED();
   return nullptr;
 }
@@ -56,7 +57,11 @@ IdentityProvider* XWalkAutofillClient::GetIdentityProvider() {
   return nullptr;
 }
 
-rappor::RapporService* XWalkAutofillClient::GetRapporService() {
+rappor::RapporServiceImpl* XWalkAutofillClient::GetRapporServiceImpl() {
+  return nullptr;
+}
+
+ukm::UkmService* XWalkAutofillClient::GetUkmService() {
   return nullptr;
 }
 
@@ -121,7 +126,7 @@ void XWalkAutofillClient::OnFirstUserGestureObserved() {
   NOTIMPLEMENTED();
 }
 
-bool XWalkAutofillClient::IsContextSecure(const GURL& form_origin) {
+bool XWalkAutofillClient::IsContextSecure() {
   content::SSLStatus ssl_status;
   content::NavigationEntry* navigation_entry =
       web_contents_->GetController().GetLastCommittedEntry();
@@ -132,9 +137,27 @@ bool XWalkAutofillClient::IsContextSecure(const GURL& form_origin) {
   // Note: The implementation below is a copy of the one in
   // ChromeAutofillClient::IsContextSecure, and should be kept in sync
   // until crbug.com/505388 gets implemented.
-  return ssl_status.security_style ==
-      content::SECURITY_STYLE_AUTHENTICATED &&
-      ssl_status.content_status == content::SSLStatus::NORMAL_CONTENT;
+  return navigation_entry->GetURL().SchemeIsCryptographic() &&
+         ssl_status.certificate &&
+         (!net::IsCertStatusError(ssl_status.cert_status) ||
+          net::IsCertStatusMinorError(ssl_status.cert_status)) &&
+         !(ssl_status.content_status &
+           content::SSLStatus::RAN_INSECURE_CONTENT);
+}
+
+bool XWalkAutofillClient::ShouldShowSigninPromo() {
+  return false;
+}
+
+void XWalkAutofillClient::StartSigninFlow() {
+}
+
+void XWalkAutofillClient::ShowHttpNotSecureExplanation() {
+}
+
+void XWalkAutofillClient::Dismissed(JNIEnv* env,
+                                 const JavaParamRef<jobject>& obj) {
+  anchor_view_.Reset();
 }
 
 void XWalkAutofillClient::SuggestionSelected(int position) {
@@ -170,6 +193,12 @@ void XWalkAutofillClient::ConfirmSaveCreditCardToCloud(
       const autofill::CreditCard& card,
       std::unique_ptr<base::DictionaryValue> legal_message,
       const base::Closure& callback) {
+  NOTIMPLEMENTED();
+}
+
+void XWalkAutofillClient::ConfirmCreditCardFillAssist(
+    const autofill::CreditCard& card,
+    const base::Closure& callback) {
   NOTIMPLEMENTED();
 }
 

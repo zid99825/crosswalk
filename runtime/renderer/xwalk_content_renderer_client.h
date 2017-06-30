@@ -50,19 +50,17 @@ class XWalkContentRendererClient
                                      size_t length) override;
   bool IsLinkVisited(unsigned long long link_hash) override;
 
-  bool WillSendRequest(blink::WebFrame* frame,
+  bool WillSendRequest(blink::WebLocalFrame* frame,
                        ui::PageTransition transition_type,
-                       const GURL& url,
-                       const GURL& first_party_for_cookies,
+                       const blink::WebURL& url,
                        GURL* new_url) override;
-
   void AddSupportedKeySystems(
       std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems)
       override;
 #if defined(OS_ANDROID)
   bool HandleNavigation(content::RenderFrame* render_frame,
                         bool is_content_initiated,
-                        int opener_id,
+                        bool render_view_was_created_by_renderer,
                         blink::WebFrame* frame,
                         const blink::WebURLRequest& request,
                         blink::WebNavigationType type,

@@ -628,6 +628,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         mXWalkView.stopSwipeRefreshHandler();
     }
 
+    // TODO(iotto) see if get's called
     @Override
     public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
         return new XWalkContentVideoViewClient(this, mXWalkView);

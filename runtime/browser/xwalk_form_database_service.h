@@ -43,7 +43,7 @@ class XWalkFormDatabaseService : public WebDataServiceConsumer {
 
   // WebDataServiceConsumer implementation.
   void OnWebDataServiceRequestDone(
-      WebDataServiceBase::Handle h, const WDTypedResult* result) override;
+      WebDataServiceBase::Handle h, std::unique_ptr<WDTypedResult> result) override;
 
  private:
   struct PendingQuery {

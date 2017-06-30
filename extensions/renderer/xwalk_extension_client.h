@@ -64,7 +64,7 @@ class XWalkExtensionClient : public IPC::Listener {
     std::vector<std::string> entry_points;
   };
 
-  typedef std::map<std::string, ExtensionCodePoints*> ExtensionAPIMap;
+  typedef std::map<std::string, std::unique_ptr<ExtensionCodePoints>> ExtensionAPIMap;
 
   const ExtensionAPIMap& extension_apis() const { return extension_apis_; }
 

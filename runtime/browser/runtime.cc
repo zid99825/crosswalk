@@ -22,6 +22,7 @@
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/web_contents.h"
+#include "content/public/browser/reload_type.h"
 #include "grit/xwalk_resources.h"
 #include "net/base/url_util.h"
 #include "ui/base/resource/resource_bundle.h"
@@ -58,6 +59,7 @@ Runtime* Runtime::Create(XWalkBrowserContext* browser_context,
   params.routing_id = MSG_ROUTING_NONE;
   WebContents* web_contents = WebContents::Create(params);
 
+ //TODO(iotto) have URL param and load url for debugger
   return new Runtime(web_contents);
 }
 
@@ -110,7 +112,7 @@ void Runtime::Forward() {
 }
 
 void Runtime::Reload() {
-  web_contents_->GetController().Reload(false);
+  web_contents_->GetController().Reload(content::ReloadType::NORMAL, false);
   web_contents_->Focus();
 }
 
@@ -135,17 +137,17 @@ content::RenderProcessHost* Runtime::GetRenderProcessHost() {
 content::WebContents* Runtime::OpenURLFromTab(
     content::WebContents* source, const content::OpenURLParams& params) {
 #if defined(OS_ANDROID)
-  DCHECK(params.disposition == CURRENT_TAB);
+  DCHECK(params.disposition == WindowOpenDisposition::CURRENT_TAB);
   source->GetController().LoadURL(
       params.url, params.referrer, params.transition, std::string());
 #else
-  if (params.disposition == CURRENT_TAB) {
+  if (params.disposition == WindowOpenDisposition::CURRENT_TAB) {
     source->GetController().LoadURL(
         params.url, params.referrer, params.transition, std::string());
-  } else if (params.disposition == NEW_WINDOW ||
-             params.disposition == NEW_POPUP ||
-             params.disposition == NEW_FOREGROUND_TAB ||
-             params.disposition == NEW_BACKGROUND_TAB) {
+  } else if (params.disposition == WindowOpenDisposition::NEW_WINDOW ||
+             params.disposition == WindowOpenDisposition::NEW_POPUP ||
+             params.disposition == WindowOpenDisposition::NEW_FOREGROUND_TAB ||
+             params.disposition == WindowOpenDisposition::NEW_BACKGROUND_TAB) {
     // TODO(xinchao): Excecuting JaveScript code is a temporary solution,
     // need to be implemented by creating a new runtime window instead.
     web_contents()->GetFocusedFrame()->ExecuteJavaScript(
@@ -225,6 +227,7 @@ void Runtime::HandleKeyboardEvent(
 
 void Runtime::WebContentsCreated(
     content::WebContents* source_contents,
+    int opener_render_process_id,
     int opener_render_frame_id,
     const std::string& frame_name,
     const GURL& target_url,
@@ -316,14 +319,13 @@ void Runtime::TitleWasSet(content::NavigationEntry* entry, bool explicit_set) {
     ui_delegate_->UpdateTitle(entry->GetTitle());
 }
 
-void Runtime::DidNavigateAnyFrame(
-    content::RenderFrameHost* render_frame_host,
-    const content::LoadCommittedDetails& details,
-    const content::FrameNavigateParams& params) {
+void Runtime::DidFinishNavigation(content::NavigationHandle* navigation_handle) {
   DCHECK(thread_checker_.CalledOnValidThread());
 
+  std::vector<GURL> redirects = navigation_handle->GetRedirectChain();
+
   XWalkBrowserContext::FromWebContents(web_contents())
-      ->AddVisitedURLs(params.redirects);
+      ->AddVisitedURLs(redirects);
 }
 
 void Runtime::DidDownloadFavicon(int id,

@@ -15,6 +15,7 @@
 #include "content/public/renderer/render_view.h"
 #include "third_party/WebKit/public/platform/WebSecurityOrigin.h"
 #include "third_party/WebKit/public/platform/WebSize.h"
+#include "third_party/WebKit/public/platform/WebString.h"
 #include "third_party/WebKit/public/platform/WebURL.h"
 #include "third_party/WebKit/public/platform/WebVector.h"
 #include "third_party/WebKit/public/web/WebDataSource.h"
@@ -39,19 +40,19 @@ namespace {
 
 GURL GetAbsoluteUrl(const blink::WebNode& node,
                     const base::string16& url_fragment) {
-  return GURL(node.document().completeURL(url_fragment));
+  return GURL(node.document().completeURL(blink::WebString::fromUTF16(url_fragment)));
 }
 
 base::string16 GetHref(const blink::WebElement& element) {
   // Get the actual 'href' attribute, which might relative if valid or can
   // possibly contain garbage otherwise, so not using absoluteLinkURL here.
-  return element.getAttribute("href");
+  return element.getAttribute("href").utf16();
 }
 
 GURL GetAbsoluteSrcUrl(const blink::WebElement& element) {
   if (element.isNull())
     return GURL();
-  return GetAbsoluteUrl(element, element.getAttribute("src"));
+  return GetAbsoluteUrl(element, element.getAttribute("src").utf16());
 }
 
 blink::WebElement GetImgChild(const blink::WebNode& node) {
@@ -194,7 +195,7 @@ void XWalkRenderViewExt::FocusedNodeChanged(const blink::WebNode& node) {
   XWalkHitTestData data;
 
   data.href = GetHref(element);
-  data.anchor_text = element.textContent();
+  data.anchor_text = element.textContent().utf16();
 
   GURL absolute_link_url;
   if (node.isLink())
@@ -230,7 +231,7 @@ void XWalkRenderViewExt::OnDoHitTest(const gfx::PointF& touch_center,
   XWalkHitTestData data;
 
   if (!result.urlElement().isNull()) {
-    data.anchor_text = result.urlElement().textContent();
+    data.anchor_text = result.urlElement().textContent().utf16();
     data.href = GetHref(result.urlElement());
   }
 

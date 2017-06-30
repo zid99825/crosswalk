@@ -19,6 +19,7 @@ declare_args() {
 
 android_library("xwalk_core_java") {
   deps = [
+    "//base:base_java",
     ":xwalk_core_java_resources",
     "//xwalk/runtime/android/core_internal:xwalk_core_reflection_layer_gen",
     "//xwalk/third_party/lzma_sdk:lzma_sdk_java",

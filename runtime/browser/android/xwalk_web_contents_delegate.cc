@@ -18,7 +18,7 @@
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/web_contents.h"
-#include "chrome/browser/media/media_capture_devices_dispatcher.h"
+#include "chrome/browser/media/webrtc/media_capture_devices_dispatcher.h"
 #include "content/public/common/file_chooser_file_info.h"
 #include "content/public/common/file_chooser_params.h"
 #include "jni/XWalkWebContentsDelegate_jni.h"
@@ -48,7 +48,7 @@ void XWalkWebContentsDelegate::AddNewContents(
     bool user_gesture, bool* was_blocked) {
   JNIEnv* env = AttachCurrentThread();
 
-  bool is_dialog = disposition == NEW_POPUP;
+  bool is_dialog = disposition == WindowOpenDisposition::NEW_POPUP;
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
   bool create_popup = false;
 
@@ -62,7 +62,7 @@ void XWalkWebContentsDelegate::AddNewContents(
         base::WrapUnique(new_contents));
     new_contents->WasHidden();
   } else {
-    base::MessageLoop::current()->DeleteSoon(FROM_HERE, new_contents);
+    base::MessageLoop::current()->task_runner()->DeleteSoon(FROM_HERE, new_contents);
   }
 
   if (was_blocked) {
@@ -165,7 +165,8 @@ void XWalkWebContentsDelegate::RequestMediaAccessPermission(
  }
  */
 
-void XWalkWebContentsDelegate::RendererUnresponsive(WebContents* source) {
+void XWalkWebContentsDelegate::RendererUnresponsive(WebContents* source,
+    const content::WebContentsUnresponsiveState& unresponsive_state) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
@@ -181,13 +182,13 @@ void XWalkWebContentsDelegate::RendererResponsive(WebContents* source) {
   Java_XWalkWebContentsDelegate_rendererResponsive(env, obj.obj());
 }
 
-bool XWalkWebContentsDelegate::AddMessageToConsole(
+bool XWalkWebContentsDelegate::DidAddMessageToConsole(
     content::WebContents* source, int32_t level, const base::string16& message,
     int32_t line_no, const base::string16& source_id) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
-    return WebContentsDelegate::AddMessageToConsole(source, level, message,
+    return WebContentsDelegate::DidAddMessageToConsole(source, level, message,
                                                     line_no, source_id);
   ScopedJavaLocalRef<jstring> jmessage(ConvertUTF16ToJavaString(env, message));
   ScopedJavaLocalRef<jstring> jsource_id(
@@ -269,9 +270,12 @@ bool XWalkWebContentsDelegate::IsFullscreenForTabOrPending(
 }
 
 bool XWalkWebContentsDelegate::ShouldCreateWebContents(
-    content::WebContents* web_contents, int32_t route_id,
+    content::WebContents* web_contents, content::SiteInstance* source_site_instance,
+    int32_t route_id,
     int32_t main_frame_route_id, int32_t main_frame_widget_route_id,
-    WindowContainerType window_container_type, const std::string& frame_name,
+    content::mojom::WindowContainerType window_container_type,
+    const GURL& opener_url,
+    const std::string& frame_name,
     const GURL& target_url, const std::string& partition_id,
     content::SessionStorageNamespace* session_storage_namespace) {
   JNIEnv* env = AttachCurrentThread();
@@ -299,7 +303,9 @@ void XWalkWebContentsDelegate::FindReply(WebContents* web_contents,
 }
 
 bool RegisterXWalkWebContentsDelegate(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+  // TODO(iotto) remove registering too
+//  return RegisterNativesImpl(env);
+  return true;
 }
 
 }  // namespace xwalk

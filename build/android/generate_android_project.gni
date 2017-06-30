@@ -251,7 +251,7 @@ template("generate_android_project") {
     args = [
       "--output-jar",
       rebase_path(_merged_jar_path, root_build_dir),
-      "@FileArg($_rebased_build_config:java:full_classpath)",
+      "@FileArg($_rebased_build_config:deps_info:java:full_classpath)",
       rebase_path(_resource_jar_path, root_build_dir),
     ]
     outputs = [

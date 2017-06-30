@@ -15,6 +15,7 @@ import com.tenta.chromium.cache.MetaCacheBackend;
 import org.chromium.base.TraceEvent;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.metrics.RecordUserAction;
+import org.chromium.content_public.browser.WebContents;
 import org.chromium.content.browser.ContentViewCore;
 import org.chromium.ui.OverscrollRefreshHandler;
 import org.chromium.third_party.android.swiperefresh.SwipeRefreshLayout;
@@ -80,7 +81,7 @@ public class SwipeRefreshHandler implements OverscrollRefreshHandler {
             setEnabled(false);
             cancelStopRefreshingRunnable();
             mSwipeRefreshLayout.setOnRefreshListener(null);
-            mContentViewCore.setOverscrollRefreshHandler(null);
+            mContentViewCore.getWebContents().setOverscrollRefreshHandler(null);
         }
 
         mContentViewCore = contentViewCore;
@@ -126,7 +127,7 @@ public class SwipeRefreshHandler implements OverscrollRefreshHandler {
                 RecordUserAction.record("MobilePullGestureReload");
             }
         });
-        contentViewCore.setOverscrollRefreshHandler(this);
+        contentViewCore.getWebContents().setOverscrollRefreshHandler(this);
     }
 
     /**

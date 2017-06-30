@@ -15,7 +15,8 @@
 #include "content/public/browser/browser_ppapi_host.h"
 #include "content/public/browser/child_process_data.h"
 #include "content/public/browser/client_certificate_delegate.h"
-#include "content/public/browser/geolocation_delegate.h"
+#include "device/geolocation/geolocation_delegate.h"
+#include "device/geolocation/geolocation_provider.h"
 #include "content/public/browser/presentation_service_delegate.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
@@ -46,6 +47,7 @@
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "xwalk/runtime/common/xwalk_paths.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+#include "xwalk/runtime/browser/devtools/xwalk_devtools_manager_delegate.h"
 
 #if !defined(DISABLE_NACL)
 #include "components/nacl/browser/nacl_browser.h"
@@ -94,13 +96,13 @@ namespace {
 XWalkContentBrowserClient* g_browser_client = nullptr;
 
 // A provider of services for Geolocation.
-class XWalkGeolocationDelegate : public content::GeolocationDelegate {
+class XWalkGeolocationDelegate : public device::GeolocationDelegate {
  public:
   explicit XWalkGeolocationDelegate(net::URLRequestContextGetter* request_context)
       : request_context_(request_context) {}
 
-  content::AccessTokenStore* CreateAccessTokenStore() final {
-    return new XWalkAccessTokenStore(request_context_);
+  scoped_refptr<device::AccessTokenStore> CreateAccessTokenStore() final {
+    return scoped_refptr<device::AccessTokenStore>( new XWalkAccessTokenStore(request_context_));
   }
 
  private:
@@ -142,6 +144,10 @@ content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
   main_parts_ = new XWalkBrowserMainParts(parameters);
 #endif
 
+  device::GeolocationProvider::SetGeolocationDelegate(
+      new XWalkGeolocationDelegate(
+      xwalk_runner_->browser_context()->url_request_getter()));
+
   return main_parts_;
 }
 
@@ -166,12 +172,6 @@ void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
 content::QuotaPermissionContext*
 XWalkContentBrowserClient::CreateQuotaPermissionContext() {
   return new RuntimeQuotaPermissionContext();
-}
-
-content::GeolocationDelegate*
-XWalkContentBrowserClient::CreateGeolocationDelegate() {
-  return new XWalkGeolocationDelegate(
-      xwalk_runner_->browser_context()->url_request_getter());
 }
 
 content::WebContentsViewDelegate*
@@ -278,22 +278,20 @@ void XWalkContentBrowserClient::AllowCertificateError(
     bool overridable,
     bool strict_enforcement,
     bool expired_previous_decision,
-    const base::Callback<void(bool)>& callback, // NOLINT
-    content::CertificateRequestResultType* result) {
+    const base::Callback<void(content::CertificateRequestResultType)>& callback) {
   // Currently only Android handles it.
   // TODO(yongsheng): applies it for other platforms?
 #if defined(OS_ANDROID)
   XWalkContentsClientBridgeBase* client =
       XWalkContentsClientBridgeBase::FromWebContents(web_contents);
-  bool cancel_request = true;
+//  bool cancel_request = true;
   if (client)
     client->AllowCertificateError(cert_error,
                                   ssl_info.cert.get(),
                                   request_url,
-                                  callback,
-                                  &cancel_request);
-  if (cancel_request)
-    *result = content::CERTIFICATE_REQUEST_RESULT_TYPE_DENY;
+                                  callback);
+//  if (cancel_request)
+//    *result = content::CERTIFICATE_REQUEST_RESULT_TYPE_DENY;
 #else
   DCHECK(web_contents);
   // The interstitial page shown is responsible for destroying
@@ -408,8 +406,13 @@ void XWalkContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
 #endif
 }
 
-content::PresentationServiceDelegate* XWalkContentBrowserClient::
-    GetPresentationServiceDelegate(content::WebContents* web_contents) {
+content::DevToolsManagerDelegate* 
+XWalkContentBrowserClient::GetDevToolsManagerDelegate() {
+  return new XWalkDevToolsManagerDelegate(xwalk_runner_->browser_context());
+}
+
+content::ControllerPresentationServiceDelegate* XWalkContentBrowserClient::
+    GetControllerPresentationServiceDelegate(content::WebContents* web_contents) {
 #if defined(OS_WIN)
   return XWalkPresentationServiceDelegateWin::
       GetOrCreateForWebContents(web_contents);
@@ -423,17 +426,17 @@ content::PresentationServiceDelegate* XWalkContentBrowserClient::
 
 std::string XWalkContentBrowserClient::GetApplicationLocale() {
 #if defined(OS_ANDROID)
-  return base::android::GetDefaultLocale();
+  return base::android::GetDefaultLocaleString();
 #else
   return content::ContentBrowserClient::GetApplicationLocale();
 #endif
 }
 
 #if defined(OS_ANDROID)
-ScopedVector<content::NavigationThrottle>
+std::vector<std::unique_ptr<content::NavigationThrottle>>
 XWalkContentBrowserClient::CreateThrottlesForNavigation(
     content::NavigationHandle* navigation_handle) {
-  ScopedVector<content::NavigationThrottle> throttles;
+  std::vector<std::unique_ptr<content::NavigationThrottle>> throttles;
   // We allow intercepting only navigations within main frames. This
   // is used to post onPageStarted. We handle shouldOverrideUrlLoading
   // via a sync IPC.

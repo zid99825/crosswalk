@@ -29,7 +29,7 @@ XWalkExtensionData::~XWalkExtensionData() {
   in_process_ui_thread_server_->Invalidate();
   in_process_message_filter_->Invalidate();
 
-  extension_thread_->message_loop()->DeleteSoon(
+  extension_thread_->message_loop()->task_runner()->DeleteSoon(
       FROM_HERE, in_process_extension_thread_server_.release());
 
   if (extension_process_host_) {

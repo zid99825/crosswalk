@@ -1577,13 +1577,13 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @param onTop true for on top.
      * @since 5.0
      */
-    @XWalkAPI
+/*    @XWalkAPI
     public void setZOrderOnTop(boolean onTop) {
         if (mContent == null)
             return;
         mContent.setZOrderOnTop(onTop);
     }
-
+*/
     /**
      * Removes the autocomplete popup from the currently focused form field, if present. Note this
      * only affects the display of the autocomplete popup, it does not remove any saved form data

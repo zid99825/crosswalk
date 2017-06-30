@@ -114,6 +114,7 @@ def CopyResources(output_dir, resources, resource_strings):
         build_utils.MakeDirectory(res_dir_subpath)
         for filename in filenames:
           if filename.endswith('.9.png'):
+            print('9-pathched ' + filename)
             # 9-patch files need to be handled specially. We need the original,
             # uncrunched versions to avoid crunching them twice and failing
             # (once when building the resources, and then when the user is
@@ -149,15 +150,18 @@ def MakeResourceTuple(resource_zip, resource_src):
   if resource_src is not None:
     return Resource(filename=resource_zip, src=resource_src)
 
+  print('Handle gn type')
   # With GN, |resource_src| is None and we derive the source path from
   # |resource_zip|.
   if not resource_zip.startswith('gen/'):
     raise ValueError('%s is expected to be in gen/.' % resource_zip)
   src_subpath = os.path.dirname(resource_zip)
+  print('subpath=' + src_subpath)
   for res_subpath in ('android/java/res', 'java/res', 'res'):
     path = os.path.join(SRC_ROOT,
                         src_subpath[4:],  # Drop the gen/ part.
                         res_subpath)
+    print('resulted path=' + path)
     if os.path.isdir(path):
       return Resource(filename=resource_zip, src=path)
   raise ValueError('Cannot find the sources for %s' % resource_zip)
@@ -192,9 +196,9 @@ def main(argv):
 
   options = parser.parse_args(build_utils.ExpandFileArgs(sys.argv[1:]))
 
-  options.resource_strings = build_utils.ParseGypList(options.resource_strings)
-  options.resource_zips = build_utils.ParseGypList(options.resource_zips)
-  options.resource_zip_sources = build_utils.ParseGypList(
+  options.resource_strings = build_utils.ParseGnList(options.resource_strings)
+  options.resource_zips = build_utils.ParseGnList(options.resource_zips)
+  options.resource_zip_sources = build_utils.ParseGnList(
       options.resource_zip_sources)
 
   # With GN, just create a list with None as elements, we derive the source
@@ -209,18 +213,22 @@ def main(argv):
   resources = []
   for resource_zip, resource_src in zip(options.resource_zips,
                                         options.resource_zip_sources):
-    if resource_zip.endswith('_grd.resources.zip'):
+    if resource_zip.find('appcompat') != -1:
+      print('Skipp ' + resource_zip)
+      continue
+    if resource_zip.endswith('_grd.resources.zip'): 
       # In GN, we just use --resource-zips, and the string files are
       # part of the list.
       # We need to put them into options.resource_strings for separate
       # processing, and do so by filtering the files by their names.
       options.resource_strings.append(resource_zip)
     else:
+      print('MakeResourceTuple  !!!!!' + resource_zip)
       resources.append(MakeResourceTuple(resource_zip, resource_src))
 
-  options.binary_files = build_utils.ParseGypList(options.binary_files)
-  options.js_bindings = build_utils.ParseGypList(options.js_bindings)
-  options.native_libraries = build_utils.ParseGypList(options.native_libraries)
+  options.binary_files = build_utils.ParseGnList(options.binary_files)
+  options.js_bindings = build_utils.ParseGnList(options.js_bindings)
+  options.native_libraries = build_utils.ParseGnList(options.native_libraries)
 
   # Copy Eclipse project files of library project.
   build_utils.DeleteDirectory(options.output_dir)
@@ -246,8 +254,10 @@ def main(argv):
 
   # Write a depfile so that these files, which are not tracked directly by GN,
   # also trigger a re-run of this script when modified.
+  print('depfile_path: %s  first_gn_output: %s' %(options.depfile, options.binary_files))
   build_utils.WriteDepfile(
     options.depfile,
+    options.output_dir,
     options.binary_files + options.native_libraries + options.js_bindings)
 
 

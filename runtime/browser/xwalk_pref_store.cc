@@ -18,6 +18,11 @@ bool XWalkPrefStore::GetValue(const std::string& key,
   return prefs_.GetValue(key, value);
 }
 
+std::unique_ptr<base::DictionaryValue>
+ XWalkPrefStore::GetValues() const {
+  return prefs_.AsDictionaryValue();
+}
+
 bool XWalkPrefStore::GetMutableValue(const std::string& key,
                                      base::Value** value) {
   return prefs_.GetValue(key, value);
@@ -74,5 +79,7 @@ void XWalkPrefStore::ReadPrefsAsync(ReadErrorDelegate* error_delegate_raw) {
 
 void XWalkPrefStore::ReportValueChanged(const std::string& key,
                                         uint32_t flags) {
-  FOR_EACH_OBSERVER(Observer, observers_, OnPrefValueChanged(key));
+  for ( auto& observer : observers_ ) {
+    observer.OnPrefValueChanged(key);
+  }
 }

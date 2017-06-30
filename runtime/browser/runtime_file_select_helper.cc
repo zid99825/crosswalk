@@ -194,15 +194,17 @@ void RuntimeFileSelectHelper::StartNewEnumeration(
   entry->lister_.reset(new net::DirectoryLister(path,
                                net::DirectoryLister::NO_SORT_RECURSIVE,
                                entry->delegate_.get()));
-  if (!entry->lister_->Start(base::WorkerPool::GetTaskRunner(true).get())) {
+//  if (!entry->lister_->Start()) {
+    entry->lister_->Start();
+
     if (request_id == kFileSelectEnumerationId)
       FileSelectionCanceled(NULL);
     else
       render_view_host->DirectoryEnumerationFinished(request_id,
                                                      entry->results_);
-  } else {
-    directory_enumerations_[request_id] = entry.release();
-  }
+//  } else {
+//    directory_enumerations_[request_id] = entry.release();
+//  }
 }
 
 void RuntimeFileSelectHelper::OnListFile(

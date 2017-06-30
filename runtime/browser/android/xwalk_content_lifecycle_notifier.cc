@@ -12,7 +12,9 @@ using base::android::AttachCurrentThread;
 namespace xwalk {
 
 bool RegisterXWalkContentLifecycleNotifier(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+  //TODO(iotto) remove registration too
+//  return RegisterNativesImpl(env);
+  return true;
 }
 
 // static

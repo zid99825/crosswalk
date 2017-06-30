@@ -40,7 +40,7 @@ class XWalkExternalExtension : public XWalkExtension {
 
   bool Initialize();
 
-  void set_runtime_variables(base::DictionaryValue::Storage* runtime_variables) {
+  void set_runtime_variables(base::DictionaryValue::DictStorage* runtime_variables) {
       runtime_variables_.swap(*runtime_variables);
   }
 
@@ -54,7 +54,7 @@ class XWalkExternalExtension : public XWalkExtension {
 
   // Variables from the browser process. Usually things like currently-running
   // application ID.
-  base::DictionaryValue::Storage runtime_variables_;
+  base::DictionaryValue::DictStorage runtime_variables_;
 
   // XW_CoreInterface_1 (from XW_Extension.h) implementation.
   void CoreSetExtensionName(const char* name);

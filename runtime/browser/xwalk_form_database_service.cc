@@ -18,7 +18,7 @@ namespace {
 
 // Callback to handle database error. It seems chrome uses this to
 // display an error dialog box only.
-void DatabaseErrorCallback(sql::InitStatus status) {
+void DatabaseErrorCallback(sql::InitStatus status, const std::string&) {
   LOG(WARNING) << "initializing autocomplete database failed";
 }
 
@@ -29,15 +29,15 @@ namespace xwalk {
 XWalkFormDatabaseService::XWalkFormDatabaseService(const base::FilePath path) {
   CHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   web_database_ = new WebDatabaseService(path.Append(kWebDataFilename),
-      BrowserThread::GetMessageLoopProxyForThread(BrowserThread::UI),
-      BrowserThread::GetMessageLoopProxyForThread(BrowserThread::DB));
+      BrowserThread::GetTaskRunnerForThread(BrowserThread::UI),
+      BrowserThread::GetTaskRunnerForThread(BrowserThread::DB));
   web_database_->AddTable(
       std::unique_ptr<WebDatabaseTable>(new autofill::AutofillTable()));
   web_database_->LoadDatabase();
   autofill_data_ = new autofill::AutofillWebDataService(
       web_database_,
-      BrowserThread::GetMessageLoopProxyForThread(BrowserThread::UI),
-      BrowserThread::GetMessageLoopProxyForThread(BrowserThread::DB),
+      BrowserThread::GetTaskRunnerForThread(BrowserThread::UI),
+      BrowserThread::GetTaskRunnerForThread(BrowserThread::DB),
       base::Bind(&DatabaseErrorCallback));
   autofill_data_->Init();
 }
@@ -106,14 +106,14 @@ void XWalkFormDatabaseService::HasFormDataImpl(
 
 void XWalkFormDatabaseService::OnWebDataServiceRequestDone(
     WebDataServiceBase::Handle h,
-    const WDTypedResult* result) {
+    std::unique_ptr<WDTypedResult> result) {
 
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::DB));
   bool has_form_data = false;
   if (result) {
     DCHECK_EQ(AUTOFILL_VALUE_RESULT, result->GetType());
     const WDResult<int>* autofill_result =
-        static_cast<const WDResult<int>*>(result);
+        static_cast<const WDResult<int>*>(result.get());
     has_form_data = autofill_result->GetValue() > 0;
   }
   QueryMap::const_iterator it = result_map_.find(h);

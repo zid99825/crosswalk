@@ -35,7 +35,7 @@ public class XWalkExternalExtension {
     // The Entry points that will trigger the extension loading
     protected String[] mEntryPoints;
 
-    private Map<Integer, ExtensionInstanceHelper> instanceHelpers;
+    private SparseArray<ExtensionInstanceHelper> instanceHelpers;
 
     // The context used by extensions.
     protected XWalkExtensionContextClient mExtensionContext;

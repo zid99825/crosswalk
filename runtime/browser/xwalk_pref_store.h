@@ -46,6 +46,7 @@ class XWalkPrefStore : public PersistentPrefStore {
   void CommitPendingWrite() override {}
   void SchedulePendingLossyWrites() override {}
   void ClearMutableValues() override {}
+  std::unique_ptr<base::DictionaryValue> GetValues() const override;
 
  protected:
   ~XWalkPrefStore() override;

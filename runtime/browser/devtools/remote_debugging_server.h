@@ -10,7 +10,7 @@
 
 #include "base/macros.h"
 
-namespace devtools_http_handler {
+namespace content {
 class DevToolsHttpHandler;
 }
 
@@ -29,7 +29,7 @@ class RemoteDebuggingServer {
   int port() { return port_; }
 
  private:
-  std::unique_ptr<devtools_http_handler::DevToolsHttpHandler> devtools_http_handler_;
+  std::unique_ptr<content::DevToolsHttpHandler> devtools_http_handler_;
   int port_;
   DISALLOW_COPY_AND_ASSIGN(RemoteDebuggingServer);
 };

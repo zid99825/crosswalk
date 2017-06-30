@@ -130,7 +130,7 @@ std::unique_ptr<StorageComponent> XWalkRunner::CreateStorageComponent() {
 
 void XWalkRunner::InitializeRuntimeVariablesForExtensions(
     const content::RenderProcessHost* host,
-    base::DictionaryValue::Storage* variables) {
+    base::DictionaryValue::DictStorage* variables) {
   application::Application* app = app_system()->application_service()->
       GetApplicationByRenderHostID(host->GetID());
 
@@ -164,8 +164,8 @@ void XWalkRunner::OnRenderProcessWillLaunch(content::RenderProcessHost* host) {
 
   InitializeEnvironmentVariablesForGoogleAPIs(host);
 
-  std::unique_ptr<base::DictionaryValue::Storage>
-      runtime_variables(new base::DictionaryValue::Storage);
+  std::unique_ptr<base::DictionaryValue::DictStorage>
+      runtime_variables(new base::DictionaryValue::DictStorage);
   InitializeRuntimeVariablesForExtensions(host, runtime_variables.get());
   extension_service_->OnRenderProcessWillLaunch(
       host, &ui_thread_extensions, &extension_thread_extensions,

@@ -33,12 +33,14 @@ class XWalkContentClient : public content::ContentClient {
   base::RefCountedMemory* GetDataResourceBytes(
       int resource_id) const override;
   gfx::Image& GetNativeImageNamed(int resource_id) const override;
-  void AddAdditionalSchemes(
+  void AddAdditionalSchemes(Schemes* schemes) override;
+
+/*  void AddAdditionalSchemes(
       std::vector<url::SchemeWithType>* standard_schemes,
       std::vector<url::SchemeWithType>* referrer_schemes,
       std::vector<std::string>* saveable_shemes) override;
   void AddSecureSchemesAndOrigins(std::set<std::string>* schemes,
-      std::set<GURL>* origins) override;
+      std::set<GURL>* origins) override;*/
   std::string GetProcessTypeNameInEnglish(int type) override;
 
  private:

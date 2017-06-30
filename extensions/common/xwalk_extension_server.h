@@ -52,6 +52,7 @@ class XWalkExtensionServer : public IPC::Listener,
 
   // IPC::Listener Implementation.
   bool OnMessageReceived(const IPC::Message& message) override;
+  void OnChannelConnected(int32_t peer_pid) override;
 
   // Different types of ExtensionServers are initialized with different
   // permission delegates: For out-of-process extensions the extension
@@ -105,8 +106,9 @@ class XWalkExtensionServer : public IPC::Listener,
 
   base::Lock channel_proxy_lock_;
   IPC::ChannelProxy* channel_proxy_;
+  int32_t _peer_pid;
 
-  typedef std::map<std::string, XWalkExtension*> ExtensionMap;
+  typedef std::map<std::string, std::unique_ptr<XWalkExtension>> ExtensionMap;
   ExtensionMap extensions_;
 
   typedef std::map<int64_t, InstanceExecutionData> InstanceMap;
@@ -121,7 +123,7 @@ class XWalkExtensionServer : public IPC::Listener,
 
 std::vector<std::string> RegisterExternalExtensionsInDirectory(
     XWalkExtensionServer* server, const base::FilePath& dir,
-    std::unique_ptr<base::DictionaryValue::Storage> runtime_variables);
+    std::unique_ptr<base::DictionaryValue::DictStorage> runtime_variables);
 
 bool ValidateExtensionNameForTesting(const std::string& extension_name);
 

@@ -11,6 +11,7 @@
 #include "third_party/WebKit/public/web/WebLocalFrame.h"
 #include "third_party/WebKit/public/web/WebView.h"
 #include "xwalk/extensions/renderer/xwalk_v8_utils.h"
+#include "base/message_loop/message_loop.h"
 
 using content::RenderView;
 using blink::WebFrame;
@@ -76,7 +77,7 @@ void LifecycleTrackerCleanup1(
   // callback we are stuck inbetween Blink's GC prologue and epilogue that
   // forbid script execution and crash Crosswalk in debug mode when certain
   // objects (such as `console') are referenced.
-  base::MessageLoop::current()->PostTask(
+  base::MessageLoop::current()->task_runner()->PostTask(
       FROM_HERE, base::Bind(&LifecycleTrackerCleanup2,
                             data));
 }

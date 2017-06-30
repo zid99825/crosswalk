@@ -53,11 +53,10 @@ class XWalkContentsClientBridge : public XWalkContentsClientBridgeBase ,
   void AllowCertificateError(int cert_error,
                              net::X509Certificate* cert,
                              const GURL& request_url,
-                             const base::Callback<void(bool)>& callback, // NOLINT
-                             bool* cancel_request) override;
+                             const base::Callback<void(content::CertificateRequestResultType)>& callback) override;
 
   void RunJavaScriptDialog(
-      content::JavaScriptMessageType message_type,
+      content::JavaScriptDialogType dialog_type,
       const GURL& origin_url,
       const base::string16& message_text,
       const base::string16& default_prompt_text,
@@ -104,8 +103,9 @@ class XWalkContentsClientBridge : public XWalkContentsClientBridgeBase ,
   virtual void OnReceivedIcon(const GURL& icon_url, const SkBitmap& bitmap);
 
   void ProvideClientCertificateResponse(JNIEnv* env, jobject object,
-      jint request_id, jobjectArray encoded_chain_ref,
-      jobject private_key_ref);
+      jint request_id, 
+      const base::android::JavaRef<jobjectArray>& encoded_chain_ref,
+      const base::android::JavaRef<jobject>& private_key_ref);
 
   virtual void SelectClientCertificate(
       net::SSLCertRequestInfo* cert_request_info,
@@ -123,19 +123,19 @@ class XWalkContentsClientBridge : public XWalkContentsClientBridgeBase ,
  private:
   JavaObjectWeakGlobalRef java_ref_;
 
-  typedef const base::Callback<void(bool)> CertErrorCallback; // NOLINT
-  IDMap<CertErrorCallback, IDMapOwnPointer> pending_cert_error_callbacks_;
-  IDMap<content::JavaScriptDialogManager::DialogClosedCallback, IDMapOwnPointer>
+  typedef const base::Callback<void(content::CertificateRequestResultType)> CertErrorCallback; // NOLINT
+  IDMap<std::unique_ptr<CertErrorCallback>> pending_cert_error_callbacks_;
+  IDMap<std::unique_ptr<content::JavaScriptDialogManager::DialogClosedCallback>>
       pending_js_dialog_callbacks_;
   // |pending_client_cert_request_delegates_| owns its pointers, but IDMap
   // doesn't provide Release, so ownership is managed manually.
-  IDMap<content::ClientCertificateDelegate>
+  IDMap<content::ClientCertificateDelegate*>
       pending_client_cert_request_delegates_;
 
   typedef std::pair<int, content::RenderFrameHost*>
     NotificationDownloadRequestInfos;
 
-  IDMap<SelectCertificateCallback, IDMapOwnPointer>
+  IDMap<std::unique_ptr<SelectCertificateCallback>>
       pending_client_cert_request_callbacks_;
 
   std::unique_ptr<XWalkIconHelper> icon_helper_;

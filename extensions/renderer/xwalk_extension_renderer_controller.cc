@@ -61,7 +61,7 @@ void CreateExtensionModules(XWalkExtensionClient* client,
       client->extension_apis();
   XWalkExtensionClient::ExtensionAPIMap::const_iterator it = extensions.begin();
   for (; it != extensions.end(); ++it) {
-    XWalkExtensionClient::ExtensionCodePoints* codepoint = it->second;
+    XWalkExtensionClient::ExtensionCodePoints* codepoint = it->second.get();
     if (codepoint->api.empty())
       continue;
     std::unique_ptr<XWalkExtensionModule> module(
@@ -134,7 +134,7 @@ void XWalkExtensionRendererController::SetupExtensionProcessClient(
   external_extensions_client_.reset(new XWalkExtensionClient);
   extension_process_channel_ = IPC::SyncChannel::Create(handle,
       IPC::Channel::MODE_CLIENT, external_extensions_client_.get(),
-      content::RenderThread::Get()->GetIOMessageLoopProxy(), true,
+      content::RenderThread::Get()->GetIOTaskRunner(), true,
       &shutdown_event_);
 
   external_extensions_client_->Initialize(extension_process_channel_.get());

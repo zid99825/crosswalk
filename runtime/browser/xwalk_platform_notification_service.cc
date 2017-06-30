@@ -86,6 +86,7 @@ XWalkPlatformNotificationService::CheckPermissionOnIOThread(
 
 void XWalkPlatformNotificationService::DisplayNotification(
     content::BrowserContext* browser_context,
+    const std::string& notification_id,
     const GURL& origin,
     const content::PlatformNotificationData& notification_data,
     const content::NotificationResources& notification_resources,
@@ -137,7 +138,7 @@ void XWalkPlatformNotificationService::DisplayNotification(
 #endif
 }
 
-bool XWalkPlatformNotificationService::GetDisplayedPersistentNotifications(
+bool XWalkPlatformNotificationService::GetDisplayedNotifications(
     content::BrowserContext* browser_context,
     std::set<std::string>* displayed_notifications) {
     NOTIMPLEMENTED();

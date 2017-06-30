@@ -111,7 +111,9 @@ bool XWalkWebResourceResponseImpl::GetResponseHeaders(
 }
 
 bool RegisterXWalkWebResourceResponse(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+  // TODO remove registration too
+//  return RegisterNativesImpl(env);
+  return true;
 }
 
 }  // namespace xwalk

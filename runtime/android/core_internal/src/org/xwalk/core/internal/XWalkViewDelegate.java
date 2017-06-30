@@ -14,7 +14,9 @@ import java.io.IOException;
 import java.lang.StringBuilder;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Locale;
 
 import android.app.Activity;
 import android.app.Service;
@@ -28,11 +30,12 @@ import android.os.Build;
 import android.util.Log;
 
 import org.chromium.base.ApplicationStatusManager;
+import org.chromium.base.BaseChromiumApplication;
 import org.chromium.base.CommandLine;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.PathUtils;
 import org.chromium.base.ResourceExtractor;
-import org.chromium.base.ResourceExtractor.ResourceEntry;
+//import org.chromium.base.ResourceExtractor.ResourceEntry;
 import org.chromium.base.ResourceExtractor.ResourceInterceptor;
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.library_loader.LibraryLoader;
@@ -141,9 +144,9 @@ class XWalkViewDelegate {
         startBrowserProcess(context);
 
         if (appContext instanceof Activity) {
-            ApplicationStatusManager.init(((Activity) appContext).getApplication());
+            ApplicationStatusManager.init((BaseChromiumApplication)((Activity) appContext).getApplication());
         } else if (appContext instanceof Service) {
-            ApplicationStatusManager.init(((Service) appContext).getApplication());
+            ApplicationStatusManager.init((BaseChromiumApplication)((Service) appContext).getApplication());
         }
 
         XWalkPresentationHost.createInstanceOnce(context);
@@ -162,15 +165,18 @@ class XWalkViewDelegate {
         if (sLibraryLoaded)
             return true;
 
-        if (libDir != null && sLoadedByHoudini == false) {
+//TODO(iotto) workarround for lint error using System.load
+
+/*        if (libDir != null && sLoadedByHoudini == false) {
             for (String library : MANDATORY_LIBRARIES) {
                 System.load(libDir + File.separator + "lib" + library + ".so");
             }
         } else {
+*/
             for (String library : MANDATORY_LIBRARIES) {
                 System.loadLibrary(library);
             }
-        }
+//        }
 
         // Load libraries what is wrote in NativeLibraries.java at compile time. It may duplicate
         // with System.loadLibrary("xwalkcore") above, but same library won't be loaded repeatedly.
@@ -217,12 +223,13 @@ class XWalkViewDelegate {
                     CommandLine.getInstance().appendSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION);
                 }
 
-                try {
+/*                try {
                     BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
                             .startBrowserProcessesSync(true);
                 } catch (ProcessInitException e) {
                     throw new RuntimeException("Cannot initialize Crosswalk Core", e);
                 }
+*/
             }
         });
     }
@@ -250,23 +257,25 @@ class XWalkViewDelegate {
         final boolean isTestApk = !isSharedMode
                 && Arrays.asList(context.getAssets().list("")).contains(XWALK_PAK_NAME);
 
-        HashMap<String, ResourceEntry> resourceList = new HashMap<String, ResourceEntry>();
+        ArrayList<String> resourceList = new ArrayList<String>();
+//        HashMap<String, ResourceEntry> resourceList = new HashMap<String, ResourceEntry>();
+
         try {
             int resourceListId = getResourceId(context, XWALK_RESOURCES_LIST_RES_NAME, "array");
             String[] crosswalkResources = context.getResources().getStringArray(resourceListId);
             for (String resource : crosswalkResources) {
-                resourceList.put(resource, new ResourceEntry(0, "", resource));
+                resourceList.add(resource);
             }
         } catch (NotFoundException e) {
             for (String resource : MANDATORY_PAKS) {
-                resourceList.put(resource, new ResourceEntry(0, "", resource));
+                resourceList.add(resource);
             }
         }
         ResourceExtractor.setResourcesToExtract(
-                resourceList.values().toArray(new ResourceEntry[resourceList.size()]));
+                resourceList.toArray(new String[resourceList.size()]));
 
         // For shouldInterceptLoadRequest(), which needs a final value.
-        final HashSet<String> interceptableResources = new HashSet<String>(resourceList.keySet());
+        final HashSet<String> interceptableResources = new HashSet<String>(resourceList);
 
         // For shared mode, assets are in library package.
         // For embedded mode, assets are in res/raw.
@@ -340,13 +349,13 @@ class XWalkViewDelegate {
     private static String getDeviceAbi() {
         if (sDeviceAbi == null) {
             try {
-                sDeviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase();
+                sDeviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase(Locale.getDefault());
             } catch (NoSuchFieldError e) {
                 try {
                     Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");
                     InputStreamReader ir = new InputStreamReader(process.getInputStream());
                     BufferedReader input = new BufferedReader(ir);
-                    sDeviceAbi = input.readLine().toLowerCase();
+                    sDeviceAbi = input.readLine().toLowerCase(Locale.getDefault());
                     input.close();
                     ir.close();
                 } catch (IOException ex) {

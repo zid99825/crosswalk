@@ -28,6 +28,7 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "xwalk/application/common/constants.h"
+#include "xwalk/runtime/browser/android/net/url_constants.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/common/xwalk_paths.h"
 
@@ -204,7 +205,35 @@ gfx::Image& XWalkContentClient::GetNativeImageNamed(int resource_id) const {
   return ResourceBundle::GetSharedInstance().GetNativeImageNamed(resource_id);
 }
 
-void XWalkContentClient::AddAdditionalSchemes(
+void XWalkContentClient::AddAdditionalSchemes(Schemes* schemes) {
+/*  url::SchemeWithType app_scheme = {application::kApplicationScheme,
+                                    url::SCHEME_WITHOUT_PORT};
+
+  schemes->standard_schemes.push_back(app_scheme);
+*/
+  schemes->standard_schemes.push_back(application::kApplicationScheme);
+  schemes->savable_schemes.push_back(application::kApplicationScheme);
+  schemes->secure_schemes.push_back(application::kApplicationScheme);
+
+// TODO see if further registration needed
+// content from  runtime/renderer/xwalk_content_renderer_client.cc
+/*  blink::WebString application_scheme(
+      blink::WebString::fromASCII(application::kApplicationScheme));
+  blink::WebSecurityPolicy::registerURLSchemeAsSecure(application_scheme);
+  blink::WebSecurityPolicy::registerURLSchemeAsCORSEnabled(application_scheme);
+*/
+  schemes->cors_enabled_schemes.push_back(application::kApplicationScheme);
+#if defined(OS_ANDROID)
+  schemes->local_schemes.push_back(xwalk::kContentScheme);
+/*  blink::WebString content_scheme(
+      blink::WebString::fromASCII(xwalk::kContentScheme));
+  blink::WebSecurityPolicy::registerURLSchemeAsLocal(content_scheme);
+*/
+#endif
+
+}
+
+/*void XWalkContentClient::AddAdditionalSchemes(
     std::vector<url::SchemeWithType>* standard_schemes,
     std::vector<url::SchemeWithType>* referrer_schemes,
     std::vector<std::string>* savable_schemes) {
@@ -219,6 +248,8 @@ void XWalkContentClient::AddSecureSchemesAndOrigins(
     std::set<GURL>* origins) {
     schemes->insert(application::kApplicationScheme);
 }
+*/
+
 
 std::string XWalkContentClient::GetProcessTypeNameInEnglish(int type) {
   switch (type) {

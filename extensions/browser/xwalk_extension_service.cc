@@ -61,8 +61,8 @@ void ExtensionServerMessageFilter::Invalidate() {
 }
 
 // IPC::ChannelProxy::MessageFilter implementation.
-void ExtensionServerMessageFilter::OnFilterAdded(IPC::Sender* sender) {
-  sender_ = sender;
+void ExtensionServerMessageFilter::OnFilterAdded(IPC::Channel* channel) {
+  sender_ = channel;
 }
 
 void ExtensionServerMessageFilter::OnFilterRemoved() {
@@ -112,13 +112,15 @@ void ExtensionServerMessageFilter::RouteMessageToServer(
   base::TaskRunner* task_runner;
   scoped_refptr<base::TaskRunner> task_runner_ref;
 
-  if (ContainsKey(extension_thread_instances_ids_, id)) {
+  auto it = extension_thread_instances_ids_.find(id);
+
+  if (it != extension_thread_instances_ids_.end()) {
     server = extension_thread_server_;
     task_runner = task_runner_.get();
   } else {
     server = ui_thread_server_;
     task_runner_ref =
-        BrowserThread::GetMessageLoopProxyForThread(BrowserThread::UI);
+        BrowserThread::GetTaskRunnerForThread(BrowserThread::UI);
     task_runner = task_runner_ref.get();
   }
 
@@ -142,7 +144,7 @@ void ExtensionServerMessageFilter::OnCreateInstance(
   } else {
     server = ui_thread_server_;
     task_runner_ref =
-        BrowserThread::GetMessageLoopProxyForThread(BrowserThread::UI);
+        BrowserThread::GetTaskRunnerForThread(BrowserThread::UI);
     task_runner = task_runner_ref.get();
   }
 
@@ -219,7 +221,7 @@ void XWalkExtensionService::OnRenderProcessHostCreatedInternal(
     content::RenderProcessHost* host,
     XWalkExtensionVector* ui_thread_extensions,
     XWalkExtensionVector* extension_thread_extensions,
-    std::unique_ptr<base::DictionaryValue::Storage> runtime_variables) {
+    std::unique_ptr<base::DictionaryValue::DictStorage> runtime_variables) {
   XWalkExtensionData* data = new XWalkExtensionData;
   data->set_render_process_host(host);
 
@@ -243,7 +245,7 @@ void XWalkExtensionService::OnRenderProcessWillLaunch(
     content::RenderProcessHost* host,
     XWalkExtensionVector* ui_thread_extensions,
     XWalkExtensionVector* extension_thread_extensions,
-    std::unique_ptr<base::DictionaryValue::Storage> runtime_variables) {
+    std::unique_ptr<base::DictionaryValue::DictStorage> runtime_variables) {
   CHECK(host);
 
   if (!g_external_extensions_path_for_testing_.empty()) {
@@ -372,7 +374,7 @@ void XWalkExtensionService::CreateInProcessExtensionServers(
 
 void XWalkExtensionService::CreateExtensionProcessHost(
     content::RenderProcessHost* host, XWalkExtensionData* data,
-    std::unique_ptr<base::DictionaryValue::Storage> runtime_variables) {
+    std::unique_ptr<base::DictionaryValue::DictStorage> runtime_variables) {
   data->set_extension_process_host(base::WrapUnique(
       new XWalkExtensionProcessHost(host, external_extensions_path_, this,
                                     std::move(runtime_variables))));

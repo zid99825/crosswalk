@@ -25,7 +25,7 @@ RuntimeJavaScriptDialogManager::~RuntimeJavaScriptDialogManager() {
 void RuntimeJavaScriptDialogManager::RunJavaScriptDialog(
     content::WebContents* web_contents,
     const GURL& origin_url,
-    content::JavaScriptMessageType javascript_message_type,
+    content::JavaScriptDialogType javascript_dialog_type,
     const base::string16& message_text,
     const base::string16& default_prompt_text,
     const DialogClosedCallback& callback,
@@ -33,7 +33,7 @@ void RuntimeJavaScriptDialogManager::RunJavaScriptDialog(
 #if defined(OS_ANDROID)
   XWalkContentsClientBridgeBase* bridge =
       XWalkContentsClientBridgeBase::FromWebContents(web_contents);
-  bridge->RunJavaScriptDialog(javascript_message_type,
+  bridge->RunJavaScriptDialog(javascript_dialog_type,
                               origin_url,
                               message_text,
                               default_prompt_text,
@@ -60,13 +60,9 @@ void RuntimeJavaScriptDialogManager::RunBeforeUnloadDialog(
 #endif
 }
 
-void RuntimeJavaScriptDialogManager::CancelActiveAndPendingDialogs(
-    content::WebContents* web_contents) {
-  NOTIMPLEMENTED();
-}
-
-void RuntimeJavaScriptDialogManager::ResetDialogState(
-    content::WebContents* web_contents) {
+void RuntimeJavaScriptDialogManager::CancelDialogs(
+    content::WebContents* web_contents,
+    bool reset_state) {
   NOTIMPLEMENTED();
 }
 

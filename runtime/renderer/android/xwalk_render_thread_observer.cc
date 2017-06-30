@@ -9,7 +9,7 @@
 #include "content/public/common/url_constants.h"
 #include "extensions/common/url_pattern.h"
 #include "ipc/ipc_message_macros.h"
-#include "third_party/WebKit/public/web/WebCache.h"
+#include "third_party/WebKit/public/platform/WebCache.h"
 #include "third_party/WebKit/public/web/WebNetworkStateNotifier.h"
 #include "third_party/WebKit/public/web/WebSecurityPolicy.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"

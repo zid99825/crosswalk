@@ -154,8 +154,6 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopStart() {
   command_line->AppendSwitch(switches::kXWalkDisableExtensionProcess);
   // Enable viewport.
   command_line->AppendSwitch(switches::kEnableViewport);
-  // Temporary fix for XWALK-7231
-  command_line->AppendSwitch(switches::kDisableUnifiedMediaPipeline);
 
   // Only force to enable WebGL for Android for IA platforms because
   // we've tested the WebGL conformance test. For other platforms, just

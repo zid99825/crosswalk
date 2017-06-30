@@ -17,7 +17,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "cc/base/switches.h"
-#include "components/devtools_http_handler/devtools_http_handler.h"
+#include "content/browser/devtools/devtools_http_handler.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/main_function_params.h"
@@ -183,10 +183,12 @@ void XWalkBrowserMainParts::RegisterExternalExtensions() {
 void XWalkBrowserMainParts::PreMainMessageLoopRun() {
   xwalk_runner_->PreMainMessageLoopRun();
 
-  devtools_http_handler_.reset(
+  XWalkDevToolsManagerDelegate::StartHttpHandler(xwalk_runner_->browser_context());
+
+/*  devtools_http_handler_.reset(
       XWalkDevToolsManagerDelegate::CreateHttpHandler(
           xwalk_runner_->browser_context()));
-
+*/
   extension_service_ = xwalk_runner_->extension_service();
 
   if (extension_service_)
@@ -262,7 +264,8 @@ bool XWalkBrowserMainParts::MainMessageLoopRun(int* result_code) {
 
 void XWalkBrowserMainParts::PostMainMessageLoopRun() {
   xwalk_runner_->PostMainMessageLoopRun();
-  devtools_http_handler_.reset();
+  XWalkDevToolsManagerDelegate::StopHttpHandler();
+//  devtools_http_handler_.reset();
 }
 
 void XWalkBrowserMainParts::CreateInternalExtensionsForUIThread(

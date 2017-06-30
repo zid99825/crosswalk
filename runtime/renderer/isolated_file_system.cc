@@ -49,7 +49,7 @@ void IsolatedFileSystem::GetIsolatedFileSystem(
   blink::WebDataSource* data_source = webframe->provisionalDataSource() ?
       webframe->provisionalDataSource() : webframe->dataSource();
   CHECK(data_source);
-  GURL context_url(data_source->request().url());
+  GURL context_url(data_source->getRequest().url());
 
   // In instrument test, context_url.GetOrigin() returns emtpy string.
   // That causes app crash. So assign "file:///" as default value to

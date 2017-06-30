@@ -111,7 +111,7 @@ class XWalkModuleSystem {
   typedef std::vector<ExtensionModuleEntry> ExtensionModules;
   ExtensionModules extension_modules_;
 
-  typedef std::map<std::string, XWalkNativeModule*> NativeModuleMap;
+  typedef std::map<std::string, std::unique_ptr<XWalkNativeModule>> NativeModuleMap;
   NativeModuleMap native_modules_;
 
   v8::Persistent<v8::FunctionTemplate> require_native_template_;

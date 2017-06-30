@@ -10,10 +10,12 @@
 #include <utility>
 
 #include "base/memory/scoped_vector.h"
-#include "components/auto_login_parser/auto_login_parser.h"
+//#include "components/auto_login_parser/auto_login_parser.h"
+#include "android_webview/browser/renderer_host/auto_login_parser.h"
 #include "components/navigation_interception/intercept_navigation_delegate.h"
 #include "content/public/browser/browser_thread.h"
-#include "content/public/browser/resource_controller.h"
+//#include "content/public/browser/resource_controller.h"
+#include "content/browser/loader/resource_controller.h"
 #include "content/public/browser/resource_request_info.h"
 #include "content/public/browser/resource_throttle.h"
 #include "content/public/common/url_constants.h"
@@ -34,10 +36,12 @@ using xwalk::XWalkContentsIoThreadClient;
 namespace {
 void SetCacheControlFlag(
     net::URLRequest* request, int flag) {
-  const int all_cache_control_flags = net::LOAD_BYPASS_CACHE |
+  const int all_cache_control_flags = 
       net::LOAD_VALIDATE_CACHE |
-      net::LOAD_PREFERRING_CACHE |
-      net::LOAD_ONLY_FROM_CACHE;
+      net::LOAD_BYPASS_CACHE |
+      net::LOAD_SKIP_CACHE_VALIDATION |
+      net::LOAD_ONLY_FROM_CACHE|
+      net::LOAD_DISABLE_CACHE;
   DCHECK((flag & all_cache_control_flags) == flag);
   int load_flags = request->load_flags();
   load_flags &= ~all_cache_control_flags;
@@ -136,13 +140,13 @@ void IoThreadClientThrottle::OnIoThreadClientReady(int new_render_process_id,
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
 
   if (!MaybeBlockRequest()) {
-    controller()->Resume();
+    Resume();
   }
 }
 
 bool IoThreadClientThrottle::MaybeBlockRequest() {
   if (ShouldBlockRequest()) {
-    controller()->CancelWithError(net::ERR_ACCESS_DENIED);
+    CancelWithError(net::ERR_ACCESS_DENIED);
     return true;
   }
   return false;
@@ -181,7 +185,7 @@ bool IoThreadClientThrottle::ShouldBlockRequest() {
         io_client->GetCacheMode();
     switch (cache_mode) {
       case XWalkContentsIoThreadClient::LOAD_CACHE_ELSE_NETWORK:
-        SetCacheControlFlag(request_, net::LOAD_PREFERRING_CACHE);
+        SetCacheControlFlag(request_, net::LOAD_VALIDATE_CACHE);
         break;
       case XWalkContentsIoThreadClient::LOAD_NO_CACHE:
         SetCacheControlFlag(request_, net::LOAD_BYPASS_CACHE);
@@ -209,7 +213,7 @@ void RuntimeResourceDispatcherHostDelegateAndroid::RequestBeginning(
     content::ResourceContext* resource_context,
     content::AppCacheService* appcache_service,
     content::ResourceType resource_type,
-    ScopedVector<content::ResourceThrottle>* throttles) {
+    std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
   const content::ResourceRequestInfo* request_info =
       content::ResourceRequestInfo::ForRequest(request);
 
@@ -223,18 +227,25 @@ void RuntimeResourceDispatcherHostDelegateAndroid::RequestBeginning(
   if (!io_client)
     return;
 
-  throttles->push_back(new IoThreadClientThrottle(
-      request_info->GetChildID(), request_info->GetRenderFrameID(), request));
+  throttles->push_back(base::WrapUnique<IoThreadClientThrottle>(new IoThreadClientThrottle(
+      request_info->GetChildID(), request_info->GetRenderFrameID(), request)));
 }
 
 void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
-    net::URLRequest* request,
+      net::URLRequest* request,
+      content::ResourceContext* resource_context,
+      bool is_content_initiated,
+      bool must_download,
+      bool is_new_request,
+      std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
+/*    net::URLRequest* request,
     content::ResourceContext* resource_context,
     int child_id,
     int route_id,
     bool is_content_initiated,
     bool must_download,
     ScopedVector<content::ResourceThrottle>* throttles) {
+*/
   GURL url(request->url());
   std::string user_agent;
   std::string content_disposition;
@@ -259,7 +270,7 @@ void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
 
   std::unique_ptr<XWalkContentsIoThreadClient> io_client =
       XWalkContentsIoThreadClient::FromID(
-          child_id, request_info->GetRenderFrameID());
+          request_info->GetChildID(), request_info->GetRenderFrameID());
 
   // POST request cannot be repeated in general, so prevent client from
   // retrying the same request, even if it is with a GET.
@@ -281,12 +292,7 @@ content::ResourceDispatcherHostLoginDelegate*
 
 bool RuntimeResourceDispatcherHostDelegateAndroid::HandleExternalProtocol(
     const GURL& url,
-    int child_id,
-    const content::ResourceRequestInfo::WebContentsGetter& web_contents_getter,
-    bool is_main_frame,
-    ui::PageTransition page_transition,
-    bool has_user_gesture,
-    content::ResourceContext* resource_context) {
+    content::ResourceRequestInfo* info) {
   // On Android, there are many Uris need to be handled differently.
   // e.g: sms:, tel:, mailto: and etc.
   // So here return false to let embedders to decide which protocol
@@ -297,8 +303,8 @@ bool RuntimeResourceDispatcherHostDelegateAndroid::HandleExternalProtocol(
 void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(
     net::URLRequest* request,
     content::ResourceContext* resource_context,
-    content::ResourceResponse* response,
-    IPC::Sender* sender) {
+    content::ResourceResponse* response) {
+//    IPC::Sender* sender) {
   const content::ResourceRequestInfo* request_info =
       content::ResourceRequestInfo::ForRequest(request);
   if (!request_info) {
@@ -309,9 +315,10 @@ void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(
 
   if (request_info->GetResourceType() == content::RESOURCE_TYPE_MAIN_FRAME) {
     // Check for x-auto-login header.
-    auto_login_parser::HeaderData header_data;
-    if (auto_login_parser::ParserHeaderInResponse(
-            request, auto_login_parser::ALLOW_ANY_REALM, &header_data)) {
+    android_webview::HeaderData header_data;
+//    auto_login_parser::HeaderData header_data;
+    if (android_webview::ParserHeaderInResponse(
+            request, android_webview::RealmRestriction::ALLOW_ANY_REALM, &header_data)) {
       std::unique_ptr<XWalkContentsIoThreadClient> io_client =
           XWalkContentsIoThreadClient::FromID(request_info->GetChildID(),
                                               request_info->GetRenderFrameID());

@@ -28,6 +28,7 @@ import org.chromium.content.browser.ContentViewClient;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.WebContentsObserver;
 import org.chromium.net.NetError;
+import org.chromium.content.browser.ContentVideoViewEmbedder;
 
 /**
  * Base-class that a XWalkViewContents embedder derives from to receive callbacks.
@@ -67,8 +68,8 @@ abstract class XWalkContentsClient extends ContentViewClient {
         }
 
         @Override
-        public void didFailLoad(boolean isProvisionalLoad, boolean isMainFrame, int errorCode,
-                String description, String failingUrl, boolean wasIgnoredByHandler) {
+        public void didFailLoad(boolean isMainFrame, int errorCode,
+                String description, String failingUrl) {
             if (errorCode == NetError.ERR_ABORTED || !isMainFrame) {
                 // This error code is generated for the following reasons:
                 // - XWalkViewInternal.stopLoading is called,
@@ -83,7 +84,7 @@ abstract class XWalkContentsClient extends ContentViewClient {
                     description, failingUrl);
         }
 
-        @Override
+ /*       @Override
         public void didNavigateAnyFrame(String url, String baseUrl, boolean isReload) {
             doUpdateVisitedHistory(url, isReload);
         }
@@ -94,7 +95,7 @@ abstract class XWalkContentsClient extends ContentViewClient {
                 boolean isNavigationToDifferentPage, boolean isFragmentNavigation, int statusCode) {
             stopSwipeRefreshHandler();
         }
-
+*/
         @Override
         public void didFinishLoad(long frameId, String validatedUrl, boolean isMainFrame) {
             // Both didStopLoading and didFinishLoad will be called once a page is finished
@@ -103,17 +104,20 @@ abstract class XWalkContentsClient extends ContentViewClient {
             //
             // So it is safe for Crosswalk to rely on didStopLoading to ensure onPageFinished
             // can be called.
+            if ( isMainFrame ) {
+                stopSwipeRefreshHandler();
+            }
         }
 
         @Override
         public void documentLoadedInFrame(long frameId, boolean isMainFrame) {
             onDocumentLoadedInFrame(frameId);
         }
-    }
 
-    @Override
-    final public void onUpdateTitle(String title) {
-        onTitleChanged(title);
+        @Override
+        public void titleWasSet(String title) {
+            onTitleChanged(title);
+        }
     }
 
     @Override
@@ -252,6 +256,8 @@ abstract class XWalkContentsClient extends ContentViewClient {
 
     public abstract void provideClientCertificateResponse(int id, byte[][] certChain,
             PrivateKey privateKey);
+
+    public abstract ContentVideoViewEmbedder getContentVideoViewEmbedder();
 
     //--------------------------------------------------------------------------------------------
     //                              Other XWalkViewInternal-specific methods

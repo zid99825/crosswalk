@@ -27,6 +27,7 @@
 #include "net/cert/ct_policy_enforcer.h"
 #include "net/cert/ct_policy_status.h"
 #include "net/cert/ct_verifier.h"
+#include "net/cert/do_nothing_ct_verifier.h"
 #include "net/cookies/cookie_monster.h"
 #include "net/dns/host_resolver.h"
 #include "net/dns/mapped_host_resolver.h"
@@ -76,22 +77,26 @@ namespace {
 // CT information with the classes below.
 // See the discussion in http://crbug.com/669978 for more information.
 
-// A CTVerifier which ignores Certificate Transparency information.
+// TODO replaced by net::DoNothingCTVerifier
+/*// A CTVerifier which ignores Certificate Transparency information.
 class IgnoresCTVerifier : public net::CTVerifier {
  public:
   IgnoresCTVerifier() = default;
   ~IgnoresCTVerifier() override = default;
 
-  int Verify(net::X509Certificate* cert,
-             const std::string& stapled_ocsp_response,
-             const std::string& sct_list_from_tls_extension,
-             net::ct::CTVerifyResult* result,
-             const net::BoundNetLog& net_log) override {
-    return net::OK;
+  void Verify(X509Certificate* cert,
+                      base::StringPiece stapled_ocsp_response,
+                      base::StringPiece sct_list_from_tls_extension,
+                      SignedCertificateTimestampAndStatusList* output_scts,
+                      const NetLogWithSource& net_log) override {
+    // TODO see net/cert/do_nothing_ct_verifier.cc
+    // TODO check for nullptr
+    output_scts->clear();
   }
 
   void SetObserver(Observer* observer) override {}
 };
+*/
 
 // A CTPolicyEnforcer that accepts all certificates.
 class IgnoresCTPolicyEnforcer : public net::CTPolicyEnforcer {
@@ -102,7 +107,7 @@ class IgnoresCTPolicyEnforcer : public net::CTPolicyEnforcer {
   net::ct::CertPolicyCompliance DoesConformToCertPolicy(
       net::X509Certificate* cert,
       const net::SCTList& verified_scts,
-      const net::BoundNetLog& net_log) override {
+      const net::NetLogWithSource& net_log) override {
     return net::ct::CertPolicyCompliance::CERT_POLICY_COMPLIES_VIA_SCTS;
   }
 
@@ -110,7 +115,7 @@ class IgnoresCTPolicyEnforcer : public net::CTPolicyEnforcer {
       net::X509Certificate* cert,
       const net::ct::EVCertsWhitelist* ev_whitelist,
       const net::SCTList& verified_scts,
-      const net::BoundNetLog& net_log) override {
+      const net::NetLogWithSource& net_log) override {
     return net::ct::EVPolicyCompliance::EV_POLICY_DOES_NOT_APPLY;
   }
 };
@@ -137,13 +142,14 @@ int GetDiskCacheSize() {
 
 RuntimeURLRequestContextGetter::RuntimeURLRequestContextGetter(
     bool ignore_certificate_errors, const base::FilePath& base_path,
-    base::MessageLoop* io_loop, base::MessageLoop* file_loop,
+    const scoped_refptr<base::SingleThreadTaskRunner>& io_task_runner, 
+    const scoped_refptr<base::SingleThreadTaskRunner>& file_task_runner,
     content::ProtocolHandlerMap* protocol_handlers,
     content::URLRequestInterceptorScopedVector request_interceptors)
     : ignore_certificate_errors_(ignore_certificate_errors),
       base_path_(base_path),
-      io_loop_(io_loop),
-      file_loop_(file_loop),
+      io_task_runner_(io_task_runner),
+      file_task_runner_(file_task_runner),
       request_interceptors_(std::move(request_interceptors)) {
   // Must first be created on the UI thread.
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
@@ -155,13 +161,13 @@ RuntimeURLRequestContextGetter::RuntimeURLRequestContextGetter(
   // the URLRequestContextStorage on the IO thread in GetURLRequestContext().
 #if defined(OS_ANDROID)
   proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(
-      io_loop_->task_runner(), file_loop_->task_runner());
+      io_task_runner, file_task_runner);
   net::ProxyConfigServiceAndroid* android_config_service =
       static_cast<net::ProxyConfigServiceAndroid*>(proxy_config_service_.get());
   android_config_service->set_exclude_pac_url(true);
 #else
   proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(
-      io_loop_->task_runner(), file_loop_->task_runner());
+      io_task_runner, file_task_runner);
 #endif
 }
 
@@ -198,8 +204,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 #endif
     storage_->set_channel_id_service(
         base::WrapUnique(
-            new net::ChannelIDService(new net::DefaultChannelIDStore(NULL),
-                                      base::WorkerPool::GetTaskRunner(true))));
+            new net::ChannelIDService(new net::DefaultChannelIDStore(NULL))));
     storage_->set_http_user_agent_settings(
         base::WrapUnique(
             new net::StaticHttpUserAgentSettings("en-us,en",
@@ -229,7 +234,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     // to update their apps as well.
     // See the discussion in http://crbug.com/669978 for more information.
     storage_->set_cert_transparency_verifier(
-        base::WrapUnique(new IgnoresCTVerifier));
+        base::WrapUnique(new net::DoNothingCTVerifier()));
     storage_->set_ct_policy_enforcer(
         base::WrapUnique(new IgnoresCTPolicyEnforcer));
 
@@ -374,9 +379,9 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
         ++i) {
       top_job_factory.reset(
           new net::URLRequestInterceptingJobFactory(std::move(top_job_factory),
-                                                    base::WrapUnique(*i)));
+                                                    std::move(*i)));
     }
-    request_interceptors_.weak_clear();
+    request_interceptors_.clear();
 
     storage_->set_job_factory(std::move(top_job_factory));
   }
@@ -385,7 +390,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 }
 
 scoped_refptr<base::SingleThreadTaskRunner> RuntimeURLRequestContextGetter::GetNetworkTaskRunner() const {
-  return BrowserThread::GetMessageLoopProxyForThread(BrowserThread::IO);
+  return BrowserThread::GetTaskRunnerForThread(BrowserThread::IO);
 }
 
 net::HostResolver* RuntimeURLRequestContextGetter::host_resolver() {

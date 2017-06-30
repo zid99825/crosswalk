@@ -7,6 +7,7 @@
 #include "base/values.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/stl_util.h"
+#include "base/memory/ptr_util.h"
 #include "ipc/ipc_sender.h"
 #include "xwalk/extensions/common/xwalk_extension_messages.h"
 
@@ -19,7 +20,6 @@ XWalkExtensionClient::XWalkExtensionClient()
 }
 
 XWalkExtensionClient::~XWalkExtensionClient() {
-  STLDeleteValues(&extension_apis_);
 }
 
 bool XWalkExtensionClient::Send(IPC::Message* msg) {
@@ -177,7 +177,7 @@ void XWalkExtensionClient::Initialize(IPC::Sender* sender) {
     codepoint->entry_points = (*it).entry_points;
 
     std::string name = (*it).name;
-    extension_apis_[name] = codepoint;
+    extension_apis_[name] = base::WrapUnique(codepoint);
   }
 }
 

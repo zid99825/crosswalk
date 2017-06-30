@@ -26,26 +26,66 @@ using net::HostResolver;
 
 //class base::WaitableEvent;
 
-namespace xwalk {
-namespace tenta {
+namespace xwalk
+{
+namespace tenta
+{
 
 using namespace net;
 
 class HostResolverTenta : public HostResolver,
-    public net::NetworkChangeNotifier::IPAddressObserver,
-    public net::NetworkChangeNotifier::ConnectionTypeObserver,
-    public net::NetworkChangeNotifier::DNSObserver {
- protected:
+  public net::NetworkChangeNotifier::IPAddressObserver,
+  public net::NetworkChangeNotifier::ConnectionTypeObserver,
+  public net::NetworkChangeNotifier::DNSObserver
+{
+protected:
   class SavedRequest;
+  /**
+   * @class RequestForCaller
+   * @author iotto
+   * @date 22/06/17
+   * @brief Class returned to caller of ::Resolve
+   */
+  class RequestForCaller : public Request
+  {
+  public:
+    RequestForCaller(int64_t requestId, const base::WeakPtr<HostResolverTenta>& parent)
+      : _request_id(requestId),
+        _parent(parent)
+    {}
 
- public:
+    // when this object gets deleted needs to delete the SavedRequest, by it's id
+    ~RequestForCaller()
+    {
+      if ( _parent )
+      {
+        _parent->CancelRequest(_request_id);
+      }
+    }
+
+    // Changes the priority of the specified request. Can be called after
+    // Resolve() is called. Can't be called once the request is cancelled or
+    // completed.
+    void ChangeRequestPriority(RequestPriority priority) {};
+  private:
+    int64_t _request_id;
+    base::WeakPtr<HostResolverTenta> _parent;
+  };
+
+public:
   HostResolverTenta(std::unique_ptr<HostResolver> backup_resolver);
   virtual ~HostResolverTenta();
 
   // Use backup host resolver
-  void use_backup(bool use) {_use_backup = use; }
+  void use_backup(bool use)
+  {
+    _use_backup = use;
+  }
   // return current setting
-  bool is_using_backup() { return _use_backup; }
+  bool is_using_backup()
+  {
+    return _use_backup;
+  }
 
   // return _use_backup state as string
   const char* use_backup_str();
@@ -71,29 +111,28 @@ class HostResolverTenta : public HostResolver,
   virtual int Resolve(const RequestInfo& info, net::RequestPriority priority,
                       net::AddressList* addresses,
                       const CompletionCallback& callback,
-                      RequestHandle* out_req, const BoundNetLog& net_log)
-                          override;
+                      std::unique_ptr<Request>* out_req, const NetLogWithSource& net_log)  override;
 
 // Resolves the given hostname (or IP address literal) out of cache or HOSTS
 // file (if enabled) only. This is guaranteed to complete synchronously.
 // This acts like |Resolve()| if the hostname is IP literal, or cached value
 // or HOSTS entry exists. Otherwise, ERR_DNS_CACHE_MISS is returned.
   virtual int ResolveFromCache(const RequestInfo& info, AddressList* addresses,
-                               const BoundNetLog& net_log) override;
+                               const NetLogWithSource& net_log) override;
 
   // Post a task to another thread to complete the request
   int ResolveFromCacheWithTask(const RequestInfo& info, AddressList* addresses,
-                               const BoundNetLog& net_log);
+                               const NetLogWithSource& net_log);
 
   // JNI direct call to complete the request
   int ResolveFromCacheDirect(const RequestInfo& info, AddressList* addresses,
-                             const BoundNetLog& net_log);
+                             const NetLogWithSource& net_log);
 
-// Cancels the specified request. |req| is the handle returned by Resolve().
-// After a request is canceled, its completion callback will not be called.
-// CancelRequest must NOT be called after the request's completion callback
-// has already run or the request was canceled.
-  virtual void CancelRequest(RequestHandle req) override;
+  /**
+   * @brief Will cancel request by key_id
+   * @param key_id Id of the SavedRequest
+   */
+  void CancelRequest(int64_t key_id);
 
   /**
    * Called from java to notify request was handled
@@ -113,11 +152,11 @@ class HostResolverTenta : public HostResolver,
 
   virtual void DoResolveCacheInJava(const RequestInfo& info,
                                     AddressList* addresses,
-                                    const BoundNetLog& net_log,
+                                    const NetLogWithSource& net_log,
                                     base::WaitableEvent* completion,
                                     bool *success);
 
- protected:
+protected:
   AddressList * ConvertIpJava2Native(JNIEnv* env, jobjectArray ipArray);
 
   // from net::NetworkChangeNotifier::IPAddressObserver:
@@ -125,13 +164,13 @@ class HostResolverTenta : public HostResolver,
 
   // from net::NetworkChangeNotifier::ConnectionTypeObserver:
   void OnConnectionTypeChanged(NetworkChangeNotifier::ConnectionType type)
-      override;
+  override;
 
   // from net::NetworkChangeNotifier::DNSObserver:
   void OnDNSChanged() override;
   void OnInitialDNSConfigRead() override;
 
- protected:
+protected:
 
   typedef base::Callback<void(int64_t, int)> OnErrorCallback;
   OnErrorCallback on_error_call_;
@@ -142,7 +181,7 @@ class HostResolverTenta : public HostResolver,
   JavaObjectWeakGlobalRef j_host_resolver_;  // java instance for host resolve
 
 // mapping id to resolver
-  typedef std::map<int64_t, SavedRequest *> RequestsMap;
+  typedef std::map<int64_t, std::unique_ptr<SavedRequest>> RequestsMap;
   RequestsMap requests_;
   base::Lock reqGuard;
   bool _use_backup; // use backup resolver instead of Java
@@ -154,7 +193,7 @@ class HostResolverTenta : public HostResolver,
 
   scoped_refptr<base::TaskRunner> orig_runner_;
 
- private:
+private:
   /**
    * Do real work on original thread
    */

@@ -57,13 +57,15 @@ XWalkSSLHostStateDelegate::~XWalkSSLHostStateDelegate() {
 }
 
 void XWalkSSLHostStateDelegate::HostRanInsecureContent(const std::string& host,
-                                                       int pid) {
+                                                       int pid,
+                                                       InsecureContentType content_type) {
   // Intentional no-op.
 }
 
 bool XWalkSSLHostStateDelegate::DidHostRunInsecureContent(
     const std::string& host,
-    int pid) const {
+    int pid,
+    InsecureContentType content_type) const {
   // Intentional no-op.
   return false;
 }
@@ -83,7 +85,8 @@ void XWalkSSLHostStateDelegate::AllowCert(const std::string& host,
   cert_policy_for_host_[host].Allow(cert, error);
 }
 
-void XWalkSSLHostStateDelegate::Clear() {
+void XWalkSSLHostStateDelegate::Clear(const base::Callback<bool(const std::string&)>& host_filter) {
+  // TODO(iotto) use host filter if not null
   cert_policy_for_host_.clear();
 }
 

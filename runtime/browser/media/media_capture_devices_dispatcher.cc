@@ -94,7 +94,7 @@ void XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(
       case content::MEDIA_OPEN_DEVICE_PEPPER_ONLY:
       case content::MEDIA_DEVICE_ACCESS:
       case content::MEDIA_GENERATE_STREAM:
-      case content::MEDIA_ENUMERATE_DEVICES: {
+      {
 #if defined (OS_ANDROID)
         // Get the exact audio and video devices if id is specified.
         // Or get the default devices when requested device id is empty.
@@ -306,14 +306,16 @@ void XWalkMediaCaptureDevicesDispatcher::OnMediaRequestStateChanged(
 
 void XWalkMediaCaptureDevicesDispatcher::NotifyAudioDevicesChangedOnUIThread() {
   MediaStreamDevices devices = GetAudioCaptureDevices();
-  FOR_EACH_OBSERVER(Observer, observers_,
-                    OnUpdateAudioDevices(devices));
+  for (auto& observer : observers_) {
+    observer.OnUpdateAudioDevices(devices);
+  }
 }
 
 void XWalkMediaCaptureDevicesDispatcher::NotifyVideoDevicesChangedOnUIThread() {
   MediaStreamDevices devices = GetVideoCaptureDevices();
-  FOR_EACH_OBSERVER(Observer, observers_,
-                    OnUpdateVideoDevices(devices));
+  for (auto& observer : observers_) {
+    observer.OnUpdateVideoDevices(devices);
+  }
 }
 
 void XWalkMediaCaptureDevicesDispatcher::UpdateMediaReqStateOnUIThread(
@@ -322,11 +324,12 @@ void XWalkMediaCaptureDevicesDispatcher::UpdateMediaReqStateOnUIThread(
     const GURL& security_origin,
     content::MediaStreamType stream_type,
     content::MediaRequestState state) {
-  FOR_EACH_OBSERVER(Observer, observers_,
-                    OnRequestUpdate(render_process_id,
+  for (auto& observer : observers_) {
+    observer.OnRequestUpdate(render_process_id,
                                     render_frame_id,
                                     stream_type,
-                                    state));
+                                    state);
+  }
 }
 
 void XWalkMediaCaptureDevicesDispatcher::SetTestAudioCaptureDevices(

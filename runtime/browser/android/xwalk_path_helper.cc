@@ -12,6 +12,8 @@
 #include "xwalk/runtime/browser/xwalk_browser_main_parts.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
 
+using base::android::JavaParamRef;
+
 namespace xwalk {
 
 typedef std::map<std::string, base::FilePath> VirtualRootMap;

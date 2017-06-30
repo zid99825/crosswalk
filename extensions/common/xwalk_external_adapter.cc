@@ -32,29 +32,31 @@ void XWalkExternalAdapter::RegisterExtension(
     XWalkExternalExtension* extension) {
   XW_Extension xw_extension = extension->xw_extension_;
   CHECK(IsValidXWExtension(xw_extension));
-  CHECK(!ContainsKey(extension_map_, xw_extension));
-  extension_map_[xw_extension] = extension;
+  auto it = extension_map_.find(xw_extension);
+  if ( it == extension_map_.end() ) {
+    extension_map_[xw_extension] = extension;
+  }
 }
 
 void XWalkExternalAdapter::UnregisterExtension(
     XWalkExternalExtension* extension) {
   XW_Extension xw_extension = extension->xw_extension_;
   CHECK(IsValidXWExtension(xw_extension));
-  CHECK(ContainsKey(extension_map_, xw_extension));
   extension_map_.erase(xw_extension);
 }
 
 void XWalkExternalAdapter::RegisterInstance(XWalkExternalInstance* context) {
   XW_Instance xw_instance = context->xw_instance_;
   CHECK(IsValidXWInstance(xw_instance));
-  CHECK(!ContainsKey(instance_map_, xw_instance));
-  instance_map_[xw_instance] = context;
+  auto it = instance_map_.find(xw_instance);
+  if ( it == instance_map_.end() ) {
+    instance_map_[xw_instance] = context;
+  }
 }
 
 void XWalkExternalAdapter::UnregisterInstance(XWalkExternalInstance* context) {
   XW_Instance xw_instance = context->xw_instance_;
   CHECK(IsValidXWInstance(xw_instance));
-  CHECK(ContainsKey(instance_map_, xw_instance));
   instance_map_.erase(xw_instance);
 }
 

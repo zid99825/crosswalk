@@ -49,8 +49,8 @@ import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.navigation_controller.UserAgentOverrideOption;
 import org.chromium.media.MediaPlayerBridge;
 import org.chromium.ui.base.ActivityWindowAndroid;
+import org.chromium.ui.base.ViewAndroidDelegate;
 import org.chromium.ui.base.WindowAndroid;
-import org.chromium.ui.gfx.DeviceDisplayInfo;
 import org.json.JSONArray;
 
 import java.io.IOException;
@@ -170,8 +170,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         if (mNativeContent == 0)
             return;
         mXWalkGetBitmapCallbackInternal = callback;
-        mWebContents.getContentBitmapAsync(Bitmap.Config.ARGB_8888, 1.0f, new Rect(),
-                mGetBitmapCallback);
+        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
+//        mWebContents.getContentBitmapAsync(Bitmap.Config.ARGB_8888, 1.0f, new Rect(),
+//                mGetBitmapCallback);
     }
 
     public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
@@ -179,8 +180,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         if (mNativeContent == 0)
             return;
         mXWalkGetBitmapCallbackInternal = callback;
-        mWebContents.getContentBitmapAsync(config, scale, srcRect,
-                mGetBitmapCallback);
+        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
+//        mWebContents.getContentBitmapAsync(config, scale, srcRect,
+//                mGetBitmapCallback);
     }
 
     private void setNativeContent(long newNativeContent, String animatable) {
@@ -223,10 +225,12 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mWebContents = nativeGetWebContents(mNativeContent);
 
         // Initialize ContentView.
-        mContentViewCore = new ContentViewCore(mViewContext);
+        mContentViewCore = new ContentViewCore(mViewContext, "Crosswalk");
         mContentView = XWalkContentView.createContentView(mViewContext, mContentViewCore,
                 mXWalkView);
-        mContentViewCore.initialize(mContentView, mContentView, mWebContents, mWindow);
+        // TODO(iotto) create propper delegate
+        mContentViewCore.initialize(ViewAndroidDelegate.createBasicDelegate(mContentView), 
+                 mContentView, mWebContents, mWindow);
         mNavigationController = mWebContents.getNavigationController();
         mXWalkView.addView(mContentView,
                 new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
@@ -253,11 +257,15 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mSettings.setAllowFileAccessFromFileURLs(true);
 
         // Set DIP scale.
-        mDIPScale = DeviceDisplayInfo.create(mViewContext).getDIPScale();
+        WindowAndroid windowAndroid = mContentViewCore.getWindowAndroid();
+
+        mDIPScale = windowAndroid.getDisplay().getDipScale();
+//DeviceDisplayInfo.create(mViewContext).getDIPScale();
+        
         mContentsClientBridge.setDIPScale(mDIPScale);
         mSettings.setDIPScale(mDIPScale);
 
-        String language = Locale.getDefault().toString().replaceAll("_", "-").toLowerCase();
+        String language = Locale.getDefault().toString().replaceAll("_", "-").toLowerCase(Locale.getDefault());
         if (language.isEmpty())
             language = "en";
         mSettings.setAcceptLanguages(language);
@@ -392,8 +400,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             return;
 
         switch (mode) {
+//TODO(iotto) remove duplicate mode
             case XWalkViewInternal.RELOAD_TO_REFRESH:
-                mNavigationController.reloadToRefreshContent(true);
+                mNavigationController.reload(true);
                 break;
             case XWalkViewInternal.RELOAD_IGNORE_CACHE:
                 mNavigationController.reloadBypassingCache(true);
@@ -657,7 +666,8 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             setOverlayVideoMode(true);
             mContentViewCore.setBackgroundOpaque(false);
         }
-        mContentViewCore.setBackgroundColor(color);
+// TODO(iotto) follow into 
+//        mContentViewCore.setBackgroundColor(color);
         mContentViewRenderView.setSurfaceViewBackgroundColor(color);
         nativeSetBackgroundColor(mNativeContent, color);
     }
@@ -801,7 +811,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         // already restored. See WebContentsImpl::UpdateTitleForEntry. So we
         // call the callback explicitly here.
         if (result)
-            mContentsClientBridge.onUpdateTitle(mWebContents.getTitle());
+            mContentsClientBridge.onTitleChanged(mWebContents.getTitle());
 
         return result ? getNavigationHistory() : null;
     }
@@ -855,7 +865,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             return null;
         }
 
-        mContentsClientBridge.onUpdateTitle(mWebContents.getTitle());
+        mContentsClientBridge.onTitleChanged(mWebContents.getTitle());
 
         return getNavigationHistory();
     }
@@ -883,7 +893,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             return null;
         }
 
-        mContentsClientBridge.onUpdateTitle(mWebContents.getTitle());
+        mContentsClientBridge.onTitleChanged(mWebContents.getTitle());
 
         return getNavigationHistory();
     }
@@ -1273,12 +1283,12 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         }
     }
 
-    public void setZOrderOnTop(boolean onTop) {
+/*    public void setZOrderOnTop(boolean onTop) {
         if (mContentViewRenderView == null)
             return;
         mContentViewRenderView.setZOrderOnTop(onTop);
     }
-
+*/
     public boolean zoomIn() {
         if (mNativeContent == 0)
             return false;

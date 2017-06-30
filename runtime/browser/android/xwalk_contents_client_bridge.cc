@@ -11,7 +11,6 @@
 #include "base/android/jni_string.h"
 #include "base/callback.h"
 #include "base/callback_helpers.h"
-#include "base/containers/scoped_ptr_hash_map.h"
 #include "base/guid.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/desktop_notification_delegate.h"
@@ -23,7 +22,8 @@
 #include "content/public/common/file_chooser_params.h"
 #include "content/public/common/notification_resources.h"
 #include "content/public/common/platform_notification_data.h"
-#include "grit/components_strings.h"
+//#include "grit/components_strings.h"
+#include "components/strings/grit/components_strings.h"
 #include "jni/XWalkContentsClientBridge_jni.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
@@ -31,10 +31,11 @@
 #include "ui/gfx/android/java_bitmap.h"
 #include "ui/shell_dialogs/selected_file_info.h"
 #include "url/gurl.h"
-#include "net/android/keystore_openssl.h"
 #include "net/cert/cert_database.h"
 #include "net/cert/x509_certificate.h"
 #include "net/ssl/openssl_client_key_store.h"
+#include "net/ssl/ssl_platform_key_android.h"
+#include "net/ssl/ssl_private_key.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertJavaStringToUTF16;
@@ -43,7 +44,8 @@ using base::android::ConvertUTF16ToJavaString;
 using base::android::JavaRef;
 using base::android::ScopedJavaGlobalRef;
 using base::android::ScopedJavaLocalRef;
-using base::ScopedPtrHashMap;
+using base::android::JavaParamRef;
+//using base::ScopedPtrHashMap;
 using content::BrowserThread;
 using content::FileChooserParams;
 using content::RenderViewHost;
@@ -56,7 +58,7 @@ namespace {
 // and its private key in the OpenSSLClientKeyStore.
 void RecordClientCertificateKey(
     const scoped_refptr<net::X509Certificate>& client_cert,
-    crypto::ScopedEVP_PKEY private_key) {
+    scoped_refptr<net::SSLPrivateKey> private_key) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
   net::OpenSSLClientKeyStore::GetInstance()->RecordClientCertPrivateKey(
       client_cert.get(), private_key.get());
@@ -73,7 +75,7 @@ namespace {
 
 int g_next_notification_id_ = 1;
 
-ScopedPtrHashMap<int, std::unique_ptr<content::DesktopNotificationDelegate>>
+std::map<int, std::unique_ptr<content::DesktopNotificationDelegate>>
     g_notification_map_;
 
 }  // namespace
@@ -106,8 +108,7 @@ void XWalkContentsClientBridge::AllowCertificateError(
     int cert_error,
     net::X509Certificate* cert,
     const GURL& request_url,
-    const base::Callback<void(bool)>& callback, // NOLINT
-    bool* cancel_request) {
+    const base::Callback<void(content::CertificateRequestResultType)>& callback) {
 
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   JNIEnv* env = AttachCurrentThread();
@@ -129,12 +130,13 @@ void XWalkContentsClientBridge::AllowCertificateError(
   // We need to add the callback before making the call to java side,
   // as it may do a synchronous callback prior to returning.
   int request_id = pending_cert_error_callbacks_.Add(
-      new CertErrorCallback(callback));
-  *cancel_request = !Java_XWalkContentsClientBridge_allowCertificateError(
+      base::MakeUnique<CertErrorCallback>(callback));
+  bool cancel_request = !Java_XWalkContentsClientBridge_allowCertificateError(
       env, obj.obj(), cert_error, jcert.obj(), jurl.obj(), request_id);
   // if the request is cancelled, then cancel the stored callback
-  if (*cancel_request) {
+  if (cancel_request) {
     pending_cert_error_callbacks_.Remove(request_id);
+    callback.Run(content::CertificateRequestResultType::CERTIFICATE_REQUEST_RESULT_TYPE_DENY);
   }
 }
 
@@ -146,12 +148,18 @@ void XWalkContentsClientBridge::ProceedSslError(JNIEnv* env, jobject obj,
     LOG(WARNING) << "Ignoring unexpected ssl error proceed callback";
     return;
   }
-  callback->Run(proceed);
+  // TODO(iotto) rewrite java to allow CERTIFICATE_REQUEST_RESULT_TYPE_CANCEL
+  if ( proceed ) {
+    callback->Run(content::CertificateRequestResultType::CERTIFICATE_REQUEST_RESULT_TYPE_CONTINUE);
+  } else {
+    callback->Run(content::CertificateRequestResultType::CERTIFICATE_REQUEST_RESULT_TYPE_DENY);
+  }
+
   pending_cert_error_callbacks_.Remove(id);
 }
 
 void XWalkContentsClientBridge::RunJavaScriptDialog(
-    content::JavaScriptMessageType message_type,
+    content::JavaScriptDialogType dialog_type,
     const GURL& origin_url,
     const base::string16& message_text,
     const base::string16& default_prompt_text,
@@ -164,22 +172,22 @@ void XWalkContentsClientBridge::RunJavaScriptDialog(
     return;
 
   int callback_id = pending_js_dialog_callbacks_.Add(
-      new content::JavaScriptDialogManager::DialogClosedCallback(callback));
+      base::MakeUnique<content::JavaScriptDialogManager::DialogClosedCallback>(callback));
   ScopedJavaLocalRef<jstring> jurl(
       ConvertUTF8ToJavaString(env, origin_url.spec()));
   ScopedJavaLocalRef<jstring> jmessage(
       ConvertUTF16ToJavaString(env, message_text));
 
-  switch (message_type) {
-    case content::JAVASCRIPT_MESSAGE_TYPE_ALERT:
+  switch (dialog_type) {
+    case content::JAVASCRIPT_DIALOG_TYPE_ALERT:
       Java_XWalkContentsClientBridge_handleJsAlert(
           env, obj.obj(), jurl.obj(), jmessage.obj(), callback_id);
       break;
-    case content::JAVASCRIPT_MESSAGE_TYPE_CONFIRM:
+    case content::JAVASCRIPT_DIALOG_TYPE_CONFIRM:
       Java_XWalkContentsClientBridge_handleJsConfirm(
           env, obj.obj(), jurl.obj(), jmessage.obj(), callback_id);
       break;
-    case content::JAVASCRIPT_MESSAGE_TYPE_PROMPT: {
+    case content::JAVASCRIPT_DIALOG_TYPE_PROMPT: {
       ScopedJavaLocalRef<jstring> jdefault_value(
           ConvertUTF16ToJavaString(env, default_prompt_text));
       Java_XWalkContentsClientBridge_handleJsPrompt(env,
@@ -209,7 +217,7 @@ void XWalkContentsClientBridge::RunBeforeUnloadDialog(
       l10n_util::GetStringUTF16(IDS_BEFOREUNLOAD_MESSAGEBOX_MESSAGE);
 
   int callback_id = pending_js_dialog_callbacks_.Add(
-      new content::JavaScriptDialogManager::DialogClosedCallback(callback));
+      base::MakeUnique<content::JavaScriptDialogManager::DialogClosedCallback>(callback));
   ScopedJavaLocalRef<jstring> jurl(
       ConvertUTF8ToJavaString(env, origin_url.spec()));
   ScopedJavaLocalRef<jstring> jmessage(
@@ -273,7 +281,7 @@ void XWalkContentsClientBridge::ShowNotification(
   }
 
   int notification_id = g_next_notification_id_++;
-  g_notification_map_.set(notification_id, std::move(delegate));
+  g_notification_map_[notification_id] = std::move(delegate);
   Java_XWalkContentsClientBridge_showNotification(
       env, obj.obj(), jtitle.obj(), jbody.obj(),
       jreplace_id.obj(), jicon.obj(), notification_id);
@@ -336,8 +344,12 @@ void XWalkContentsClientBridge::CancelJsResult(JNIEnv*, jobject, int id) {
 void XWalkContentsClientBridge::NotificationDisplayed(
     JNIEnv*, jobject, jint notification_id) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  content::DesktopNotificationDelegate* notification_delegate =
-      g_notification_map_.get(notification_id);
+  content::DesktopNotificationDelegate* notification_delegate = nullptr;
+  auto it = g_notification_map_.find(notification_id);
+  if ( it != g_notification_map_.end() ) {
+    notification_delegate = it->second.get();
+  }
+
   if (notification_delegate)
     notification_delegate->NotificationDisplayed();
 }
@@ -345,8 +357,14 @@ void XWalkContentsClientBridge::NotificationDisplayed(
 void XWalkContentsClientBridge::NotificationClicked(
     JNIEnv*, jobject, jint id) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  std::unique_ptr<content::DesktopNotificationDelegate> notification_delegate =
-      g_notification_map_.take_and_erase(id);
+  std::unique_ptr<content::DesktopNotificationDelegate> notification_delegate;
+
+  auto it = g_notification_map_.find(id);
+  if ( it != g_notification_map_.end() ) {
+    notification_delegate = std::move(it->second);
+    g_notification_map_.erase(it);
+  }
+
   if (notification_delegate.get())
     notification_delegate->NotificationClick();
 }
@@ -354,8 +372,14 @@ void XWalkContentsClientBridge::NotificationClicked(
 void XWalkContentsClientBridge::NotificationClosed(
     JNIEnv*, jobject, jint id, bool by_user) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  std::unique_ptr<content::DesktopNotificationDelegate> notification_delegate =
-      g_notification_map_.take_and_erase(id);
+  std::unique_ptr<content::DesktopNotificationDelegate> notification_delegate;
+
+  auto it = g_notification_map_.find(id);
+  if ( it != g_notification_map_.end() ) {
+    notification_delegate = std::move(it->second);
+    g_notification_map_.erase(it);
+  }
+
   if (notification_delegate.get())
     notification_delegate->NotificationClosed();
 }
@@ -438,15 +462,15 @@ void XWalkContentsClientBridge::ProvideClientCertificateResponse(
     JNIEnv* env,
     jobject obj,
     int request_id,
-    jobjectArray encoded_chain_ref,
-    jobject private_key_ref) {
+    const JavaRef<jobjectArray>& encoded_chain_ref,
+    const JavaRef<jobject>& private_key_ref) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
   content::ClientCertificateDelegate* delegate =
       pending_client_cert_request_delegates_.Lookup(request_id);
   DCHECK(delegate);
 
-  if (!encoded_chain_ref || !private_key_ref) {
+  if (encoded_chain_ref.is_null() || private_key_ref.is_null()) {
     LOG(ERROR) << "No client certificate selected";
     pending_client_cert_request_delegates_.Remove(request_id);
     delegate->ContinueWithCertificate(nullptr);
@@ -461,9 +485,9 @@ void XWalkContentsClientBridge::ProvideClientCertificateResponse(
 
   // Convert the encoded chain to a vector of strings.
   std::vector<std::string> encoded_chain_strings;
-  if (encoded_chain_ref) {
+  if (!encoded_chain_ref.is_null()) {
     base::android::JavaArrayOfByteArrayToStringVector(
-       env, encoded_chain_ref, &encoded_chain_strings);
+       env, encoded_chain_ref.obj(), &encoded_chain_strings);
   }
 
   std::vector<base::StringPiece> encoded_chain;
@@ -479,9 +503,9 @@ void XWalkContentsClientBridge::ProvideClientCertificateResponse(
   }
 
   // Create an EVP_PKEY wrapper for the private key JNI reference.
-  crypto::ScopedEVP_PKEY private_key(
-      net::android::GetOpenSSLPrivateKeyWrapper(private_key_ref));
-  if (!private_key.get()) {
+  scoped_refptr<net::SSLPrivateKey> private_key = 
+      net::WrapJavaPrivateKey(client_cert.get(), private_key_ref);
+  if (!private_key) {
     LOG(ERROR) << "Could not create OpenSSL wrapper for private key";
     return;
   }

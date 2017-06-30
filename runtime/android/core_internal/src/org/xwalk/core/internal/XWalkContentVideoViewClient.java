@@ -24,9 +24,14 @@ class XWalkContentVideoViewClient implements ContentVideoViewEmbedder {
     }
 
     @Override
-    public void enterFullscreenVideo(View view) {
+    public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
         mView.setOverlayVideoMode(true);
         mContentsClient.onShowCustomView(view, new CustomViewCallbackHandlerInternal());
+        //TODO(iotto) add progress bar if video not loaded
+    }
+
+    @Override
+    public void fullscreenVideoLoaded() {
     }
 
     @Override
@@ -35,10 +40,6 @@ class XWalkContentVideoViewClient implements ContentVideoViewEmbedder {
         mContentsClient.onHideCustomView();
     }
 
-    @Override
-    public View getVideoLoadingProgressView() {
-        return null;
-    }
     @Override
     public void setSystemUiVisibility(boolean enterFullscreen) {
     }

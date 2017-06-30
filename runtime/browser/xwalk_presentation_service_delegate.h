@@ -9,7 +9,6 @@
 #include <string>
 #include <utility>
 
-#include "base/containers/scoped_ptr_hash_map.h"
 #include "base/memory/weak_ptr.h"
 #include "content/public/browser/presentation_service_delegate.h"
 #include "content/public/browser/web_contents_user_data.h"
@@ -25,7 +24,7 @@ class PresentationSession;
 class XWalkBrowserContext;
 
 class XWalkPresentationServiceDelegate
-    : public content::PresentationServiceDelegate {
+    : public content::ControllerPresentationServiceDelegate {
  public:
   using RenderFrameHostId = std::pair<int, int>;
 
@@ -53,16 +52,16 @@ class XWalkPresentationServiceDelegate
 
   void Reset(int render_process_id, int render_frame_id) override;
 
-  void SetDefaultPresentationUrl(
+  void SetDefaultPresentationUrls(
       int render_process_id,
       int render_frame_id,
-      const std::string& default_presentation_url,
+      const std::vector<GURL>& default_presentation_urls,
       const content::PresentationSessionStartedCallback& callback) override;
 
   void JoinSession(
       int render_process_id,
       int render_frame_id,
-      const std::string& presentation_url,
+      const std::vector<GURL>& presentation_urls,
       const std::string& presentation_id,
       const content::PresentationSessionStartedCallback& success_cb,
       const content::PresentationSessionErrorCallback& error_cb) override;
@@ -75,17 +74,17 @@ class XWalkPresentationServiceDelegate
                  int render_frame_id,
                  const std::string& presentation_id) override;
 
-  void ListenForSessionMessages(
+  void ListenForConnectionMessages(
       int render_process_id,
       int render_frame_id,
       const content::PresentationSessionInfo& session,
-      const content::PresentationSessionMessageCallback& message_cb) override {}
+      const content::PresentationConnectionMessageCallback& message_cb) override {}
 
   void SendMessage(
       int render_process_id,
       int render_frame_id,
       const content::PresentationSessionInfo& session,
-      std::unique_ptr<content::PresentationSessionMessage> message_request,
+      std::unique_ptr<content::PresentationConnectionMessage> message_request,
       const SendMessageCallback& send_message_cb) override {}
 
   void ListenForConnectionStateChange(
@@ -101,13 +100,26 @@ class XWalkPresentationServiceDelegate
       const content::PresentationSessionErrorCallback& error_cb,
       scoped_refptr<PresentationSession> session,
       const std::string& error);
+  // Connect |controller_connection| owned by the controlling frame to the
+  // offscreen presentation represented by |session|.
+  // |render_process_id|, |render_frame_id|: ID of originating frame.
+  // |controller_connection|: Pointer to controller's presentation connection,
+  // ownership passed from controlling frame to the offscreen presentation.
+  // |receiver_connection_request|: Mojo InterfaceRequest to be bind to receiver
+  // page's presentation connection.
+  virtual void ConnectToPresentation(
+      int render_process_id,
+      int render_frame_id,
+      const content::PresentationSessionInfo& session,
+      content::PresentationConnectionPtr controller_connection_ptr,
+      content::PresentationConnectionRequest receiver_connection_request) override {}
 
  protected:
   PresentationFrame* GetOrAddPresentationFrame(
       const RenderFrameHostId& render_frame_host_id);
 
   content::WebContents* web_contents_;
-  base::ScopedPtrHashMap<RenderFrameHostId, std::unique_ptr<PresentationFrame>>
+  std::map<RenderFrameHostId, std::unique_ptr<PresentationFrame>>
       presentation_frames_;
 };
 

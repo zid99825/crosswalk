@@ -56,7 +56,7 @@ def main():
     print '--jni-abi and --native-libraries must be specified together.'
     return 1
 
-  options.native_libraries = build_utils.ParseGypList(options.native_libraries)
+  options.native_libraries = build_utils.ParseGnList(options.native_libraries)
 
   with zipfile.ZipFile(options.aar_path, 'w', zipfile.ZIP_DEFLATED) as aar:
     for native_library in options.native_libraries:
@@ -70,7 +70,7 @@ def main():
 
   # Write a depfile so that any native libraries also trigger a re-run of this
   # script.
-  build_utils.WriteDepfile(options.depfile, options.native_libraries)
+  build_utils.WriteDepfile(options.depfile, options.aar_path, options.native_libraries)
   return 0
 
 

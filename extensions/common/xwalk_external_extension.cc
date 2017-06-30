@@ -153,7 +153,7 @@ void XWalkExternalExtension::EntryPointsSetExtraJSEntryPoints(
 
 void XWalkExternalExtension::RuntimeGetStringVariable(const char* key,
     char* value, size_t value_len) {
-  const base::DictionaryValue::Storage::const_iterator it = runtime_variables_.find(key);
+  const base::DictionaryValue::DictStorage::const_iterator it = runtime_variables_.find(key);
   if (it != runtime_variables_.end()) {
     std::string json;
     base::JSONWriter::Write(*(it->second), &json);

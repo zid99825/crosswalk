@@ -24,14 +24,14 @@
 #include "components/navigation_interception/intercept_navigation_delegate.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_thread.h"
-#include "content/public/browser/cert_store.h"
 #include "content/public/browser/devtools_agent_host.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
+#include "content/public/browser/ssl_status.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/renderer_preferences.h"
-#include "content/public/common/ssl_status.h"
+//#include "content/public/common/ssl_status.h"
 #include "content/public/common/url_constants.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "xwalk/application/common/application_manifest_constants.h"
@@ -264,7 +264,7 @@ void XWalkContent::SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
                                              web_contents_.get(),
                                              ScopedJavaLocalRef<jobject>(env, io_thread_client));
   int render_process_id = web_contents_->GetRenderProcessHost()->GetID();
-  int render_frame_id = web_contents_->GetRoutingID();
+  int render_frame_id = web_contents_->GetRenderViewHost()->GetRoutingID();
   RuntimeResourceDispatcherHostDelegateAndroid::OnIoThreadClientReady(
                                                                       render_process_id,
                                                                       render_frame_id);
@@ -294,7 +294,7 @@ void XWalkContent::SetPendingWebContentsForPopup(
     // TODO(benm): Support holding multiple pop up window requests.
     LOG(WARNING) << "Blocking popup window creation as an outstanding "
                     << "popup window is still pending.";
-    base::MessageLoop::current()->DeleteSoon(FROM_HERE, pending.release());
+    base::MessageLoop::current()->task_runner()->DeleteSoon(FROM_HERE, pending.release());
     return;
   }
   pending_contents_.reset(new XWalkContent(std::move(pending)));
@@ -393,7 +393,7 @@ jboolean XWalkContent::SetManifest(JNIEnv* env, jobject obj, jstring path,
 
   std::unique_ptr<base::Value> manifest_value = base::JSONReader::Read(
                                                                        json_input);
-  if (!manifest_value || !manifest_value->IsType(base::Value::TYPE_DICTIONARY))
+  if (!manifest_value || !manifest_value->IsType(base::Value::Type::DICTIONARY))
     return false;
 
   xwalk::application::Manifest manifest(
@@ -530,7 +530,7 @@ jboolean XWalkContent::SetManifest(JNIEnv* env, jobject obj, jstring path,
 
 jint XWalkContent::GetRoutingID(JNIEnv* env, jobject obj) {
   DCHECK(web_contents_.get());
-  return web_contents_->GetRoutingID();
+  return web_contents_->GetRenderViewHost()->GetRoutingID();
 }
 
 base::android::ScopedJavaLocalRef<jbyteArray> XWalkContent::GetState(
@@ -1304,18 +1304,14 @@ base::android::ScopedJavaLocalRef<jbyteArray> XWalkContent::GetCertificate(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   content::NavigationEntry* entry = web_contents_->GetController()
       .GetLastCommittedEntry();
-  if (!entry)
+  if (!entry || !entry->GetSSL().certificate) {
     return ScopedJavaLocalRef<jbyteArray>();
-  // Get the certificate
-  int cert_id = entry->GetSSL().cert_id;
-  scoped_refptr<net::X509Certificate> cert;
-  bool ok = content::CertStore::GetInstance()->RetrieveCert(cert_id, &cert);
-  if (!ok)
-    return ScopedJavaLocalRef<jbyteArray>();
+  }
 
   // Convert the certificate and return it
   std::string der_string;
-  net::X509Certificate::GetDEREncoded(cert->os_cert_handle(), &der_string);
+  net::X509Certificate::GetDEREncoded(
+      entry->GetSSL().certificate->os_cert_handle(), &der_string);
   return base::android::ToJavaByteArray(
                                         env,
                                         reinterpret_cast<const uint8_t*>(der_string.data()),
@@ -1332,14 +1328,13 @@ base::android::ScopedJavaLocalRef<jobjectArray> XWalkContent::GetCertificateChai
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   content::NavigationEntry* entry = web_contents_->GetController()
       .GetLastCommittedEntry();
-  if (!entry)
+  if (!entry || !entry->GetSSL().certificate) {
     return ScopedJavaLocalRef<jobjectArray>();
+  }
+
   // Get the certificate
-  int cert_id = entry->GetSSL().cert_id;
-  scoped_refptr<net::X509Certificate> cert;
-  bool ok = content::CertStore::GetInstance()->RetrieveCert(cert_id, &cert);
-  if (!ok)
-    return ScopedJavaLocalRef<jobjectArray>();
+
+  scoped_refptr<net::X509Certificate> cert = entry->GetSSL().certificate;
 
   std::vector < std::string > cert_chain;
   // Convert the certificate and return it

@@ -24,9 +24,10 @@
     </structures>
     <messages fallback_to_english="true">
       <!-- Generic terms -->
-      <message name="IDS_SAVE" desc="Used on a button to save information you are editing.">
+      <!--<message name="IDS_SAVE" desc="Used on a button to save information you are editing.">
         Save
       </message>
+      -->
       <message name="IDS_IMAGE_FILES" desc="The description of the image file extensions in the select file dialog.">
         Image Files
       </message>

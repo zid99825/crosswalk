@@ -31,6 +31,8 @@
 #include "xwalk/runtime/common/xwalk_localized_error.h"
 #include "xwalk/runtime/renderer/isolated_file_system.h"
 #include "xwalk/runtime/renderer/pepper/pepper_helper.h"
+//#include "services/shell/public/cpp/interface_registry.h"
+#include "services/service_manager/public/cpp/interface_registry.h"
 
 #if defined(OS_ANDROID)
 #include "components/cdm/renderer/android_key_systems.h"
@@ -69,7 +71,7 @@ class XWalkFrameHelper
 
   // RenderFrameObserver implementation.
   void DidCreateScriptContext(v8::Handle<v8::Context> context,
-                              int extension_group, int world_id) override {
+                              int world_id) override {
     if (extension_controller_)
       extension_controller_->DidCreateScriptContext(
           render_frame()->GetWebFrame(), context);
@@ -111,29 +113,32 @@ void XWalkContentRendererClient::RenderThreadStarted() {
   xwalk_render_thread_observer_.reset(new XWalkRenderThreadObserver);
   thread->AddObserver(xwalk_render_thread_observer_.get());
   visited_link_slave_.reset(new visitedlink::VisitedLinkSlave);
-  thread->AddObserver(visited_link_slave_.get());
+  thread->GetInterfaceRegistry()->AddInterface(
+    visited_link_slave_->GetBindCallback());
 
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
   if (!cmd_line->HasSwitch(switches::kXWalkDisableExtensions))
     extension_controller_.reset(
         new extensions::XWalkExtensionRendererController(this));
-
+/*
+  // TODO moved to runtime/common/xwalk_content_client.cc
   blink::WebString application_scheme(
-      base::ASCIIToUTF16(application::kApplicationScheme));
+      blink::WebString::fromASCII(application::kApplicationScheme));
   blink::WebSecurityPolicy::registerURLSchemeAsSecure(application_scheme);
   blink::WebSecurityPolicy::registerURLSchemeAsCORSEnabled(application_scheme);
 #if defined(OS_ANDROID)
   blink::WebString content_scheme(
-      base::ASCIIToUTF16(xwalk::kContentScheme));
+      blink::WebString::fromASCII(xwalk::kContentScheme));
   blink::WebSecurityPolicy::registerURLSchemeAsLocal(content_scheme);
 #endif
+*/
 }
 
 #if defined(OS_ANDROID)
 bool XWalkContentRendererClient::HandleNavigation(
     content::RenderFrame* render_frame,
     bool is_content_initiated,
-    int opener_id,
+    bool render_view_was_created_by_renderer,
     blink::WebFrame* frame,
     const blink::WebURLRequest& request,
     blink::WebNavigationType type,
@@ -168,13 +173,15 @@ bool XWalkContentRendererClient::HandleNavigation(
        gurl.SchemeIs(url::kAboutScheme)))
     return false;
 
+  // TODO(iotto) analyse how to replace opener_id with render_view_was_created_by_renderer
+
   // use NavigationInterception throttle to handle the call as that can
   // be deferred until after the java side has been constructed.
-  if (opener_id != MSG_ROUTING_NONE)
-    return false;
+//  if (opener_id != MSG_ROUTING_NONE)
+//    return false;
 
   bool ignore_navigation = false;
-  base::string16 url = request.url().string();
+  base::string16 url = request.url().string().utf16();
   bool has_user_gesture = request.hasUserGesture();
 
   int render_frame_id = render_frame->GetRoutingID();
@@ -261,15 +268,16 @@ bool XWalkContentRendererClient::IsLinkVisited(unsigned long long link_hash) {
   return visited_link_slave_->IsVisited(link_hash);
 }
 
-bool XWalkContentRendererClient::WillSendRequest(blink::WebFrame* frame,
-                     ui::PageTransition transition_type,
-                     const GURL& url,
-                     const GURL& first_party_for_cookies,
-                     GURL* new_url) {
+bool XWalkContentRendererClient::WillSendRequest(
+                       blink::WebLocalFrame* frame,
+                       ui::PageTransition transition_type,
+                       const blink::WebURL& url,
+                       GURL* new_url) {
 #if defined(OS_ANDROID)
   return false;
 #else
-  if (!xwalk_render_thread_observer_->IsWarpMode() &&
+  // TODO(iotto) for other than android implement
+/*  if (!xwalk_render_thread_observer_->IsWarpMode() &&
       !xwalk_render_thread_observer_->IsCSPMode())
     return false;
 
@@ -297,6 +305,7 @@ bool XWalkContentRendererClient::WillSendRequest(blink::WebFrame* frame,
   LOG(INFO) << "[BLOCK] " << origin_url.spec() << " request " << url.spec();
   *new_url = GURL();
   return true;
+*/
 #endif
 }
 
@@ -312,7 +321,7 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
     if (error.localizedDescription.isEmpty())
       *error_description = base::ASCIIToUTF16(net::ErrorToString(error.reason));
     else
-      *error_description = error.localizedDescription;
+      *error_description = error.localizedDescription.utf16();
   }
 }
 

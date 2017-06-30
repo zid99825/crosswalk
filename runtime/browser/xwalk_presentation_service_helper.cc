@@ -105,7 +105,9 @@ void DisplayInfoManager::UpdateInfoList() {
 }
 
 void DisplayInfoManager::NotifyInfoChanged() {
-  FOR_EACH_OBSERVER(Observer, observers_, OnDisplayInfoChanged(info_list_));
+  for ( auto& observer : observers_ ) {
+    observer.OnDisplayInfoChanged(info_list_);
+  }
 }
 
 PresentationSession::PresentationSession(const std::string& presentation_url,
@@ -113,7 +115,7 @@ PresentationSession::PresentationSession(const std::string& presentation_url,
                                          const SystemString& display_id)
     : render_process_id_(-1),
       render_frame_id_(-1),
-      session_info_(presentation_url, presentation_id),
+      session_info_(GURL(presentation_url), presentation_id),
       display_id_(display_id),
       weak_factory_(this) {}
 
@@ -126,8 +128,9 @@ PresentationSession::CreateParams::CreateParams()
       render_frame_id(-1) {}
 
 void PresentationSession::NotifyClose() {
-  FOR_EACH_OBSERVER(Observer, observers_,
-                    OnPresentationSessionClosed(session_info_));
+  for ( auto& observer : observers_ ) {
+    observer.OnPresentationSessionClosed(session_info_);
+  }
 }
 
 std::unique_ptr<PresentationFrame> PresentationFrame::Create(
