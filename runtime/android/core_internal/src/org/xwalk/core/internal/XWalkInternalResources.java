@@ -39,7 +39,7 @@ class XWalkInternalResources {
                     try {
                         generatedInnerClazz = appClassLoader.loadClass(generatedInnerClassName);
                     } catch (ClassNotFoundException e) {
-                        Log.w(TAG, generatedInnerClassName + " is not found.");
+                        Log.w(TAG, generatedInnerClassName + " (generatedInnerClassName) is not found.");
                         continue;
                     }
                     Field[] fields = innerClazz.getFields();
@@ -51,19 +51,19 @@ class XWalkInternalResources {
                             field.setInt(null, value);
                         } catch (IllegalAccessException e) {
                             Log.w(TAG, generatedInnerClazz.getName() + "." +
-                                    field.getName() + " is not accessable.");
+                                    field.getName() + " (IllegalAccessException) is not accessable.");
                         } catch (IllegalArgumentException e) {
                             Log.w(TAG, generatedInnerClazz.getName() + "." +
-                                    field.getName() + " is not int.");
+                                    field.getName() + " (IllegalArgumentException) is not int.");
                         } catch (NoSuchFieldException e) {
                             Log.w(TAG, generatedInnerClazz.getName() + "." +
-                                    field.getName() + " is not found.");
+                                    field.getName() + " (NoSuchFieldException) is not found.");
                         }
                         if (Modifier.isFinal(field.getModifiers())) field.setAccessible(false);
                     }
                 }
             } catch (ClassNotFoundException e) {
-                Log.w(TAG, resourceClass + " is not found.");
+                Log.w(TAG, resourceClass + " (resourceClass) is not found.");
             }
         }
     }

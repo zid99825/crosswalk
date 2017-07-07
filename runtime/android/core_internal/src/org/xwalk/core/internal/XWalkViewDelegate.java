@@ -35,8 +35,11 @@ import org.chromium.base.CommandLine;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.PathUtils;
 import org.chromium.base.ResourceExtractor;
+import org.chromium.base.LocaleUtils;
+import org.chromium.base.BuildConfig;
 //import org.chromium.base.ResourceExtractor.ResourceEntry;
 import org.chromium.base.ResourceExtractor.ResourceInterceptor;
+import org.chromium.base.ContextUtils;
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.library_loader.LibraryLoader;
 import org.chromium.base.library_loader.LibraryProcessType;
@@ -118,6 +121,7 @@ class XWalkViewDelegate {
         Context context = libContext == null ? appContext
                 : new MixedContext(libContext, appContext);
 
+        ContextUtils.initApplicationContext(context);
         PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
 
         // Initialize chromium resources. Assign them the correct ids in xwalk core.
@@ -150,6 +154,7 @@ class XWalkViewDelegate {
         }
 
         XWalkPresentationHost.createInstanceOnce(context);
+//        ContextUtils.initApplicationContextForNative();
 
         sInitialized = true;
     }
@@ -164,6 +169,13 @@ class XWalkViewDelegate {
             throws UnsatisfiedLinkError {
         if (sLibraryLoaded)
             return true;
+
+        try {
+            Log.d(TAG, "!!!!!!!!!!!!!!!!!! LibraryLoader.get");
+            LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
+//            libraryLoader.ensureInitialized();
+        } catch (ProcessInitException e) {
+        }
 
 //TODO(iotto) workarround for lint error using System.load
 
@@ -183,6 +195,7 @@ class XWalkViewDelegate {
         try {
             LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
             libraryLoader.loadNow();
+//            libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {
         }
 
@@ -223,13 +236,13 @@ class XWalkViewDelegate {
                     CommandLine.getInstance().appendSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION);
                 }
 
-/*                try {
+                try {
                     BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
                             .startBrowserProcessesSync(true);
                 } catch (ProcessInitException e) {
                     throw new RuntimeException("Cannot initialize Crosswalk Core", e);
                 }
-*/
+
             }
         });
     }
@@ -259,6 +272,21 @@ class XWalkViewDelegate {
 
         ArrayList<String> resourceList = new ArrayList<String>();
 //        HashMap<String, ResourceEntry> resourceList = new HashMap<String, ResourceEntry>();
+        // code fragment from ResourceExtractor
+        Locale defaultLocale = Locale.getDefault();
+        String language = LocaleUtils.getUpdatedLanguageForChromium(defaultLocale.getLanguage());
+        // Currenty (Oct 2016), this array can be as big as 4 entries, so using a capacity
+        // that allows a bit of growth, but is still in the right ballpark..
+        ArrayList<String> activeLocalePakFiles = new ArrayList<String>(6);
+        for (String locale : BuildConfig.COMPRESSED_LOCALES) {
+            if (locale.startsWith(language)) {
+                resourceList.add(locale + ".pak");
+            }
+        }
+        if (resourceList.isEmpty() && BuildConfig.COMPRESSED_LOCALES.length > 0) {
+            assert Arrays.asList(BuildConfig.COMPRESSED_LOCALES).contains(ResourceExtractor.FALLBACK_LOCALE);
+            resourceList.add(ResourceExtractor.FALLBACK_LOCALE + ".pak");
+        }
 
         try {
             int resourceListId = getResourceId(context, XWALK_RESOURCES_LIST_RES_NAME, "array");

@@ -103,6 +103,7 @@ def CopyResources(output_dir, resources, resource_strings):
   # include the .grd string zips), making sure we replace crunched 9-patch
   # images with the original ones and avoiding file name colisions.
   for index, resource in enumerate(resources):
+    #print('copy resource ::: %s' % (resource.filename));
     with build_utils.TempDir() as temp_dir:
       temp_res_dir = os.path.join(temp_dir, 'res')
       build_utils.ExtractAll(resource.filename, path=temp_res_dir,
@@ -113,8 +114,8 @@ def CopyResources(output_dir, resources, resource_strings):
         res_dir_subpath = os.path.join(res_dir, os.path.basename(dirpath))
         build_utils.MakeDirectory(res_dir_subpath)
         for filename in filenames:
+     #     print('   file ' + filename);
           if filename.endswith('.9.png'):
-            print('9-pathched ' + filename)
             # 9-patch files need to be handled specially. We need the original,
             # uncrunched versions to avoid crunching them twice and failing
             # (once when building the resources, and then when the user is
@@ -150,18 +151,15 @@ def MakeResourceTuple(resource_zip, resource_src):
   if resource_src is not None:
     return Resource(filename=resource_zip, src=resource_src)
 
-  print('Handle gn type')
   # With GN, |resource_src| is None and we derive the source path from
   # |resource_zip|.
   if not resource_zip.startswith('gen/'):
     raise ValueError('%s is expected to be in gen/.' % resource_zip)
   src_subpath = os.path.dirname(resource_zip)
-  print('subpath=' + src_subpath)
   for res_subpath in ('android/java/res', 'java/res', 'res'):
     path = os.path.join(SRC_ROOT,
                         src_subpath[4:],  # Drop the gen/ part.
                         res_subpath)
-    print('resulted path=' + path)
     if os.path.isdir(path):
       return Resource(filename=resource_zip, src=path)
   raise ValueError('Cannot find the sources for %s' % resource_zip)
@@ -214,7 +212,10 @@ def main(argv):
   for resource_zip, resource_src in zip(options.resource_zips,
                                         options.resource_zip_sources):
     if resource_zip.find('appcompat') != -1:
-      print('Skipp ' + resource_zip)
+      appcompat_path =  os.path.join(SRC_ROOT, 'third_party/android_tools/sdk/extras/android/support/v7/appcompat/res')
+
+      resources.append(MakeResourceTuple(resource_zip, appcompat_path)
+#      print('TODO Skipp ' + resource_zip)
       continue
     if resource_zip.endswith('_grd.resources.zip'): 
       # In GN, we just use --resource-zips, and the string files are
@@ -223,7 +224,6 @@ def main(argv):
       # processing, and do so by filtering the files by their names.
       options.resource_strings.append(resource_zip)
     else:
-      print('MakeResourceTuple  !!!!!' + resource_zip)
       resources.append(MakeResourceTuple(resource_zip, resource_src))
 
   options.binary_files = build_utils.ParseGnList(options.binary_files)

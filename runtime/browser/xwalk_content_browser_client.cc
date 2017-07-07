@@ -136,6 +136,7 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
 
 content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
     const content::MainFunctionParams& parameters) {
+  LOG(INFO) << "XWalkContentBrowserClient::CreateBrowserMainParts";
 #if defined(OS_MACOSX)
   main_parts_ = new XWalkBrowserMainPartsMac(parameters);
 #elif defined(OS_ANDROID)
@@ -144,10 +145,12 @@ content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
   main_parts_ = new XWalkBrowserMainParts(parameters);
 #endif
 
-  device::GeolocationProvider::SetGeolocationDelegate(
+  LOG(INFO) << "XWalkContentBrowserClient::CreateBrowserMainParts instance=" << reinterpret_cast<intptr_t>(main_parts_);
+  // TODO(iotto) see how and when this needs to be initialized
+/*  device::GeolocationProvider::SetGeolocationDelegate(
       new XWalkGeolocationDelegate(
       xwalk_runner_->browser_context()->url_request_getter()));
-
+*/
   return main_parts_;
 }
 
