@@ -6,6 +6,8 @@ import("//build/config/android/rules.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/build/xwalk.gni")
 import("//xwalk/runtime/android/core_internal/chromium_java_deps.gni")
+import("//android_webview/glue/generate_resource_rewriter.gni")
+
 
 reflection_gen_dir = "$root_gen_dir/xwalk_core_reflection_layer/"
 
@@ -47,6 +49,18 @@ reflection_java_files = [
   "src/org/xwalk/core/internal/ReflectMethod.java",
 ]
 
+generate_resource_rewriter("xwalk_resource_rewriter") {
+  # Change deps? please modify glue_library_deps variable.
+  deps = core_internal_java_chromium_deps
+  package_name = "org.xwalk.core.internal"
+}
+
+android_library("resource_glue_java") {
+  deps = core_internal_java_chromium_deps
+  srcjar_deps = [ ":xwalk_resource_rewriter" ]
+  java_files = []
+}
+
 android_library("xwalk_core_internal_java") {
   # ATTENTION: do NOT add dependencies on non-//xwalk targets below; they must
   # be added to |core_internal_java_chromium_deps| instead. This variable is
@@ -54,12 +68,14 @@ android_library("xwalk_core_internal_java") {
   deps = [
     ":xwalk_core_internal_java_resources",
     ":xwalk_core_reflection_layer_gen",
+    ":resource_glue_java",
     "//xwalk/extensions/android:xwalk_core_extensions_java",
-    "//components/autofill/android:autofill_java",
-    "//android_webview:android_webview_java",
   ]
   deps += core_internal_java_chromium_deps
-  srcjars = [ "$reflection_gen_dir/bridge/bridge.srcjar" ]
+#  srcjar_deps = [ ":xwalk_resource_rewriter" ]
+  srcjars = [ 
+    "$reflection_gen_dir/bridge/bridge.srcjar",
+  ]
   java_files = [
     "src/org/xwalk/core/internal/AndroidProtocolHandler.java",
     "src/org/xwalk/core/internal/ClientCertLookupTable.java",
@@ -75,6 +91,7 @@ android_library("xwalk_core_internal_java") {
     "src/org/xwalk/core/internal/XWalkAPI.java",
     "src/org/xwalk/core/internal/XWalkAutofillClientAndroid.java",
     "src/org/xwalk/core/internal/XWalkClient.java",
+    "src/org/xwalk/core/internal/XWalkCleanupReference.java",
     "src/org/xwalk/core/internal/XWalkContent.java",
     "src/org/xwalk/core/internal/XWalkContentLifecycleNotifier.java",
     "src/org/xwalk/core/internal/XWalkContentVideoViewClient.java",

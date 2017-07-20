@@ -38,7 +38,6 @@ import org.chromium.content.browser.ContentViewCore;
 import org.chromium.content.browser.ContentViewRenderView;
 import org.chromium.content.browser.ContentViewRenderView.CompositingSurfaceType;
 import org.chromium.content.browser.ContentViewStatics;
-import org.chromium.android_webview.CleanupReference;
 import org.chromium.content_public.browser.ContentBitmapCallback;
 import org.chromium.content_public.browser.JavaScriptCallback;
 import org.chromium.content_public.browser.LoadUrlParams;
@@ -129,7 +128,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
 
     // Reference to the active mNativeContent pointer while it is active use
     // (ie before it is destroyed).
-    private CleanupReference mCleanupReference;
+    private XWalkCleanupReference mXWalkCleanupReference;
 
     public XWalkContent(Context context, String animatable, XWalkViewInternal xwView) {
         // Initialize the WebContensDelegate.
@@ -159,6 +158,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mGetBitmapCallback = new ContentBitmapCallback() {
             @Override
             public void onFinishGetBitmap(Bitmap bitmap, int response) {
+                Log.d("iotto", "onFinishGetBitmap " + response);
                 if (mXWalkGetBitmapCallbackInternal == null)
                     return;
                 mXWalkGetBitmapCallbackInternal.onFinishGetBitmap(bitmap, response);
@@ -169,6 +169,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     public void captureBitmapAsync(XWalkGetBitmapCallbackInternal callback) {
         if (mNativeContent == 0)
             return;
+        Log.d("iotto", "captureBitmapAsync");
         mXWalkGetBitmapCallbackInternal = callback;
         mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
 //        mWebContents.getContentBitmapAsync(Bitmap.Config.ARGB_8888, 1.0f, new Rect(),
@@ -191,7 +192,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             mContentViewCore = null;
         }
 
-        assert mNativeContent == 0 && mCleanupReference == null && mContentViewCore == null;
+        assert mNativeContent == 0 && mXWalkCleanupReference == null && mContentViewCore == null;
 
         // Initialize ContentViewRenderView
         if (animatable == null)
@@ -199,10 +200,11 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
                     .getValue(XWalkPreferencesInternal.ANIMATABLE_XWALK_VIEW);
         else
             mAnimated = animatable.equalsIgnoreCase("true");
+        mAnimated = false;
         CompositingSurfaceType surfaceType = mAnimated ? CompositingSurfaceType.TEXTURE_VIEW
                 : CompositingSurfaceType.SURFACE_VIEW;
         Log.d(TAG, "CompositingSurfaceType is " + (mAnimated ? "TextureView" : "SurfaceView"));
-        mContentViewRenderView = new ContentViewRenderView(mViewContext, surfaceType) {
+        mContentViewRenderView = new ContentViewRenderView(mViewContext, CompositingSurfaceType.SURFACE_VIEW/*surfaceType*/) {
             protected void onReadyToRender() {
                 // Anything depending on the underlying Surface readiness should
                 // be placed here.
@@ -220,7 +222,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         // The native side object has been bound to this java instance, so now
         // is the time to
         // bind all the native->java relationships.
-        mCleanupReference = new CleanupReference(this, new DestroyRunnable(mNativeContent));
+        mXWalkCleanupReference = new XWalkCleanupReference(this, new DestroyRunnable(mNativeContent));
 
         mWebContents = nativeGetWebContents(mNativeContent);
 
@@ -1031,11 +1033,11 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         }
 
         // Destroy the native resources.
-        mCleanupReference.cleanupNow();
+        mXWalkCleanupReference.cleanupNow();
         mContentViewRenderView.destroy();
         mContentViewCore.destroy();
 
-        mCleanupReference = null;
+        mXWalkCleanupReference = null;
         mNativeContent = 0;
     }
 

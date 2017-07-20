@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.lang.StringBuilder;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -25,9 +26,11 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
 import android.os.Build;
 import android.util.Log;
+import android.util.SparseArray;
 
 import org.chromium.base.ApplicationStatusManager;
 import org.chromium.base.BaseChromiumApplication;
@@ -46,6 +49,7 @@ import org.chromium.base.library_loader.LibraryProcessType;
 import org.chromium.base.library_loader.ProcessInitException;
 import org.chromium.content.browser.BrowserStartupController;
 import org.chromium.content.browser.DeviceUtils;
+//import org.xwalk.core.internal.ResourceRewriter;
 
 @JNINamespace("xwalk")
 class XWalkViewDelegate {
@@ -57,6 +61,16 @@ class XWalkViewDelegate {
     private static final String XWALK_CORE_EXTRACTED_DIR = "extracted_xwalkcore";
     private static final String META_XWALK_ENABLE_DOWNLOAD_MODE = "xwalk_enable_download_mode";
     private static final String META_XWALK_DOWNLOAD_MODE = "xwalk_download_mode";
+    private static final Method mGetAssignedPackageIdentifiersMethod;
+
+    static {
+        try {
+            mGetAssignedPackageIdentifiersMethod =
+                        AssetManager.class.getMethod("getAssignedPackageIdentifiers");
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid reflection", e);
+        }
+    }
 
     // TODO(rakuco,lincsoon): This list is also in generate_xwalk_core_library.py.
     // We should remove it from one of the places to avoid duplication.
@@ -64,6 +78,7 @@ class XWalkViewDelegate {
             "xwalk.pak",
             "icudtl.dat",
             "xwalk_100_percent.pak",
+            "xwalk_200_percent.pak"
             // Please refer to XWALK-3516, disable v8 use external startup data,
             // reopen it if needed later.
             // "natives_blob.bin",
@@ -109,7 +124,27 @@ class XWalkViewDelegate {
             }
         }
     }
+private static void displayFiles (AssetManager mgr, String path, int level) {
 
+     Log.v(TAG,"enter displayFiles("+path+")");
+    try {
+        String list[] = mgr.list(path);
+         Log.v(TAG,"L"+level+": list:"+ Arrays.asList(list));
+
+        if (list != null)
+            for (int i=0; i<list.length; ++i)
+                {
+                    if(level>=1){
+                      displayFiles(mgr, path + "/" + list[i], level+1);
+                    }else{
+                         displayFiles(mgr, list[i], level+1);
+                    }
+                }
+    } catch (IOException e) {
+        Log.v(TAG,"List error: can't list" + path);
+    }
+
+}
     public static void init(Context libContext, Context appContext) {
         if (!loadXWalkLibrary(libContext, null)) {
             throw new RuntimeException("Failed to load native library");
@@ -117,6 +152,11 @@ class XWalkViewDelegate {
 
         if (sInitialized)
             return;
+
+        if ( libContext != null ) {
+            Log.d("iotto", "lib context: " + libContext.getPackageName());
+        }
+        Log.d("iotto", "app context: " + appContext.getPackageName() + " cls: " + appContext.toString());
 
         Context context = libContext == null ? appContext
                 : new MixedContext(libContext, appContext);
@@ -126,6 +166,9 @@ class XWalkViewDelegate {
 
         // Initialize chromium resources. Assign them the correct ids in xwalk core.
         XWalkInternalResources.resetIds(context);
+//        ResourceRewriter.rewriteRValues(
+//            getPackageId(context.getResources(), ContextUtils.getApplicationContext().getPackageName()));
+        
 
         // Last place to initialize CommandLine object. If you haven't initialize
         // the CommandLine object before XWalkViewContent is created, here will create
@@ -143,7 +186,16 @@ class XWalkViewDelegate {
 
         // Use MixedContext to initialize the ResourceExtractor, as the pak file
         // is in the library apk if in shared apk mode.
-        ResourceExtractor.get();
+//        ResourceExtractor.get();
+//        ResourceExtractor resourceExtractor = ResourceExtractor.get();
+//        resourceExtractor.startExtractingResources();
+
+//        resourceExtractor.waitForCompletion();
+
+//        final AssetManager mgr = context.getApplicationContext().getAssets();
+//        displayFiles(mgr, "",0);
+
+//        XWalkInternalResources.resetIds(appContext);
 
         startBrowserProcess(context);
 
@@ -394,6 +446,24 @@ class XWalkViewDelegate {
         }
         return sDeviceAbi;
     }
+
+        public static int getPackageId(Resources resources, String packageName) {
+            try {
+                SparseArray packageIdentifiers =
+                        (SparseArray) mGetAssignedPackageIdentifiersMethod.invoke(
+                                resources.getAssets());
+                for (int i = 0; i < packageIdentifiers.size(); i++) {
+                    final String name = (String) packageIdentifiers.valueAt(i);
+
+                    if (packageName.equals(name)) {
+                        return packageIdentifiers.keyAt(i);
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Invalid reflection", e);
+            }
+            throw new RuntimeException("Package not found: " + packageName);
+        }
 
     private static native boolean nativeIsLibraryBuiltForIA();
 }

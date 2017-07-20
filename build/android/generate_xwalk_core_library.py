@@ -19,6 +19,7 @@ import collections
 import os
 import shutil
 import sys
+import difflib
 
 GYP_ANDROID_DIR = os.path.join(os.path.dirname(__file__),
                                os.pardir, os.pardir, os.pardir,
@@ -124,7 +125,20 @@ def CopyResources(output_dir, resources, resource_strings):
                                        os.path.basename(dirpath),
                                        filename)
             if not os.path.isfile(original_9p):
-              raise IOError("Expected to find %s." % original_9p)
+              # try and find closest match
+              orig_folder = os.path.basename(dirpath) #ex. drawable-ldrtl-xxhdpi-v17
+              subfolders = os.listdir(resource.src)
+              #subfolders = [subf.name for subf in os.scandir(resource.src) if subf.is_dir() ]
+              close_match = difflib.get_close_matches(orig_folder, subfolders)
+              #print(">> for %s/%s closest match is %s" %(orig_folder, filename, close_match))
+              original_9p = os.path.join(resource.src, close_match[0], filename)
+              if not os.path.isfile(original_9p):
+                print("Resource NOT FOUND !!!! %s" %(original_9p))
+                continue
+                #raise IOError("Expected to find %s." % original_9p)
+              #for find_file in build_utils.FindInDirectory(os.path.join(resource.src, close_match[0]), filename):
+                #print("for file %s in path %s found match in %s " %(filename, os.path.basename(dirpath), find_file))
+              #raise IOError("Expected to find %s." % original_9p)
             shutil.copy2(original_9p, os.path.join(dirpath, filename))
           # Avoid ovewriting existing files.
           root, ext = os.path.splitext(filename)
@@ -212,11 +226,13 @@ def main(argv):
   for resource_zip, resource_src in zip(options.resource_zips,
                                         options.resource_zip_sources):
     if resource_zip.find('appcompat') != -1:
-      appcompat_path =  os.path.join(SRC_ROOT, 'third_party/android_tools/sdk/extras/android/support/v7/appcompat/res')
-
-      resources.append(MakeResourceTuple(resource_zip, appcompat_path)
-#      print('TODO Skipp ' + resource_zip)
       continue
+      appcompat_path = os.path.join(SRC_ROOT, 'third_party/android_tools/sdk/extras/android/support/v7/appcompat/res')
+      #third_party/android_tools/sdk/extras/android/support/v7/appcompat/res
+      print("appcompat_path %s" %(appcompat_path))
+      resources.append(MakeResourceTuple(resource_zip, appcompat_path))
+      continue
+
     if resource_zip.endswith('_grd.resources.zip'): 
       # In GN, we just use --resource-zips, and the string files are
       # part of the list.

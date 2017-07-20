@@ -14,10 +14,13 @@ core_internal_java_chromium_deps = [
   "//components/navigation_interception/android:navigation_interception_java",
   "//components/web_contents_delegate_android:web_contents_delegate_android_java",
   "//content/public/android:content_java",
+  "//content/public/android:content_java_resources",
   "//media/base/android:media_java",
   "//net/android:net_java",
   "//ui/android:ui_java",
   "//third_party/android_swipe_refresh:android_swipe_refresh_java",
   "//xwalk/third_party/tenta/meta_fs/java:meta_fs_java",
   "//xwalk/third_party/tenta/chromium_cache:chromium_cache_java",
+  "//components/autofill/android:autofill_java",
+  "//device/geolocation:geolocation_java",
 ]

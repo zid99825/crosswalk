@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/config/android/rules.gni")
+#import("//android_webview/glue/generate_resource_rewriter.gni")
 
 # Runs generate_xwalk_core_library.py.
 #
@@ -169,11 +170,17 @@ template("generate_android_project") {
     ]
 #    r_text_path = _r_file_path
     r_text_out_path = _r_file_path
+#    r_text_in_path = _r_file_path
     resource_dirs = [ "//build/android/ant/empty/res" ]
     srcjar_path = "$target_gen_dir/$target_name.srcjar"
 
     # Unused, but required.
     zip_path = _base_path + "_reszip__unused.zip"
+#    shared_resources = true
+
+    if (defined(invoker.include_all_resources) ) {
+      include_all_resources = invoker.include_all_resources
+    }
   }
   _srcjar_deps += [ ":$_process_resources_target" ]
 
@@ -227,6 +234,7 @@ template("generate_android_project") {
     ]
     dex_path = _base_path + "__unused.dex.jar"
     emma_never_instrument = true
+#    chromium_code = true
     if (defined(invoker.resource_excluded_patterns)) {
       jar_excluded_patterns = invoker.resource_excluded_patterns
     }
