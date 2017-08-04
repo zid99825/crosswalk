@@ -188,6 +188,9 @@ bool WriteNavigationEntryToPickle(const content::NavigationEntry& entry,
   if (!pickle->WriteInt(entry.GetHttpStatusCode()))
     return false;
 
+  if (!pickle->WriteString(entry.GetExtraHeaders()))
+    return false;
+
   // Please update AW_STATE_VERSION if serialization format is changed.
 
   return true;
@@ -281,6 +284,12 @@ bool RestoreNavigationEntryFromPickle(base::PickleIterator* iterator,
     entry->SetHttpStatusCode(http_status_code);
   }
 
+  {
+    string extra_headers;
+    if (!iterator->ReadString(&extra_headers))
+      return false;
+    entry->AddExtraHeaders(extra_headers);
+  }
   return true;
 }
 
