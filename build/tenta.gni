@@ -1,4 +1,6 @@
 declare_args() {
     # Enable/Disable log output for tenta modules
     enable_tenta_log = false
+    enable_tenta_log_cache = false
+    enable_tenta_log_db = false
 }
