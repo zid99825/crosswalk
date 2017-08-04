@@ -24,7 +24,7 @@ vars = {
 deps = {
     'src/xwalk/third_party/tenta/file_blocks': 'git@bitbucket.org:mikandi/fileblocks-sqlite.git',
     'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:mikandi/android-database-sqlitecrypt.git',
-    'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:mikandi/file-metadata-sqlite.git',
+    'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:mikandi/file-metadata-sqlite.git@8975e951d79389cd7479185dafa0a271c4484141',
     'src/xwalk/third_party/tenta/chromium_cache' : 'git@bitbucket.org:mikandi/chromium-cache-metafs.git',
 }
 
