@@ -1960,6 +1960,18 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
     }
 
     /**
+     * Enable/Disable swipe refresh handler
+     * @param enable
+     */
+    @XWalkAPI
+    public void enableSwipeRefresh(boolean enable) {
+        if (mContent == null)
+            return;
+        checkThreadSafety();
+        mContent.enableSwipeRefresh(enable);
+    }
+    
+    /**
      * Clears the SSL preferences table stored in response to proceeding with SSL certificate
      * errors.
      * 
