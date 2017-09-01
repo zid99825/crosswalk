@@ -45,6 +45,8 @@ class XWalkSettings : public content::WebContentsObserver {
   void RenderViewCreated(
       content::RenderViewHost* render_view_host) override;
 
+  void RenderFrameForInterstitialPageCreated(content::RenderFrameHost* render_frame_host) override;
+
   // Java field references for accessing the values in the Java object.
   std::unique_ptr<FieldIds> field_ids_;
 

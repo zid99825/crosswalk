@@ -257,6 +257,7 @@ void XWalkRenderViewExt::OnResetScrollAndScaleState() {
 }
 
 void XWalkRenderViewExt::OnSetInitialPageScale(double page_scale_factor) {
+  LOG(INFO) << "OnSetInitialPageScale " << page_scale_factor;
   if (!render_view() || !render_view()->GetWebView())
     return;
   render_view()->GetWebView()->setInitialPageScaleOverride(

@@ -263,6 +263,9 @@ bool RestoreNavigationEntryFromPickle(base::PickleIterator* iterator,
     entry->SetBaseURLForDataURL(GURL(base_url_for_data_url));
   }
 
+  // TODO (iotto) missing data url
+  // entry->SetDataURLAsString(ref);
+
   {
     bool is_overriding_user_agent;
     if (!iterator->ReadBool(&is_overriding_user_agent))
@@ -288,7 +291,8 @@ bool RestoreNavigationEntryFromPickle(base::PickleIterator* iterator,
     string extra_headers;
     if (!iterator->ReadString(&extra_headers))
       return false;
-    entry->AddExtraHeaders(extra_headers);
+    if ( !extra_headers.empty())
+      entry->AddExtraHeaders(extra_headers);
   }
   return true;
 }

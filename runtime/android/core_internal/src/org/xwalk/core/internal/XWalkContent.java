@@ -233,6 +233,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         // TODO(iotto) create propper delegate
         mContentViewCore.initialize(ViewAndroidDelegate.createBasicDelegate(mContentView), 
                  mContentView, mWebContents, mWindow);
+        
+        // iotto: returnes nativeGetWebContentsAndroid
+        mWebContents = mContentViewCore.getWebContents();
         mNavigationController = mWebContents.getNavigationController();
         mXWalkView.addView(mContentView,
                 new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,

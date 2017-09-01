@@ -82,6 +82,7 @@ public class XWalkSettingsInternal {
 
     private final Context mContext;
 
+    private boolean mViewPortMetaEnabled = true;
     private boolean mAllowScriptsToCloseWindows = true;
     private boolean mLoadsImagesAutomatically = true;
     private boolean mImagesEnabled = true;
@@ -932,6 +933,11 @@ public class XWalkSettingsInternal {
         }
     }
 
+    @XWalkAPI
+    public void setUserAgentMobile(boolean isMobile) {
+        mViewPortMetaEnabled = isMobile;
+    }
+    
     /**
      * Get the user agent of web page/app.
      * @return the XWalkView's user-agent string.

@@ -43,5 +43,13 @@ void NetworkChangeTenta::OnConnectionTypeChanged(
     net::NetworkChangeNotifier::ConnectionType type) {
 
 }
+
+void NetworkChangeTenta::OnDNSChanged() {
+
+}
+
+void NetworkChangeTenta::OnInitialDNSConfigRead() {
+
+}
 } /* namespace tenta */
 } /* namespace xwalk */

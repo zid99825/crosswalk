@@ -84,6 +84,7 @@ Runtime::~Runtime() {
 }
 
 void Runtime::LoadURL(const GURL& url) {
+  LOG(INFO) << "xwalk Runtime::OpenURLFromTab " << url.spec();
   content::NavigationController::LoadURLParams params(url);
   params.transition_type = ui::PageTransitionFromInt(
       ui::PAGE_TRANSITION_TYPED |
@@ -136,6 +137,7 @@ content::RenderProcessHost* Runtime::GetRenderProcessHost() {
 //////////////////////////////////////////////////////
 content::WebContents* Runtime::OpenURLFromTab(
     content::WebContents* source, const content::OpenURLParams& params) {
+  LOG(INFO) << "xwalk Runtime::OpenURLFromTab " << params.url.spec();
 #if defined(OS_ANDROID)
   DCHECK(params.disposition == WindowOpenDisposition::CURRENT_TAB);
   source->GetController().LoadURL(

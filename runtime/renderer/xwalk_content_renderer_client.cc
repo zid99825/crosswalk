@@ -122,6 +122,7 @@ void XWalkContentRendererClient::RenderThreadStarted() {
         new extensions::XWalkExtensionRendererController(this));
 /*
   // TODO moved to runtime/common/xwalk_content_client.cc
+   * @note see chromium commit 0901535a93c8bdf5d9a67edc8085beb2786888b3
   blink::WebString application_scheme(
       blink::WebString::fromASCII(application::kApplicationScheme));
   blink::WebSecurityPolicy::registerURLSchemeAsSecure(application_scheme);

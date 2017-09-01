@@ -18,11 +18,13 @@
 namespace content {
 class BrowserContext;
 class ResourceContext;
+class RenderViewHost;
 class QuotaPermissionContext;
 class SpeechRecognitionManagerDelegate;
 class WebContents;
 class WebContentsViewDelegate;
 class PresentationServiceDelegate;
+struct WebPreferences;
 }
 
 namespace net {
@@ -39,6 +41,12 @@ class XWalkDevToolsManagerDelegate;
 class XWalkContentBrowserClient : public content::ContentBrowserClient {
  public:
   static XWalkContentBrowserClient* Get();
+
+  // Called by WebContents to override the WebKit preferences that are used by
+  // the renderer. The content layer will add its own settings, and then it's up
+  // to the embedder to update it if it wants.
+  virtual void OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
+                                   content::WebPreferences* prefs) override;
 
   explicit XWalkContentBrowserClient(XWalkRunner* xwalk_runner);
   ~XWalkContentBrowserClient() override;
