@@ -298,12 +298,13 @@ base::DictionaryValue* LoadXMLNode(
 
   for (xmlNode* node = root->children; node; node = node->next) {
     std::string sub_node_name(ToConstCharPointer(node->name));
-    base::DictionaryValue* sub_value = LoadXMLNode(node, current_dir);
+    //base::DictionaryValue* sub_value = LoadXMLNode(node, current_dir);
+    std::unique_ptr<base::DictionaryValue> sub_value(LoadXMLNode(node, current_dir));
     if (!sub_value)
       continue;
 
     if (!value->HasKey(sub_node_name)) {
-      value->Set(sub_node_name, sub_value);
+      value->Set(sub_node_name, std::move(sub_value));
       continue;
     } else if (IsSingletonElement(sub_node_name)) {
       continue;
@@ -316,16 +317,17 @@ base::DictionaryValue* LoadXMLNode(
     if (temp->IsType(base::Value::Type::LIST)) {
       base::ListValue* list;
       temp->GetAsList(&list);
-      list->Append(sub_value);
+      list->Append(std::move(sub_value));
     } else {
       DCHECK(temp->IsType(base::Value::Type::DICTIONARY));
       base::DictionaryValue* dict;
       temp->GetAsDictionary(&dict);
-      base::DictionaryValue* prev_value = dict->DeepCopy();
+//      base::DictionaryValue* prev_value = dict->DeepCopy();
+      std::unique_ptr<base::DictionaryValue> prev_value(dict);
 
       base::ListValue* list = new base::ListValue();
-      list->Append(prev_value);
-      list->Append(sub_value);
+      list->Append(std::move(prev_value));
+      list->Append(std::move(sub_value));
       value->Set(sub_node_name, list);
     }
   }

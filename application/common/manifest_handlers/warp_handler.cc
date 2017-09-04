@@ -6,6 +6,7 @@
 
 #include "base/strings/utf_string_conversions.h"
 #include "xwalk/application/common/application_manifest_constants.h"
+#include "base/memory/ptr_util.h"
 
 namespace xwalk {
 
@@ -36,10 +37,11 @@ bool WARPHandler::Parse(scoped_refptr<ApplicationData> application,
     return false;
   }
 
+  std::unique_ptr<base::Value> safe_value = base::WrapUnique<base::Value>(value);
   std::unique_ptr<base::ListValue> warp_list;
   if (value->IsType(base::Value::Type::DICTIONARY)) {
     warp_list.reset(new base::ListValue);
-    warp_list->Append(value->DeepCopy());
+    warp_list->Append(std::move(safe_value));
   } else {
     base::ListValue* list;
     value->GetAsList(&list);

@@ -13,7 +13,7 @@
 namespace base {
 
 template <typename Type>
-struct DefaultLazyInstanceTraits;
+struct LazyInstanceTraitsBase;
 
 }  // namespace base
 
@@ -26,7 +26,7 @@ class VirtualRootProvider {
 #endif
 
  private:
-  friend struct base::DefaultLazyInstanceTraits<VirtualRootProvider>;
+  friend struct base::LazyInstanceTraitsBase<VirtualRootProvider>;
   VirtualRootProvider();
   ~VirtualRootProvider();
 

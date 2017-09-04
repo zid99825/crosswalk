@@ -12,7 +12,7 @@
 #include "base/values.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/child_process_security_policy.h"
-#include "grit/xwalk_resources.h"
+#include "xwalk/grit/xwalk_resources.h"
 #include "storage/browser/fileapi/file_system_url.h"
 #include "storage/browser/fileapi/isolated_context.h"
 #include "ui/base/resource/resource_bundle.h"
@@ -23,17 +23,17 @@ using namespace xwalk::jsapi::native_file_system;
 
 namespace {
 
-std::unique_ptr<base::StringValue> GetRealPath(std::unique_ptr<base::Value> msg) {
+std::unique_ptr<base::Value> GetRealPath(std::unique_ptr<base::Value> msg) {
   base::DictionaryValue* dict;
   std::string virtual_root;
   if (!msg->GetAsDictionary(&dict) || !dict->GetString("path", &virtual_root)) {
     LOG(ERROR) << "Malformed getRealPath request.";
-    return base::WrapUnique(new base::StringValue(std::string()));
+    return base::WrapUnique(new base::Value(std::string()));
   }
 
   const std::string real_path =
       VirtualRootProvider::GetInstance()->GetRealPath(virtual_root);
-  return base::WrapUnique(new base::StringValue(real_path));
+  return base::WrapUnique(new base::Value(real_path));
 }
 
 void RegisterFileSystemAndSendResponse(
@@ -122,11 +122,11 @@ void NativeFileSystemInstance::HandleSyncMessage(std::unique_ptr<base::Value> ms
 
   if (!msg->GetAsDictionary(&dict) || !dict->GetString("command", &command)) {
     LOG(ERROR) << "Fail to handle sync message.";
-    SendSyncReplyToJS(std::unique_ptr<base::Value>(new base::StringValue("")));
+    SendSyncReplyToJS(std::unique_ptr<base::Value>(new base::Value("")));
     return;
   }
 
-  std::unique_ptr<base::Value> result(new base::StringValue(""));
+  std::unique_ptr<base::Value> result(new base::Value(""));
   if (command == "getRealPath") {
     result = GetRealPath(std::move(msg));
   } else {

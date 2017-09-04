@@ -1059,7 +1059,8 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             nativeRequestNewHitTestDataAt(mNativeContent, event.getX() / (float) mDIPScale,
                     event.getY() / (float) mDIPScale, event.getTouchMajor() / (float) mDIPScale);
         }
-        return mContentViewCore.onTouchEvent(event);
+        return mWebContents.getEventForwarder().onTouchEvent(event);
+//        return mContentViewCore.onTouchEvent(event);
     }
 
     public void setOnTouchListener(OnTouchListener l) {

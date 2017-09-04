@@ -11,7 +11,7 @@ root_extra_deps = [ "//xwalk:xwalk_builder" ]
 # From src/build/config/features.gni
 # Disable WebVR support. The code is still experimental and and ends up
 # pulling additional dependencies into our JARs (XWALK-6597).
-enable_webvr = false
+#enable_webvr = false
 
 # From src/build/config/features.gni
 # Whether to include support for proprietary codecs.

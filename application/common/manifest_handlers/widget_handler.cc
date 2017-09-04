@@ -156,7 +156,7 @@ bool WidgetHandler::Parse(scoped_refptr<ApplicationData> application,
          it != list->end(); ++it) {
       std::unique_ptr<base::DictionaryValue> pref(new base::DictionaryValue);
       base::DictionaryValue* dict;
-      (*it)->GetAsDictionary(&dict);
+      (it)->GetAsDictionary(&dict);
       if (ParsePreferenceItem(dict, pref.get(), &preference_names_used))
         preferences->Append(std::move(pref));
     }

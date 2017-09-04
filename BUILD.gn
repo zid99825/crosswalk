@@ -30,8 +30,8 @@ group("xwalk_builder") {
       "app/android/runtime_client_shell:xwalk_runtime_client_shell_apk",
       "runtime/android/core_internal_shell:xwalk_core_internal_shell_apk",
       "runtime/android/core_shell:xwalk_core_shell_apk",
-      "test/android/core/javatests:xwalk_core_test_apk",
-      "test/android/core_internal/javatests:xwalk_core_internal_test_apk",
+#      "test/android/core/javatests:xwalk_core_test_apk",
+#      "test/android/core_internal/javatests:xwalk_core_internal_test_apk",
       "test/android/runtime_client/javatests:xwalk_runtime_client_test_apk",
       "test/android/runtime_client_embedded/javatests:xwalk_runtime_client_embedded_test_apk",
 

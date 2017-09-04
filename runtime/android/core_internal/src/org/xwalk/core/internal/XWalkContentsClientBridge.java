@@ -207,15 +207,18 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         return false;
     }
 
-    @Override
+    // TODO (iotto) connect to ContentViewCore 
+    // public boolean dispatchKeyEvent(KeyEvent event) {
+    //@Override
     public boolean shouldOverrideKeyEvent(KeyEvent event) {
         boolean overridden = false;
         if (mXWalkUIClient != null && mXWalkView != null) {
             overridden = mXWalkUIClient.shouldOverrideKeyEvent(mXWalkView, event);
         }
-        if (!overridden) {
-            return super.shouldOverrideKeyEvent(event);
-        }
+        // TODO(iotto) see where it went the super.shouldOverrideKeyEvent
+//        if (!overridden) {
+//            return super.shouldOverrideKeyEvent(event);
+//        }
         return overridden;
     }
 
