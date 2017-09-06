@@ -10,6 +10,7 @@
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/size_f.h"
+#include "url/origin.h"
 
 
 namespace blink {
@@ -53,6 +54,8 @@ class XWalkRenderViewExt : public content::RenderViewObserver {
   void OnSetBackgroundColor(SkColor c);
 
   void OnSetTextZoomFactor(float zoom_factor);
+
+  url::Origin last_origin_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkRenderViewExt);
 };

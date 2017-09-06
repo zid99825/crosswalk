@@ -134,8 +134,8 @@ void ApplicationSecurityPolicyWARP::InitEntries() {
   const base::ListValue* whitelist = info->GetWARP();
   for (base::ListValue::const_iterator it = whitelist->begin();
        it != whitelist->end(); ++it) {
-    base::DictionaryValue* value = nullptr;
-    (*it)->GetAsDictionary(&value);
+    const base::DictionaryValue* value = nullptr;
+    it->GetAsDictionary(&value);
     std::string dest;
     if (!value || !value->GetString(widget_keys::kAccessOriginKey, &dest) ||
         dest.empty())

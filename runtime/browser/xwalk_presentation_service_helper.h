@@ -40,12 +40,12 @@ using content::RenderFrameHost;
 using content::PresentationConnectionStateChangedCallback;
 
 using DelegateObserver = content::PresentationServiceDelegate::Observer;
-using PresentationSessionErrorCallback =
-    content::PresentationSessionErrorCallback;
-using PresentationSessionStartedCallback =
-    content::PresentationSessionStartedCallback;
+using PresentationConnectionErrorCallback =
+    content::PresentationConnectionErrorCallback;
+using PresentationConnectionCallback =
+    content::PresentationConnectionCallback;
 using RenderFrameHostId = XWalkPresentationServiceDelegate::RenderFrameHostId;
-using SessionInfo = content::PresentationSessionInfo;
+using SessionInfo = content::PresentationInfo;
 
 #if defined(OS_ANDROID)
 using SystemString = std::basic_string<char>;

@@ -131,7 +131,7 @@ bool AppWidgetStorage::SaveConfigInfoInDB() {
     for (base::ListValue::iterator it = list->begin();
          it != list->end(); ++it) {
       base::DictionaryValue* dict;
-      (*it)->GetAsDictionary(&dict);
+      it->GetAsDictionary(&dict);
       if (!SaveConfigInfoItem(dict))
         return false;
     }

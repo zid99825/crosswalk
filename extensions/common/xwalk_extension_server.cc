@@ -210,7 +210,7 @@ bool XWalkExtensionServer::ContainsExtension(
 void XWalkExtensionServer::PostMessageToJSCallback(
     int64_t instance_id, std::unique_ptr<base::Value> msg) {
   base::ListValue wrapped_msg;
-  wrapped_msg.Append(msg.release());
+  wrapped_msg.Append(std::move(msg));
 
   std::unique_ptr<IPC::Message> message(
       new XWalkExtensionClientMsg_PostMessageToJS(instance_id, wrapped_msg));
@@ -270,7 +270,7 @@ void XWalkExtensionServer::SendSyncReplyToJSCallback(
   }
 
   base::ListValue wrapped_reply;
-  wrapped_reply.Append(reply.release());
+  wrapped_reply.Append(std::move(reply));
   XWalkExtensionServerMsg_SendSyncMessageToNative::WriteReplyParams(
       data.pending_reply, wrapped_reply);
   Send(data.pending_reply);
@@ -433,7 +433,7 @@ std::vector<std::string> RegisterExternalExtensionsInDirectory(
     // as an identifier in case you have symlinks to extensions to force it
     // load multiple times.
     (*runtime_variables)["extension_path"] = base::WrapUnique(
-        new base::StringValue(extension_path.AsUTF8Unsafe()));
+        new base::Value(extension_path.AsUTF8Unsafe()));
 
     extension->set_runtime_variables(runtime_variables.get());
     if (server->permissions_delegate())

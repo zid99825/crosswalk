@@ -14,6 +14,7 @@
 #include "components/app_modal/javascript_dialog_manager.h"
 #include "components/content_settings/core/common/content_settings.h"
 #include "components/content_settings/core/common/content_settings_types.h"
+#include "content/public/browser/keyboard_event_processing_result.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/notification_details.h"
 #include "content/public/browser/notification_service.h"
@@ -184,7 +185,7 @@ bool Runtime::IsFullscreenForTabOrPending(
 blink::WebDisplayMode Runtime::GetDisplayMode(
     const content::WebContents* web_contents) const {
   return (ui_delegate_) ? ui_delegate_->GetDisplayMode()
-                        : blink::WebDisplayModeUndefined;
+                        : blink::kWebDisplayModeUndefined;
 }
 
 void Runtime::RequestToLockMouse(content::WebContents* web_contents,
@@ -210,16 +211,15 @@ bool Runtime::CanOverscrollContent() const {
   return false;
 }
 
-bool Runtime::PreHandleKeyboardEvent(
+content::KeyboardEventProcessingResult Runtime::PreHandleKeyboardEvent(
       content::WebContents* source,
-      const content::NativeWebKeyboardEvent& event,
-      bool* is_keyboard_shortcut) {
+      const content::NativeWebKeyboardEvent& event) {
   // Escape exits tabbed fullscreen mode.
-  if (event.windowsKeyCode == 27 && IsFullscreenForTabOrPending(source)) {
+  if (event.windows_key_code == 27 && IsFullscreenForTabOrPending(source)) {
     ExitFullscreenModeForTab(source);
-    return true;
+    return content::KeyboardEventProcessingResult::HANDLED;
   }
-  return false;
+  return content::KeyboardEventProcessingResult::NOT_HANDLED;
 }
 
 void Runtime::HandleKeyboardEvent(

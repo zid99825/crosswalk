@@ -43,13 +43,13 @@ void IsolatedFileSystem::GetIsolatedFileSystem(
   CHECK(info[0]->IsString());
 
   blink::WebLocalFrame* webframe =
-      blink::WebLocalFrame::frameForCurrentContext();
+      blink::WebLocalFrame::FrameForCurrentContext();
   CHECK(webframe);
   std::string file_system_id(*v8::String::Utf8Value(info[0]));
-  blink::WebDataSource* data_source = webframe->provisionalDataSource() ?
-      webframe->provisionalDataSource() : webframe->dataSource();
+  blink::WebDataSource* data_source = webframe->ProvisionalDataSource() ?
+      webframe->ProvisionalDataSource() : webframe->DataSource();
   CHECK(data_source);
-  GURL context_url(data_source->getRequest().url());
+  GURL context_url(data_source->GetRequest().Url());
 
   // In instrument test, context_url.GetOrigin() returns emtpy string.
   // That causes app crash. So assign "file:///" as default value to
@@ -70,10 +70,10 @@ void IsolatedFileSystem::GetIsolatedFileSystem(
       file_system_id,
       optional_root_name)));
   v8::Isolate* isolate = v8::Isolate::GetCurrent();
-  info.GetReturnValue().Set(blink::WebDOMFileSystem::create(webframe,
-      blink::WebFileSystemTypeIsolated,
-      blink::WebString::fromUTF8(name),
-      root).toV8Value(isolate->GetCurrentContext()->Global(), isolate));
+  info.GetReturnValue().Set(blink::WebDOMFileSystem::Create(webframe,
+      blink::kWebFileSystemTypeIsolated,
+      blink::WebString::FromUTF8(name),
+      root).ToV8Value(isolate->GetCurrentContext()->Global(), isolate));
 }
 
 IsolatedFileSystem::IsolatedFileSystem() {

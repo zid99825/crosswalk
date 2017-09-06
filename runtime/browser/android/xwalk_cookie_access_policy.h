@@ -59,7 +59,7 @@ class XWalkCookieAccessPolicy {
                       const net::CookieOptions& options);
 
  private:
-  friend struct base::DefaultLazyInstanceTraits<XWalkCookieAccessPolicy>;
+  friend struct base::LazyInstanceTraitsBase<XWalkCookieAccessPolicy>;
 
   XWalkCookieAccessPolicy();
   ~XWalkCookieAccessPolicy();

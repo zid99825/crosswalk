@@ -90,11 +90,11 @@ class XWalkExtensionAndroidInstance : public XWalkExtensionInstance {
   ~XWalkExtensionAndroidInstance();
 
   void PostMessageWrapper(const char* msg) {
-    PostMessageToJS(std::unique_ptr<base::Value>(new base::StringValue(msg)));
+    PostMessageToJS(std::unique_ptr<base::Value>(new base::Value(msg)));
   }
   void PostBinaryMessageWrapper(const char* msg, const size_t size) {
     PostMessageToJS(std::unique_ptr<base::Value>(
-        base::BinaryValue::CreateWithCopiedBuffer(msg, size)));
+        base::Value::CreateWithCopiedBuffer(msg, size)));
   }
 
   int getID() {

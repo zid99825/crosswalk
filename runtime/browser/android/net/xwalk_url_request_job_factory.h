@@ -47,7 +47,6 @@ class XWalkURLRequestJobFactory : public net::URLRequestJobFactory {
       net::NetworkDelegate* network_delegate) const override;
 
   bool IsHandledProtocol(const std::string& scheme) const override;
-  bool IsHandledURL(const GURL& url) const override;
   bool IsSafeRedirectTarget(const GURL& location) const override;
 
  private:

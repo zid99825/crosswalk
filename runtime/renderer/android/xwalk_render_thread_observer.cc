@@ -10,7 +10,7 @@
 #include "extensions/common/url_pattern.h"
 #include "ipc/ipc_message_macros.h"
 #include "third_party/WebKit/public/platform/WebCache.h"
-#include "third_party/WebKit/public/web/WebNetworkStateNotifier.h"
+#include "third_party/WebKit/public/platform/WebNetworkStateNotifier.h"
 #include "third_party/WebKit/public/web/WebSecurityPolicy.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
 #include "xwalk/runtime/common/android/xwalk_render_view_messages.h"
@@ -37,17 +37,17 @@ bool XWalkRenderThreadObserver::OnControlMessageReceived(
 }
 
 void XWalkRenderThreadObserver::OnSetJsOnlineProperty(bool network_up) {
-  blink::WebNetworkStateNotifier::setOnLine(network_up);
+  blink::WebNetworkStateNotifier::SetOnLine(network_up);
 }
 
 void XWalkRenderThreadObserver::OnClearCache() {
-  blink::WebCache::clear();
+  blink::WebCache::Clear();
 }
 
 void XWalkRenderThreadObserver::OnSetOriginAccessWhitelist(
     std::string base_url,
     std::string match_patterns) {
-  blink::WebSecurityPolicy::resetOriginAccessWhitelists();
+  blink::WebSecurityPolicy::ResetOriginAccessWhitelists();
 
   DCHECK(!base_url.empty());
   if (base_url.empty() || match_patterns.empty())
@@ -79,10 +79,10 @@ void XWalkRenderThreadObserver::OnSetOriginAccessWhitelist(
 
     for (size_t j = 0; j < arraysize(schemes); ++j) {
       if (allowedUrl.MatchesScheme(schemes[j])) {
-        blink::WebSecurityPolicy::addOriginAccessWhitelistEntry(
+        blink::WebSecurityPolicy::AddOriginAccessWhitelistEntry(
               blink::WebURL(GURL(base_url)),
-              blink::WebString::fromUTF8(schemes[j]),
-              blink::WebString::fromUTF8(allowedUrl.host()),
+              blink::WebString::FromUTF8(schemes[j]),
+              blink::WebString::FromUTF8(allowedUrl.host()),
               allowedUrl.match_subdomains());
       }
     }

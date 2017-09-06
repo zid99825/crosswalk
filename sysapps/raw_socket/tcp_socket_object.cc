@@ -187,10 +187,10 @@ void TCPSocketObject::OnRead(int status) {
     return;
   }
 
-  std::unique_ptr<base::Value> data(base::BinaryValue::CreateWithCopiedBuffer(
+  std::unique_ptr<base::Value> data(base::Value::CreateWithCopiedBuffer(
       static_cast<char*>(read_buffer_->data()), status));
 
-  eventData->Append(data.release());
+  eventData->Append(std::move(data));
 
   if (!is_suspended_)
     DispatchEvent("data", std::move(eventData));

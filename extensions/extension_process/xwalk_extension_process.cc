@@ -57,7 +57,7 @@ void ToValueMap(base::ListValue* lv, base::DictionaryValue::DictStorage* vm) {
 
   for (base::ListValue::iterator it = lv->begin(); it != lv->end(); it++) {
     base::DictionaryValue* dv;
-    if (!(*it)->GetAsDictionary(&dv))
+    if (!it->GetAsDictionary(&dv))
       continue;
     for (base::DictionaryValue::Iterator dit(*dv);
         !dit.IsAtEnd(); dit.Advance())

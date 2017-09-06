@@ -29,12 +29,12 @@ class XWalkPresentationServiceDelegateAndroid
       XWalkPresentationServiceDelegateAndroid>;
 
  public:
-  void StartSession(
+  void StartPresentation(
       int render_process_id,
       int render_frame_id,
       const std::vector<GURL>& presentation_urls,
-      const content::PresentationSessionStartedCallback& success_cb,
-      const content::PresentationSessionErrorCallback& error_cb) override;
+      const content::PresentationConnectionCallback& success_cb,
+      const content::PresentationConnectionErrorCallback& error_cb) override;
 };
 
 }  // namespace xwalk

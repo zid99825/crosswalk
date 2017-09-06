@@ -181,7 +181,7 @@ XWalkExtensionAndroidInstance::~XWalkExtensionAndroidInstance() {
 void XWalkExtensionAndroidInstance::HandleMessage(
     std::unique_ptr<base::Value> msg) {
   std::string value;
-  const base::BinaryValue* binary_value = nullptr;
+  const base::Value* binary_value = nullptr;
 
   JNIEnv* env = base::android::AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
@@ -209,7 +209,7 @@ void XWalkExtensionAndroidInstance::HandleMessage(
 
 void XWalkExtensionAndroidInstance::HandleSyncMessage(
     std::unique_ptr<base::Value> msg) {
-  std::unique_ptr<base::Value> ret_val(new base::StringValue(""));
+  std::unique_ptr<base::Value> ret_val(new base::Value(""));
 
   std::string value;
   if (!msg->GetAsString(&value)) {
@@ -231,7 +231,7 @@ void XWalkExtensionAndroidInstance::HandleSyncMessage(
               env, obj.obj(), getID(), buffer.obj());
 
   const char *str = env->GetStringUTFChars(ret.obj(), 0);
-  ret_val.reset(new base::StringValue(str));
+  ret_val.reset(new base::Value(str));
   env->ReleaseStringUTFChars(ret.obj(), str);
 
   SendSyncReplyToJS(std::move(ret_val));

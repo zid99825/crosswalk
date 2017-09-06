@@ -138,11 +138,11 @@ void XWalkPlatformNotificationService::DisplayNotification(
 #endif
 }
 
-bool XWalkPlatformNotificationService::GetDisplayedNotifications(
+void XWalkPlatformNotificationService::GetDisplayedNotifications(
     content::BrowserContext* browser_context,
-    std::set<std::string>* displayed_notifications) {
+    const DisplayedNotificationsCallback& callback) {
     NOTIMPLEMENTED();
-    return false;
+    // TODO(iotto) check do we need to implement?
 }
 
 

@@ -33,10 +33,6 @@ bool XWalkURLRequestJobFactory::IsHandledProtocol(
   return true;
 }
 
-bool XWalkURLRequestJobFactory::IsHandledURL(const GURL& url) const {
-  return true;
-}
-
 URLRequestJob* XWalkURLRequestJobFactory::MaybeCreateJobWithProtocolHandler(
     const std::string& scheme,
     URLRequest* request,

@@ -250,7 +250,7 @@ void XWalkExtensionService::OnRenderProcessWillLaunch(
 
   if (!g_external_extensions_path_for_testing_.empty()) {
     (*runtime_variables)["runtime_name"] = base::WrapUnique(
-        new base::StringValue("xwalk"));
+        new base::Value("xwalk"));
     OnRenderProcessHostCreatedInternal(host, ui_thread_extensions,
         extension_thread_extensions, std::move(runtime_variables));
     return;

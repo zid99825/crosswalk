@@ -73,13 +73,13 @@ class RfhToIoThreadClientMap {
   void Erase(pair<int, int> rfh_id);
 
  private:
-  static LazyInstance<RfhToIoThreadClientMap> g_instance_;
+  friend struct base::LazyInstanceTraitsBase<RfhToIoThreadClientMap>;
   base::Lock map_lock_;
   RenderFrameHostToIoThreadClientType rfh_to_io_thread_client_;
 };
 
 // static
-LazyInstance<RfhToIoThreadClientMap> RfhToIoThreadClientMap::g_instance_ =
+LazyInstance<RfhToIoThreadClientMap>::Leaky g_instance_ =
     LAZY_INSTANCE_INITIALIZER;
 
 // static

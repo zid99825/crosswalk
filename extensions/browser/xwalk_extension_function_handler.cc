@@ -117,7 +117,7 @@ void XWalkExtensionFunctionHandler::DispatchResult(
 
   // Prepend the callback id to the list, so the handlers
   // on the JavaScript side know which callback should be evoked.
-  result->Insert(0, base::MakeUnique<base::Value>(new base::StringValue(callback_id)));
+  result->Insert(0, base::MakeUnique<base::Value>(callback_id));
 
   if (handler)
     handler->PostMessageToInstance(std::move(result));

@@ -127,7 +127,7 @@ bool DefaultRuntimeUIDelegate::AddDownloadItem(
 
 blink::WebDisplayMode DefaultRuntimeUIDelegate::GetDisplayMode() const {
   if (window_ && window_->IsFullscreen())
-      return blink::WebDisplayModeFullscreen;
+      return blink::kWebDisplayModeFullscreen;
   return window_params_.display_mode;
 }
 

@@ -94,7 +94,7 @@ void XWalkPresentationServiceDelegate::SetDefaultPresentationUrls(
     int render_process_id,
     int render_frame_id,
     const std::vector<GURL>& default_presentation_urls,
-    const PresentationSessionStartedCallback& callback) {
+    const PresentationConnectionCallback& callback) {
   RenderFrameHostId id(render_process_id, render_frame_id);
   auto presentation_frame = GetOrAddPresentationFrame(id);
 // TODO(iotto) default_presentation_urls is a vector
@@ -103,8 +103,8 @@ void XWalkPresentationServiceDelegate::SetDefaultPresentationUrls(
 
 void XWalkPresentationServiceDelegate::OnSessionStarted(
     const RenderFrameHostId& id,
-    const PresentationSessionStartedCallback& success_cb,
-    const PresentationSessionErrorCallback& error_cb,
+    const PresentationConnectionCallback& success_cb,
+    const PresentationConnectionErrorCallback& error_cb,
     scoped_refptr<PresentationSession> session,
     const std::string& error) {
   auto it = presentation_frames_.find(id);
@@ -120,13 +120,13 @@ void XWalkPresentationServiceDelegate::OnSessionStarted(
       content::PresentationError(content::PRESENTATION_ERROR_UNKNOWN, error));
 }
 
-void XWalkPresentationServiceDelegate::JoinSession(
+void XWalkPresentationServiceDelegate::ReconnectPresentation(
     int render_process_id,
     int render_frame_id,
     const std::vector<GURL>& presentation_urls,
     const std::string& presentation_id,
-    const PresentationSessionStartedCallback& success_cb,
-    const PresentationSessionErrorCallback& error_cb) {
+    const PresentationConnectionCallback& success_cb,
+    const PresentationConnectionErrorCallback& error_cb) {
   RenderFrameHostId id(render_process_id, render_frame_id);
   auto it = presentation_frames_.find(id);
   if ( it != presentation_frames_.end() ) {
@@ -180,7 +180,7 @@ void XWalkPresentationServiceDelegate::CloseConnection(
 void XWalkPresentationServiceDelegate::ListenForConnectionStateChange(
     int render_process_id,
     int render_frame_id,
-    const content::PresentationSessionInfo& connection,
+    const content::PresentationInfo& connection,
     const PresentationConnectionStateChangedCallback& state_changed_cb) {
   RenderFrameHostId id(render_process_id, render_frame_id);
   PresentationFrame* presentation_frame = GetOrAddPresentationFrame(id);

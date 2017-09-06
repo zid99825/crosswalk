@@ -29,12 +29,12 @@ XWalkPresentationServiceDelegateAndroid::GetOrCreateForWebContents(
   return XWalkPresentationServiceDelegateAndroid::FromWebContents(web_contents);
 }
 
-void XWalkPresentationServiceDelegateAndroid::StartSession(
+void XWalkPresentationServiceDelegateAndroid::StartPresentation(
     int render_process_id,
     int render_frame_id,
     const std::vector<GURL>& presentation_urls,
-    const PresentationSessionStartedCallback& success_cb,
-    const PresentationSessionErrorCallback& error_cb) {
+    const PresentationConnectionCallback& success_cb,
+    const PresentationConnectionErrorCallback& error_cb) {
 // TODO(iotto) presentation_urls, is a vector!
   if (presentation_urls.empty() || !IsValidPresentationUrl(presentation_urls[0].spec())) {
     error_cb.Run(content::PresentationError(content::PRESENTATION_ERROR_UNKNOWN,

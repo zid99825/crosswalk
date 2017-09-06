@@ -26,6 +26,7 @@ struct FileChooserParams;
 class RenderProcessHost;
 class SiteInstance;
 class WebContents;
+enum class KeyboardEventProcessingResult;
 }
 
 namespace xwalk {
@@ -135,10 +136,9 @@ class Runtime : public content::WebContentsDelegate,
       content::WebContents* contents) override;
   void ActivateContents(content::WebContents* contents) override;
   bool CanOverscrollContent() const override;
-  bool PreHandleKeyboardEvent(
+  content::KeyboardEventProcessingResult PreHandleKeyboardEvent(
       content::WebContents* source,
-      const content::NativeWebKeyboardEvent& event,
-      bool* is_keyboard_shortcut) override;
+      const content::NativeWebKeyboardEvent& event) override;
   void HandleKeyboardEvent(
       content::WebContents* source,
       const content::NativeWebKeyboardEvent& event) override;

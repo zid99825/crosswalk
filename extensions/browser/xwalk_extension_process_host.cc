@@ -152,9 +152,9 @@ void ToListValue(base::DictionaryValue::DictStorage* vm, base::ListValue* lv) {
   lv->Clear();
 
   for (base::DictionaryValue::DictStorage::iterator it = vm->begin(); it != vm->end(); it++) {
-    base::DictionaryValue* dv = new base::DictionaryValue();
+    std::unique_ptr<base::DictionaryValue> dv(new base::DictionaryValue());
     dv->Set(it->first, std::move(it->second));
-    lv->Append(dv);
+    lv->Append(std::move(dv));
   }
 }
 

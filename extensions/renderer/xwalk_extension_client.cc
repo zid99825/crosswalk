@@ -135,7 +135,7 @@ std::unique_ptr<base::ListValue> WrapValueInList(std::unique_ptr<base::Value> va
   if (!value)
     return std::unique_ptr<base::ListValue>();
   std::unique_ptr<base::ListValue> list_value(new base::ListValue);
-  list_value->Append(value.release());
+  list_value->Append(std::move(value));
   return list_value;
 }
 

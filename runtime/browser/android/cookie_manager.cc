@@ -193,7 +193,7 @@ class CookieManager {
   void SetAcceptFileSchemeCookies(bool accept);
 
  private:
-  friend struct base::DefaultLazyInstanceTraits<CookieManager>;
+  friend struct base::LazyInstanceTraitsBase<CookieManager>;
 
   CookieManager();
   ~CookieManager();

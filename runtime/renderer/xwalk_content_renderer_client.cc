@@ -146,7 +146,7 @@ bool XWalkContentRendererClient::HandleNavigation(
     blink::WebNavigationPolicy default_policy,
     bool is_redirect) {
   // Only GETs can be overridden.
-  if (!request.httpMethod().equals("GET"))
+  if (!request.HttpMethod().Equals("GET"))
     return false;
 
   // Any navigation from loadUrl, and goBack/Forward are considered application-
@@ -158,14 +158,14 @@ bool XWalkContentRendererClient::HandleNavigation(
   // works fine. This will stop working if android_webview starts swapping out
   // renderers on navigation.
   bool application_initiated =
-      !is_content_initiated || type == blink::WebNavigationTypeBackForward;
+      !is_content_initiated || type == blink::kWebNavigationTypeBackForward;
 
   // Don't offer application-initiated navigations unless it's a redirect.
   if (application_initiated && !is_redirect)
     return false;
 
-  bool is_main_frame = !frame->parent();
-  const GURL& gurl = request.url();
+  bool is_main_frame = !frame->Parent();
+  const GURL& gurl = request.Url();
   // For HTTP schemes, only top-level navigations can be overridden. Similarly,
   // WebView Classic lets app override only top level about:blank navigations.
   // So we filter out non-top about:blank navigations here.
@@ -182,8 +182,8 @@ bool XWalkContentRendererClient::HandleNavigation(
 //    return false;
 
   bool ignore_navigation = false;
-  base::string16 url = request.url().string().utf16();
-  bool has_user_gesture = request.hasUserGesture();
+  base::string16 url = request.Url().GetString().Utf16();
+  bool has_user_gesture = request.HasUserGesture();
 
   int render_frame_id = render_frame->GetRoutingID();
   RenderThread::Get()->Send(new XWalkViewHostMsg_ShouldOverrideUrlLoading(
@@ -319,10 +319,10 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
   // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
 
   if (error_description) {
-    if (error.localizedDescription.isEmpty())
+    if (error.localized_description.IsEmpty())
       *error_description = base::ASCIIToUTF16(net::ErrorToString(error.reason));
     else
-      *error_description = error.localizedDescription.utf16();
+      *error_description = error.localized_description.Utf16();
   }
 }
 

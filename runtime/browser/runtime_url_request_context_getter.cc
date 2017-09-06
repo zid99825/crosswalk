@@ -210,17 +210,17 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
             new net::StaticHttpUserAgentSettings("en-us,en",
                                                  xwalk::GetUserAgent())));
 
-    std::unique_ptr<net::HostResolver> backup =
-        net::HostResolver::CreateDefaultResolver(NULL);
+//    std::unique_ptr<net::HostResolver> backup =
+//        net::HostResolver::CreateDefaultResolver(NULL);
+//
+//    tenta::HostResolverTenta * hrt = new tenta::HostResolverTenta(
+//        std::move(backup));
+//    hrt->use_backup(false);
+//
+//    std::unique_ptr<net::HostResolver> host_resolver(hrt);
 
-    tenta::HostResolverTenta * hrt = new tenta::HostResolverTenta(
-        std::move(backup));
-    hrt->use_backup(false);
-
-    std::unique_ptr<net::HostResolver> host_resolver(hrt);
-
-//    std::unique_ptr<net::HostResolver> host_resolver(
-//        net::HostResolver::CreateDefaultResolver(NULL));
+    std::unique_ptr<net::HostResolver> host_resolver(
+        net::HostResolver::CreateDefaultResolver(NULL));
 
     storage_->set_cert_verifier(net::CertVerifier::CreateDefault());
     storage_->set_transport_security_state(

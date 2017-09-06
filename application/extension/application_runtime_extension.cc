@@ -53,10 +53,10 @@ void AppRuntimeExtensionInstance::OnGetManifest(
 
   std::unique_ptr<base::ListValue> results(new base::ListValue());
   if (manifest_data)
-    results->Append(manifest_data);
+    results->Append(base::WrapUnique(manifest_data));
   else
     // Return an empty dictionary value when there's no valid manifest data.
-    results->Append(new base::DictionaryValue());
+    results->Append(base::WrapUnique(new base::DictionaryValue()));
   info->PostResult(std::move(results));
 }
 

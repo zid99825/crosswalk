@@ -74,7 +74,9 @@ class XWalkAutofillClient : public autofill::AutofillClient {
   void ConfirmSaveCreditCardToCloud(
       const autofill::CreditCard& card,
       std::unique_ptr<base::DictionaryValue> legal_message,
+      bool should_cvc_be_requested,
       const base::Closure& callback) override;
+
   void ConfirmCreditCardFillAssist(const autofill::CreditCard& card,
                                    const base::Closure& callback) override;
   void LoadRiskData(
@@ -97,7 +99,6 @@ class XWalkAutofillClient : public autofill::AutofillClient {
   void DidFillOrPreviewField(
       const base::string16& autofilled_value,
       const base::string16& profile_full_name) override;
-  void OnFirstUserGestureObserved() override;
   bool IsContextSecure() override;
   bool ShouldShowSigninPromo() override;
   void StartSigninFlow() override;
@@ -114,6 +115,9 @@ class XWalkAutofillClient : public autofill::AutofillClient {
     const std::vector<autofill::Suggestion>& suggestions) = 0;
 
   virtual void HideAutofillPopupImpl() = 0;
+  // Gets the SaveCardBubbleController instance associated with the client.
+  // May return nullptr if the save card bubble has not been shown yet.
+  virtual autofill::SaveCardBubbleController* GetSaveCardBubbleController() override;
 
  protected:
   explicit XWalkAutofillClient(content::WebContents* web_contents);

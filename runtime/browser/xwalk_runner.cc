@@ -136,7 +136,7 @@ void XWalkRunner::InitializeRuntimeVariablesForExtensions(
 
   if (app)
     (*variables)["app_id"] =
-        base::WrapUnique(new base::StringValue(app->id()));
+        base::WrapUnique(new base::Value(app->id()));
 }
 
 void XWalkRunner::OnRenderProcessWillLaunch(content::RenderProcessHost* host) {

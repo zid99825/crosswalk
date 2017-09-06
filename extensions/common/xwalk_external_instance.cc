@@ -43,7 +43,7 @@ void XWalkExternalInstance::HandleMessage(std::unique_ptr<base::Value> msg) {
   }
 
   std::string string_msg;
-  const base::BinaryValue* binary_msg = nullptr;
+  const base::Value* binary_msg = nullptr;
   if (callback && msg->GetAsString(&string_msg)) {
     callback(xw_instance_, string_msg.c_str());
   } else if (binary_callback && msg->GetAsBinary(&binary_msg)) {
@@ -81,17 +81,17 @@ void* XWalkExternalInstance::CoreGetInstanceData() {
 }
 
 void XWalkExternalInstance::MessagingPostMessage(const char* msg) {
-  PostMessageToJS(std::unique_ptr<base::Value>(new base::StringValue(msg)));
+  PostMessageToJS(std::unique_ptr<base::Value>(new base::Value(msg)));
 }
 
 void XWalkExternalInstance::MessagingPostBinaryMessage(const char* msg,
                                                        const size_t size) {
   PostMessageToJS(std::unique_ptr<base::Value>(
-      base::BinaryValue::CreateWithCopiedBuffer(msg, size)));
+      base::Value::CreateWithCopiedBuffer(msg, size)));
 }
 
 void XWalkExternalInstance::SyncMessagingSetSyncReply(const char* reply) {
-  SendSyncReplyToJS(std::unique_ptr<base::Value>(new base::StringValue(reply)));
+  SendSyncReplyToJS(std::unique_ptr<base::Value>(new base::Value(reply)));
 }
 
 }  // namespace extensions

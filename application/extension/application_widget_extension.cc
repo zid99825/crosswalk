@@ -128,11 +128,11 @@ void AppWidgetExtensionInstance::HandleSyncMessage(
 
   if (!msg->GetAsDictionary(&dict) || !dict->GetString(kCommandKey, &command)) {
     LOG(ERROR) << "Fail to handle command sync message.";
-    SendSyncReplyToJS(std::unique_ptr<base::Value>(new base::StringValue("")));
+    SendSyncReplyToJS(std::unique_ptr<base::Value>(new base::Value("")));
     return;
   }
 
-  std::unique_ptr<base::Value> result(new base::StringValue(""));
+  std::unique_ptr<base::Value> result(new base::Value(""));
   if (command == "GetWidgetInfo") {
     result = GetWidgetInfo(std::move(msg));
   } else if (command == "SetPreferencesItem") {
@@ -154,9 +154,9 @@ void AppWidgetExtensionInstance::HandleSyncMessage(
   SendSyncReplyToJS(std::move(result));
 }
 
-std::unique_ptr<base::StringValue> AppWidgetExtensionInstance::GetWidgetInfo(
+std::unique_ptr<base::Value> AppWidgetExtensionInstance::GetWidgetInfo(
     std::unique_ptr<base::Value> msg) {
-  std::unique_ptr<base::StringValue> result(new base::StringValue(""));
+  std::unique_ptr<base::Value> result(new base::Value(""));
   std::string key;
   std::string value;
   base::DictionaryValue* dict;
@@ -172,7 +172,7 @@ std::unique_ptr<base::StringValue> AppWidgetExtensionInstance::GetWidgetInfo(
       application_->data()->GetManifestData(widget_keys::kWidgetKey));
   base::DictionaryValue* widget_info = info->GetWidgetInfo();
   widget_info->GetString(key, &value);
-  result.reset(new base::StringValue(value));
+  result.reset(new base::Value(value));
   return result;
 }
 
@@ -285,7 +285,7 @@ std::unique_ptr<base::DictionaryValue> AppWidgetExtensionInstance::GetAllItems(
   return result;
 }
 
-std::unique_ptr<base::StringValue> AppWidgetExtensionInstance::GetItemValueByKey(
+std::unique_ptr<base::Value> AppWidgetExtensionInstance::GetItemValueByKey(
     std::unique_ptr<base::Value> msg) {
   base::DictionaryValue* dict;
   msg->GetAsDictionary(&dict);
@@ -295,7 +295,7 @@ std::unique_ptr<base::StringValue> AppWidgetExtensionInstance::GetItemValueByKey
   if (!dict->GetString(kPreferencesItemKey, &key) ||
       !widget_storage_->GetValueByKey(key, &value))
     value = "";
-  std::unique_ptr<base::StringValue> result(new base::StringValue(value));
+  std::unique_ptr<base::Value> result(new base::Value(value));
   return result;
 }
 

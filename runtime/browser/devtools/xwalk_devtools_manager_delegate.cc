@@ -217,7 +217,12 @@ std::string XWalkDevToolsManagerDelegate::GetDiscoveryPageHTML() {
 
 std::string XWalkDevToolsManagerDelegate::GetFrontendResource(
     const std::string& path) {
+#if defined(OS_ANDROID)
+  return std::string();
+#else
   return content::DevToolsFrontendHost::GetFrontendResource(path).as_string();
+#endif
+
 }
 
 XWalkDevToolsManagerDelegate::~XWalkDevToolsManagerDelegate() {

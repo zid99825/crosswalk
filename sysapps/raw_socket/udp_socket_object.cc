@@ -214,7 +214,7 @@ void UDPSocketObject::OnRead(int status) {
     return;
   }
 
-  std::unique_ptr<base::Value> data(base::BinaryValue::CreateWithCopiedBuffer(
+  std::unique_ptr<base::Value> data(base::Value::CreateWithCopiedBuffer(
       static_cast<char*>(read_buffer_->data()), status));
 
   UDPMessageEvent event;
@@ -224,7 +224,7 @@ void UDPSocketObject::OnRead(int status) {
   event.remote_address = from_.ToStringWithoutPort();
 
   std::unique_ptr<base::ListValue> eventData(new base::ListValue);
-  eventData->Append(event.ToValue().release());
+  eventData->Append(std::move(event.ToValue()));
 
   if (!is_suspended_)
     DispatchEvent("message", std::move(eventData));

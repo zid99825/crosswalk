@@ -19,6 +19,7 @@
 #include "base/path_service.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/download_interrupt_reasons.h"
 #include "content/public/browser/download_manager.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/file_chooser_params.h"
@@ -71,7 +72,8 @@ bool RuntimeDownloadManagerDelegate::DetermineDownloadTarget(
     callback.Run(download->GetForcedFilePath(),
                  content::DownloadItem::TARGET_DISPOSITION_OVERWRITE,
                  content::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS,
-                 download->GetForcedFilePath());
+                 download->GetForcedFilePath(),
+                 content::DownloadInterruptReason::DOWNLOAD_INTERRUPT_REASON_NONE);
     return true;
   }
 
@@ -136,7 +138,8 @@ void RuntimeDownloadManagerDelegate::OnDownloadPathGenerated(
     callback.Run(suggested_path,
                  content::DownloadItem::TARGET_DISPOSITION_OVERWRITE,
                  content::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS,
-                 suggested_path.AddExtension(FILE_PATH_LITERAL(".crdownload")));
+                 suggested_path.AddExtension(FILE_PATH_LITERAL(".crdownload")),
+                 content::DownloadInterruptReason::DOWNLOAD_INTERRUPT_REASON_NONE);
     return;
   }
 

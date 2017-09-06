@@ -10,7 +10,6 @@
 #include "base/strings/string_piece.h"
 #include "base/strings/utf_string_conversions.h"
 #include "content/public/common/url_constants.h"
-#include "content/public/renderer/android_content_detection_prefixes.h"
 #include "content/public/renderer/document_state.h"
 #include "content/public/renderer/render_view.h"
 #include "third_party/WebKit/public/platform/WebSecurityOrigin.h"
@@ -24,6 +23,7 @@
 #include "third_party/WebKit/public/web/WebElementCollection.h"
 #include "third_party/WebKit/public/web/WebFrameWidget.h"
 #include "third_party/WebKit/public/web/WebHitTestResult.h"
+#include "third_party/WebKit/public/web/WebImageCache.h"
 #include "third_party/WebKit/public/web/WebLocalFrame.h"
 #include "third_party/WebKit/public/web/WebNode.h"
 #include "third_party/WebKit/public/web/WebView.h"
@@ -38,30 +38,42 @@ namespace xwalk {
 
 namespace {
 
+const char kAddressPrefix[] = "geo:0,0?q=";
+const char kEmailPrefix[] = "mailto:";
+const char kPhoneNumberPrefix[] = "tel:";
+
+
 GURL GetAbsoluteUrl(const blink::WebNode& node,
                     const base::string16& url_fragment) {
-  return GURL(node.document().completeURL(blink::WebString::fromUTF16(url_fragment)));
+  return GURL(node.GetDocument().CompleteURL(blink::WebString::FromUTF16(url_fragment)));
 }
 
 base::string16 GetHref(const blink::WebElement& element) {
   // Get the actual 'href' attribute, which might relative if valid or can
   // possibly contain garbage otherwise, so not using absoluteLinkURL here.
-  return element.getAttribute("href").utf16();
+  return element.GetAttribute("href").Utf16();
 }
 
 GURL GetAbsoluteSrcUrl(const blink::WebElement& element) {
-  if (element.isNull())
+  if (element.IsNull())
     return GURL();
-  return GetAbsoluteUrl(element, element.getAttribute("src").utf16());
+  return GetAbsoluteUrl(element, element.GetAttribute("src").Utf16());
 }
 
 blink::WebElement GetImgChild(const blink::WebNode& node) {
   // This implementation is incomplete (for example if is an area tag) but
   // matches the original WebViewClassic implementation.
 
-  blink::WebElementCollection collection = node.getElementsByHTMLTagName("img");
-  DCHECK(!collection.isNull());
-  return collection.firstItem();
+  blink::WebElementCollection collection = node.GetElementsByHTMLTagName("img");
+  DCHECK(!collection.IsNull());
+  return collection.FirstItem();
+}
+
+GURL GetChildImageUrlFromElement(const blink::WebElement& element) {
+  const blink::WebElement child_img = GetImgChild(element);
+  if (child_img.IsNull())
+    return GURL();
+  return GetAbsoluteSrcUrl(child_img);
 }
 
 bool RemovePrefixAndAssignIfMatches(const base::StringPiece& prefix,
@@ -82,23 +94,26 @@ bool RemovePrefixAndAssignIfMatches(const base::StringPiece& prefix,
 
 void DistinguishAndAssignSrcLinkType(const GURL& url, XWalkHitTestData* data) {
   if (RemovePrefixAndAssignIfMatches(
-      content::kAddressPrefix,
+      kAddressPrefix,
       url,
       &data->extra_data_for_type)) {
     data->type = XWalkHitTestData::GEO_TYPE;
   } else if (RemovePrefixAndAssignIfMatches(
-      content::kPhoneNumberPrefix,
+      kPhoneNumberPrefix,
       url,
       &data->extra_data_for_type)) {
     data->type = XWalkHitTestData::PHONE_TYPE;
   } else if (RemovePrefixAndAssignIfMatches(
-      content::kEmailPrefix,
+      kEmailPrefix,
       url,
       &data->extra_data_for_type)) {
     data->type = XWalkHitTestData::EMAIL_TYPE;
   } else {
     data->type = XWalkHitTestData::SRC_LINK_TYPE;
     data->extra_data_for_type = url.possibly_invalid_spec();
+    if (!data->extra_data_for_type.empty()) {
+      data->href = base::UTF8ToUTF16(data->extra_data_for_type);
+    }
   }
 }
 
@@ -123,6 +138,9 @@ void PopulateHitTestData(const GURL& absolute_link_url,
   } else if (has_link_url && has_image_url && !is_javascript_scheme) {
     data->type = XWalkHitTestData::SRC_IMAGE_LINK_TYPE;
     data->extra_data_for_type = data->img_src.possibly_invalid_spec();
+    if (absolute_link_url.is_valid()) {
+      data->href = base::UTF8ToUTF16(absolute_link_url.possibly_invalid_spec());
+    }
   } else if (!has_link_url && has_image_url) {
     data->type = XWalkHitTestData::IMAGE_TYPE;
     data->extra_data_for_type = data->img_src.possibly_invalid_spec();
@@ -168,9 +186,9 @@ void XWalkRenderViewExt::OnDocumentHasImagesRequest(int id) {
   if (render_view()) {
     blink::WebView* webview = render_view()->GetWebView();
     if (webview) {
-      blink::WebDocument document = webview->mainFrame()->document();
+      blink::WebDocument document = webview->MainFrame()->GetDocument();
       const blink::WebElement child_img = GetImgChild(document);
-      hasImages = !child_img.isNull();
+      hasImages = !child_img.IsNull();
     }
   }
   Send(new XWalkViewHostMsg_DocumentHasImagesResponse(routing_id(), id,
@@ -180,37 +198,47 @@ void XWalkRenderViewExt::OnDocumentHasImagesRequest(int id) {
 void XWalkRenderViewExt::DidCommitProvisionalLoad(blink::WebLocalFrame* frame,
                                                   bool is_new_navigation) {
   content::DocumentState* document_state =
-      content::DocumentState::FromDataSource(frame->dataSource());
+      content::DocumentState::FromDataSource(frame->DataSource());
   if (document_state->can_load_local_resources()) {
-    blink::WebSecurityOrigin origin = frame->document().getSecurityOrigin();
-    origin.grantLoadLocalResources();
+    blink::WebSecurityOrigin origin = frame->GetDocument().GetSecurityOrigin();
+    origin.GrantLoadLocalResources();
+  }
+
+  // Clear the cache when we cross site boundaries in the main frame.
+  //
+  // We're trying to approximate what happens with a multi-process Chromium,
+  // where navigation across origins would cause a new render process to spin
+  // up, and thus start with a clear cache. Wiring up a signal from browser to
+  // renderer code to say "this navigation would have switched processes" would
+  // be disruptive, so this clearing of the cache is the compromise.
+  if (!frame->Parent()) {
+    url::Origin new_origin(frame->GetDocument().Url());
+    if (!new_origin.IsSameOriginWith(last_origin_)) {
+      last_origin_ = new_origin;
+      blink::WebImageCache::Clear();
+    }
   }
 }
 
 void XWalkRenderViewExt::FocusedNodeChanged(const blink::WebNode& node) {
-  if (node.isNull() || !node.isElementNode() || !render_view())
+  if (node.IsNull() || !node.IsElementNode() || !render_view())
     return;
 
-  const blink::WebElement element = node.toConst<blink::WebElement>();
+  const blink::WebElement element = node.ToConst<blink::WebElement>();
   XWalkHitTestData data;
 
   data.href = GetHref(element);
-  data.anchor_text = element.textContent().utf16();
+  data.anchor_text = element.TextContent().Utf16();
 
   GURL absolute_link_url;
-  if (node.isLink())
+  if (node.IsLink())
     absolute_link_url = GetAbsoluteUrl(node, data.href);
 
-  GURL absolute_image_url;
-  const blink::WebElement child_img = GetImgChild(element);
-  if (!child_img.isNull()) {
-    absolute_image_url =
-        GetAbsoluteSrcUrl(child_img);
-  }
+  GURL absolute_image_url = GetChildImageUrlFromElement(element);
 
   PopulateHitTestData(absolute_link_url,
                       absolute_image_url,
-                      element.isEditable(),
+                      element.IsEditable(),
                       &data);
   Send(new XWalkViewHostMsg_UpdateHitTestData(routing_id(), data));
 }
@@ -225,19 +253,25 @@ void XWalkRenderViewExt::OnDoHitTest(const gfx::PointF& touch_center,
     return;
 
   const blink::WebHitTestResult result =
-      render_view()->GetWebView()->hitTestResultForTap(
+      render_view()->GetWebView()->HitTestResultForTap(
           blink::WebPoint(touch_center.x(), touch_center.y()),
           blink::WebSize(touch_area.width(), touch_area.height()));
   XWalkHitTestData data;
 
-  if (!result.urlElement().isNull()) {
-    data.anchor_text = result.urlElement().textContent().utf16();
-    data.href = GetHref(result.urlElement());
+  GURL absolute_image_url = result.AbsoluteImageURL();
+  if (!result.UrlElement().IsNull()) {
+    data.anchor_text = result.UrlElement().TextContent().Utf16();
+    data.href = GetHref(result.UrlElement());
+    // If we hit an image that failed to load, Blink won't give us its URL.
+    // Fall back to walking the DOM in this case.
+    if (absolute_image_url.is_empty()) {
+      absolute_image_url = GetChildImageUrlFromElement(result.UrlElement());
+    }
   }
 
-  PopulateHitTestData(result.absoluteLinkURL(),
-                      result.absoluteImageURL(),
-                      result.isContentEditable(),
+  PopulateHitTestData(result.AbsoluteLinkURL(),
+                      absolute_image_url,
+                      result.IsContentEditable(),
                       &data);
   Send(new XWalkViewHostMsg_UpdateHitTestData(routing_id(), data));
 }
@@ -245,22 +279,23 @@ void XWalkRenderViewExt::OnDoHitTest(const gfx::PointF& touch_center,
 void XWalkRenderViewExt::OnSetTextZoomLevel(double zoom_level) {
   if (!render_view() || !render_view()->GetWebView())
     return;
+
   // Hide selection and autofill popups.
-  render_view()->GetWebView()->hidePopups();
-  render_view()->GetWebView()->setZoomLevel(zoom_level);
+  render_view()->GetWebView()->HidePopups();
+  render_view()->GetWebView()->SetZoomLevel(zoom_level);
 }
 
 void XWalkRenderViewExt::OnResetScrollAndScaleState() {
   if (!render_view() || !render_view()->GetWebView())
     return;
-  render_view()->GetWebView()->resetScrollAndScaleState();
+  render_view()->GetWebView()->ResetScrollAndScaleState();
 }
 
 void XWalkRenderViewExt::OnSetInitialPageScale(double page_scale_factor) {
   LOG(INFO) << "OnSetInitialPageScale " << page_scale_factor;
   if (!render_view() || !render_view()->GetWebView())
     return;
-  render_view()->GetWebView()->setInitialPageScaleOverride(
+  render_view()->GetWebView()->SetInitialPageScaleOverride(
       page_scale_factor);
 }
 
@@ -268,15 +303,15 @@ void XWalkRenderViewExt::OnSetBackgroundColor(SkColor c) {
   if (!render_view() || !render_view()->GetWebFrameWidget())
     return;
   blink::WebFrameWidget* web_frame_widget = render_view()->GetWebFrameWidget();
-  web_frame_widget->setBaseBackgroundColor(c);
+  web_frame_widget->SetBaseBackgroundColor(c);
 }
 
 void XWalkRenderViewExt::OnSetTextZoomFactor(float zoom_factor) {
   if (!render_view() || !render_view()->GetWebView())
     return;
   // Hide selection and autofill popups.
-  render_view()->GetWebView()->hidePopups();
-  render_view()->GetWebView()->setTextZoomFactor(zoom_factor);
+  render_view()->GetWebView()->HidePopups();
+  render_view()->GetWebView()->SetTextZoomFactor(zoom_factor);
 }
 
 }  // namespace xwalk

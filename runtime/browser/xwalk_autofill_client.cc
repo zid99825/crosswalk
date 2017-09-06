@@ -122,10 +122,6 @@ void XWalkAutofillClient::DidFillOrPreviewField(
     const base::string16& profile_full_name) {
 }
 
-void XWalkAutofillClient::OnFirstUserGestureObserved() {
-  NOTIMPLEMENTED();
-}
-
 bool XWalkAutofillClient::IsContextSecure() {
   content::SSLStatus ssl_status;
   content::NavigationEntry* navigation_entry =
@@ -192,6 +188,7 @@ void XWalkAutofillClient::ConfirmSaveCreditCardLocally(
 void XWalkAutofillClient::ConfirmSaveCreditCardToCloud(
       const autofill::CreditCard& card,
       std::unique_ptr<base::DictionaryValue> legal_message,
+      bool should_cvc_be_requested,
       const base::Closure& callback) {
   NOTIMPLEMENTED();
 }
@@ -214,6 +211,12 @@ bool XWalkAutofillClient::HasCreditCardScanFeature() {
 void XWalkAutofillClient::ScanCreditCard(
     const CreditCardScanCallback& callback) {
   NOTIMPLEMENTED();
+}
+
+autofill::SaveCardBubbleController* XWalkAutofillClient::GetSaveCardBubbleController() {
+  // TODO (iotto) check if need to implement
+  NOTIMPLEMENTED();
+  return nullptr;
 }
 
 }  // namespace xwalk

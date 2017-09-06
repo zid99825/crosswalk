@@ -14,7 +14,7 @@ namespace xwalk {
 
 XWalkPermissionClient::XWalkPermissionClient(content::RenderFrame* render_frame)
     : content::RenderFrameObserver(render_frame) {
-  render_frame->GetWebFrame()->setContentSettingsClient(this);
+  render_frame->GetWebFrame()->SetContentSettingsClient(this);
 }
 
 XWalkPermissionClient::~XWalkPermissionClient() {

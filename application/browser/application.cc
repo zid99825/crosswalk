@@ -187,16 +187,16 @@ void Application::SetWindowShowState<Manifest::TYPE_MANIFEST>(
 
   // FIXME: As we do not support browser mode, the default fallback will be
   // minimal-ui mode.
-  params->display_mode = blink::WebDisplayModeMinimalUi;
+  params->display_mode = blink::kWebDisplayModeMinimalUi;
   params->state = ui::SHOW_STATE_DEFAULT;
   if (!manifest->GetString(keys::kDisplay, &display_string))
     return;
 
   if (display_string == values::kDisplayModeFullscreen) {
-    params->display_mode = blink::WebDisplayModeFullscreen;
+    params->display_mode = blink::kWebDisplayModeFullscreen;
     params->state = ui::SHOW_STATE_FULLSCREEN;
   } else if (display_string == values::kDisplayModeStandalone) {
-    params->display_mode = blink::WebDisplayModeStandalone;
+    params->display_mode = blink::kWebDisplayModeStandalone;
   }
 }
 
@@ -334,13 +334,13 @@ bool Application::RegisterPermissions(const std::string& extension_name,
   if (permission_list->GetSize() == 0)
     return false;
 
-  for (base::ListValue::const_iterator iter = permission_list->begin();
+  for (base::ListValue::iterator iter = permission_list->begin();
       iter != permission_list->end(); ++iter) {
-    if (!(*iter)->IsType(base::Value::Type::DICTIONARY))
+    if (!iter->IsType(base::Value::Type::DICTIONARY))
       return false;
 
-    base::DictionaryValue* dict_val =
-        static_cast<base::DictionaryValue*>(iter->get());
+    base::DictionaryValue * dict_val;
+    iter->GetAsDictionary(&dict_val);
     std::string permission_name;
     if (!dict_val->GetString("permission_name", &permission_name))
       return false;
@@ -352,8 +352,8 @@ bool Application::RegisterPermissions(const std::string& extension_name,
     for (base::ListValue::const_iterator api_iter = api_list->begin();
         api_iter != api_list->end(); ++api_iter) {
       std::string api;
-      if (!((*api_iter)->IsType(base::Value::Type::STRING)
-          && (*api_iter)->GetAsString(&api)))
+      if (!(api_iter->IsType(base::Value::Type::STRING)
+          && api_iter->GetAsString(&api)))
         return false;
       // register the permission and api
       name_perm_map_[api] = permission_name;

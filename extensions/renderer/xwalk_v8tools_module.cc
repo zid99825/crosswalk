@@ -142,13 +142,13 @@ void LifecycleTracker(const v8::FunctionCallbackInfo<v8::Value>& info) {
 // getWindowObject
 // ===============
 RenderView* GetCurrentRenderView() {
-  WebLocalFrame* frame = WebLocalFrame::frameForCurrentContext();
+  WebLocalFrame* frame = WebLocalFrame::FrameForCurrentContext();
   DCHECK(frame) << "There should be an active frame here";
 
   if (!frame)
     return NULL;
 
-  WebView* view = frame->view();
+  WebView* view = frame->View();
   if (!view)
     return NULL;
 
@@ -176,11 +176,11 @@ void GetWindowObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
   if (!new_view)
     return;
 
-  WebFrame* opener = cur_view->GetWebView()->mainFrame();
-  WebFrame* frame = new_view->GetWebView()->mainFrame();
-  frame->setOpener(opener);
+  WebFrame* opener = cur_view->GetWebView()->MainFrame();
+  WebFrame* frame = new_view->GetWebView()->MainFrame();
+  frame->SetOpener(opener);
 
-  v8::Local<v8::Value> window = frame->mainWorldScriptContext()->Global();
+  v8::Local<v8::Value> window = frame->MainWorldScriptContext()->Global();
   args.GetReturnValue().Set(window);
 }
 
