@@ -172,7 +172,7 @@ abstract class XWalkContentsClient extends ContentViewClient {
 
     public abstract boolean shouldOverrideUrlLoading(String url);
     
-    public abstract boolean rewriteUrlIfNeeded(RewriteUrlValueInternal toRewrite);
+    public abstract boolean onRewriteUrlIfNeeded(RewriteUrlValueInternal toRewrite);
 
     public abstract void onUnhandledKeyEvent(KeyEvent event);
 
