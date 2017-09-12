@@ -171,6 +171,8 @@ abstract class XWalkContentsClient extends ContentViewClient {
     public abstract void onLoadResource(String url);
 
     public abstract boolean shouldOverrideUrlLoading(String url);
+    
+    public abstract boolean rewriteUrlIfNeeded(RewriteUrlValueInternal toRewrite);
 
     public abstract void onUnhandledKeyEvent(KeyEvent event);
 

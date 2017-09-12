@@ -13,8 +13,8 @@ import android.graphics.Picture;
 import android.net.Uri;
 import android.net.http.SslCertificate;
 import android.net.http.SslError;
-import android.os.Message;
 import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -24,26 +24,19 @@ import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
 import android.widget.Toast;
 
-import java.security.cert.X509Certificate;
-import java.security.KeyStore.PrivateKeyEntry;
-import java.security.Principal;
-import java.security.PrivateKey;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
-
-import javax.security.auth.x500.X500Principal;
-
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.ThreadUtils;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
 import org.chromium.components.navigation_interception.NavigationParams;
 import org.chromium.content.browser.ContentVideoViewEmbedder;
-
 import org.xwalk.core.internal.XWalkUIClientInternal.LoadStatusInternal;
+
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.security.auth.x500.X500Principal;
 
 // Help bridge callback in XWalkContentsClient to XWalkViewClient and
 // XWalkWebChromeClient; Also handle the JNI conmmunication logic.
@@ -788,6 +781,14 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
          return shouldOverrideUrlLoading(url);
     }
 
+    @CalledByNative
+    public boolean rewriteUrlIfNeeded(RewriteUrlValueInternal rewriteValue) {
+        if (mXWalkResourceClient != null && mXWalkView != null) {
+            return mXWalkResourceClient.rewriteUrlIfNeeded(mXWalkView, rewriteValue);
+        }
+        return false;
+    }
+    
     @CalledByNative
     private void showNotification(String title, String message, String replaceId,
             Bitmap icon, int notificationId) {

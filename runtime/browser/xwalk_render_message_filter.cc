@@ -29,16 +29,17 @@ XWalkRenderMessageFilter::XWalkRenderMessageFilter(int process_id)
 }
 
 void XWalkRenderMessageFilter::OverrideThreadForMessage(
-    const IPC::Message& message,
-    BrowserThread::ID* thread) {
-  if (message.type() == XWalkViewHostMsg_ShouldOverrideUrlLoading::ID) {
+                                                        const IPC::Message& message,
+                                                        BrowserThread::ID* thread) {
+  if (message.type() == XWalkViewHostMsg_ShouldOverrideUrlLoading::ID ||
+      message.type() == XWalkViewHostMsg_WillSendRequest::ID) {
     *thread = BrowserThread::UI;
   }
 }
 #endif
 
 bool XWalkRenderMessageFilter::OnMessageReceived(
-    const IPC::Message& message) {
+                                                 const IPC::Message& message) {
   bool handled = true;
   IPC_BEGIN_MESSAGE_MAP(XWalkRenderMessageFilter, message)
     IPC_MESSAGE_HANDLER(ViewMsg_OpenLinkExternal, OnOpenLinkExternal)
@@ -46,6 +47,8 @@ bool XWalkRenderMessageFilter::OnMessageReceived(
     IPC_MESSAGE_HANDLER(XWalkViewHostMsg_SubFrameCreated, OnSubFrameCreated)
     IPC_MESSAGE_HANDLER(XWalkViewHostMsg_ShouldOverrideUrlLoading,
                         OnShouldOverrideUrlLoading)
+    IPC_MESSAGE_HANDLER(XWalkViewHostMsg_WillSendRequest,
+                        OnWillSendRequest)
 #endif
     IPC_MESSAGE_UNHANDLED(handled = false)
   IPC_END_MESSAGE_MAP()
@@ -59,29 +62,52 @@ void XWalkRenderMessageFilter::OnOpenLinkExternal(const GURL& url) {
 }
 
 #if defined(OS_ANDROID)
-void XWalkRenderMessageFilter::OnSubFrameCreated(
-    int parent_render_frame_id, int child_render_frame_id) {
+void XWalkRenderMessageFilter::OnSubFrameCreated(int parent_render_frame_id,
+                                                 int child_render_frame_id) {
   XWalkContentsIoThreadClient::SubFrameCreated(
-      process_id_, parent_render_frame_id, child_render_frame_id);
+                                               process_id_,
+                                               parent_render_frame_id, child_render_frame_id);
 }
 
-void XWalkRenderMessageFilter::OnShouldOverrideUrlLoading(
-    int render_frame_id,
-    const base::string16& url,
-    bool has_user_gesture,
-    bool is_redirect,
-    bool is_main_frame,
-    bool* ignore_navigation) {
+void XWalkRenderMessageFilter::OnShouldOverrideUrlLoading(int render_frame_id,
+                                                          const base::string16& url,
+                                                          bool has_user_gesture,
+                                                          bool is_redirect,
+                                                          bool is_main_frame,
+                                                          bool* ignore_navigation) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   *ignore_navigation = false;
   XWalkContentsClientBridgeBase* client =
       XWalkContentsClientBridgeBase::FromRenderFrameID(process_id_, render_frame_id);
   if (client) {
     *ignore_navigation = client->ShouldOverrideUrlLoading(
-        url, has_user_gesture, is_redirect, is_main_frame);
+                                                          url,
+                                                          has_user_gesture, is_redirect,
+                                                          is_main_frame);
   } else {
+#if TENTA_LOG_ENABLE == 1
     LOG(WARNING) << "Failed to find the associated render view host for url: "
-                 << url;
+                    << url;
+#endif
+  }
+}
+
+void XWalkRenderMessageFilter::OnWillSendRequest(int render_frame_id, const std::string& url,
+                                                 ui::PageTransition transition_type,
+                                                 std::string* new_url,
+                                                 bool* did_overwrite) {
+  // TODO(iotto) check new_url/did_overwrite for null
+  *did_overwrite = false;
+  XWalkContentsClientBridgeBase* client =
+      XWalkContentsClientBridgeBase::FromRenderFrameID(process_id_, render_frame_id);
+
+  if ( client ) {
+    *did_overwrite = client->RewriteUrlIfNeeded(url, transition_type, new_url);
+  } else {
+#if TENTA_LOG_ENABLE == 1
+    LOG(WARNING) << "Failed to find the associated render view host for url: "
+                    << url;
+#endif
   }
 }
 #endif

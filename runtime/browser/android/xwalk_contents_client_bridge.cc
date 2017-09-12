@@ -308,6 +308,59 @@ bool XWalkContentsClientBridge::ShouldOverrideUrlLoading(
       env, obj.obj(), jurl.obj(), has_user_gesture, is_redirect, is_main_frame);
 }
 
+/**
+ *
+ */
+bool XWalkContentsClientBridge::RewriteUrlIfNeeded(const std::string& url,
+                                 ui::PageTransition transition_type,
+                                 std::string* new_url) {
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << "XWalkContentsClientBridge::RewriteUrlIfNeeded " << url;
+#endif
+
+  JNIEnv* env = AttachCurrentThread();
+  ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
+  if (obj.is_null())
+    return false;
+
+  /* TODO ********* move to function ***********/
+  using namespace base::android;
+
+  ScopedJavaLocalRef<jclass> jcls = base::android::GetClass(
+      env, "org/xwalk/core/internal/RewriteUrlValueInternal");
+
+  jfieldID field_url = env->GetFieldID(jcls.obj(), "url", "Ljava/lang/String;");
+  jfieldID field_tr_type = env->GetFieldID(jcls.obj(), "transitionType", "I");
+
+  jmethodID ctor = MethodID::Get<MethodID::TYPE_INSTANCE>(env,
+                                                          jcls.obj(),
+                                                          "<init>", "()V");
+
+  // create java object (!!!release local ref!!!)
+  jobject new_obj = env->NewObject(jcls.obj(), ctor);
+
+  ScopedJavaLocalRef<jstring> jurl = base::android::ConvertUTF8ToJavaString(env, url);
+
+  env->SetIntField(new_obj, field_tr_type, transition_type);
+  env->SetObjectField(new_obj, field_url, jurl.obj());
+
+  // call java
+  bool did_rewrite = Java_XWalkContentsClientBridge_rewriteUrlIfNeeded(env, obj.obj(), new_obj);
+
+  jurl.Reset(env, (jstring)env->GetObjectField(new_obj, field_url));
+
+  env->DeleteLocalRef(new_obj);
+
+  if ( did_rewrite == true && new_url != nullptr) {
+    base::android::ConvertJavaStringToUTF8(env, jurl.obj(), new_url);
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "GOT rewritten from:" << url << " to:" << *new_url;
+#endif
+    return did_rewrite;
+  }
+
+  return false;
+}
 void XWalkContentsClientBridge::ConfirmJsResult(JNIEnv* env,
                                                 jobject,
                                                 int id,

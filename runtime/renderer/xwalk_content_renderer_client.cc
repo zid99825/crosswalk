@@ -266,8 +266,42 @@ bool XWalkContentRendererClient::WillSendRequest(blink::WebFrame* frame,
                      const GURL& url,
                      const GURL& first_party_for_cookies,
                      GURL* new_url) {
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url=" << frame->document().url().string().utf8() << " url=" << url.spec()
+      << " first_party_for_cookies=" << first_party_for_cookies.spec();
+#endif
+
 #if defined(OS_ANDROID)
-  return false;
+  content::RenderView* render_view =
+      content::RenderView::FromWebView(frame->view());
+  if ( render_view == nullptr ) {
+    return false; // no overwrite
+  }
+
+  content::RenderFrame* render_frame = render_view->GetMainRenderFrame();
+  if ( render_frame == nullptr ) {
+    return false; // no overwrite
+  }
+
+  int render_frame_id = render_frame->GetRoutingID();
+
+  bool did_overwrite = false;
+  std::string url_str = url.spec();
+  std::string new_url_str;
+
+  RenderThread::Get()->Send(new XWalkViewHostMsg_WillSendRequest(render_frame_id,
+                                                                 url_str,
+                                                                 transition_type,
+                                                                 &new_url_str,
+                                                                 &did_overwrite));
+
+  if ( did_overwrite ) {
+    *new_url = GURL(new_url_str);
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "XWalkContentRendererClient::WillSendRequest did_overwrite";
+#endif
+  }
+  return did_overwrite;
 #else
   if (!xwalk_render_thread_observer_->IsWarpMode() &&
       !xwalk_render_thread_observer_->IsCSPMode())

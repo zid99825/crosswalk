@@ -10,6 +10,7 @@
 #include "content/public/browser/client_certificate_delegate.h"
 #include "content/public/browser/javascript_dialog_manager.h"
 #include "net/ssl/ssl_cert_request_info.h"
+#include "ui/base/page_transition_types.h"
 
 class GURL;
 class SkBitmap;
@@ -82,6 +83,15 @@ class XWalkContentsClientBridgeBase {
                                         bool has_user_gesture,
                                         bool is_redirect,
                                         bool is_main_frame) = 0;
+  /**
+   * Last chance to rewrite request url, right before WebKit makes the request
+   *
+   * @param new_url the rewritten url (return true if rewritten!)
+   * @return true if new_url has been assigned a new value
+   */
+  virtual bool RewriteUrlIfNeeded(const std::string& url,
+                               ui::PageTransition transition_type,
+                               std::string* new_url) = 0;
 };
 
 }  // namespace xwalk
