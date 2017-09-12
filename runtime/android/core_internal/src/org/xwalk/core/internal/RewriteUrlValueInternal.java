@@ -3,6 +3,11 @@ package org.xwalk.core.internal;
 @XWalkAPI(createInternally = true)
 public class RewriteUrlValueInternal {
     private String url;
+    
+    /**
+     * C++ ui/base/page_transition_types.h
+     * Java org.chromium.ui.base.PageTransition
+     */
     private int transitionType;
     
     private void nativeInit(String url, int trType) {
