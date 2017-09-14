@@ -11,8 +11,10 @@
 #include "ipc/ipc_message_macros.h"
 #include "ipc/ipc_platform_file.h"
 #include "third_party/skia/include/core/SkColor.h"
+#include "ui/base/page_transition_types.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/size_f.h"
+
 
 // Singly-included section for enums and custom IPC traits.
 #ifndef XWALK_RUNTIME_COMMON_ANDROID_XWALK_RENDER_VIEW_MESSAGES_H_
@@ -130,7 +132,12 @@ IPC_SYNC_MESSAGE_CONTROL5_1(XWalkViewHostMsg_ShouldOverrideUrlLoading, // NOLINT
                             bool /* in - is_redirect */,
                             bool /* in - is_main_frame */,
                             bool /* out - result */)
-
+IPC_SYNC_MESSAGE_CONTROL3_2(XWalkViewHostMsg_WillSendRequest, // NOLINT(*)
+                            int /* render_frame_id id */,
+                            std::string /* in - url */,
+                            ui::PageTransition /*in - transition_type */,
+                            std::string /* out - new url*/,
+                            bool /* out - did_overwrite*/)
 // Sent when a subframe is created.
 IPC_MESSAGE_CONTROL2(XWalkViewHostMsg_SubFrameCreated, // NOLINT(*)
                      int, /* parent_render_frame_id */

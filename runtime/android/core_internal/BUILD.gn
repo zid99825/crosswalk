@@ -19,6 +19,7 @@ internal_java_files = [
   "src/org/xwalk/core/internal/ClientCertRequestInternal.java",
   "src/org/xwalk/core/internal/CustomViewCallbackHandlerInternal.java",
   "src/org/xwalk/core/internal/CustomViewCallbackInternal.java",
+  "src/org/xwalk/core/internal/RewriteUrlValueInternal.java",
   "src/org/xwalk/core/internal/XWalkCookieManagerInternal.java",
   "src/org/xwalk/core/internal/XWalkDownloadListenerInternal.java",
   "src/org/xwalk/core/internal/XWalkExtensionInternal.java",

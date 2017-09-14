@@ -5,6 +5,7 @@
 #define XWALK_RUNTIME_BROWSER_XWALK_RENDER_MESSAGE_FILTER_H_
 
 #include "content/public/browser/browser_message_filter.h"
+#include "ui/base/page_transition_types.h"
 #include "url/gurl.h"
 
 namespace xwalk {
@@ -13,17 +14,17 @@ namespace xwalk {
 class XWalkRenderMessageFilter : public content::BrowserMessageFilter {
  public:
   XWalkRenderMessageFilter();
-#if defined(OS_ANDROID)
+  #if defined(OS_ANDROID)
   explicit XWalkRenderMessageFilter(int process_id);
   // BrowserMessageFilter methods.
   void OverrideThreadForMessage(const IPC::Message& message,
                                 content::BrowserThread::ID* thread) override;
-#endif
+  #endif
   bool OnMessageReceived(const IPC::Message& message) override;
 
  private:
   void OnOpenLinkExternal(const GURL& url);
-#if defined(OS_ANDROID)
+  #if defined(OS_ANDROID)
   void OnSubFrameCreated(int parent_render_frame_id, int child_render_frame_id);
   void OnShouldOverrideUrlLoading(int routing_id,
                                   const base::string16& url,
@@ -31,14 +32,20 @@ class XWalkRenderMessageFilter : public content::BrowserMessageFilter {
                                   bool is_redirect,
                                   bool is_main_frame,
                                   bool* ignore_navigation);
-#endif
-  ~XWalkRenderMessageFilter() override {}
+  void OnWillSendRequest(int render_frame_id, const std::string& url,
+                         ui::PageTransition transition_type,
+                         std::string* new_url,
+                         bool* did_overwrite);
+  #endif
+  ~XWalkRenderMessageFilter() override {
+  }
 
 #if defined(OS_ANDROID)
   int process_id_;
-#endif
+  #endif
 
-  DISALLOW_COPY_AND_ASSIGN(XWalkRenderMessageFilter);
+  DISALLOW_COPY_AND_ASSIGN(XWalkRenderMessageFilter)
+  ;
 };
 }  // namespace xwalk
 

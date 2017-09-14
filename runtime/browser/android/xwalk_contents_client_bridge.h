@@ -84,6 +84,9 @@ class XWalkContentsClientBridge : public XWalkContentsClientBridgeBase ,
                                 bool is_redirect,
                                 bool is_main_frame) override;
 
+  bool RewriteUrlIfNeeded(const std::string& url,
+                                 ui::PageTransition transition_type,
+                                 std::string* new_url) override;
   // Methods called from Java.
   void ProceedSslError(JNIEnv* env, jobject obj, jboolean proceed, jint id);
   void ConfirmJsResult(JNIEnv*, jobject, int id, jstring prompt);
