@@ -785,12 +785,17 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
          return shouldOverrideUrlLoading(url);
     }
 
-    @CalledByNative
-    public boolean rewriteUrlIfNeeded(RewriteUrlValueInternal rewriteValue) {
+    @Override
+    public boolean onRewriteUrlIfNeeded(RewriteUrlValueInternal toRewrite) {
         if (mXWalkResourceClient != null && mXWalkView != null) {
-            return mXWalkResourceClient.rewriteUrlIfNeeded(mXWalkView, rewriteValue);
+            return mXWalkResourceClient.onRewriteUrlIfNeeded(mXWalkView, toRewrite);
         }
         return false;
+    }
+    
+    @CalledByNative
+    private boolean rewriteUrlIfNeeded(RewriteUrlValueInternal rewriteValue) {
+        return onRewriteUrlIfNeeded(rewriteValue);
     }
     
     @CalledByNative

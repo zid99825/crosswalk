@@ -259,8 +259,14 @@ public class XWalkResourceClientInternal {
         return false;
     }
     
+    /**
+     * Can rewrite url just before load
+     * @param view
+     * @param rewriteValue Storage for old and new url
+     * @return true if url was rewritten 
+     */
     @XWalkAPI
-    public boolean rewriteUrlIfNeeded(XWalkViewInternal view, RewriteUrlValueInternal rewriteValue) {
+    public boolean onRewriteUrlIfNeeded(XWalkViewInternal view, RewriteUrlValueInternal rewriteValue) {
         return false;
     }
 
