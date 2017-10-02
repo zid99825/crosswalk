@@ -135,6 +135,7 @@ if (is_android) {
 # the right places in grit of the grd file.
 grit("generate_xwalk_resources") {
   source = "//xwalk/runtime/resources/xwalk_resources.grd"
+  use_qualified_include = true
   resource_ids = "//xwalk/resources/resource_ids"
   outputs = [
     "$root_gen_dir/xwalk/resources/grit/xwalk_resources.h",
@@ -163,18 +164,24 @@ copy("xwalk_resources") {
 # the right places in grit of the grd file.
 grit("xwalk_strings") {
   source = "//xwalk/runtime/resources/xwalk_strings.grd"
+  use_qualified_include = true
   outputs = [
-    "../grit/xwalk_strings.h",
+#     "../grit/xwalk_strings.h",
+    "grit/xwalk_strings.h",
   ]
-  outputs += locales
-  output_dir = "$root_gen_dir/xwalk/locales"
-  resource_ids = "//xwalk/resources/resource_ids"
+  foreach(_locale, locales) {
+    outputs += [ "xwalk_strings_${_locale}.pak" ]
+  }
+
+#   outputs += locales
+#   output_dir = "$root_gen_dir/xwalk/locales"
+   resource_ids = "//xwalk/resources/resource_ids"
 }
 
 copy("xwalk_locales") {
   sources = []
   foreach(pak, locales) {
-    sources += [ "$root_gen_dir/xwalk/locales/$pak" ]
+    sources += [ "$root_gen_dir/xwalk/resources/xwalk_strings_$pak.pak" ]
   }
   outputs = [
     "$root_out_dir/locales/xwalk/{{source_file_part}}",

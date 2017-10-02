@@ -4,6 +4,6 @@
 
 # Crosswalk locales pak files list.
 locales = [
-  "en-US.pak",
-  "zh-CN.pak",
+  "en-US",
+  "zh-CN",
 ]

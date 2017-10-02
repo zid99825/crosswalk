@@ -168,6 +168,7 @@ template("generate_android_project") {
     deps = [
       ":$_build_config_target",
     ]
+    generate_constant_ids = true
 #    r_text_path = _r_file_path
     r_text_out_path = _r_file_path
 #    r_text_in_path = _r_file_path
@@ -176,10 +177,14 @@ template("generate_android_project") {
 
     # Unused, but required.
     zip_path = _base_path + "_reszip__unused.zip"
+    all_resources_zip_path = _base_path + "_reszip__unused.all.zip"
 #    shared_resources = true
 
     if (defined(invoker.include_all_resources) ) {
       include_all_resources = invoker.include_all_resources
+    }
+    if (defined(invoker.deps)) {
+        deps += invoker.deps
     }
   }
   _srcjar_deps += [ ":$_process_resources_target" ]

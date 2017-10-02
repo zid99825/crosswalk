@@ -104,12 +104,14 @@ generate_android_project("xwalk_core_library") {
   # app-tools and dex complaining of multiple definitions of
   # org.xwalk.core.R.
   # TODO(rakuco): Check if we should fix the manifest instead.
-  resource_excluded_patterns = [
+resource_excluded_patterns = [
+#     "*/org/xwalk/core/library/empty/R.class",
+#     "*/org/xwalk/core/library/empty/R##*.class",
     "*/org/xwalk/core/R.class",
-    "*/org/xwalk/core/R##*.class",
-    "*/org/xwalk/core/library/empty/R.class",
-    "*/org/xwalk/core/library/empty/R##*.class",
-  ]
+    "*/org/xwalk/core/R\$*.class",
+    "*/org/xwalk/core/Manifest.class",
+    "*/org/xwalk/core/Manifest\$*.class",
+]
   shared_libraries = [
     "//xwalk/runtime/android/dummy_lib:libxwalkdummy",
     "//xwalk/runtime/app/android:libxwalkcore",
@@ -161,10 +163,12 @@ generate_android_project("xwalk_shared_library") {
   # org.xwalk.core.R.
   # TODO(rakuco): Check if we should fix the manifest instead.
   resource_excluded_patterns = [
+#     "*/org/xwalk/core/library/empty/R.class",
+#     "*/org/xwalk/core/library/empty/R##*.class",
     "*/org/xwalk/core/R.class",
-    "*/org/xwalk/core/R##*.class",
-    "*/org/xwalk/core/library/empty/R.class",
-    "*/org/xwalk/core/library/empty/R##*.class",
+    "*/org/xwalk/core/R\$*.class",
+    "*/org/xwalk/core/Manifest.class",
+    "*/org/xwalk/core/Manifest\$*.class",
   ]
   template_dir = "//xwalk/build/android/xwalk_shared_library_template"
 }

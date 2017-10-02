@@ -22,6 +22,12 @@ import java.util.Map;
 public class XWalkPreferencesInternal {
     private static final String TAG = "XWalkPreferences";
 
+    @XWalkAPI
+    public static String getChromeVersion()
+    {
+        return XWalkContent.getChromeVersion();
+    }
+    
     static class PreferenceValue {
         static final int PREFERENCE_TYPE_BOOLEAN = 1;
         static final int PREFERENCE_TYPE_INTEGER = 2;

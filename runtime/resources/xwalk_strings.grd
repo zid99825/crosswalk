@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <grit latest_public_release="0" current_release="1" source_lang_id="en">
   <outputs>
-    <output filename="../grit/xwalk_strings.h" type="rc_header" >
+    <output filename="grit/xwalk_strings.h" type="rc_header" >
       <emit emit_type='prepend'></emit>
     </output>
-    <output filename="en-US.pak" type="data_package" lang="en" />
-    <output filename="zh-CN.pak" type="data_package" lang="zh-CN" />
+    <output filename="xwalk_strings_en-US.pak" type="data_package" lang="en" />
+    <output filename="xwalk_strings_zh-CN.pak" type="data_package" lang="zh-CN" />
   </outputs>
   <translations>
     <file path="locale/xwalk_strings_zh-CN.xtb" lang="zh-CN" />

@@ -40,8 +40,8 @@ JAR_ENTRY_WHITELIST = (
   'org/chromium/*.class',
   'org/xwalk/*.class',
   'com/tenta/*.class',
-  'android/support/*.class',
 )
+#'android/support/*.class',
 
 # These are the JAR files we are known to skip because they contain classes in
 # namespaces we do not allow -- they are either not necessary or users must
@@ -66,6 +66,7 @@ KNOWN_SKIPPED_JARS = (
   # XWALK-6597.
   'cardboard.jar',
   'protobuf_nano_javalib.jar',
+  'support-annotations-25.0.1.jar',
 )
 
 

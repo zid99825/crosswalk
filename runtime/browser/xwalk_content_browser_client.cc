@@ -173,6 +173,7 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
   LOG(INFO) << "webPref cookie_enabled=" << prefs->cookie_enabled;
   LOG(INFO) << "webPref progress_bar_completion=" << static_cast<int>(prefs->progress_bar_completion);
   LOG(INFO) << "webPref viewport_meta_enabled=" << prefs->viewport_meta_enabled;
+  LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
 
   prefs->viewport_meta_enabled = true;
 }

@@ -22,6 +22,7 @@
 #include "base/pickle.h"
 #include "base/strings/string_number_conversions.h"
 #include "components/navigation_interception/intercept_navigation_delegate.h"
+#include "components/version_info/version_info.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/devtools_agent_host.h"
@@ -33,6 +34,7 @@
 #include "content/public/common/renderer_preferences.h"
 //#include "content/public/common/ssl_status.h"
 #include "content/public/common/url_constants.h"
+
 #include "ui/gfx/geometry/rect_f.h"
 #include "xwalk/application/common/application_manifest_constants.h"
 #include "xwalk/application/common/manifest.h"
@@ -377,6 +379,11 @@ void XWalkContent::UpdateLastHitTestData(JNIEnv* env, jobject obj) {
 
 ScopedJavaLocalRef<jstring> XWalkContent::GetVersion(JNIEnv* env, jobject obj) {
   return base::android::ConvertUTF8ToJavaString(env, XWALK_VERSION);
+}
+
+static ScopedJavaLocalRef<jstring> GetChromeVersion(JNIEnv* env, const base::android::JavaParamRef<jclass>& jcaller) {
+  LOG(INFO) << "iotto GetChromeVersion" <<  version_info::GetVersionNumber();
+  return base::android::ConvertUTF8ToJavaString(env, version_info::GetVersionNumber());
 }
 
 void XWalkContent::SetJsOnlineProperty(JNIEnv* env, jobject obj,

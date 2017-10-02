@@ -96,8 +96,9 @@ public class SwipeRefreshHandler implements OverscrollRefreshHandler {
                 cancelStopRefreshingRunnable();
                 mSwipeRefreshLayout.postDelayed(
                         getStopRefreshingRunnable(), MAX_REFRESH_ANIMATION_DURATION_MS);
+                // TODO (iotto) see where the string resources are gone
                 if (mAccessibilityRefreshString == null) {
-                    int resId = R.string.accessibility_swipe_refresh;
+                    int resId = R.string.xwalk_accessibility_swipe_refresh;
                     mAccessibilityRefreshString = contentViewCore.getContext().getResources()
                             .getString(resId);
                 }

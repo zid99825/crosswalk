@@ -153,11 +153,6 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         if (sInitialized)
             return;
 
-        if ( libContext != null ) {
-            Log.d("iotto", "lib context: " + libContext.getPackageName());
-        }
-        Log.d("iotto", "app context: " + appContext.getPackageName() + " cls: " + appContext.toString());
-
         Context context = libContext == null ? appContext
                 : new MixedContext(libContext, appContext);
 
@@ -165,7 +160,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
 
         // Initialize chromium resources. Assign them the correct ids in xwalk core.
-        XWalkInternalResources.resetIds(context);
+//        XWalkInternalResources.resetIds(context);
 //        ResourceRewriter.rewriteRValues(
 //            getPackageId(context.getResources(), ContextUtils.getApplicationContext().getPackageName()));
         
@@ -206,8 +201,12 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         }
 
         XWalkPresentationHost.createInstanceOnce(context);
-//        ContextUtils.initApplicationContextForNative();
+        // ContextUtils.initApplicationContextForNative();
 
+        ResourceExtractor resourceExtractor = ResourceExtractor.get();
+
+        resourceExtractor.waitForCompletion();
+        XWalkInternalResources.resetIds(context.getApplicationContext());
         sInitialized = true;
     }
 
@@ -223,7 +222,6 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
             return true;
 
         try {
-            Log.d(TAG, "!!!!!!!!!!!!!!!!!! LibraryLoader.get");
             LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
 //            libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {

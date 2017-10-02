@@ -647,6 +647,10 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         return nativeGetVersion(mNativeContent);
     }
 
+    public static String getChromeVersion() {
+        return nativeGetChromeVersion();
+    }
+    
     private boolean isOpaque(int color) {
         return ((color >> 24) & 0xFF) == 0xFF;
     }
@@ -1467,6 +1471,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private native String nativeDevToolsAgentId(long nativeXWalkContent);
 
     private native String nativeGetVersion(long nativeXWalkContent);
+    private static native String nativeGetChromeVersion();
 
     private native void nativeSetJsOnlineProperty(long nativeXWalkContent, boolean networkUp);
 

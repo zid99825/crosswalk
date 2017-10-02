@@ -41,7 +41,6 @@
 #include "xwalk/runtime/renderer/android/xwalk_permission_client.h"
 #include "xwalk/runtime/renderer/android/xwalk_render_thread_observer.h"
 #include "xwalk/runtime/renderer/android/xwalk_render_view_ext.h"
-#else
 #include "third_party/WebKit/public/web/WebLocalFrame.h"
 #endif
 
@@ -275,12 +274,13 @@ bool XWalkContentRendererClient::WillSendRequest(
                        const blink::WebURL& url,
                        GURL* new_url) {
 #if TENTA_LOG_ENABLE == 1
-  LOG(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url=" << frame->document().url().string().utf8() << " url=" << url.spec()
-      << " first_party_for_cookies=" << first_party_for_cookies.spec();
+  LOG(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
+               << frame->GetDocument().Url().GetString().Utf8() << " url="
+               << url.GetString().Utf8();
 #endif
 #if defined(OS_ANDROID)
   content::RenderView* render_view =
-      content::RenderView::FromWebView(frame->view());
+      content::RenderView::FromWebView(frame->View());
   if ( render_view == nullptr ) {
     return false; // no overwrite
   }
@@ -293,7 +293,7 @@ bool XWalkContentRendererClient::WillSendRequest(
   int render_frame_id = render_frame->GetRoutingID();
 
   bool did_overwrite = false;
-  std::string url_str = url.spec();
+  std::string url_str = url.GetString().Utf8();
   std::string new_url_str;
 
   RenderThread::Get()->Send(new XWalkViewHostMsg_WillSendRequest(render_frame_id,
