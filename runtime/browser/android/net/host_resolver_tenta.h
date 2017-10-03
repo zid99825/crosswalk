@@ -197,7 +197,7 @@ private:
   /**
    * Do real work on original thread
    */
-  void origOnResolved(int64_t forRequestId, int error, AddressList* addr_list);
+  void origOnResolved(SavedRequest* theRequest, int error, AddressList* addr_list);
 
   DISALLOW_COPY_AND_ASSIGN(HostResolverTenta)
   ;

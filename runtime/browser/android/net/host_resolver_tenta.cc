@@ -42,11 +42,12 @@ using namespace net;
 class HostResolverTenta::SavedRequest
 {
 public:
-  SavedRequest(base::TimeTicks when_created, const RequestInfo& info,
+  SavedRequest(base::TimeTicks when_created, int64_t request_id, const RequestInfo& info,
                RequestPriority priority,
                const CompletionCallback& callback,
                AddressList* addresses)
-    : info_(info),
+    : _request_id(request_id),
+      info_(info),
       priority_(priority),  // not used
       callback_(callback),
       addresses_(addresses),
@@ -120,7 +121,9 @@ public:
     return info_;
   }
 
+  int64_t request_id() { return _request_id; }
 private:
+  int64_t _request_id;
   // The request info that started the request.
   const RequestInfo info_;
 
@@ -190,8 +193,9 @@ HostResolverTenta::~HostResolverTenta()
   net::NetworkChangeNotifier::RemoveConnectionTypeObserver(this);
   net::NetworkChangeNotifier::RemoveDNSObserver(this);
 
+//  LOG(INFO) << "Lock in HostResolverTenta";
   base::AutoLock lock(reqGuard);
-
+//  LOG(INFO) << "Lock out HostResolverTenta";
   //STLDeleteValues(&requests_);
 }
 
@@ -231,18 +235,20 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
   base::TimeTicks now = base::TimeTicks::Now();
   int64_t key_id = now.ToInternalValue();
 
-  SavedRequest * the_request = new SavedRequest(now, info, priority, callback,
+  SavedRequest * the_request = new SavedRequest(now, key_id, info, priority, callback,
       addresses);
 
   std::unique_ptr<SavedRequest> request(the_request);
   std::unique_ptr<Request> response(new RequestForCaller(key_id, weak_ptr_factory_.GetWeakPtr()));
 
+//  LOG(INFO) << "Lock in Resolve";
   reqGuard.Acquire();
   requests_.insert(std::make_pair(key_id, std::move(request)));
   reqGuard.Release();
+//  LOG(INFO) << "Lock out Resolve";
 
 #if TENTA_LOG_ENABLE == 1
-  LOG(INFO) << "Request ID: " << key_id;
+  LOG(INFO) << "Request ID=" << key_id;
 #endif
 
   // post task and run
@@ -369,7 +375,7 @@ void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id)
     request->sent_to_java();
 
 #if TENTA_LOG_ENABLE == 1
-    LOG(INFO) << "resolv name java returned: " << jReturn;
+    LOG(INFO) << "resolv id=" << key_id << " java returned=" << jReturn;
 #endif
 
     if (jReturn != OK)
@@ -417,15 +423,26 @@ void HostResolverTenta::OnResolved(JNIEnv* env, jobject caller, jint status,
 
   AddressList *foundAddr = nullptr;  // the found addresses
 
+//  LOG(INFO) << "HostResolverTenta::OnResolved id=" << forRequestId;
   if (status == OK)
   {
     foundAddr = ConvertIpJava2Native(env, result);
   }
 
-// TODO search by id and call onresolved
-  orig_runner_->PostTask(FROM_HERE,
-                         base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
-                                    forRequestId, status, base::Owned(foundAddr)));  // bind will delete the foundAddr
+  base::AutoLock lock(reqGuard);
+
+  auto it = requests_.find(forRequestId);
+  SavedRequest* saved_request = nullptr;
+
+  if (it != requests_.end()) {
+    saved_request = it->second.release();
+    requests_.erase(it);
+
+    // TODO search by id and call onresolved
+    orig_runner_->PostTask(FROM_HERE,
+    base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
+        base::Owned(saved_request), status, base::Owned(foundAddr)));  // bind will delete the foundAddr
+  }
 
 }
 
@@ -469,27 +486,36 @@ AddressList * HostResolverTenta::ConvertIpJava2Native(JNIEnv* env,
   return foundAddr;
 }
 
-void HostResolverTenta::origOnResolved(int64_t forRequestId, int error,
+/**
+ *
+ */
+void HostResolverTenta::origOnResolved(SavedRequest* theRequest, int error,
                                        AddressList* addr_list)
 {
 
-  base::AutoLock lock(reqGuard);
-
-  auto it = requests_.find(forRequestId);
-  if (it != requests_.end())
-  {
-    it->second->OnResolved(error, addr_list);
-//    delete it->second;
-    requests_.erase(it);
+  if ( theRequest != nullptr ) {
+//    LOG(INFO) << "HostResolverTenta::origOnResolved id=" << theRequest->request_id();
+    theRequest->OnResolved(error, addr_list);
   }
+
 }
 /**
  * Called when error occured (can be on any thread, will post a task to original thread
  */
 void HostResolverTenta::OnError(int64_t key_id, int error)
 {
-  orig_runner_->PostTask(FROM_HERE,
-                         base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(), key_id, error, nullptr));
+  base::AutoLock lock(reqGuard);
+
+  auto it = requests_.find(key_id);
+  SavedRequest* saved_request = nullptr;
+
+  if (it != requests_.end()) {
+    saved_request = it->second.release();
+    requests_.erase(it);
+    orig_runner_->PostTask(FROM_HERE,
+    base::Bind(&HostResolverTenta::origOnResolved, weak_ptr_factory_.GetWeakPtr(),
+        base::Owned(saved_request), error, nullptr));
+  }
 }
 
 /**
@@ -505,9 +531,10 @@ void HostResolverTenta::CancelRequest(int64_t key_id)
 //    int64_t key_id = reinterpret_cast<int64_t>(req);
 
 #if TENTA_LOG_ENABLE == 1
-  LOG(INFO) << "CancelRequest ID: " << key_id;
+  LOG(INFO) << "CancelRequest ID=" << key_id;
 #endif
 
+//  LOG(INFO) << "Lock in CancelRequest";
   base::AutoLock lock(reqGuard);
 
   auto it = requests_.find(key_id);
@@ -525,6 +552,7 @@ void HostResolverTenta::CancelRequest(int64_t key_id)
     }
   }
 //  }
+//  LOG(INFO) << "Lock out CancelRequest";
 }
 
 /**
