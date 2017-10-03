@@ -37,6 +37,7 @@
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "xwalk/runtime/common/xwalk_runtime_features.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+#include "gpu/config/gpu_switches.h"
 
 namespace {
 
