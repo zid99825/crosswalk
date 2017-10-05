@@ -141,6 +141,24 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
 void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
                                    content::WebPreferences* prefs) {
 
+  LOG(INFO) << "webPref images_enabled=" << prefs->images_enabled;
+  LOG(INFO) << "webPref plugins_enabled=" << prefs->plugins_enabled;
+  LOG(INFO) << "webPref encrypted_media_enabled=" << prefs->encrypted_media_enabled;
+  LOG(INFO) << "webPref accelerated_2d_canvas_enabled=" << prefs->accelerated_2d_canvas_enabled;
+  LOG(INFO) << "webPref antialiased_2d_canvas_disabled=" << prefs->antialiased_2d_canvas_disabled;
+  LOG(INFO) << "webPref antialiased_clips_2d_canvas_enabled=" << prefs->antialiased_clips_2d_canvas_enabled;
+
+  LOG(INFO) << "webPref accelerated_filters_enabled=" << prefs->accelerated_filters_enabled;
+  LOG(INFO) << "webPref deferred_filters_enabled=" << prefs->deferred_filters_enabled;
+  LOG(INFO) << "webPref container_culling_enabled=" << prefs->container_culling_enabled;
+  LOG(INFO) << "webPref pepper_accelerated_video_decode_enabled=" << prefs->pepper_accelerated_video_decode_enabled;
+  LOG(INFO) << "webPref pepper_3d_enabled=" << prefs->pepper_3d_enabled;
+  LOG(INFO) << "webPref media_playback_gesture_whitelist_scope=" << prefs->media_playback_gesture_whitelist_scope;
+  LOG(INFO) << "webPref video_fullscreen_detection_enabled=" << prefs->video_fullscreen_detection_enabled;
+  LOG(INFO) << "webPref embedded_media_experience_enabled=" << prefs->embedded_media_experience_enabled;
+  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->background_video_track_optimization_enabled;
+  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->media_controls_enabled;
+
   LOG(INFO) << "webPref default_minimum_page_scale_factor=" << prefs->default_minimum_page_scale_factor;
   LOG(INFO) << "webPref default_maximum_page_scale_factor=" << prefs->default_maximum_page_scale_factor;
   LOG(INFO) << "webPref use_wide_viewport=" << prefs->use_wide_viewport;
@@ -176,6 +194,8 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
   LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
 
   prefs->viewport_meta_enabled = true;
+  prefs->viewport_style = content::ViewportStyle::DEFAULT;
+  prefs->accelerated_filters_enabled = true;
 }
 
 content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
