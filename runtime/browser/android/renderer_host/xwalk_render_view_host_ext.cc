@@ -70,7 +70,6 @@ const XWalkHitTestData& XWalkRenderViewHostExt::GetLastHitTestData() const {
 
 void XWalkRenderViewHostExt::SetTextZoomLevel(double level) {
   DCHECK(CalledOnValidThread());
-  LOG(INFO) << "SetTextZoomLevel=" << level;
   Send(new XWalkViewMsg_SetTextZoomLevel(
       web_contents()->GetRenderViewHost()->GetRoutingID(), level));
 }
@@ -78,7 +77,6 @@ void XWalkRenderViewHostExt::SetTextZoomLevel(double level) {
 void XWalkRenderViewHostExt::ResetScrollAndScaleState() {
   DCHECK(CalledOnValidThread());
 
-  LOG(INFO) << "ResetScrollAndScaleState";
   Send(new XWalkViewMsg_ResetScrollAndScaleState(
       web_contents()->GetMainFrame()->GetRoutingID()));
 //  Send(new XWalkViewMsg_ResetScrollAndScaleState(
@@ -87,11 +85,10 @@ void XWalkRenderViewHostExt::ResetScrollAndScaleState() {
 
 void XWalkRenderViewHostExt::SetInitialPageScale(double page_scale_factor) {
   DCHECK(CalledOnValidThread());
-  LOG(INFO) << "SetInitialPageScale=" << page_scale_factor;
-//  Send(new XWalkViewMsg_SetInitialPageScale(web_contents()->GetMainFrame()->GetRoutingID(),
-//                                         page_scale_factor));
-  Send(new XWalkViewMsg_SetInitialPageScale(web_contents()->GetRenderViewHost()->GetRoutingID(),
+  Send(new XWalkViewMsg_SetInitialPageScale(web_contents()->GetMainFrame()->GetRoutingID(),
                                          page_scale_factor));
+//  Send(new XWalkViewMsg_SetInitialPageScale(web_contents()->GetRenderViewHost()->GetRoutingID(),
+//                                         page_scale_factor));
 }
 
 void XWalkRenderViewHostExt::RenderViewCreated(
@@ -133,7 +130,6 @@ void XWalkRenderViewHostExt::DidFinishNavigation(content::NavigationHandle* navi
 void XWalkRenderViewHostExt::OnPageScaleFactorChanged(float page_scale_factor) {
   XWalkContentsClientBridgeBase* client_bridge =
       XWalkContentsClientBridgeBase::FromWebContents(web_contents());
-  LOG(INFO) << "OnPageScaleFactorChanged=" << page_scale_factor;
   if (client_bridge != NULL)
     client_bridge->OnWebLayoutPageScaleFactorChanged(page_scale_factor);
 }
@@ -192,8 +188,6 @@ void XWalkRenderViewHostExt::SetBackgroundColor(SkColor c) {
 
 void XWalkRenderViewHostExt::SetTextZoomFactor(float factor) {
   DCHECK(CalledOnValidThread());
-  LOG(INFO) << "SetTextZoomFactor RenderViewHost()->GetRoutingID=" << web_contents()->GetRenderViewHost()->GetRoutingID();
-  LOG(INFO) << "SetTextZoomFactor MainFrame()->GetRoutingID()=" << web_contents()->GetMainFrame()->GetRoutingID();
 
   Send(new XWalkViewMsg_SetTextZoomFactor(web_contents()->GetMainFrame()->GetRoutingID(),
       factor));

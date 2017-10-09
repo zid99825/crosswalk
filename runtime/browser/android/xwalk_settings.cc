@@ -186,7 +186,7 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, jobject obj) {
   if (!render_view_host) return;
   content::WebPreferences prefs = render_view_host->GetWebkitPreferences();
 
-  LOG(INFO) << "XWalkSettings::UpdateWebkitPreferences";
+//  LOG(INFO) << "XWalkSettings::UpdateWebkitPreferences";
 
   prefs.allow_scripts_to_close_windows =
       env->GetBooleanField(obj, field_ids_->allow_scripts_to_close_windows);
@@ -293,7 +293,7 @@ void XWalkSettings::UpdateFormDataPreferences(JNIEnv* env, jobject obj) {
 
 void XWalkSettings::RenderViewCreated(
     content::RenderViewHost* render_view_host) {
-  LOG(INFO) << "XWalkSettings::RenderViewCreated";
+//  LOG(INFO) << "XWalkSettings::RenderViewCreated";
   // A single WebContents can normally have 0 to many RenderViewHost instances
   // associated with it.
   // This is important since there is only one RenderViewHostExt instance per
@@ -309,7 +309,7 @@ void XWalkSettings::RenderViewCreated(
 }
 
 void XWalkSettings::RenderFrameForInterstitialPageCreated(content::RenderFrameHost* render_frame_host) {
-  LOG(INFO) << "XWalkSettings::RenderFrameForInterstitialPageCreated";
+//  LOG(INFO) << "XWalkSettings::RenderFrameForInterstitialPageCreated";
   UpdateEverything();
 }
 

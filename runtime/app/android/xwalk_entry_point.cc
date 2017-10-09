@@ -17,8 +17,6 @@ namespace xwalk {
 namespace {
 
 bool RegisterJNI(JNIEnv* env) {
-  LOG(INFO) << "xwalk::RegisterJNI";
-
   bool retVal =xwalk::RegisterJni(env);
   retVal = retVal && tenta::fs::RegisterJni(env);
   retVal = retVal && tenta::fs::cache::RegisterJni(env);
@@ -28,8 +26,6 @@ bool RegisterJNI(JNIEnv* env) {
 } // namespace
 
 bool OnJNIOnLoadRegisterJNI(JNIEnv* env) {
-  LOG(INFO) << "xwalk::OnJNIOnLoadRegisterJNI";
-
   if (!content::android::OnJNIOnLoadRegisterJNI(env)) {
     return false;
   }
@@ -42,7 +38,6 @@ bool OnJNIOnLoadRegisterJNI(JNIEnv* env) {
 }
 
 bool OnJNIOnLoadInit() {
-  LOG(INFO) << "xwalk::OnJNIOnLoadInit";
   if (!content::android::OnJNIOnLoadInit()) {
     return false;
   }
@@ -62,8 +57,6 @@ bool OnJNIOnLoadInit() {
 
 // This is called by the VM when the shared library is first loaded.
 JNI_EXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
-
-  LOG(INFO) << "JNI_OnLoad";
 //  base::android::SetJniRegistrationType(base::android::NO_JNI_REGISTRATION);
   base::android::InitVM(vm);
   JNIEnv* env = base::android::AttachCurrentThread();
