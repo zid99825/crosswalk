@@ -36,6 +36,7 @@
 #include "net/cookies/cookie_monster.h"
 #include "net/cookies/cookie_options.h"
 #include "net/cookies/cookie_store.h"
+#include "net/cookies/cookie_util.h"
 #include "net/url_request/url_request_context.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "xwalk/runtime/browser/android/scoped_allow_wait_for_legacy_web_view_api.h"
@@ -135,7 +136,7 @@ class CookieByteArray {
   ~CookieByteArray() {
     delete[] _data;
 #if TENTA_LOG_ENABLE == 1
-    LOG(INFO) << "delete Cookie byte array " << _len;
+    LOG(INFO) << "Delete Cookie byte array " << _len;
 #endif
   }
 
@@ -298,6 +299,9 @@ net::CookieStore* CookieManager::GetCookieStore() {
     FilePath cookie_store_path =
         user_data_dir.Append(FILE_PATH_LITERAL("Cookies"));
 
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "!!! " << __func__ << " cookie_store_path=" << cookie_store_path.value();
+#endif
     content::CookieStoreConfig cookie_config(
         cookie_store_path, content::CookieStoreConfig::RESTORED_SESSION_COOKIES,
         nullptr, nullptr);
@@ -531,6 +535,9 @@ void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
       it != cookies.end(); ++it) {
     const net::CanonicalCookie& cc = *it;
 
+#if TENTA_LOG_ENABLE == 1
+    LOG(INFO) << "Cookie saved name=" << cc.Name() << " value=" << cc.Value() << " domain="<< cc.Domain();
+#endif
 //    pickle->WriteString(cc.Source().spec());
     pickle->WriteString(cc.Name());
     pickle->WriteString(cc.Value());
@@ -604,9 +611,11 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
             && it.ReadBool(&secure) && it.ReadBool(&http_only)
             && it.ReadInt(&same_site) && it.ReadInt(&prio)) {
 
+          GURL url = net::cookie_util::CookieOriginToURL(domain, secure);
+
           // TODO READ url!!!
           cs->SetCookieWithDetailsAsync(
-              GURL(/*spec*/), name, value, domain, path,
+              url, name, value, domain, path,
               base::Time::FromInternalValue(c_time),
               base::Time::FromInternalValue(e_time),
               base::Time::FromInternalValue(l_time), secure, http_only,
@@ -614,7 +623,8 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
               static_cast<net::CookiePriority>(prio), callback);
 
 #if TENTA_LOG_ENABLE == 1
-          LOG(INFO) << "Cookie restored |" << name << "|" << domain;
+          LOG(INFO) << "Cookie restored name=" << name << " value=" << value
+                       << " domain=" << domain << " url=" << url.spec();
 #endif
 
         } else {
@@ -636,6 +646,9 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
 }
 
 void CookieManager::RestoreCookieCallback(bool success) {
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << "!!! " << __func__ << " success=" << success;
+#endif
 }
 
 bool CookieManager::HasCookies() {

@@ -140,7 +140,8 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
  */
 void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
                                    content::WebPreferences* prefs) {
-
+#if TENTA_LOG_ENABLE == 1
+#if 0
   LOG(INFO) << "webPref images_enabled=" << prefs->images_enabled;
   LOG(INFO) << "webPref plugins_enabled=" << prefs->plugins_enabled;
   LOG(INFO) << "webPref encrypted_media_enabled=" << prefs->encrypted_media_enabled;
@@ -191,11 +192,12 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
   LOG(INFO) << "webPref cookie_enabled=" << prefs->cookie_enabled;
   LOG(INFO) << "webPref progress_bar_completion=" << static_cast<int>(prefs->progress_bar_completion);
   LOG(INFO) << "webPref viewport_meta_enabled=" << prefs->viewport_meta_enabled;
+#endif
   LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
-
+#endif
   prefs->viewport_meta_enabled = true;
-  prefs->viewport_style = content::ViewportStyle::DEFAULT;
-  prefs->accelerated_filters_enabled = true;
+//  prefs->viewport_style = content::ViewportStyle::DEFAULT;
+//  prefs->accelerated_filters_enabled = true;
 }
 
 content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
