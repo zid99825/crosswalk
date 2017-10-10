@@ -273,7 +273,7 @@ bool XWalkContentRendererClient::WillSendRequest(
                        ui::PageTransition transition_type,
                        const blink::WebURL& url,
                        GURL* new_url) {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
                << frame->GetDocument().Url().GetString().Utf8() << " url="
                << url.GetString().Utf8();
@@ -304,7 +304,7 @@ bool XWalkContentRendererClient::WillSendRequest(
 
   if ( did_overwrite ) {
     *new_url = GURL(new_url_str);
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
     LOG(INFO) << "XWalkContentRendererClient::WillSendRequest did_overwrite";
 #endif
   }

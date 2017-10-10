@@ -322,7 +322,7 @@ bool XWalkContentsClientBridge::ShouldOverrideUrlLoading(
 bool XWalkContentsClientBridge::RewriteUrlIfNeeded(const std::string& url,
                                  ui::PageTransition transition_type,
                                  std::string* new_url) {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "XWalkContentsClientBridge::RewriteUrlIfNeeded " << url;
 #endif
 
@@ -361,7 +361,7 @@ bool XWalkContentsClientBridge::RewriteUrlIfNeeded(const std::string& url,
 
   if ( did_rewrite == true && new_url != nullptr) {
     base::android::ConvertJavaStringToUTF8(env, jurl.obj(), new_url);
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
     LOG(INFO) << "GOT rewritten from:" << url << " to:" << *new_url;
 #endif
     return did_rewrite;
