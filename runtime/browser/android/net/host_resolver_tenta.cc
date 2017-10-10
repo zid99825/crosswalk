@@ -61,7 +61,7 @@ public:
    */
   void OnResolved(int status, AddressList * addr_list)
   {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
     LOG(INFO) << "resolved: " + info_.hostname() + " status: " << status;
 #endif
 
@@ -171,7 +171,7 @@ HostResolverTenta::HostResolverTenta(
 //  orig_runner_ = base::MessageLoop::current()->task_runner();
   orig_runner_ = base::ThreadTaskRunnerHandle::Get();
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "HostResolverTenta register "
             << NetworkChangeNotifier::ConnectionTypeToString(
               NetworkChangeNotifier::GetConnectionType());
@@ -185,7 +185,7 @@ HostResolverTenta::HostResolverTenta(
 
 HostResolverTenta::~HostResolverTenta()
 {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "~HostResolverTenta";
 #endif
   // if case we have unresolved requests
@@ -209,7 +209,7 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
                                std::unique_ptr<Request>* out_req,
                                const NetLogWithSource& net_log)
 {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO)
       << "resolv name: " + info.hostname() + " using "
       + use_backup_str() + " onCon "
@@ -247,7 +247,7 @@ int HostResolverTenta::Resolve(const RequestInfo& info,
   reqGuard.Release();
 //  LOG(INFO) << "Lock out Resolve";
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "Request ID=" << key_id;
 #endif
 
@@ -269,7 +269,7 @@ int HostResolverTenta::ResolveFromCache(const RequestInfo& info,
                                         AddressList* addresses,
                                         const NetLogWithSource& net_log)
 {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO)
       << "Resolve from cache: " + info.hostname() + " using "
       + use_backup_str() + " with flags: "
@@ -308,7 +308,7 @@ int HostResolverTenta::ResolveFromCacheDirect(const RequestInfo& info,
       *addresses = AddressList::CopyWithPort(*foundAddr, info.port());
       delete foundAddr;
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
       LOG(INFO) << "Resolved from cache: " + info.hostname() + " ipCnt: "
                 << addresses->size();
 #endif
@@ -316,7 +316,7 @@ int HostResolverTenta::ResolveFromCacheDirect(const RequestInfo& info,
     }
   }
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "NoCache for: " + info.hostname();
 #endif
 
@@ -374,7 +374,7 @@ void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id)
 
     request->sent_to_java();
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
     LOG(INFO) << "resolv id=" << key_id << " java returned=" << jReturn;
 #endif
 
@@ -530,7 +530,7 @@ void HostResolverTenta::CancelRequest(int64_t key_id)
 //
 //    int64_t key_id = reinterpret_cast<int64_t>(req);
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "CancelRequest ID=" << key_id;
 #endif
 
@@ -560,7 +560,7 @@ void HostResolverTenta::CancelRequest(int64_t key_id)
  */
 void HostResolverTenta::OnIPAddressChanged()
 {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "OnIPAddressChanged";
 #endif
 }
@@ -568,7 +568,7 @@ void HostResolverTenta::OnIPAddressChanged()
 void HostResolverTenta::OnConnectionTypeChanged(
   NetworkChangeNotifier::ConnectionType type)
 {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "OnConnectionTypeChanged "
             << NetworkChangeNotifier::ConnectionTypeToString(type);
 #endif
@@ -576,14 +576,14 @@ void HostResolverTenta::OnConnectionTypeChanged(
 
 void HostResolverTenta::OnDNSChanged()
 {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "OnDNSChanged";
 #endif
 }
 
 void HostResolverTenta::OnInitialDNSConfigRead()
 {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "OnInitialDNSConfigRead";
 #endif
 }

@@ -3,4 +3,6 @@ declare_args() {
     enable_tenta_log = false
     enable_tenta_log_cache = false
     enable_tenta_log_db = false
+    enable_tenta_log_net = false
+    enable_tenta_log_cookie = false
 }

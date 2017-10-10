@@ -193,9 +193,11 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
   LOG(INFO) << "webPref progress_bar_completion=" << static_cast<int>(prefs->progress_bar_completion);
   LOG(INFO) << "webPref viewport_meta_enabled=" << prefs->viewport_meta_enabled;
 #endif
+  LOG(INFO) << "webPref context_menu_on_mouse_up=" << prefs->context_menu_on_mouse_up;
   LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
 #endif
   prefs->viewport_meta_enabled = true;
+  prefs->context_menu_on_mouse_up = true;
 //  prefs->viewport_style = content::ViewportStyle::DEFAULT;
 //  prefs->accelerated_filters_enabled = true;
 }

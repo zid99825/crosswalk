@@ -135,7 +135,7 @@ class CookieByteArray {
 
   ~CookieByteArray() {
     delete[] _data;
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
     LOG(INFO) << "Delete Cookie byte array " << _len;
 #endif
   }
@@ -299,7 +299,7 @@ net::CookieStore* CookieManager::GetCookieStore() {
     FilePath cookie_store_path =
         user_data_dir.Append(FILE_PATH_LITERAL("Cookies"));
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
     LOG(INFO) << "!!! " << __func__ << " cookie_store_path=" << cookie_store_path.value();
 #endif
     content::CookieStoreConfig cookie_config(
@@ -502,7 +502,7 @@ static jboolean RestoreCookies(JNIEnv* env,
  * Save cookies in pickle
  */
 void CookieManager::SaveCookies(base::Pickle *dstPickle) {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
   LOG(INFO) << "SaveCookies";
 #endif
   FlushCookieStore();
@@ -511,7 +511,7 @@ void CookieManager::SaveCookies(base::Pickle *dstPickle) {
       base::Bind(&CookieManager::SaveCookiesAsyncHelper, base::Unretained(this),
                  dstPickle),
       true);
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
   LOG(INFO) << "SaveCookies return";
 #endif
 }
@@ -535,7 +535,7 @@ void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
       it != cookies.end(); ++it) {
     const net::CanonicalCookie& cc = *it;
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
     LOG(INFO) << "Cookie saved name=" << cc.Name() << " value=" << cc.Value() << " domain="<< cc.Domain();
 #endif
 //    pickle->WriteString(cc.Source().spec());
@@ -560,7 +560,7 @@ void CookieManager::SaveCookiesCompleted(base::Pickle *pickle,
  * Save cookies in pickle
  */
 void CookieManager::RestoreCookies(CookieByteArray * cb) {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
   int len;
 
   if (cb != nullptr) {
@@ -576,7 +576,7 @@ void CookieManager::RestoreCookies(CookieByteArray * cb) {
                  base::Unretained(this), base::Owned(cb)),
       false);
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
   LOG(INFO) << "RestoreCookies return ";
 #endif
 }
@@ -622,7 +622,7 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
               static_cast<net::CookieSameSite>(same_site),
               static_cast<net::CookiePriority>(prio), callback);
 
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
           LOG(INFO) << "Cookie restored name=" << name << " value=" << value
                        << " domain=" << domain << " url=" << url.spec();
 #endif
@@ -646,7 +646,7 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
 }
 
 void CookieManager::RestoreCookieCallback(bool success) {
-#if TENTA_LOG_ENABLE == 1
+#if TENTA_LOG_COOKIE_ENABLE == 1
   LOG(INFO) << "!!! " << __func__ << " success=" << success;
 #endif
 }
