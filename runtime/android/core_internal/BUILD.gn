@@ -74,6 +74,7 @@ android_library("xwalk_core_internal_java") {
     "src/org/xwalk/core/internal/DummyNativeTest.java",
     "src/org/xwalk/core/internal/HostResolverTenta.java",
     "src/org/xwalk/core/internal/UrlUtilities.java",
+    "src/org/xwalk/core/internal/XWalkActionModeCallback.java",
     "src/org/xwalk/core/internal/XWalkAPI.java",
     "src/org/xwalk/core/internal/XWalkAutofillClientAndroid.java",
     "src/org/xwalk/core/internal/XWalkClient.java",
