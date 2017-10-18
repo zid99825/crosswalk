@@ -128,7 +128,8 @@ bool RestoreFromPickle(base::PickleIterator* iterator,
     }
   }
 
-  controller.LoadIfNecessary();
+  // TODO (iotto): will cause automatic page load after restore
+//  controller.LoadIfNecessary();
 
   return true;
 }
@@ -152,6 +153,7 @@ bool RestoreHeaderFromPickle(base::PickleIterator* iterator) {
 
 bool WriteNavigationEntryToPickle(const content::NavigationEntry& entry,
                                   base::Pickle* pickle) {
+  LOG(INFO) << "!!! " << __func__ << " url=" << entry.GetURL();
   if (!pickle->WriteString(entry.GetURL().spec()))
     return false;
 
