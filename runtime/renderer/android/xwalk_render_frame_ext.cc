@@ -1,8 +1,11 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * xwalk_render_frame_ext.cpp
+ *
+ *  Created on: Oct 13, 2017
+ *      Author: iotto
+ */
 
-#include "xwalk/runtime/renderer/android/xwalk_render_view_ext.h"
+#include <xwalk/runtime/renderer/android/xwalk_render_frame_ext.h>
 
 #include <string>
 
@@ -11,13 +14,10 @@
 #include "base/strings/utf_string_conversions.h"
 #include "content/public/common/url_constants.h"
 #include "content/public/renderer/document_state.h"
+#include "content/public/renderer/render_frame.h"
 #include "content/public/renderer/render_view.h"
 #include "third_party/WebKit/public/platform/WebSecurityOrigin.h"
 #include "third_party/WebKit/public/platform/WebSize.h"
-#include "third_party/WebKit/public/platform/WebString.h"
-#include "third_party/WebKit/public/platform/WebURL.h"
-#include "third_party/WebKit/public/platform/WebVector.h"
-#include "third_party/WebKit/public/web/WebDataSource.h"
 #include "third_party/WebKit/public/web/WebDocument.h"
 #include "third_party/WebKit/public/web/WebElement.h"
 #include "third_party/WebKit/public/web/WebElementCollection.h"
@@ -25,9 +25,10 @@
 #include "third_party/WebKit/public/web/WebHitTestResult.h"
 #include "third_party/WebKit/public/web/WebImageCache.h"
 #include "third_party/WebKit/public/web/WebLocalFrame.h"
+#include "third_party/WebKit/public/web/WebMeaningfulLayout.h"
 #include "third_party/WebKit/public/web/WebNode.h"
 #include "third_party/WebKit/public/web/WebView.h"
-#include "third_party/skia/include/core/SkPicture.h"
+//#include "third_party/skia/include/core/SkPicture.h"
 #include "url/url_canon.h"
 #include "url/url_constants.h"
 #include "url/url_util.h"
@@ -93,20 +94,14 @@ bool RemovePrefixAndAssignIfMatches(const base::StringPiece& prefix,
 }
 
 void DistinguishAndAssignSrcLinkType(const GURL& url, XWalkHitTestData* data) {
-  if (RemovePrefixAndAssignIfMatches(
-      kAddressPrefix,
-      url,
-      &data->extra_data_for_type)) {
+  if (RemovePrefixAndAssignIfMatches(kAddressPrefix, url,
+                                     &data->extra_data_for_type)) {
     data->type = XWalkHitTestData::GEO_TYPE;
-  } else if (RemovePrefixAndAssignIfMatches(
-      kPhoneNumberPrefix,
-      url,
-      &data->extra_data_for_type)) {
+  } else if (RemovePrefixAndAssignIfMatches(kPhoneNumberPrefix, url,
+                                            &data->extra_data_for_type)) {
     data->type = XWalkHitTestData::PHONE_TYPE;
-  } else if (RemovePrefixAndAssignIfMatches(
-      kEmailPrefix,
-      url,
-      &data->extra_data_for_type)) {
+  } else if (RemovePrefixAndAssignIfMatches(kEmailPrefix, url,
+                                            &data->extra_data_for_type)) {
     data->type = XWalkHitTestData::EMAIL_TYPE;
   } else {
     data->type = XWalkHitTestData::SRC_LINK_TYPE;
@@ -118,8 +113,7 @@ void DistinguishAndAssignSrcLinkType(const GURL& url, XWalkHitTestData* data) {
 }
 
 void PopulateHitTestData(const GURL& absolute_link_url,
-                         const GURL& absolute_image_url,
-                         bool is_editable,
+                         const GURL& absolute_image_url, bool is_editable,
                          XWalkHitTestData* data) {
   // Note: Using GURL::is_empty instead of GURL:is_valid due to the
   // WebViewClassic allowing any kind of protocol which GURL::is_valid
@@ -128,8 +122,8 @@ void PopulateHitTestData(const GURL& absolute_link_url,
   if (!absolute_image_url.is_empty())
     data->img_src = absolute_image_url;
 
-  const bool is_javascript_scheme =
-      absolute_link_url.SchemeIs(url::kJavaScriptScheme);
+  const bool is_javascript_scheme = absolute_link_url.SchemeIs(
+      url::kJavaScriptScheme);
   const bool has_link_url = !absolute_link_url.is_empty();
   const bool has_image_url = !absolute_image_url.is_empty();
 
@@ -152,21 +146,21 @@ void PopulateHitTestData(const GURL& absolute_link_url,
 
 }  // namespace
 
-XWalkRenderViewExt::XWalkRenderViewExt(content::RenderView* render_view)
-    : content::RenderViewObserver(render_view) {
+XWalkRenderFrameExt::XWalkRenderFrameExt(content::RenderFrame* render_frame)
+    : content::RenderFrameObserver(render_frame) {
 }
 
-XWalkRenderViewExt::~XWalkRenderViewExt() {
+XWalkRenderFrameExt::~XWalkRenderFrameExt() {
 }
 
-// static
-void XWalkRenderViewExt::RenderViewCreated(content::RenderView* render_view) {
-  new XWalkRenderViewExt(render_view);  // |render_view| takes ownership.
-}
+//// static
+//void XWalkRenderFrameExt::RenderViewCreated(content::RenderView* render_view) {
+//  new XWalkRenderFrameExt(render_view);  // |render_view| takes ownership.
+//}
 
-bool XWalkRenderViewExt::OnMessageReceived(const IPC::Message& message) {
+bool XWalkRenderFrameExt::OnMessageReceived(const IPC::Message& message) {
   bool handled = true;
-  IPC_BEGIN_MESSAGE_MAP(XWalkRenderViewExt, message)
+  IPC_BEGIN_MESSAGE_MAP(XWalkRenderFrameExt, message)
     IPC_MESSAGE_HANDLER(XWalkViewMsg_DocumentHasImages,
                         OnDocumentHasImagesRequest)
     IPC_MESSAGE_HANDLER(XWalkViewMsg_DoHitTest, OnDoHitTest)
@@ -176,27 +170,32 @@ bool XWalkRenderViewExt::OnMessageReceived(const IPC::Message& message) {
     IPC_MESSAGE_HANDLER(XWalkViewMsg_SetInitialPageScale, OnSetInitialPageScale)
     IPC_MESSAGE_HANDLER(XWalkViewMsg_SetBackgroundColor, OnSetBackgroundColor)
     IPC_MESSAGE_HANDLER(XWalkViewMsg_SetTextZoomFactor, OnSetTextZoomFactor)
+    //TODO missing ; see AwRederFrameExt
+//    IPC_MESSAGE_HANDLER(AwViewMsg_SmoothScroll, OnSmoothScroll)
     IPC_MESSAGE_UNHANDLED(handled = false)
   IPC_END_MESSAGE_MAP()
   return handled;
 }
 
-void XWalkRenderViewExt::OnDocumentHasImagesRequest(int id) {
+void XWalkRenderFrameExt::OnDocumentHasImagesRequest(uint32_t id) {
   bool hasImages = false;
-  if (render_view()) {
-    blink::WebView* webview = render_view()->GetWebView();
-    if (webview) {
-      blink::WebDocument document = webview->MainFrame()->GetDocument();
-      const blink::WebElement child_img = GetImgChild(document);
-      hasImages = !child_img.IsNull();
-    }
+  blink::WebView* webview = GetWebView();
+  if (webview) {
+    blink::WebDocument document = webview->MainFrame()->GetDocument();
+    const blink::WebElement child_img = GetImgChild(document);
+    hasImages = !child_img.IsNull();
   }
   Send(new XWalkViewHostMsg_DocumentHasImagesResponse(routing_id(), id,
                                                    hasImages));
 }
 
-void XWalkRenderViewExt::DidCommitProvisionalLoad(blink::WebLocalFrame* frame,
-                                                  bool is_new_navigation) {
+void XWalkRenderFrameExt::DidCommitProvisionalLoad(
+    bool is_new_navigation, bool is_same_document_navigation) {
+
+  blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
+  LOG(INFO) << "!!! " << __func__ << " new_navig=" << is_new_navigation
+      << " is_same_document_navigation=" << is_same_document_navigation
+      << " url=" << frame->GetDocument().Url();
   content::DocumentState* document_state =
       content::DocumentState::FromDataSource(frame->DataSource());
   if (document_state->can_load_local_resources()) {
@@ -220,8 +219,9 @@ void XWalkRenderViewExt::DidCommitProvisionalLoad(blink::WebLocalFrame* frame,
   }
 }
 
-void XWalkRenderViewExt::FocusedNodeChanged(const blink::WebNode& node) {
-  if (node.IsNull() || !node.IsElementNode() || !render_view())
+void XWalkRenderFrameExt::FocusedNodeChanged(const blink::WebNode& node) {
+  if (node.IsNull() || !node.IsElementNode() || !render_frame() ||
+      !render_frame()->GetRenderView())
     return;
 
   const blink::WebElement element = node.ToConst<blink::WebElement>();
@@ -236,26 +236,24 @@ void XWalkRenderViewExt::FocusedNodeChanged(const blink::WebNode& node) {
 
   GURL absolute_image_url = GetChildImageUrlFromElement(element);
 
-  PopulateHitTestData(absolute_link_url,
-                      absolute_image_url,
-                      element.IsEditable(),
-                      &data);
+  PopulateHitTestData(absolute_link_url, absolute_image_url,
+                      element.IsEditable(), &data);
   Send(new XWalkViewHostMsg_UpdateHitTestData(routing_id(), data));
 }
 
-void XWalkRenderViewExt::OnDestruct() {
+void XWalkRenderFrameExt::OnDestruct() {
   delete this;
 }
 
-void XWalkRenderViewExt::OnDoHitTest(const gfx::PointF& touch_center,
-                                     const gfx::SizeF& touch_area) {
-  if (!render_view() || !render_view()->GetWebView())
+void XWalkRenderFrameExt::OnDoHitTest(const gfx::PointF& touch_center,
+                                      const gfx::SizeF& touch_area) {
+  blink::WebView* webview = GetWebView();
+  if (!webview)
     return;
 
-  const blink::WebHitTestResult result =
-      render_view()->GetWebView()->HitTestResultForTap(
-          blink::WebPoint(touch_center.x(), touch_center.y()),
-          blink::WebSize(touch_area.width(), touch_area.height()));
+  const blink::WebHitTestResult result = webview->HitTestResultForTap(
+      blink::WebPoint(touch_center.x(), touch_center.y()),
+      blink::WebSize(touch_area.width(), touch_area.height()));
   XWalkHitTestData data;
 
   GURL absolute_image_url = result.AbsoluteImageURL();
@@ -269,48 +267,67 @@ void XWalkRenderViewExt::OnDoHitTest(const gfx::PointF& touch_center,
     }
   }
 
-  PopulateHitTestData(result.AbsoluteLinkURL(),
-                      absolute_image_url,
-                      result.IsContentEditable(),
-                      &data);
+  PopulateHitTestData(result.AbsoluteLinkURL(), absolute_image_url,
+                      result.IsContentEditable(), &data);
   Send(new XWalkViewHostMsg_UpdateHitTestData(routing_id(), data));
 }
 
-void XWalkRenderViewExt::OnSetTextZoomLevel(double zoom_level) {
-  if (!render_view() || !render_view()->GetWebView())
+void XWalkRenderFrameExt::OnSetTextZoomLevel(double zoom_level) {
+  blink::WebView* webview = GetWebView();
+  if (!webview)
     return;
 
   // Hide selection and autofill popups.
-  render_view()->GetWebView()->HidePopups();
-  render_view()->GetWebView()->SetZoomLevel(zoom_level);
+  webview->HidePopups();
+  webview->SetZoomLevel(zoom_level);
 }
 
-void XWalkRenderViewExt::OnResetScrollAndScaleState() {
-  if (!render_view() || !render_view()->GetWebView())
+void XWalkRenderFrameExt::OnResetScrollAndScaleState() {
+  blink::WebView* webview = GetWebView();
+  if (!webview)
     return;
-  render_view()->GetWebView()->ResetScrollAndScaleState();
+
+  webview->ResetScrollAndScaleState();
 }
 
-void XWalkRenderViewExt::OnSetInitialPageScale(double page_scale_factor) {
-  if (!render_view() || !render_view()->GetWebView())
+void XWalkRenderFrameExt::OnSetInitialPageScale(double page_scale_factor) {
+  blink::WebView* webview = GetWebView();
+  if (!webview)
     return;
-  render_view()->GetWebView()->SetInitialPageScaleOverride(
-      page_scale_factor);
+
+  webview->SetInitialPageScaleOverride(page_scale_factor);
 }
 
-void XWalkRenderViewExt::OnSetBackgroundColor(SkColor c) {
-  if (!render_view() || !render_view()->GetWebFrameWidget())
+void XWalkRenderFrameExt::OnSetBackgroundColor(SkColor c) {
+  blink::WebFrameWidget* web_frame_widget = GetWebFrameWidget();
+  if (!web_frame_widget)
     return;
-  blink::WebFrameWidget* web_frame_widget = render_view()->GetWebFrameWidget();
+
   web_frame_widget->SetBaseBackgroundColor(c);
 }
 
-void XWalkRenderViewExt::OnSetTextZoomFactor(float zoom_factor) {
-  if (!render_view() || !render_view()->GetWebView())
+void XWalkRenderFrameExt::OnSetTextZoomFactor(float zoom_factor) {
+  blink::WebView* webview = GetWebView();
+  if (!webview)
     return;
+
   // Hide selection and autofill popups.
-  render_view()->GetWebView()->HidePopups();
-  render_view()->GetWebView()->SetTextZoomFactor(zoom_factor);
+  webview->HidePopups();
+  webview->SetTextZoomFactor(zoom_factor);
 }
 
-}  // namespace xwalk
+blink::WebView* XWalkRenderFrameExt::GetWebView() {
+  if (!render_frame() || !render_frame()->GetRenderView() ||
+      !render_frame()->GetRenderView()->GetWebView())
+    return nullptr;
+
+  return render_frame()->GetRenderView()->GetWebView();
+}
+
+blink::WebFrameWidget* XWalkRenderFrameExt::GetWebFrameWidget() {
+  if (!render_frame() || !render_frame()->GetRenderView())
+    return nullptr;
+
+  return render_frame()->GetRenderView()->GetWebFrameWidget();
+}
+} /* namespace xwalk */

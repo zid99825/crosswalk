@@ -31,7 +31,6 @@
 #include "xwalk/runtime/common/xwalk_localized_error.h"
 #include "xwalk/runtime/renderer/isolated_file_system.h"
 #include "xwalk/runtime/renderer/pepper/pepper_helper.h"
-//#include "services/shell/public/cpp/interface_registry.h"
 #include "services/service_manager/public/cpp/interface_registry.h"
 
 #if defined(OS_ANDROID)
@@ -40,7 +39,7 @@
 #include "xwalk/runtime/common/android/xwalk_render_view_messages.h"
 #include "xwalk/runtime/renderer/android/xwalk_permission_client.h"
 #include "xwalk/runtime/renderer/android/xwalk_render_thread_observer.h"
-#include "xwalk/runtime/renderer/android/xwalk_render_view_ext.h"
+#include "xwalk/runtime/renderer/android/xwalk_render_frame_ext.h"
 #include "third_party/WebKit/public/web/WebLocalFrame.h"
 #endif
 
@@ -144,6 +143,14 @@ bool XWalkContentRendererClient::HandleNavigation(
     blink::WebNavigationType type,
     blink::WebNavigationPolicy default_policy,
     bool is_redirect) {
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << "!!! " << __func__ << " is_content_initiated=" << is_content_initiated
+      << " render_view_was_created_by_renderer=" << render_view_was_created_by_renderer
+      << " is_redirect=" << is_redirect
+      << " type=" << type
+      << " is_main_frame=" << !frame->Parent()
+      << " url=" << request.Url();
+#endif
   // Only GETs can be overridden.
   if (!request.HttpMethod().Equals("GET"))
     return false;
@@ -162,7 +169,6 @@ bool XWalkContentRendererClient::HandleNavigation(
   // Don't offer application-initiated navigations unless it's a redirect.
   if (application_initiated && !is_redirect)
     return false;
-
   bool is_main_frame = !frame->Parent();
   const GURL& gurl = request.Url();
   // For HTTP schemes, only top-level navigations can be overridden. Similarly,
@@ -172,7 +178,6 @@ bool XWalkContentRendererClient::HandleNavigation(
       (gurl.SchemeIs(url::kHttpScheme) || gurl.SchemeIs(url::kHttpsScheme) ||
        gurl.SchemeIs(url::kAboutScheme)))
     return false;
-
   // TODO(iotto) analyse how to replace opener_id with render_view_was_created_by_renderer
 
   // use NavigationInterception throttle to handle the call as that can
@@ -195,6 +200,7 @@ bool XWalkContentRendererClient::HandleNavigation(
 void XWalkContentRendererClient::RenderFrameCreated(
     content::RenderFrame* render_frame) {
   new XWalkFrameHelper(render_frame, extension_controller_.get());
+  new XWalkRenderFrameExt(render_frame);
 #if defined(OS_ANDROID)
   new XWalkPermissionClient(render_frame);
 #endif
@@ -231,7 +237,8 @@ void XWalkContentRendererClient::RenderFrameCreated(
 void XWalkContentRendererClient::RenderViewCreated(
     content::RenderView* render_view) {
 #if defined(OS_ANDROID)
-  XWalkRenderViewExt::RenderViewCreated(render_view);
+  // TODO (iotto) replaced with XWalkRenderFrameExt
+//  XWalkRenderViewExt::RenderViewCreated(render_view);
 #endif
 }
 

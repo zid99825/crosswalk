@@ -170,6 +170,12 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
       content::NavigationHandle* navigation_handle) override;
 #endif
 
+  // TODO (iotto) : use the method to register autofill interfaces
+//  void RegisterRenderFrameMojoInterfaces(
+//      service_manager::InterfaceRegistry* registry,
+//      content::RenderFrameHost* render_frame_host) override;
+
+  //**************** private ************
  private:
   XWalkRunner* xwalk_runner_;
   std::unique_ptr<content::ClientCertificateDelegate> delegate_;
