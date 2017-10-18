@@ -153,7 +153,6 @@ bool RestoreHeaderFromPickle(base::PickleIterator* iterator) {
 
 bool WriteNavigationEntryToPickle(const content::NavigationEntry& entry,
                                   base::Pickle* pickle) {
-  LOG(INFO) << "!!! " << __func__ << " url=" << entry.GetURL();
   if (!pickle->WriteString(entry.GetURL().spec()))
     return false;
 
