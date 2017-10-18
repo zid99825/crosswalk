@@ -6,7 +6,6 @@ import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import org.chromium.base.Log;
 import org.chromium.content_public.browser.ActionModeCallbackHelper;
 
 public class XWalkActionModeCallback implements ActionMode.Callback {
@@ -59,7 +58,6 @@ public class XWalkActionModeCallback implements ActionMode.Callback {
 
     @Override
     public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-        Log.d("chromium!!!", "onActionItemClicked");
         if (!mHelper.isActionModeValid())
             return true;
 

@@ -48,6 +48,7 @@ import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.navigation_controller.UserAgentOverrideOption;
 import org.chromium.media.MediaPlayerBridge;
 import org.chromium.ui.base.ActivityWindowAndroid;
+import org.chromium.ui.base.PageTransition;
 import org.chromium.ui.base.ViewAndroidDelegate;
 import org.chromium.ui.base.WindowAndroid;
 import org.json.JSONArray;
@@ -135,7 +136,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mXWalkView = xwView;
         mViewContext = mXWalkView.getContext();
         mContentsClientBridge = new XWalkContentsClientBridge(mXWalkView);
-        mXWalkContentsDelegateAdapter = new XWalkWebContentsDelegateAdapter(mContentsClientBridge);
+        mXWalkContentsDelegateAdapter = new XWalkWebContentsDelegateAdapter(mContentsClientBridge, this);
         mIoThreadClient = new XWalkIoThreadClientImpl();
 
         // Initialize mWindow which is needed by content.
@@ -158,7 +159,6 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mGetBitmapCallback = new ContentBitmapCallback() {
             @Override
             public void onFinishGetBitmap(Bitmap bitmap, int response) {
-                Log.d("iotto", "onFinishGetBitmap " + response);
                 if (mXWalkGetBitmapCallbackInternal == null)
                     return;
                 mXWalkGetBitmapCallbackInternal.onFinishGetBitmap(bitmap, response);
@@ -169,7 +169,6 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     public void captureBitmapAsync(XWalkGetBitmapCallbackInternal callback) {
         if (mNativeContent == 0)
             return;
-        Log.d("iotto", "captureBitmapAsync");
         mXWalkGetBitmapCallbackInternal = callback;
         mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
 //        mWebContents.getContentBitmapAsync(Bitmap.Config.ARGB_8888, 1.0f, new Rect(),
@@ -401,6 +400,15 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         LoadUrlParams params = new LoadUrlParams(url);
         if (additionalHttpHeaders != null)
             params.setExtraHeaders(additionalHttpHeaders);
+        
+        // If we are reloading the same url, then set transition type as reload.
+        if (params.getUrl() != null
+                && params.getUrl().equals(mWebContents.getUrl())
+                && params.getTransitionType() == PageTransition.LINK) {
+            params.setTransitionType(PageTransition.RELOAD);
+        }
+        params.setTransitionType(
+                params.getTransitionType() | PageTransition.FROM_API);
         doLoadUrl(params);
     }
 
@@ -768,6 +776,19 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
                 mNavigationController.getNavigationHistory());
     }
 
+    /**
+     * Gets the last committed URL. It represents the current page that is
+     * displayed in WebContents. It represents the current security context.
+     *
+     * @return The URL of the current page or null if it's empty.
+     */
+    public String getLastCommittedUrl() {
+        if (mNativeContent == 0) return null;
+        String url = mWebContents.getLastCommittedUrl();
+        if (url == null || url.trim().isEmpty()) return null;
+        return url;
+    }
+    
     public int getLastCommittedEntryIndex() {
         if (mNativeContent == 0)
             return -1;
@@ -824,7 +845,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         // already restored. See WebContentsImpl::UpdateTitleForEntry. So we
         // call the callback explicitly here.
         if (result)
-            mContentsClientBridge.onTitleChanged(mWebContents.getTitle());
+            mContentsClientBridge.onTitleChanged(mWebContents.getTitle(), true);
 
         return result ? getNavigationHistory() : null;
     }
@@ -878,7 +899,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             return null;
         }
 
-        mContentsClientBridge.onTitleChanged(mWebContents.getTitle());
+        mContentsClientBridge.onTitleChanged(mWebContents.getTitle(), true);
 
         return getNavigationHistory();
     }
@@ -906,7 +927,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             return null;
         }
 
-        mContentsClientBridge.onTitleChanged(mWebContents.getTitle());
+        mContentsClientBridge.onTitleChanged(mWebContents.getTitle(), true);
 
         return getNavigationHistory();
     }

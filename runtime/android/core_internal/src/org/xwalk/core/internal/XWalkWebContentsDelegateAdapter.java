@@ -6,18 +6,23 @@ package org.xwalk.core.internal;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.webkit.ConsoleMessage;
 import org.chromium.content.browser.ContentVideoView;
+import org.chromium.content_public.browser.InvalidateTypes;
+import org.chromium.content_public.common.ContentUrlConstants;
 
 class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
     private static final String TAG = XWalkWebContentsDelegateAdapter.class.getName();
 
     private XWalkContentsClient mXWalkContentsClient;
+    private XWalkContent mXwalkContent;
 
-    public XWalkWebContentsDelegateAdapter(XWalkContentsClient client) {
+    public XWalkWebContentsDelegateAdapter(XWalkContentsClient client, XWalkContent content) {
         mXWalkContentsClient = client;
+        mXwalkContent = content;
     }
 
     @Override
@@ -26,6 +31,35 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
             return mXWalkContentsClient.shouldCreateWebContents(contentUrl);
         }
         return super.shouldCreateWebContents(contentUrl);
+    }
+
+    @Override
+    public void loadingStateChanged(boolean toDifferentDocument) {
+        if (mXWalkContentsClient != null) {
+            mXWalkContentsClient.onTitleChanged(mXwalkContent.getTitle(), false);
+        }
+    }
+    
+    @Override
+    public void navigationStateChanged(int flags) {
+        if (mXWalkContentsClient != null) {
+            // TODO (iotto): continue implementation if needed
+            mXWalkContentsClient.onNavigationStateChanged(flags);
+        }
+        if ((flags & InvalidateTypes.URL) != 0 ) {
+            
+        }
+//        if ((flags & InvalidateTypes.URL) != 0
+//                && mAwContents.isPopupWindow()
+//                && mXwalkContent.hasAccessedInitialDocument()) {
+//            // Hint the client to show the last committed url, as it may be unsafe to show
+//            // the pending entry.
+//            String url = mXwalkContent.getLastCommittedUrl();
+//            url = TextUtils.isEmpty(url) ? ContentUrlConstants.ABOUT_BLANK_DISPLAY_URL : url;
+//            if (mXWalkContentsClient != null) {
+//                mXWalkContentsClient.getCallbackHelper().postSynthesizedPageLoadingForUrlBarUpdate(url);
+//            }
+//        }
     }
 
     @Override

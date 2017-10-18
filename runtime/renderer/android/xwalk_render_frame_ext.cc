@@ -193,9 +193,6 @@ void XWalkRenderFrameExt::DidCommitProvisionalLoad(
     bool is_new_navigation, bool is_same_document_navigation) {
 
   blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
-  LOG(INFO) << "!!! " << __func__ << " new_navig=" << is_new_navigation
-      << " is_same_document_navigation=" << is_same_document_navigation
-      << " url=" << frame->GetDocument().Url();
   content::DocumentState* document_state =
       content::DocumentState::FromDataSource(frame->DataSource());
   if (document_state->can_load_local_resources()) {

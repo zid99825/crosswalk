@@ -86,6 +86,7 @@ class XWalkContentsClientCallbackHelper {
     private final static int MSG_ON_RESOURCE_LOAD_STARTED = 6;
     private final static int MSG_ON_PAGE_FINISHED = 7;
     private final static int MSG_ON_RECEIVED_RESPONSE_HEADERS = 8;
+    private final static int MSG_SYNTHESIZE_PAGE_LOADING = 9;
 
     private final XWalkContentsClient mContentsClient;
 
@@ -130,6 +131,14 @@ class XWalkContentsClientCallbackHelper {
                     mContentsClient.onPageFinished(url);
                     break;
                 }
+                case MSG_SYNTHESIZE_PAGE_LOADING: {
+                    final String url = (String) msg.obj;
+                    mContentsClient.onPageStarted(url);
+                    mContentsClient.onLoadResource(url);
+                    mContentsClient.onProgressChanged(100);
+                    mContentsClient.onPageFinished(url);
+                    break;
+                }
                 case MSG_ON_RECEIVED_RESPONSE_HEADERS: {
                     OnReceivedResponseHeadersInfo info = (OnReceivedResponseHeadersInfo) msg.obj;
                     mContentsClient.onReceivedResponseHeaders(info.mRequest, info.mResponse);
@@ -150,6 +159,10 @@ class XWalkContentsClientCallbackHelper {
         mHandler.sendMessage(mHandler.obtainMessage(MSG_ON_LOAD_RESOURCE, url));
     }
 
+    public void postSynthesizedPageLoadingForUrlBarUpdate(String url) {
+        mHandler.sendMessage(mHandler.obtainMessage(MSG_SYNTHESIZE_PAGE_LOADING, url));
+    }
+    
     public void postOnPageStarted(String url) {
         mHandler.sendMessage(mHandler.obtainMessage(MSG_ON_PAGE_STARTED, url));
     }

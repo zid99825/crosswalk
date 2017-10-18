@@ -16,6 +16,7 @@ import android.net.http.SslError;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -61,6 +62,13 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     private XWalkNotificationService mNotificationService;
     private Handler mUiThreadHandler;
 
+    // Holds the last known page title. {@link ContentViewClient#onUpdateTitle} is unreliable,
+    // particularly for navigating backwards and forwards in the history stack. Instead, the last
+    // known document title is kept here, and the clients gets updated whenever the value has
+    // actually changed. Blink also only sends updates when the document title have changed,
+    // so behaviours are consistent.
+    private String mTitle = "";
+    
     /** State recording variables */
     // For fullscreen state.
     private boolean mIsFullscreen = false;
@@ -390,6 +398,20 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @Override
+    public void onNavigationStateChanged(int flags) {
+        // TODO continue
+    }
+
+    @Override
+    public void onNavigationStart(String url) {
+        if (mXWalkUIClient != null) {
+            mLoadingUrl = url;
+            mLoadStatus = LoadStatusInternal.FINISHED;
+            mXWalkUIClient.onNavigationStarted(mXWalkView, url);
+        }
+    }
+    
+    @Override
     public void onPageStarted(String url) {
         if (mXWalkUIClient != null) {
             mLoadingUrl = url;
@@ -523,7 +545,11 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @Override
-    public void onTitleChanged(String title) {
+    public void onTitleChanged(String title, boolean forceNotification) {
+        if (!forceNotification && TextUtils.equals(mTitle, title)) return;
+        mTitle = title;
+//        mCallbackHelper.postOnReceivedTitle(mTitle);
+        
         if (mXWalkUIClient != null) {
             mXWalkUIClient.onReceivedTitle(mXWalkView, title);
         }

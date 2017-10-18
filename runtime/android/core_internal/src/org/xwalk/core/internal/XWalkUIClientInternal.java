@@ -366,6 +366,16 @@ public class XWalkUIClientInternal {
     }
 
     /**
+     * 
+     * @param view
+     * @param url
+     */
+    @XWalkAPI
+    public void onNavigationStarted(XWalkViewInternal view, String url) {
+        
+    }
+    
+    /**
      * Notify the host application that a page has started loading. This method
      * is called once for each main frame load so a page with iframes or
      * framesets will call onPageLoadStarted one time for the main frame. This also
@@ -376,7 +386,9 @@ public class XWalkUIClientInternal {
      * @param url The url to be loaded.
      *
      * @since 2.1
+     * @deprecated use {@link #onNavigationStarted} to receive internal navigation events too
      */
+    @Deprecated 
     @XWalkAPI
     public void onPageLoadStarted(XWalkViewInternal view, String url) {
     }
