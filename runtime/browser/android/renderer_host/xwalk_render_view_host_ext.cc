@@ -58,7 +58,7 @@ void XWalkRenderViewHostExt::RequestNewHitTestDataAt(
     const gfx::PointF& touch_center,
     const gfx::SizeF& touch_area) {
   DCHECK(CalledOnValidThread());
-  Send(new XWalkViewMsg_DoHitTest(web_contents()->GetRenderViewHost()->GetRoutingID(),
+  Send(new XWalkViewMsg_DoHitTest(web_contents()->GetMainFrame()->GetRoutingID(),
                                touch_center,
                                touch_area));
 }
@@ -71,7 +71,7 @@ const XWalkHitTestData& XWalkRenderViewHostExt::GetLastHitTestData() const {
 void XWalkRenderViewHostExt::SetTextZoomLevel(double level) {
   DCHECK(CalledOnValidThread());
   Send(new XWalkViewMsg_SetTextZoomLevel(
-      web_contents()->GetRenderViewHost()->GetRoutingID(), level));
+      web_contents()->GetMainFrame()->GetRoutingID(), level));
 }
 
 void XWalkRenderViewHostExt::ResetScrollAndScaleState() {

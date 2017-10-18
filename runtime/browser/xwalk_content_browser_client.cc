@@ -198,6 +198,7 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
 #endif
   prefs->viewport_meta_enabled = true;
   prefs->context_menu_on_mouse_up = true;
+  prefs->always_show_context_menu_on_touch = true;
 //  prefs->viewport_style = content::ViewportStyle::DEFAULT;
 //  prefs->accelerated_filters_enabled = true;
 }

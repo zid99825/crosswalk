@@ -119,6 +119,8 @@ void PopulateHitTestData(const GURL& absolute_link_url,
   // WebViewClassic allowing any kind of protocol which GURL::is_valid
   // disallows. Similar reasons for using GURL::possibly_invalid_spec instead of
   // GURL::spec.
+//  LOG(INFO) << __func__ << " absolute_link_url=" << absolute_link_url
+//      << " absolute_image_url=" << absolute_image_url;
   if (!absolute_image_url.is_empty())
     data->img_src = absolute_image_url;
 
@@ -266,7 +268,7 @@ void XWalkRenderFrameExt::OnDoHitTest(const gfx::PointF& touch_center,
 
   PopulateHitTestData(result.AbsoluteLinkURL(), absolute_image_url,
                       result.IsContentEditable(), &data);
-  Send(new XWalkViewHostMsg_UpdateHitTestData(routing_id(), data));
+  Send(new XWalkViewHostMsg_UpdateHitTestData(render_frame()->GetRenderView()->GetRoutingID(), data));
 }
 
 void XWalkRenderFrameExt::OnSetTextZoomLevel(double zoom_level) {
