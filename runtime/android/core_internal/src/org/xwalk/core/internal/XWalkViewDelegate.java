@@ -61,15 +61,16 @@ class XWalkViewDelegate {
     private static final String XWALK_CORE_EXTRACTED_DIR = "extracted_xwalkcore";
     private static final String META_XWALK_ENABLE_DOWNLOAD_MODE = "xwalk_enable_download_mode";
     private static final String META_XWALK_DOWNLOAD_MODE = "xwalk_download_mode";
-    private static final Method mGetAssignedPackageIdentifiersMethod;
+//    private static final Method mGetAssignedPackageIdentifiersMethod;
 
     static {
-        try {
+/*        try {
             mGetAssignedPackageIdentifiersMethod =
                         AssetManager.class.getMethod("getAssignedPackageIdentifiers");
         } catch (Exception e) {
             throw new RuntimeException("Invalid reflection", e);
         }
+*/
     }
 
     // TODO(rakuco,lincsoon): This list is also in generate_xwalk_core_library.py.
@@ -444,7 +445,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         }
         return sDeviceAbi;
     }
-
+/*
         public static int getPackageId(Resources resources, String packageName) {
             try {
                 SparseArray packageIdentifiers =
@@ -462,6 +463,6 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
             }
             throw new RuntimeException("Package not found: " + packageName);
         }
-
+*/
     private static native boolean nativeIsLibraryBuiltForIA();
 }
