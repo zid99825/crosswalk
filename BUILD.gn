@@ -111,8 +111,6 @@ source_set("xwalk_runtime") {
     "runtime/browser/android/net/xwalk_url_request_job_factory.h",
     "runtime/browser/android/net_disk_cache_remover.cc",
     "runtime/browser/android/net_disk_cache_remover.h",
-    "runtime/browser/android/net/host_resolver_tenta.cc",
-    "runtime/browser/android/net/host_resolver_tenta.h",
     "runtime/browser/android/net/network_change_tenta.cc",
     "runtime/browser/android/net/network_change_tenta.h",
     "runtime/browser/android/renderer_host/xwalk_render_view_host_ext.cc",
@@ -333,6 +331,14 @@ source_set("xwalk_runtime") {
     "//android_webview/browser/renderer_host/auto_login_parser.cc",
     "//android_webview/browser/renderer_host/auto_login_parser.h",
   ]
+
+  if ( tenta_chromium_build ) {
+    sources += [
+      "runtime/browser/android/net/host_resolver_tenta.cc",
+      "runtime/browser/android/net/host_resolver_tenta.h",
+    ]
+  }
+
   if (!is_android) {
     sources += [
       "runtime/browser/devtools/xwalk_devtools_frontend.cc",

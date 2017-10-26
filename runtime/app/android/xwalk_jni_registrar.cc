@@ -27,7 +27,9 @@
 #include "xwalk/runtime/browser/android/xwalk_view_delegate.h"
 #include "xwalk/runtime/browser/android/xwalk_web_contents_delegate.h"
 #include "xwalk/runtime/browser/android/xwalk_web_resource_response_impl.h"
+#ifdef TENTA_CHROMIUM_BUILD
 #include "xwalk/runtime/browser/android/net/host_resolver_tenta.h"
+#endif
 
 namespace xwalk {
 
@@ -57,7 +59,9 @@ static base::android::RegistrationMethod kXWalkRegisteredMethods[] = {
   { "XWalkViewDelegate", RegisterXWalkViewDelegate },
   { "XWalkWebContentsDelegate", RegisterXWalkWebContentsDelegate },
   { "XWalkWebResourceResponseImpl", RegisterXWalkWebResourceResponse },
+#ifdef TENTA_CHROMIUM_BUILD
   { "HostResolverTenta", tenta::RegisterHostResolverTentaNative},
+#endif
 };
 
 bool RegisterJni(JNIEnv* env) {

@@ -1,4 +1,6 @@
 declare_args() {
+  #build chromium for Tenta
+    tenta_chromium_build = false
     # Enable/Disable log output for tenta modules
     enable_tenta_log = false
     enable_tenta_log_cache = false

@@ -51,7 +51,10 @@
 #include "xwalk/runtime/browser/runtime_network_delegate.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+#ifdef TENTA_CHROMIUM_BUILD
 #include "xwalk/runtime/browser/android/net/host_resolver_tenta.h"
+#include "xwalk/third_party/tenta/chromium_cache/chromium_cache_factory.h"
+#endif
 
 #if defined(OS_ANDROID)
 #include "net/proxy/proxy_config_service_android.h"
@@ -61,7 +64,6 @@
 #include "xwalk/runtime/browser/android/net/xwalk_cookie_store_wrapper.h"
 #include "xwalk/runtime/browser/android/net/xwalk_url_request_job_factory.h"
 #include "xwalk/runtime/browser/android/xwalk_request_interceptor.h"
-#include "xwalk/third_party/tenta/chromium_cache/chromium_cache_factory.h"
 #endif
 
 using content::BrowserThread;
@@ -210,8 +212,11 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
             new net::StaticHttpUserAgentSettings("en-us,en",
                                                  xwalk::GetUserAgent())));
 
+#ifdef TENTA_CHROMIUM_BUILD
+    std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(new tenta_cache::ChromiumCacheFactory());
+
     std::unique_ptr<net::HostResolver> backup =
-        net::HostResolver::CreateDefaultResolver(NULL);
+    net::HostResolver::CreateDefaultResolver(NULL);
 
     tenta::HostResolverTenta * hrt = new tenta::HostResolverTenta(
         std::move(backup));
@@ -219,8 +224,19 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 
     std::unique_ptr<net::HostResolver> host_resolver(hrt);
 
-//    std::unique_ptr<net::HostResolver> host_resolver(
-//        net::HostResolver::CreateDefaultResolver(NULL));
+#else
+    base::FilePath cache_path = base_path_.Append(FILE_PATH_LITERAL("Cache"));
+
+    std::unique_ptr<net::HttpCache::DefaultBackend> main_backend(
+        new net::HttpCache::DefaultBackend(
+            net::DISK_CACHE, net::CACHE_BACKEND_DEFAULT, cache_path,
+            GetDiskCacheSize(),
+            BrowserThread::GetTaskRunnerForThread(BrowserThread::CACHE)));
+
+    std::unique_ptr<net::MappedHostResolver> host_resolver(
+        new net::MappedHostResolver(
+            net::HostResolver::CreateDefaultResolver(nullptr)));
+#endif
 
     storage_->set_cert_verifier(net::CertVerifier::CreateDefault());
     storage_->set_transport_security_state(
@@ -259,14 +275,6 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
         std::unique_ptr < net::HttpServerProperties
             > (new net::HttpServerPropertiesImpl));
 
-    base::FilePath cache_path = base_path_.Append(FILE_PATH_LITERAL("Cache"));
-    std::unique_ptr<tenta_cache::ChromiumCacheFactory> tenta_backend(new tenta_cache::ChromiumCacheFactory());
-
-//    std::unique_ptr<net::HttpCache::DefaultBackend> main_backend(
-//        new net::HttpCache::DefaultBackend(
-//            net::DISK_CACHE, net::CACHE_BACKEND_DEFAULT, cache_path,
-//            GetDiskCacheSize(),
-//            BrowserThread::GetMessageLoopProxyForThread(BrowserThread::CACHE)));
 
     net::HttpNetworkSession::Params network_session_params;
     network_session_params.cert_verifier =
@@ -300,8 +308,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     storage_->set_http_transaction_factory(
         base::WrapUnique(
             new net::HttpCache(storage_->http_network_session(),
-                               std::move(tenta_backend),
-//                               std::move(main_backend),
+                               std::move(main_backend),
                                false /* set_up_quic_server_info */)));
 #if defined(OS_ANDROID)
     std::unique_ptr<XWalkURLRequestJobFactory> job_factory_impl(
