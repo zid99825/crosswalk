@@ -117,10 +117,14 @@ public class SwipeRefreshHandler implements OverscrollRefreshHandler {
                     }
 
                     protected void onPostExecute(Void result) {
-                        // contentViewCore.getWebContents().getNavigationController().reloadBypassingCache(true);
-                        contentViewCore.getWebContents().getNavigationController()
-                                .reloadBypassingCache(true);
-                        // .reloadToRefreshContent(true);
+                        if (contentViewCore != null && contentViewCore.getWebContents() != null &&
+                                contentViewCore.getWebContents()
+                                        .getNavigationController() != null) {
+                            // contentViewCore.getWebContents().getNavigationController().reloadBypassingCache(true);
+                            contentViewCore.getWebContents().getNavigationController()
+                                    .reloadBypassingCache(true);
+                            // .reloadToRefreshContent(true);
+                        }
                     };
 
                 }.execute();
