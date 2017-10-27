@@ -504,6 +504,10 @@ void HostResolverTenta::origOnResolved(SavedRequest* theRequest, int error,
  */
 void HostResolverTenta::OnError(int64_t key_id, int error)
 {
+#if TENTA_LOG_NET_ENABLE == 1
+  LOG(INFO) << "OnError ID=" << key_id << " error=" << error;
+#endif
+
   base::AutoLock lock(reqGuard);
 
   auto it = requests_.find(key_id);

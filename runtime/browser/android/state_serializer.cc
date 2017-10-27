@@ -129,7 +129,7 @@ bool RestoreFromPickle(base::PickleIterator* iterator,
   }
 
   // TODO (iotto): will cause automatic page load after restore
-//  controller.LoadIfNecessary();
+  controller.LoadIfNecessary();
 
   return true;
 }
@@ -191,8 +191,6 @@ bool WriteNavigationEntryToPickle(const content::NavigationEntry& entry,
 
   if (!pickle->WriteString(entry.GetExtraHeaders()))
     return false;
-
-  // Please update AW_STATE_VERSION if serialization format is changed.
 
   return true;
 }

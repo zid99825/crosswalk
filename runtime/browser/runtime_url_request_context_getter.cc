@@ -215,6 +215,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 #ifdef TENTA_CHROMIUM_BUILD
     std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(new tenta_cache::ChromiumCacheFactory());
 
+    //TODO (iotto): Remove backup, needed for speed comparison
+    // or use when we'll have option for native host resolver
     std::unique_ptr<net::HostResolver> backup =
     net::HostResolver::CreateDefaultResolver(NULL);
 
@@ -309,7 +311,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
         base::WrapUnique(
             new net::HttpCache(storage_->http_network_session(),
                                std::move(main_backend),
-                               false /* set_up_quic_server_info */)));
+                               true /* is_main_cache; set_up_quic_server_info */)));
 #if defined(OS_ANDROID)
     std::unique_ptr<XWalkURLRequestJobFactory> job_factory_impl(
         new XWalkURLRequestJobFactory);
