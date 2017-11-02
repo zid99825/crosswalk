@@ -382,9 +382,7 @@ ScopedJavaLocalRef<jstring> XWalkContent::GetVersion(JNIEnv* env, jobject obj) {
 }
 
 static ScopedJavaLocalRef<jstring> GetChromeVersion(JNIEnv* env, const base::android::JavaParamRef<jclass>& jcaller) {
-#if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "GetChromeVersion=" <<  version_info::GetVersionNumber();
-#endif
   return base::android::ConvertUTF8ToJavaString(env, version_info::GetVersionNumber());
 }
 

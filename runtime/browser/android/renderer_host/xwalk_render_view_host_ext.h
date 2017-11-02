@@ -85,9 +85,11 @@ class XWalkRenderViewHostExt : public content::WebContentsObserver,
       const content::FrameNavigateParams& params) override;
 */
   void OnPageScaleFactorChanged(float page_scale_factor) override;
-  bool OnMessageReceived(const IPC::Message& message) override;
+  bool OnMessageReceived(const IPC::Message& message,
+                         content::RenderFrameHost* render_frame_host) override;
 
-  void OnDocumentHasImagesResponse(int msg_id, bool has_images);
+  void OnDocumentHasImagesResponse(content::RenderFrameHost* render_frame_host,
+                                   int msg_id, bool has_images);
   void OnUpdateHitTestData(const XWalkHitTestData& hit_test_data);
   void OnPictureUpdated();
 

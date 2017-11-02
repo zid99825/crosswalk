@@ -37,7 +37,7 @@ void XWalkRenderViewHostExt::DocumentHasImages(DocumentHasImagesResult result) {
   static int next_id = 1;
   int this_id = next_id++;
   pending_document_has_images_requests_[this_id] = result;
-  Send(new XWalkViewMsg_DocumentHasImages(web_contents()->GetRenderViewHost()->GetRoutingID(),
+  Send(new XWalkViewMsg_DocumentHasImages(web_contents()->GetMainFrame()->GetRoutingID(),
                                        this_id));
 }
 
@@ -134,9 +134,10 @@ void XWalkRenderViewHostExt::OnPageScaleFactorChanged(float page_scale_factor) {
     client_bridge->OnWebLayoutPageScaleFactorChanged(page_scale_factor);
 }
 
-bool XWalkRenderViewHostExt::OnMessageReceived(const IPC::Message& message) {
+bool XWalkRenderViewHostExt::OnMessageReceived(
+    const IPC::Message& message, content::RenderFrameHost* render_frame_host) {
   bool handled = true;
-  IPC_BEGIN_MESSAGE_MAP(XWalkRenderViewHostExt, message)
+  IPC_BEGIN_MESSAGE_MAP_WITH_PARAM(XWalkRenderViewHostExt, message, render_frame_host)
     IPC_MESSAGE_HANDLER(XWalkViewHostMsg_DocumentHasImagesResponse,
                         OnDocumentHasImagesResponse)
     IPC_MESSAGE_HANDLER(XWalkViewHostMsg_UpdateHitTestData,
@@ -147,8 +148,9 @@ bool XWalkRenderViewHostExt::OnMessageReceived(const IPC::Message& message) {
   return handled ? true : WebContentsObserver::OnMessageReceived(message);
 }
 
-void XWalkRenderViewHostExt::OnDocumentHasImagesResponse(int msg_id,
-                                                      bool has_images) {
+void XWalkRenderViewHostExt::OnDocumentHasImagesResponse(
+    content::RenderFrameHost* render_frame_host, int msg_id, bool has_images) {
+  LOG(INFO) << __func__ << " msg_id=" << msg_id;
   DCHECK(CalledOnValidThread());
   std::map<int, DocumentHasImagesResult>::iterator pending_req =
       pending_document_has_images_requests_.find(msg_id);
