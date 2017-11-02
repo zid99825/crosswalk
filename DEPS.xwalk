@@ -20,16 +20,10 @@
 #orig 
 #chromium_crosswalk_rev = 'dd39e4fbbc1e4417cef2f908cc0a42af1e2120aa'
 
-chromium_crosswalk_rev = 'ab86416ce7cdfc76426688a6f7a5788da51d4cea'
-#bf6425cb49dd10d03de847bb541f4fe4a19ae6cd'
-#65e04d512372ad906151a31a4aceaffb62060cab'
-#711a913fae0dac71a37ffceccc55352f64712885'
-#e526ec607a1647d25fa39d5704d242146a8749ce'
-#3bb406193913d2548be154d0fdb608b6f16c40c8'
-#9a8193737aefbe39d0762d10317ab0538fd3dd41'
-v8_crosswalk_rev = 'ca914831c3631a8383951c5f300102ec7035c69d'
-#7899d5c8f19284cbc23ab9c0951ebc0d01f33ccd'
-#ef3437f1c30743c8cdabe1431d0a92eaceacfe45'
+chromium_crosswalk_rev = 'b3e5b455ff885fc941e6c476d051ee0c9704538e'
+#ab86416ce7cdfc76426688a6f7a5788da51d4cea'
+v8_crosswalk_rev = '5eb0505f3301063000480cc2ca346e61f717a616'
+#ca914831c3631a8383951c5f300102ec7035c69d'
 
 # We need our own copy of src/buildtools in order to have the gn and
 # clang-format binaries in a location that can be found automatically both by
