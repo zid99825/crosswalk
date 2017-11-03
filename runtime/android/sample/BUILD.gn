@@ -39,7 +39,7 @@ android_apk("xwalk_core_sample_apk") {
 }
 
 android_resources("xwalk_core_sample_apk_resources") {
-  visibility = [ ":*" ]
+  #visibility = [ ":*" ]
   resource_dirs = [ "res" ]
   custom_package = "org.xwalk.core.sample"
 }

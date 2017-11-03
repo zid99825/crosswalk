@@ -8,6 +8,7 @@ import("//third_party/ffmpeg/ffmpeg_options.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/build/xwalk.gni")
 import("//xwalk/build/tenta.gni")
+import("//ppapi/features/features.gni")
 
 group("xwalk_builder") {
   # In GN, When a target is marked "testonly = true", it must only be depended
