@@ -224,7 +224,7 @@ void UDPSocketObject::OnRead(int status) {
   event.remote_address = from_.ToStringWithoutPort();
 
   std::unique_ptr<base::ListValue> eventData(new base::ListValue);
-  eventData->Append(std::move(event.ToValue()));
+  eventData->Append(event.ToValue());
 
   if (!is_suspended_)
     DispatchEvent("message", std::move(eventData));

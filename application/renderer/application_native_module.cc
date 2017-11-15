@@ -36,7 +36,7 @@ void ApplicationNativeModule::GetViewByIDCallback(
 
   blink::WebView* webview = render_view->GetWebView();
   v8::Handle<v8::Context> context =
-    webview->MainFrame()->MainWorldScriptContext();
+    webview->MainFrame()->ToWebLocalFrame()->MainWorldScriptContext();
   v8::Handle<v8::Value> window = context->Global();
   info.GetReturnValue().Set(window);
 }

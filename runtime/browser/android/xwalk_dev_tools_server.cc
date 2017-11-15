@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <vector>
 
-#include "base/android/context_utils.h"
+//#include "base/android/context_utils.h"
 #include "base/android/jni_string.h"
 #include "base/bind.h"
 #include "base/callback.h"
@@ -53,8 +53,7 @@ bool AuthorizeSocketAccessWithDebugPermission(
      const net::UnixDomainServerSocket::Credentials& credentials) {
   JNIEnv* env = base::android::AttachCurrentThread();
   return xwalk::Java_XWalkDevToolsServer_checkDebugPermission(
-      env, base::android::GetApplicationContext(),
-      credentials.process_id, credentials.user_id) ||
+      env, credentials.process_id, credentials.user_id) ||
       content::CanUserConnectToDevTools(credentials);
 }
 
@@ -114,7 +113,7 @@ class UnixDomainServerSocketFactory
 
   // Creates a named socket for reversed tethering implementation (used with
   // remote debugging, primarily for mobile).
-  virtual std::unique_ptr<net::ServerSocket> CreateForTethering(
+  std::unique_ptr<net::ServerSocket> CreateForTethering(
       std::string* out_name) override {
     return std::unique_ptr<net::ServerSocket>();
   }
@@ -168,9 +167,7 @@ void XWalkDevToolsServer::Start(bool allow_debug_permission,
       std::move(factory),
       base::StringPrintf(kFrontEndURL, BLINK_UPSTREAM_REVISION),
       base::FilePath(),
-      base::FilePath(),
-      std::string(),
-      xwalk::GetUserAgent()));
+      base::FilePath()));
 }
 
 void XWalkDevToolsServer::Stop() {
@@ -184,7 +181,8 @@ bool XWalkDevToolsServer::IsStarted() const {
 }
 
 bool RegisterXWalkDevToolsServer(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 static jlong InitRemoteDebugging(JNIEnv* env,

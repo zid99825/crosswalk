@@ -35,7 +35,7 @@ XWalkHttpAuthHandler:: ~XWalkHttpAuthHandler() {
   DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
   Java_XWalkHttpAuthHandlerInternal_handlerDestroyed(
       base::android::AttachCurrentThread(),
-      http_auth_handler_.obj());
+      http_auth_handler_);
 }
 
 void XWalkHttpAuthHandler::Proceed(JNIEnv* env,
@@ -77,7 +77,8 @@ XWalkHttpAuthHandlerBase* XWalkHttpAuthHandlerBase::Create(
 }
 
 bool RegisterXWalkHttpAuthHandler(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace xwalk

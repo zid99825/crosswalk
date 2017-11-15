@@ -60,8 +60,8 @@ class XWalkAutofillClient : public autofill::AutofillClient {
   PrefService* GetPrefs() override;
   syncer::SyncService* GetSyncService() override;
   IdentityProvider* GetIdentityProvider() override;
-  rappor::RapporServiceImpl* GetRapporServiceImpl() override;
-  ukm::UkmService* GetUkmService() override;
+//  rappor::RapporServiceImpl* GetRapporServiceImpl() override;
+  ukm::UkmRecorder* GetUkmRecorder() override;
   void ShowAutofillSettings() override;
   void ShowUnmaskPrompt(
       const autofill::CreditCard& card,
@@ -101,8 +101,15 @@ class XWalkAutofillClient : public autofill::AutofillClient {
       const base::string16& profile_full_name) override;
   bool IsContextSecure() override;
   bool ShouldShowSigninPromo() override;
-  void StartSigninFlow() override;
-  void ShowHttpNotSecureExplanation() override;
+//  void StartSigninFlow() override;
+//  void ShowHttpNotSecureExplanation() override;
+  // Whether Autofill is currently supported by the client. If false, all
+  // features of Autofill are disabled, including Autocomplete.
+  bool IsAutofillSupported() override;
+
+  // Handles simple actions for the autofill popups.
+  void ExecuteCommand(int id) override;
+  // **************************
 
   void Dismissed(JNIEnv* env,
                  const base::android::JavaParamRef<jobject>& obj);
@@ -117,7 +124,7 @@ class XWalkAutofillClient : public autofill::AutofillClient {
   virtual void HideAutofillPopupImpl() = 0;
   // Gets the SaveCardBubbleController instance associated with the client.
   // May return nullptr if the save card bubble has not been shown yet.
-  virtual autofill::SaveCardBubbleController* GetSaveCardBubbleController() override;
+  autofill::SaveCardBubbleController* GetSaveCardBubbleController() override;
 
  protected:
   explicit XWalkAutofillClient(content::WebContents* web_contents);

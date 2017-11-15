@@ -30,7 +30,7 @@ XWalkExtensionModule::XWalkExtensionModule(XWalkExtensionClient* client,
                                            const std::string& extension_code)
     : extension_name_(extension_name),
       extension_code_(extension_code),
-      converter_(content::V8ValueConverter::create()),
+      converter_(content::V8ValueConverter::Create()),
       client_(client),
       module_system_(module_system),
       instance_id_(0) {

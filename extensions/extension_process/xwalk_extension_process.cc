@@ -12,9 +12,11 @@
 #include "content/public/common/mojo_channel_switches.h"
 #include "ipc/ipc_message_macros.h"
 #include "ipc/ipc_sync_channel.h"
-#include "xwalk/extensions/common/xwalk_extension_messages.h"
-#include "services/service_manager/public/cpp/service_context.h"
 #include "mojo/edk/embedder/embedder.h"
+#include "mojo/edk/embedder/incoming_broker_client_invitation.h"
+#include "services/service_manager/public/cpp/service_context.h"
+#include "xwalk/extensions/common/xwalk_extension_messages.h"
+
 
 namespace xwalk {
 namespace extensions {
@@ -105,16 +107,55 @@ void XWalkExtensionProcess::CreateBrowserProcessChannel(
   std::string channel_token;
   mojo::ScopedMessagePipeHandle handle;
 
-  channel_token = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(switches::kMojoChannelToken);
-  handle = mojo::edk::CreateChildMessagePipe(channel_token);
+  channel_token = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(switches::kServiceRequestChannelToken);
+//  channel_token = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(switches::kMojoChannelToken);
+//  handle = mojo::edk::CreateChildMessagePipe(channel_token);
 
-  browser_process_channel_ = IPC::SyncChannel::Create(handle.release(),
+    auto invitation =
+      mojo::edk::IncomingBrokerClientInvitation::AcceptFromCommandLine(
+          mojo::edk::TransportProtocol::kLegacy);
+    mojo::ScopedMessagePipeHandle mojo_handle = invitation->ExtractMessagePipe(channel_token);
+
+//  +  auto invitation =
+//  +      mojo::edk::IncomingBrokerClientInvitation::AcceptFromCommandLine(
+//  +          mojo::edk::TransportProtocol::kLegacy);
+
+
+//  -  mojo::ScopedMessagePipeHandle mojo_handle =
+//  -      mojo::edk::CreateChildMessagePipe(
+//  -          base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+//  -              switches::kMojoChannelToken));
+
+//  +  auto invitation = mojo::edk::IncomingBrokerClientInvitation::Accept(
+//  +      mojo::edk::ConnectionParams(
+//  +          mojo::edk::TransportProtocol::kLegacy,
+//  +          mojo::edk::ScopedPlatformHandle(mojo::edk::PlatformHandle(
+//  +              kMojoIPCChannel + base::GlobalDescriptors::kBaseDescriptor))));
+//  +  mojo::ScopedMessagePipeHandle mojo_handle = invitation->ExtractMessagePipe(
+//  +      base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+//  +          switches::kMojoChannelToken));
+
+
+
+  browser_process_channel_ = IPC::SyncChannel::Create(mojo_handle.release(),
                                       IPC::Channel::MODE_CLIENT,
                                       this,  // As a Listener.
                                       io_thread_.task_runner(),
                                       true,  // Create pipe now.
                                       &shutdown_event_);
 
+
+//  mojo::edk::ScopedPlatformHandle parent_pipe =
+//      mojo::edk::PlatformChannelPair::PassClientHandleFromParentProcess(
+//          *command_line);
+//  if (!parent_pipe.is_valid()) {
+//    parent_pipe =
+//        mojo::edk::NamedPlatformChannelPair::PassClientHandleFromParentProcess(
+//            *command_line);
+//  }
+//  if (!parent_pipe.is_valid()) {
+//    return kInvalidCommandLineExitCode;
+//  }
 }
 
 void XWalkExtensionProcess::CreateRenderProcessChannel() {

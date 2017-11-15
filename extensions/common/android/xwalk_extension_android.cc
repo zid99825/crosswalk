@@ -124,7 +124,7 @@ XWalkExtensionInstance* XWalkExtensionAndroid::CreateInstance() {
   instances_[next_instance_id_] = instance;
 
   Java_XWalkExtensionAndroid_onInstanceCreated(
-      env, obj.obj(), next_instance_id_);
+      env, obj, next_instance_id_);
   next_instance_id_++;
 
   // Here we return the raw pointer to its caller XWalkExtensionServer. Since
@@ -175,13 +175,12 @@ XWalkExtensionAndroidInstance::~XWalkExtensionAndroidInstance() {
     return;
   }
   Java_XWalkExtensionAndroid_onInstanceDestroyed(
-      env, obj.obj(), id_);
+      env, obj, id_);
 }
 
 void XWalkExtensionAndroidInstance::HandleMessage(
     std::unique_ptr<base::Value> msg) {
   std::string value;
-  const base::Value* binary_value = nullptr;
 
   JNIEnv* env = base::android::AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
@@ -192,16 +191,16 @@ void XWalkExtensionAndroidInstance::HandleMessage(
 
   if (msg->GetAsString(&value)) {
     ScopedJavaLocalRef<jstring> buffer(env, env->NewStringUTF(value.c_str()));
-    Java_XWalkExtensionAndroid_onMessage(
-        env, obj.obj(), getID(), buffer.obj());
-  } else if (msg->GetAsBinary(&binary_value)) {
+    Java_XWalkExtensionAndroid_onMessage(env, obj, getID(), buffer);
+  } else if (msg->is_blob()) {
+    const base::Value::BlobStorage& blob_value = msg->GetBlob();
     ScopedJavaLocalRef<jbyteArray> buffer(
-        env, env->NewByteArray(binary_value->GetSize()));
+        env, env->NewByteArray(blob_value.size()));
     env->SetByteArrayRegion(
-        buffer.obj(), 0, binary_value->GetSize(),
-        reinterpret_cast<jbyte*>(const_cast<char*>(binary_value->GetBuffer())));
+        buffer.obj(), 0, blob_value.size(),
+        reinterpret_cast<jbyte*>(const_cast<char*>(blob_value.data())));
     Java_XWalkExtensionAndroid_onBinaryMessage(
-        env, obj.obj(), getID(), buffer.obj());
+        env, obj, getID(), buffer);
   } else {
     NOTREACHED() << "Failed to decode message as either string or binary blob";
   }
@@ -228,7 +227,7 @@ void XWalkExtensionAndroidInstance::HandleSyncMessage(
   ScopedJavaLocalRef<jstring> buffer(env, env->NewStringUTF(value.c_str()));
   ScopedJavaLocalRef<jstring> ret =
       Java_XWalkExtensionAndroid_onSyncMessage(
-              env, obj.obj(), getID(), buffer.obj());
+              env, obj, getID(), buffer);
 
   const char *str = env->GetStringUTFChars(ret.obj(), 0);
   ret_val.reset(new base::Value(str));
@@ -263,7 +262,8 @@ static jlong GetOrCreateExtension(
 }
 
 bool RegisterXWalkExtensionAndroid(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace extensions

@@ -49,24 +49,15 @@ protected:
   class RequestForCaller : public Request
   {
   public:
-    RequestForCaller(int64_t requestId, const base::WeakPtr<HostResolverTenta>& parent)
-      : _request_id(requestId),
-        _parent(parent)
-    {}
+    RequestForCaller(int64_t requestId, const base::WeakPtr<HostResolverTenta>& parent);
 
     // when this object gets deleted needs to delete the SavedRequest, by it's id
-    ~RequestForCaller()
-    {
-      if ( _parent )
-      {
-        _parent->CancelRequest(_request_id);
-      }
-    }
+    ~RequestForCaller() final;
 
     // Changes the priority of the specified request. Can be called after
     // Resolve() is called. Can't be called once the request is cancelled or
     // completed.
-    void ChangeRequestPriority(RequestPriority priority) {};
+    void ChangeRequestPriority(RequestPriority priority) override;
   private:
     int64_t _request_id;
     base::WeakPtr<HostResolverTenta> _parent;
@@ -74,7 +65,7 @@ protected:
 
 public:
   HostResolverTenta(std::unique_ptr<HostResolver> backup_resolver);
-  virtual ~HostResolverTenta();
+  ~HostResolverTenta() override;
 
   // Use backup host resolver
   void use_backup(bool use)
@@ -108,7 +99,7 @@ public:
 // completed.
 //
 // Profiling information for the request is saved to |net_log| if non-NULL.
-  virtual int Resolve(const RequestInfo& info, net::RequestPriority priority,
+  int Resolve(const RequestInfo& info, net::RequestPriority priority,
                       net::AddressList* addresses,
                       const CompletionCallback& callback,
                       std::unique_ptr<Request>* out_req, const NetLogWithSource& net_log)  override;
@@ -117,7 +108,7 @@ public:
 // file (if enabled) only. This is guaranteed to complete synchronously.
 // This acts like |Resolve()| if the hostname is IP literal, or cached value
 // or HOSTS entry exists. Otherwise, ERR_DNS_CACHE_MISS is returned.
-  virtual int ResolveFromCache(const RequestInfo& info, AddressList* addresses,
+  int ResolveFromCache(const RequestInfo& info, AddressList* addresses,
                                const NetLogWithSource& net_log) override;
 
   // Post a task to another thread to complete the request
@@ -175,8 +166,6 @@ protected:
   typedef base::Callback<void(int64_t, int)> OnErrorCallback;
   OnErrorCallback on_error_call_;
 
-  base::WeakPtrFactory<HostResolverTenta> weak_ptr_factory_;
-
   std::unique_ptr<HostResolver> backup_resolver_;  // chromium implementation for host resolve
   JavaObjectWeakGlobalRef j_host_resolver_;  // java instance for host resolve
 
@@ -193,6 +182,7 @@ protected:
 
   scoped_refptr<base::TaskRunner> orig_runner_;
 
+  base::WeakPtrFactory<HostResolverTenta> weak_ptr_factory_;
 private:
   /**
    * Do real work on original thread

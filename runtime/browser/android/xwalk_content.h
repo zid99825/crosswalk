@@ -37,7 +37,7 @@ class XWalkContentsClientBridge;
 class XWalkContent : public FindHelper::Listener {
  public:
   explicit XWalkContent(std::unique_ptr<content::WebContents> web_contents);
-  ~XWalkContent();
+  ~XWalkContent() override;
 
   static XWalkContent* FromID(int render_process_id, int render_view_id);
   static XWalkContent* FromWebContents(content::WebContents* web_contents);
@@ -47,16 +47,20 @@ class XWalkContent : public FindHelper::Listener {
   void SetPendingWebContentsForPopup(
                                      std::unique_ptr<content::WebContents> pending);
   jlong ReleasePopupXWalkContent(JNIEnv* env, jobject obj);
-  void SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
-                    jobject web_contents_delegate,
-                    jobject contents_client_bridge, jobject io_thread_client,
-                    jobject intercept_navigation_delegate);
+  void SetJavaPeers(
+      JNIEnv* env,
+      const base::android::JavaParamRef<jobject>& obj,
+      const base::android::JavaParamRef<jobject>& xwalk_content,
+      const base::android::JavaParamRef<jobject>& web_contents_delegate,
+      const base::android::JavaParamRef<jobject>& contents_client_bridge,
+      const base::android::JavaParamRef<jobject>& io_thread_client,
+      const base::android::JavaParamRef<jobject>& intercept_navigation_delegate);
   void ClearCache(JNIEnv* env, jobject obj, jboolean include_disk_files);
   void ClearCacheForSingleFile(JNIEnv* env, jobject obj, jstring url);
   ScopedJavaLocalRef<jstring> DevToolsAgentId(JNIEnv* env, jobject obj);
   void Destroy(JNIEnv* env, jobject obj);
-  void UpdateLastHitTestData(JNIEnv* env, jobject obj);
-  void RequestNewHitTestDataAt(JNIEnv* env, jobject obj, jfloat x, jfloat y,
+  void UpdateLastHitTestData(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void RequestNewHitTestDataAt(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, jfloat x, jfloat y,
                                jfloat touch_major);
   ScopedJavaLocalRef<jstring> GetVersion(JNIEnv* env, jobject obj);
   jint GetRoutingID(JNIEnv* env, jobject obj);
@@ -122,8 +126,8 @@ class XWalkContent : public FindHelper::Listener {
   }
 
   void SetJsOnlineProperty(JNIEnv* env, jobject obj, jboolean network_up);
-  jboolean SetManifest(JNIEnv* env, jobject obj, jstring path,
-                       jstring manifest);
+  jboolean SetManifest(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, const base::android::JavaParamRef<jstring>& path,
+                       const base::android::JavaParamRef<jstring>& manifest);
   void SetBackgroundColor(JNIEnv* env, jobject obj, jint color);
   void SetOriginAccessWhitelist(JNIEnv* env, jobject obj, jstring url,
                                 jstring match_patterns);
@@ -135,7 +139,7 @@ class XWalkContent : public FindHelper::Listener {
   void InvokeGeolocationCallback(JNIEnv* env, jobject obj, jboolean value,
                                  jstring origin);
 
-  void SetXWalkAutofillClient(jobject client);
+  void SetXWalkAutofillClient(const base::android::JavaRef<jobject>& client);
   void SetSaveFormData(bool enabled);
 
   base::android::ScopedJavaLocalRef<jbyteArray> GetCertificate(

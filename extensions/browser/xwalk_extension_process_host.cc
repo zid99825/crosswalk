@@ -109,6 +109,11 @@ class ExtensionSandboxedProcessLauncherDelegate
   }
 */
 #endif  // OS_WIN
+  // Returns the SandboxType to enforce on the process, or
+  // SANDBOX_TYPE_NO_SANDBOX to run without a sandbox policy.
+  content::SandboxType GetSandboxType() override {
+    return content::SandboxType::SANDBOX_TYPE_NO_SANDBOX;
+  }
 private:
 
   DISALLOW_COPY_AND_ASSIGN(ExtensionSandboxedProcessLauncherDelegate);

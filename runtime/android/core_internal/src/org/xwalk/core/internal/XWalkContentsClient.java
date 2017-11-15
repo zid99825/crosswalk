@@ -24,7 +24,6 @@ import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.chromium.content.browser.ContentViewClient;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.WebContentsObserver;
 import org.chromium.net.NetError;
@@ -38,7 +37,7 @@ import org.chromium.content.browser.ContentVideoViewEmbedder;
  * and then introduce new abstract methods that the our own client must implement. i.e.: all methods
  * in this class should either be final, or abstract.
  */
-abstract class XWalkContentsClient extends ContentViewClient {
+abstract class XWalkContentsClient {
 
     private static final String TAG = "XWalkContentsClient";
     private final XWalkContentsClientCallbackHelper mCallbackHelper = new XWalkContentsClientCallbackHelper(

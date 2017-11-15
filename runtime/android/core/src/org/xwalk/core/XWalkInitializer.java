@@ -151,7 +151,7 @@ public class XWalkInitializer {
         public void onXWalkInitCompleted();
     }
 
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkInitializer";
 
     private XWalkInitListener mInitListener;
     private Context mContext;

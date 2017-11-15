@@ -100,6 +100,7 @@ template("generate_xwalk_core_library") {
 #     Directory to the template directory containing a ant.properties,
 #     AndroidManifest.xml and others.
 template("generate_android_project") {
+  print("generate_android_project", target_name)
   assert(defined(invoker.android_manifest))
   assert(defined(invoker.js_bindings))
   assert(defined(invoker.template_dir))
@@ -192,25 +193,56 @@ template("generate_android_project") {
   # If we are shipping native libraries, we need to create a wrapper to be able
   # to load them at runtime.
   if (_native_libs_deps != []) {
+    print("_native_libs_deps ", _native_libs_deps)
     # TODO(rakuco): We may need an additional block adding libc++_shared.so for
     # the is_component_build case. See the android_apk template in rules.gni.
     # M53 also added a block to order the library dependencies, but we do not
     # need that for now.
 
+    _ordered_libraries_json =
+        "$target_gen_dir/$target_name.ordered_libararies.json"
+    _rebased_ordered_libraries_json =
+        rebase_path(_ordered_libraries_json, root_build_dir)
+    _ordered_libraries_target = "${target_name}__write_ordered_libraries"
+
+    # TODO(agrieve): Make GN write runtime deps in dependency order so as to
+    # not need this manual sorting step.
+    action(_ordered_libraries_target) {
+      script = "//build/android/gyp/write_ordered_libraries.py"
+      deps = _native_libs_deps + [ ":$_build_config_target" ]
+      outputs = [
+        _ordered_libraries_json,
+      ]
+      _rebased_android_readelf = rebase_path(android_readelf, root_build_dir)
+      args = [
+        "--readelf=$_rebased_android_readelf",
+        "--output=$_rebased_ordered_libraries_json",
+        "--libraries-dir=.",
+        "--input-libraries=@FileArg($_rebased_build_config:native:libraries)",
+      ]
+    }
+                                
     java_cpp_template("${target_name}__native_libraries_java") {
-      package_name = "org/chromium/base/library_loader"
+      #package_name = "org/chromium/base/library_loader"
+      package_path = "org/chromium/base/library_loader"
       sources = [
         "//base/android/java/templates/NativeLibraries.template",
       ]
       inputs = [
-        _build_config,
+#         _build_config,
+        _ordered_libraries_json,
       ]
       deps = [
-        ":$_build_config_target",
+#         ":$_build_config_target",
+        ":${_ordered_libraries_target}",
       ]
-      defines =
-          [ "NATIVE_LIBRARIES_LIST=" +
-            "@FileArg($_rebased_build_config:native:java_libraries_list)" ]
+#       defines =
+#           [ "NATIVE_LIBRARIES_LIST=" +
+#             "@FileArg($_rebased_build_config:native:java_libraries_list)" ]
+      defines = [
+        "NATIVE_LIBRARIES_LIST=" +
+            "@FileArg($_rebased_ordered_libraries_json:java_libraries_list)",
+      ]
     }
     _srcjar_deps += [ ":${target_name}__native_libraries_java" ]
 
@@ -221,7 +253,8 @@ template("generate_android_project") {
     # we do not want any Chromium bits at all (i.e. we are building
     # xwalk_shared_library).
     java_cpp_template("${target_name}__build_config_java") {
-      package_name = "org/chromium/base"
+      #package_name = "org/chromium/base"
+      package_path = "org/chromium/base"
       sources = [
         "//base/android/java/templates/BuildConfig.template",
       ]
@@ -240,9 +273,16 @@ template("generate_android_project") {
     dex_path = _base_path + "__unused.dex.jar"
     emma_never_instrument = true
 #    chromium_code = true
+    jar_excluded_patterns = []
     if (defined(invoker.resource_excluded_patterns)) {
-      jar_excluded_patterns = invoker.resource_excluded_patterns
+      jar_excluded_patterns += invoker.resource_excluded_patterns
     }
+
+    if (defined(invoker.jar_excluded_patterns)) {
+      jar_excluded_patterns += invoker.jar_excluded_patterns
+    }
+                                   
+    print("java_library_impl", _java_target, " exclude_patterns", jar_excluded_patterns)
     jar_path = _resource_jar_path
     if (defined(invoker.java_files)) {
         java_files = invoker.java_files

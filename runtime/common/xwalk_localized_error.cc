@@ -183,42 +183,42 @@ const LocalizedErrorMap dns_probe_error_options[] = {
   },
 };
 
-const LocalizedErrorMap* FindErrorMapInArray(const LocalizedErrorMap* maps,
-                                                   size_t num_maps,
-                                                   int error_code) {
-  for (size_t i = 0; i < num_maps; ++i) {
-    if (maps[i].error_code == error_code)
-      return &maps[i];
-  }
-  return NULL;
-}
+//const LocalizedErrorMap* FindErrorMapInArray(const LocalizedErrorMap* maps,
+//                                                   size_t num_maps,
+//                                                   int error_code) {
+//  for (size_t i = 0; i < num_maps; ++i) {
+//    if (maps[i].error_code == error_code)
+//      return &maps[i];
+//  }
+//  return NULL;
+//}
 
-const LocalizedErrorMap* LookupErrorMap(const std::string& error_domain,
-                                        int error_code, bool is_post) {
-  if (error_domain == net::kErrorDomain) {
-    // Display a different page in the special case of navigating through the
-    // history to an uncached page created by a POST.
-    if (is_post && error_code == net::ERR_CACHE_MISS)
-      return &repost_error;
-    return FindErrorMapInArray(net_error_options,
-                               arraysize(net_error_options),
-                               error_code);
-  } else if (error_domain == LocalizedError::kHttpErrorDomain) {
-    return FindErrorMapInArray(http_error_options,
-                               arraysize(http_error_options),
-                               error_code);
-  } else if (error_domain == LocalizedError::kDnsProbeErrorDomain) {
-    const LocalizedErrorMap* map =
-        FindErrorMapInArray(dns_probe_error_options,
-                            arraysize(dns_probe_error_options),
-                            error_code);
-    DCHECK(map);
-    return map;
-  } else {
-    NOTREACHED();
-    return NULL;
-  }
-}
+//const LocalizedErrorMap* LookupErrorMap(const std::string& error_domain,
+//                                        int error_code, bool is_post) {
+//  if (error_domain == net::kErrorDomain) {
+//    // Display a different page in the special case of navigating through the
+//    // history to an uncached page created by a POST.
+//    if (is_post && error_code == net::ERR_CACHE_MISS)
+//      return &repost_error;
+//    return FindErrorMapInArray(net_error_options,
+//                               arraysize(net_error_options),
+//                               error_code);
+//  } else if (error_domain == LocalizedError::kHttpErrorDomain) {
+//    return FindErrorMapInArray(http_error_options,
+//                               arraysize(http_error_options),
+//                               error_code);
+//  } else if (error_domain == LocalizedError::kDnsProbeErrorDomain) {
+//    const LocalizedErrorMap* map =
+//        FindErrorMapInArray(dns_probe_error_options,
+//                            arraysize(dns_probe_error_options),
+//                            error_code);
+//    DCHECK(map);
+//    return map;
+//  } else {
+//    NOTREACHED();
+//    return NULL;
+//  }
+//}
 }  // namespace
 
 const char LocalizedError::kHttpErrorDomain[] = "http";
@@ -226,10 +226,13 @@ const char LocalizedError::kDnsProbeErrorDomain[] = "dnsprobe";
 
 base::string16 LocalizedError::GetErrorDetails(const blink::WebURLError& error,
                                                bool is_post) {
-  const LocalizedErrorMap* error_map =
-      LookupErrorMap(error.domain.Utf8(), error.reason, is_post);
-  if (error_map)
-    return l10n_util::GetStringUTF16(error_map->summary_resource_id);
-  else
-    return l10n_util::GetStringUTF16(IDS_ERRORPAGES_SUMMARY_NOT_AVAILABLE);
+  return error.localized_description.Utf16();
+  // TODO (iotto) :
+//
+//  const LocalizedErrorMap* error_map =
+//      LookupErrorMap(error.domain.Utf8(), error.reason, is_post);
+//  if (error_map)
+//    return l10n_util::GetStringUTF16(error_map->summary_resource_id);
+//  else
+//    return l10n_util::GetStringUTF16(IDS_ERRORPAGES_SUMMARY_NOT_AVAILABLE);
 }

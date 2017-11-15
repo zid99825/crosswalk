@@ -19,6 +19,7 @@ shared_library("libxwalkcore") {
     "//mojo/public/cpp/bindings",
     "//skia",
     "//xwalk:xwalk_runtime",
+    "//xwalk/runtime/android/core:xwalk_jni_registration",
     "//xwalk/extensions/android:xwalk_core_extensions_native_jni",
     "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
     "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",

@@ -49,6 +49,7 @@
 #include "xwalk/runtime/common/xwalk_paths.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/browser/devtools/xwalk_devtools_manager_delegate.h"
+#include "xwalk/runtime/browser/android/xwalk_settings.h"
 
 #if !defined(DISABLE_NACL)
 #include "components/nacl/browser/nacl_browser.h"
@@ -271,7 +272,7 @@ void XWalkContentBrowserClient::RenderProcessWillLaunch(
   xwalk_runner_->OnRenderProcessWillLaunch(host);
   host->AddFilter(new XWalkRenderMessageFilter);
 #if defined(OS_ANDROID)
-  host->AddFilter(new cdm::CdmMessageFilterAndroid());
+  host->AddFilter(new cdm::CdmMessageFilterAndroid(true, false));
   host->AddFilter(new XWalkRenderMessageFilter(host->GetID()));
 #endif
 }
@@ -327,14 +328,17 @@ bool XWalkContentBrowserClient::AllowSetCookie(
 void XWalkContentBrowserClient::SelectClientCertificate(
     content::WebContents* web_contents,
     net::SSLCertRequestInfo* cert_request_info,
+    net::ClientCertIdentityList client_certs,
     std::unique_ptr<content::ClientCertificateDelegate> delegate) {
 #if defined(OS_ANDROID)
   XWalkContentsClientBridgeBase* client =
       XWalkContentsClientBridgeBase::FromWebContents(web_contents);
+
+  // TODO(iotto) : also forward client_certs
   if (client) {
     client->SelectClientCertificate(cert_request_info, std::move(delegate));
   } else {
-    delegate->ContinueWithCertificate(nullptr);
+    delegate->ContinueWithCertificate(nullptr, nullptr);
   }
 #endif
 }
@@ -418,39 +422,48 @@ content::SpeechRecognitionManagerDelegate*
   return new xwalk::XWalkSpeechRecognitionManagerDelegate();
 }
 
-#if !defined(OS_ANDROID)
-bool XWalkContentBrowserClient::CanCreateWindow(const GURL& opener_url,
-                             const GURL& opener_top_level_frame_url,
-                             const GURL& source_origin,
-                             WindowContainerType container_type,
-                             const GURL& target_url,
-                             const content::Referrer& referrer,
-                             WindowOpenDisposition disposition,
-                             const blink::WebWindowFeatures& features,
-                             bool user_gesture,
-                             bool opener_suppressed,
-                             content::ResourceContext* context,
-                             int render_process_id,
-                             int opener_render_view_id,
-                             int opener_render_frame_id,
-                             bool* no_javascript_access) {
-  *no_javascript_access = false;
-  application::Application* app = xwalk_runner_->app_system()->
-      application_service()->GetApplicationByRenderHostID(render_process_id);
-  if (!app)
-    // If it's not a request from an application, always enable this action.
-    return true;
+bool XWalkContentBrowserClient::CanCreateWindow(content::RenderFrameHost* opener,
+                                                const GURL& opener_url,
+                                                const GURL& opener_top_level_frame_url,
+                                                const GURL& source_origin,
+                                                content::mojom::WindowContainerType container_type,
+                                                const GURL& target_url,
+                                                const content::Referrer& referrer,
+                                                const std::string& frame_name,
+                                                WindowOpenDisposition disposition,
+                                                const blink::mojom::WindowFeatures& features,
+                                                bool user_gesture,
+                                                bool opener_suppressed,
+                                                bool* no_javascript_access) {
 
-  if (app->CanRequestURL(target_url)) {
-    LOG(INFO) << "[ALLOW] CreateWindow: " << target_url.spec();
-    return true;
+  if (no_javascript_access) {
+    *no_javascript_access = false;
   }
 
-  LOG(INFO) << "[BlOCK] CreateWindow: " << target_url.spec();
-  platform_util::OpenExternal(target_url);
-  return false;
+  content::WebContents* web_contents =
+      content::WebContents::FromRenderFrameHost(opener);
+
+  XWalkSettings* settings = XWalkSettings::FromWebContents(web_contents);
+
+  return (settings && settings->GetJavaScriptCanOpenWindowsAutomatically()) ||
+         user_gesture;
+
+//  *no_javascript_access = false;
+//  application::Application* app = xwalk_runner_->app_system()->
+//      application_service()->GetApplicationByRenderHostID(render_process_id);
+//  if (!app)
+//    // If it's not a request from an application, always enable this action.
+//    return true;
+//
+//  if (app->CanRequestURL(target_url)) {
+//    LOG(INFO) << "[ALLOW] CreateWindow: " << target_url.spec();
+//    return true;
+//  }
+//
+//  LOG(INFO) << "[BlOCK] CreateWindow: " << target_url.spec();
+//  platform_util::OpenExternal(target_url);
+//  return false;
 }
-#endif
 
 void XWalkContentBrowserClient::GetStoragePartitionConfigForSite(
     content::BrowserContext* browser_context,

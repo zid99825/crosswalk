@@ -169,9 +169,8 @@ RemoteDebuggingServer::RemoteDebuggingServer(
           std::move(factory),
           frontend_url,
           output_dir,
-          output_dir,
-          std::string(),
-          xwalk::GetUserAgent()));
+          output_dir));
+
   port_ = port;
 }
 

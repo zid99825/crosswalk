@@ -86,6 +86,7 @@ int XWalkPermissionManager::RequestPermission(
           ->GetLastCommittedURL().GetOrigin();
   int request_id = kNoPendingOperation;
 
+  // TODO (iotto): Analize and fix
   switch (permission) {
     case content::PermissionType::GEOLOCATION: {
       request_id = pending_requests_.Add(base::MakeUnique<PendingRequest>(
@@ -139,8 +140,10 @@ int XWalkPermissionManager::RequestPermission(
     case content::PermissionType::MIDI:
     case content::PermissionType::MIDI_SYSEX:
     case content::PermissionType::PUSH_MESSAGING:
+    case content::PermissionType::SENSORS:
     case content::PermissionType::VIDEO_CAPTURE:
     case content::PermissionType::FLASH:
+    case content::PermissionType::ACCESSIBILITY_EVENTS:
       NOTIMPLEMENTED() << "RequestPermission is not implemented for "
                        << static_cast<int>(permission);
       callback.Run(PermissionStatus::DENIED);
@@ -190,8 +193,10 @@ void XWalkPermissionManager::CancelPermissionRequest(int request_id) {
     case content::PermissionType::MIDI_SYSEX:
     case content::PermissionType::NOTIFICATIONS:
     case content::PermissionType::PUSH_MESSAGING:
+    case content::PermissionType::SENSORS:
     case content::PermissionType::VIDEO_CAPTURE:
     case content::PermissionType::FLASH:
+    case content::PermissionType::ACCESSIBILITY_EVENTS:
       NOTIMPLEMENTED() << "CancelPermission not implemented for "
                        << static_cast<int>(pending_request->permission);
       break;

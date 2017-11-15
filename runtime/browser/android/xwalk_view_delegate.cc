@@ -19,7 +19,8 @@ jboolean IsLibraryBuiltForIA(JNIEnv* env, const base::android::JavaParamRef<jcla
 }
 
 bool RegisterXWalkViewDelegate(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace xwalk

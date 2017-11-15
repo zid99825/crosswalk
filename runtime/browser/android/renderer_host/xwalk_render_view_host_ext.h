@@ -9,7 +9,8 @@
 #include <string>
 
 #include "base/callback_forward.h"
-#include "base/threading/non_thread_safe.h"
+//#include "base/threading/non_thread_safe.h"
+#include "base/sequence_checker.h"
 #include "content/public/browser/web_contents_observer.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/size_f.h"
@@ -24,10 +25,11 @@ struct LoadCommittedDetails;
 
 namespace xwalk {
 
+// TODO(iotto) : See what happened to base::NonThreadSafe
 // Provides RenderViewHost wrapper functionality for sending WebView-specific
 // IPC messages to the renderer and from there to WebKit.
-class XWalkRenderViewHostExt : public content::WebContentsObserver,
-                               public base::NonThreadSafe {
+class XWalkRenderViewHostExt : public content::WebContentsObserver
+                               /*, public base::NonThreadSafe*/ {
  public:
   // To send receive messages to a RenderView we take the WebContents instance,
   // as it internally handles RenderViewHost instances changing underneath us.
@@ -107,6 +109,8 @@ class XWalkRenderViewHostExt : public content::WebContentsObserver,
   std::string pending_base_url_;
   std::string pending_match_patterns_;
   bool is_render_view_created_;
+
+  SEQUENCE_CHECKER(sequence_checker_);
 
   DISALLOW_COPY_AND_ASSIGN(XWalkRenderViewHostExt);
 };

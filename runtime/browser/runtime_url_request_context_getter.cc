@@ -113,13 +113,13 @@ class IgnoresCTPolicyEnforcer : public net::CTPolicyEnforcer {
     return net::ct::CertPolicyCompliance::CERT_POLICY_COMPLIES_VIA_SCTS;
   }
 
-  net::ct::EVPolicyCompliance DoesConformToCTEVPolicy(
-      net::X509Certificate* cert,
-      const net::ct::EVCertsWhitelist* ev_whitelist,
-      const net::SCTList& verified_scts,
-      const net::NetLogWithSource& net_log) override {
-    return net::ct::EVPolicyCompliance::EV_POLICY_DOES_NOT_APPLY;
-  }
+//  net::ct::EVPolicyCompliance DoesConformToCTEVPolicy(
+//      net::X509Certificate* cert,
+//      const net::ct::EVCertsWhitelist* ev_whitelist,
+//      const net::SCTList& verified_scts,
+//      const net::NetLogWithSource& net_log) override {
+//    return net::ct::EVPolicyCompliance::EV_POLICY_DOES_NOT_APPLY;
+//  }
 };
 
 }  // namespace
@@ -163,7 +163,7 @@ RuntimeURLRequestContextGetter::RuntimeURLRequestContextGetter(
   // the URLRequestContextStorage on the IO thread in GetURLRequestContext().
 #if defined(OS_ANDROID)
   proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(
-      io_task_runner, file_task_runner);
+      io_task_runner);
   net::ProxyConfigServiceAndroid* android_config_service =
       static_cast<net::ProxyConfigServiceAndroid*>(proxy_config_service_.get());
   android_config_service->set_exclude_pac_url(true);
@@ -277,36 +277,37 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
         std::unique_ptr < net::HttpServerProperties
             > (new net::HttpServerPropertiesImpl));
 
-
     net::HttpNetworkSession::Params network_session_params;
-    network_session_params.cert_verifier =
+    net::HttpNetworkSession::Context network_session_context;
+
+    network_session_context.cert_verifier =
         url_request_context_->cert_verifier();
-    network_session_params.transport_security_state = url_request_context_
+    network_session_context.transport_security_state = url_request_context_
         ->transport_security_state();
-    network_session_params.cert_transparency_verifier = url_request_context_
+    network_session_context.cert_transparency_verifier = url_request_context_
         ->cert_transparency_verifier();
-    network_session_params.ct_policy_enforcer = url_request_context_
+    network_session_context.ct_policy_enforcer = url_request_context_
         ->ct_policy_enforcer();
-    network_session_params.channel_id_service = url_request_context_
+    network_session_context.channel_id_service = url_request_context_
         ->channel_id_service();
-    network_session_params.proxy_service =
+    network_session_context.proxy_service =
         url_request_context_->proxy_service();
-    network_session_params.ssl_config_service = url_request_context_
+    network_session_context.ssl_config_service = url_request_context_
         ->ssl_config_service();
-    network_session_params.http_auth_handler_factory = url_request_context_
+    network_session_context.http_auth_handler_factory = url_request_context_
         ->http_auth_handler_factory();
-    network_session_params.http_server_properties = url_request_context_
+    network_session_context.http_server_properties = url_request_context_
         ->http_server_properties();
     network_session_params.ignore_certificate_errors =
         ignore_certificate_errors_;
 
     // Give |storage_| ownership at the end in case it's |mapped_host_resolver|.
     storage_->set_host_resolver(std::move(host_resolver));
-    network_session_params.host_resolver =
+    network_session_context.host_resolver =
         url_request_context_->host_resolver();
 
     storage_->set_http_network_session(
-        base::WrapUnique(new net::HttpNetworkSession(network_session_params)));
+        base::WrapUnique(new net::HttpNetworkSession(network_session_params, network_session_context)));
     storage_->set_http_transaction_factory(
         base::WrapUnique(
             new net::HttpCache(storage_->http_network_session(),

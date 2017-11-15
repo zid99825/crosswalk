@@ -65,8 +65,6 @@ class XWalkBrowserContext
       content::WebContents* web_contents);
 
   // BrowserContext implementation.
-  std::unique_ptr<content::ZoomLevelDelegate> CreateZoomLevelDelegate(
-      const base::FilePath& partition_path) override;
   base::FilePath GetPath() const override;
   bool IsOffTheRecord() const override;
   content::DownloadManagerDelegate* GetDownloadManagerDelegate() override;
@@ -77,6 +75,10 @@ class XWalkBrowserContext
   content::SSLHostStateDelegate* GetSSLHostStateDelegate() override;
   content::PermissionManager* GetPermissionManager() override;
   content::BackgroundSyncController* GetBackgroundSyncController() override;
+  // Returns the BrowsingDataRemoverDelegate for this context. This will be
+  // called once per context. It's valid to return nullptr.
+  content::BrowsingDataRemoverDelegate* GetBrowsingDataRemoverDelegate() override;
+
   net::URLRequestContextGetter* CreateRequestContext(
       content::ProtocolHandlerMap* protocol_handlers,
       content::URLRequestInterceptorScopedVector request_interceptors) override;

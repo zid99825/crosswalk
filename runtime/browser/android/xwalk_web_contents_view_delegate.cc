@@ -6,7 +6,6 @@
 #include "xwalk/runtime/browser/android/xwalk_web_contents_view_delegate.h"
 
 #include "base/command_line.h"
-#include "content/public/browser/android/content_view_core.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/context_menu_params.h"
 
@@ -14,23 +13,32 @@ namespace xwalk {
 
 XWalkWebContentsViewDelegate::XWalkWebContentsViewDelegate(
     content::WebContents* web_contents)
-    : web_contents_(web_contents) {
+//    : web_contents_(web_contents)
+{
 }
 
 XWalkWebContentsViewDelegate::~XWalkWebContentsViewDelegate() {
 }
 
-void XWalkWebContentsViewDelegate::ShowContextMenu(
-    content::RenderFrameHost* render_frame_host,
-    const content::ContextMenuParams& params) {
-  if (params.is_editable && params.selection_text.empty()) {
-    content::ContentViewCore* content_view_core =
-        content::ContentViewCore::FromWebContents(web_contents_);
-    if (content_view_core) {
-      content_view_core->ShowPastePopup(params);
-    }
-  }
-}
+//void XWalkWebContentsViewDelegate::ShowContextMenu(
+//    content::RenderFrameHost* render_frame_host,
+//    const content::ContextMenuParams& params) {
+//
+//    // TODO(dtrainor, kouhei): Give WebView a Populator/delegate so it can use
+//    // the same context menu code.
+//    ContextMenuHelper* helper =
+//        ContextMenuHelper::FromWebContents(web_contents_);
+//    if (helper)
+//      helper->ShowContextMenu(render_frame_host, params);
+////
+////  if (params.is_editable && params.selection_text.empty()) {
+////    content::ContentViewCore* content_view_core =
+////        content::ContentViewCore::FromWebContents(web_contents_);
+////    if (content_view_core) {
+////      content_view_core->ShowPastePopup(params);
+////    }
+////  }
+//}
 
 content::WebDragDestDelegate*
     XWalkWebContentsViewDelegate::GetDragDestDelegate() {

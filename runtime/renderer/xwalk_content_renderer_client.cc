@@ -7,14 +7,15 @@
 
 #include "base/command_line.h"
 #include "base/strings/utf_string_conversions.h"
-#include "components/autofill/content/renderer/autofill_agent.h"
-#include "components/autofill/content/renderer/password_autofill_agent.h"
 #include "components/visitedlink/renderer/visitedlink_slave.h"
 #include "content/public/renderer/render_frame.h"
 #include "content/public/renderer/render_frame_observer.h"
 #include "content/public/renderer/render_frame_observer_tracker.h"
 #include "content/public/renderer/render_thread.h"
 #include "content/public/renderer/render_view.h"
+#include "content/public/common/service_manager_connection.h"
+#include "content/public/common/simple_connection_filter.h"
+#include "content/public/common/url_loader_throttle.h"
 #include "grit/xwalk_application_resources.h"
 #include "grit/xwalk_sysapps_resources.h"
 #include "net/base/net_errors.h"
@@ -31,7 +32,8 @@
 #include "xwalk/runtime/common/xwalk_localized_error.h"
 #include "xwalk/runtime/renderer/isolated_file_system.h"
 #include "xwalk/runtime/renderer/pepper/pepper_helper.h"
-#include "services/service_manager/public/cpp/interface_registry.h"
+#include "services/service_manager/public/cpp/binder_registry.h"
+//#include "services/service_manager/public/cpp/interface_registry.h"
 
 #if defined(OS_ANDROID)
 #include "components/cdm/renderer/android_key_systems.h"
@@ -108,29 +110,26 @@ XWalkContentRendererClient::~XWalkContentRendererClient() {
 
 void XWalkContentRendererClient::RenderThreadStarted() {
   content::RenderThread* thread = content::RenderThread::Get();
+
   xwalk_render_thread_observer_.reset(new XWalkRenderThreadObserver);
   thread->AddObserver(xwalk_render_thread_observer_.get());
+
+  auto registry = base::MakeUnique<service_manager::BinderRegistry>();
+
   visited_link_slave_.reset(new visitedlink::VisitedLinkSlave);
-  thread->GetInterfaceRegistry()->AddInterface(
-    visited_link_slave_->GetBindCallback());
+  registry->AddInterface(visited_link_slave_->GetBindCallback(),
+                           base::ThreadTaskRunnerHandle::Get());
+
+  content::ChildThread::Get()
+      ->GetServiceManagerConnection()
+      ->AddConnectionFilter(base::MakeUnique<content::SimpleConnectionFilter>(
+          std::move(registry)));
+
 
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
   if (!cmd_line->HasSwitch(switches::kXWalkDisableExtensions))
     extension_controller_.reset(
         new extensions::XWalkExtensionRendererController(this));
-/*
-  // TODO moved to runtime/common/xwalk_content_client.cc
-   * @note see chromium commit 0901535a93c8bdf5d9a67edc8085beb2786888b3
-  blink::WebString application_scheme(
-      blink::WebString::fromASCII(application::kApplicationScheme));
-  blink::WebSecurityPolicy::registerURLSchemeAsSecure(application_scheme);
-  blink::WebSecurityPolicy::registerURLSchemeAsCORSEnabled(application_scheme);
-#if defined(OS_ANDROID)
-  blink::WebString content_scheme(
-      blink::WebString::fromASCII(xwalk::kContentScheme));
-  blink::WebSecurityPolicy::registerURLSchemeAsLocal(content_scheme);
-#endif
-*/
 }
 
 #if defined(OS_ANDROID)
@@ -227,11 +226,6 @@ void XWalkContentRendererClient::RenderFrameCreated(
         parent_frame->GetRoutingID(), render_frame->GetRoutingID()));
   }
 #endif
-  // TODO(sgurun) do not create a password autofill agent (change
-  // autofill agent to store a weakptr).
-  autofill::PasswordAutofillAgent* password_autofill_agent =
-      new autofill::PasswordAutofillAgent(render_frame);
-  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr);
 }
 
 void XWalkContentRendererClient::RenderViewCreated(
@@ -279,6 +273,7 @@ bool XWalkContentRendererClient::WillSendRequest(
                        blink::WebLocalFrame* frame,
                        ui::PageTransition transition_type,
                        const blink::WebURL& url,
+                       std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
                        GURL* new_url) {
 #if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="

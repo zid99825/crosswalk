@@ -120,8 +120,9 @@ bool RuntimeNetworkDelegate::OnCanSetCookie(const net::URLRequest& request,
 #endif
 }
 
-bool RuntimeNetworkDelegate::OnCanAccessFile(const net::URLRequest& request,
-                                             const base::FilePath& path) const {
+bool RuntimeNetworkDelegate::OnCanAccessFile(
+    const net::URLRequest& request, const base::FilePath& original_path,
+    const base::FilePath& absolute_path) const {
   return true;
 }
 

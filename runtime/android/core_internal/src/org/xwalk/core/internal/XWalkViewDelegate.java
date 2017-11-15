@@ -219,6 +219,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
     // If context is null, it's running in embedded mode, otherwise in shared mode.
     public static boolean loadXWalkLibrary(Context context, String libDir)
             throws UnsatisfiedLinkError {
+        org.chromium.base.Log.d("iotto|chromium", "loadXWalkLibrary context=%s, libdir=%s", context, libDir);
         if (sLibraryLoaded)
             return true;
 
@@ -236,11 +237,13 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
             }
         } else {
 */
-            for (String library : MANDATORY_LIBRARIES) {
-                System.loadLibrary(library);
-            }
+//            for (String library : MANDATORY_LIBRARIES) {
+//                org.chromium.base.Log.d("iotto", "Loading library %s", library);
+//                System.loadLibrary(library);
+//            }
 //        }
 
+        
         // Load libraries what is wrote in NativeLibraries.java at compile time. It may duplicate
         // with System.loadLibrary("xwalkcore") above, but same library won't be loaded repeatedly.
         try {
@@ -248,6 +251,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
             libraryLoader.loadNow();
 //            libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {
+            org.chromium.base.Log.e("iotto|chromium", "error loading library %s", e);
         }
 
         if (nativeIsLibraryBuiltForIA()) {

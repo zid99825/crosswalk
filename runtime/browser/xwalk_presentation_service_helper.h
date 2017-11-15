@@ -55,13 +55,13 @@ using SystemString = std::basic_string<TCHAR>;
 using SystemString = std::basic_string<char>;
 #endif
 
-inline bool IsValidPresentationUrl(const std::string& url) {
-  GURL gurl(url);
-  return gurl.is_valid();
+inline bool IsValidPresentationUrl(const GURL& url) {
+//  GURL gurl(url);
+  return url.is_valid();
 }
 
 inline Application* GetApplication(content::WebContents* contents) {
-  auto app_service =
+  application::ApplicationService * app_service =
       XWalkRunner::GetInstance()->app_system()->application_service();
   int rph_id = contents->GetRenderProcessHost()->GetID();
   return app_service->GetApplicationByRenderHostID(rph_id);
@@ -160,7 +160,7 @@ class PresentationSession : public base::RefCounted<PresentationSession> {
   };
 
   using SessionCallback =
-      base::Callback<void(scoped_refptr<PresentationSession>,
+      base::OnceCallback<void(scoped_refptr<PresentationSession>,
                           const std::string& error)>;
 
   virtual void Close() = 0;

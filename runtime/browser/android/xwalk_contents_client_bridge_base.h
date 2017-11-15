@@ -17,7 +17,6 @@ class GURL;
 class SkBitmap;
 
 namespace content {
-class DesktopNotificationDelegate;
 struct NotificationResources;
 struct PlatformNotificationData;
 class RenderFrameHost;
@@ -75,7 +74,6 @@ class XWalkContentsClientBridgeBase {
   virtual void ShowNotification(
       const content::PlatformNotificationData& notification_data,
       const content::NotificationResources& notification_resources,
-      std::unique_ptr<content::DesktopNotificationDelegate> delegate,
       base::Closure* cancel_callback)
       = 0;
   virtual void OnWebLayoutPageScaleFactorChanged(float page_scale_factor) = 0;

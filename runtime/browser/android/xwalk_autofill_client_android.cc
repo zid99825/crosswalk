@@ -35,7 +35,7 @@ XWalkAutofillClientAndroid::XWalkAutofillClientAndroid(WebContents* contents)
           env,
           reinterpret_cast<intptr_t>(this)));
   XWalkContent* xwalk_content = XWalkContent::FromWebContents(contents);
-  xwalk_content->SetXWalkAutofillClient(delegate.obj());
+  xwalk_content->SetXWalkAutofillClient(delegate);
   java_ref_ = JavaObjectWeakGlobalRef(env, delegate.obj());
 }
 
@@ -85,7 +85,7 @@ void XWalkAutofillClientAndroid::HideAutofillPopupImpl() {
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
   if (obj.is_null())
     return;
-  Java_XWalkAutofillClientAndroid_hideAutofillPopup(env, obj.obj());
+  Java_XWalkAutofillClientAndroid_hideAutofillPopup(env, obj);
 }
 
 void XWalkAutofillClientAndroid::SuggestionSelected(JNIEnv* env,
@@ -95,7 +95,8 @@ void XWalkAutofillClientAndroid::SuggestionSelected(JNIEnv* env,
 }
 
 bool RegisterXWalkAutofillClient(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace xwalk

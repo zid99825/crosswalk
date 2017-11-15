@@ -34,7 +34,8 @@ void ClearFormData(JNIEnv*, const base::android::JavaParamRef<jclass>&) {
 }
 
 bool RegisterXWalkFormDatabase(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 } // namespace xwalk

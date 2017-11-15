@@ -36,7 +36,6 @@ import org.chromium.base.annotations.JNINamespace;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
 import org.chromium.content.browser.ContentViewCore;
 import org.chromium.content.browser.ContentViewRenderView;
-import org.chromium.content.browser.ContentViewRenderView.CompositingSurfaceType;
 import org.chromium.content.browser.ContentViewStatics;
 import org.chromium.content_public.browser.ContentBitmapCallback;
 import org.chromium.content_public.browser.JavaScriptCallback;
@@ -200,10 +199,10 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         else
             mAnimated = animatable.equalsIgnoreCase("true");
         mAnimated = false;
-        CompositingSurfaceType surfaceType = mAnimated ? CompositingSurfaceType.TEXTURE_VIEW
-                : CompositingSurfaceType.SURFACE_VIEW;
-        Log.d(TAG, "CompositingSurfaceType is " + (mAnimated ? "TextureView" : "SurfaceView"));
-        mContentViewRenderView = new ContentViewRenderView(mViewContext, CompositingSurfaceType.SURFACE_VIEW/*surfaceType*/) {
+//        CompositingSurfaceType surfaceType = mAnimated ? CompositingSurfaceType.TEXTURE_VIEW
+//                : CompositingSurfaceType.SURFACE_VIEW;
+//        Log.d(TAG, "CompositingSurfaceType is " + (mAnimated ? "TextureView" : "SurfaceView"));
+        mContentViewRenderView = new ContentViewRenderView(mViewContext) {
             protected void onReadyToRender() {
                 // Anything depending on the underlying Surface readiness should
                 // be placed here.
@@ -243,7 +242,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mXWalkView.addView(mContentView,
                 new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT));
-        mContentViewCore.setContentViewClient(mContentsClientBridge);
+//        mContentViewCore.setContentViewClient(mContentsClientBridge);
         mContentViewRenderView.setCurrentContentViewCore(mContentViewCore);
         // For addJavascriptInterface
         mContentsClientBridge.installWebContentsObserver(mWebContents);
@@ -403,7 +402,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         
         // If we are reloading the same url, then set transition type as reload.
         if (params.getUrl() != null
-                && params.getUrl().equals(mWebContents.getUrl())
+                && params.getUrl().equals(mWebContents.getLastCommittedUrl())
                 && params.getTransitionType() == PageTransition.LINK) {
             params.setTransitionType(PageTransition.RELOAD);
         }
@@ -434,7 +433,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     public String getUrl() {
         if (mNativeContent == 0)
             return null;
-        String url = mWebContents.getUrl();
+        String url = mWebContents.getLastCommittedUrl();
         if (url == null || url.trim().isEmpty())
             return null;
         return url;

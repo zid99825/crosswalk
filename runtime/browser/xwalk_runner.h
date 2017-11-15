@@ -8,7 +8,6 @@
 #include <memory>
 #include <string>
 
-#include "base/memory/scoped_vector.h"
 #include "base/values.h"
 
 #include "xwalk/runtime/browser/storage_component.h"
@@ -141,7 +140,7 @@ class XWalkRunner {
   // XWalkRunner uses the XWalkComponent interface to be able to handle
   // different subsystems and call them in specific situations, e.g. when
   // extensions need to be created.
-  ScopedVector<XWalkComponent> components_;
+  std::vector<XWalkComponent*> components_;
 
   ApplicationComponent* app_component_;
 

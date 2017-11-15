@@ -36,6 +36,32 @@ namespace tenta
 
 using namespace net;
 
+/**
+ *
+ */
+HostResolverTenta::RequestForCaller::RequestForCaller(
+    int64_t requestId, const base::WeakPtr<HostResolverTenta>& parent)
+    : _request_id(requestId),
+      _parent(parent) {
+}
+
+/**
+ *
+ */
+HostResolverTenta::RequestForCaller::~RequestForCaller() {
+  if (_parent) {
+    _parent->CancelRequest(_request_id);
+  }
+}
+
+/**
+ *
+ */
+void HostResolverTenta::RequestForCaller::ChangeRequestPriority(
+    RequestPriority priority) {
+
+}
+
 /**********************************
  * class SavedRequest
  */
@@ -48,7 +74,7 @@ public:
                AddressList* addresses)
     : _request_id(request_id),
       info_(info),
-      priority_(priority),  // not used
+//      priority_(priority),  // not used
       callback_(callback),
       addresses_(addresses),
       sent_to_java_(false)
@@ -127,7 +153,8 @@ private:
   // The request info that started the request.
   const RequestInfo info_;
 
-  RequestPriority priority_;
+  // TODO(iotto) : use request priority!!
+//  RequestPriority priority_;
 
   // The user's callback to invoke when the request completes.
   CompletionCallback callback_;
@@ -150,8 +177,8 @@ private:
  */
 HostResolverTenta::HostResolverTenta(
   std::unique_ptr<HostResolver> backup_resolver)
-  : weak_ptr_factory_(this),
-    _use_backup(false)
+  : _use_backup(false),
+    weak_ptr_factory_(this)
 {
 
   backup_resolver_ = std::move(backup_resolver);
@@ -299,7 +326,7 @@ int HostResolverTenta::ResolveFromCacheDirect(const RequestInfo& info,
     rHost = ConvertUTF8ToJavaString(env, info.hostname());
 
     ScopedJavaLocalRef<jobjectArray> jReturn =
-      Java_HostResolverTenta_resolveCache(env, gInstance.obj(), rHost.obj());
+      Java_HostResolverTenta_resolveCache(env, gInstance, rHost);
 
     AddressList *foundAddr = ConvertIpJava2Native(env, jReturn.obj());
 
@@ -368,8 +395,8 @@ void HostResolverTenta::DoResolveInJava(SavedRequest *request, int64_t key_id)
     ScopedJavaLocalRef<jstring> rHost;
     rHost = ConvertUTF8ToJavaString(env, request->info().hostname());
 
-    jint jReturn = Java_HostResolverTenta_resolve(env, gInstance.obj(),
-                   rHost.obj(),
+    jint jReturn = Java_HostResolverTenta_resolve(env, gInstance,
+                   rHost,
                    key_id);
 
     request->sent_to_java();
@@ -607,9 +634,10 @@ const char* HostResolverTenta::use_backup_str()
 /**
  * Register native functions
  */
-bool RegisterHostResolverTentaNative(JNIEnv* env)
-{
-  return RegisterNativesImpl(env);
+bool RegisterHostResolverTentaNative(JNIEnv* env) {
+  // TODO(iotto) : See how natives are registered
+//  return RegisterNativesImpl(env);
+  return true;
 }
 
 } /* namespace tenta */

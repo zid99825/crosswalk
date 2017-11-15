@@ -13,7 +13,7 @@
 #include "base/callback_helpers.h"
 #include "base/guid.h"
 #include "content/public/browser/browser_thread.h"
-#include "content/public/browser/desktop_notification_delegate.h"
+//#include "content/public/browser/desktop_notification_delegate.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
@@ -33,7 +33,7 @@
 #include "url/gurl.h"
 #include "net/cert/cert_database.h"
 #include "net/cert/x509_certificate.h"
-#include "net/ssl/openssl_client_key_store.h"
+//#include "net/ssl/openssl_client_key_store.h"
 #include "net/ssl/ssl_platform_key_android.h"
 #include "net/ssl/ssl_private_key.h"
 
@@ -56,13 +56,13 @@ namespace {
 
 // Must be called on the I/O thread to record a client certificate
 // and its private key in the OpenSSLClientKeyStore.
-void RecordClientCertificateKey(
-    const scoped_refptr<net::X509Certificate>& client_cert,
-    scoped_refptr<net::SSLPrivateKey> private_key) {
-  DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
-  net::OpenSSLClientKeyStore::GetInstance()->RecordClientCertPrivateKey(
-      client_cert.get(), private_key.get());
-}
+//void RecordClientCertificateKey(
+//    const scoped_refptr<net::X509Certificate>& client_cert,
+//    scoped_refptr<net::SSLPrivateKey> private_key) {
+//  DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
+//  net::OpenSSLClientKeyStore::GetInstance()->RecordClientCertPrivateKey(
+//      client_cert.get(), private_key.get());
+//}
 
 void NotifyClientCertificatesChanged() {
   DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
@@ -75,14 +75,14 @@ namespace {
 
 int g_next_notification_id_ = 1;
 
-std::map<int, std::unique_ptr<content::DesktopNotificationDelegate>>
-    g_notification_map_;
+//std::map<int, std::unique_ptr<content::DesktopNotificationDelegate>>
+//    g_notification_map_;
 
 }  // namespace
 
 
 XWalkContentsClientBridge::XWalkContentsClientBridge(
-    JNIEnv* env, jobject obj,
+    JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
     content::WebContents* web_contents)
     : java_ref_(env, obj),
       icon_helper_(new XWalkIconHelper(web_contents)) {
@@ -101,7 +101,7 @@ XWalkContentsClientBridge::~XWalkContentsClientBridge() {
   // Clear the weak reference from the java peer to the native object since
   // it is possible that java object lifetime can exceed the XWalkViewContents.
   Java_XWalkContentsClientBridge_setNativeContentsClientBridge(
-      env, obj.obj(), 0);
+      env, obj, 0);
 }
 
 void XWalkContentsClientBridge::AllowCertificateError(
@@ -132,7 +132,7 @@ void XWalkContentsClientBridge::AllowCertificateError(
   int request_id = pending_cert_error_callbacks_.Add(
       base::MakeUnique<CertErrorCallback>(callback));
   bool cancel_request = !Java_XWalkContentsClientBridge_allowCertificateError(
-      env, obj.obj(), cert_error, jcert.obj(), jurl.obj(), request_id);
+      env, obj, cert_error, jcert, jurl, request_id);
   // if the request is cancelled, then cancel the stored callback
   if (cancel_request) {
     pending_cert_error_callbacks_.Remove(request_id);
@@ -181,20 +181,20 @@ void XWalkContentsClientBridge::RunJavaScriptDialog(
   switch (dialog_type) {
     case content::JAVASCRIPT_DIALOG_TYPE_ALERT:
       Java_XWalkContentsClientBridge_handleJsAlert(
-          env, obj.obj(), jurl.obj(), jmessage.obj(), callback_id);
+          env, obj, jurl, jmessage, callback_id);
       break;
     case content::JAVASCRIPT_DIALOG_TYPE_CONFIRM:
       Java_XWalkContentsClientBridge_handleJsConfirm(
-          env, obj.obj(), jurl.obj(), jmessage.obj(), callback_id);
+          env, obj, jurl, jmessage, callback_id);
       break;
     case content::JAVASCRIPT_DIALOG_TYPE_PROMPT: {
       ScopedJavaLocalRef<jstring> jdefault_value(
           ConvertUTF16ToJavaString(env, default_prompt_text));
       Java_XWalkContentsClientBridge_handleJsPrompt(env,
-                                                    obj.obj(),
-                                                    jurl.obj(),
-                                                    jmessage.obj(),
-                                                    jdefault_value.obj(),
+                                                    obj,
+                                                    jurl,
+                                                    jmessage,
+                                                    jdefault_value,
                                                     callback_id);
       break;
     }
@@ -224,7 +224,7 @@ void XWalkContentsClientBridge::RunBeforeUnloadDialog(
       ConvertUTF16ToJavaString(env, message_text));
 
   Java_XWalkContentsClientBridge_handleJsBeforeUnload(
-      env, obj.obj(), jurl.obj(), jmessage.obj(), callback_id);
+      env, obj, jurl, jmessage, callback_id);
 }
 
 bool XWalkContentsClientBridge::OnReceivedHttpAuthRequest(
@@ -239,7 +239,7 @@ bool XWalkContentsClientBridge::OnReceivedHttpAuthRequest(
   ScopedJavaLocalRef<jstring> jhost = ConvertUTF8ToJavaString(env, host);
   ScopedJavaLocalRef<jstring> jrealm = ConvertUTF8ToJavaString(env, realm);
   Java_XWalkContentsClientBridge_onReceivedHttpAuthRequest(
-      env, obj.obj(), handler.obj(), jhost.obj(), jrealm.obj());
+      env, obj, handler, jhost, jrealm);
   return true;
 }
 
@@ -252,13 +252,13 @@ static void CancelNotification(
     return;
 
   Java_XWalkContentsClientBridge_cancelNotification(
-      env, obj.obj(), notification_id);
+      env, obj, notification_id);
 }
 
 void XWalkContentsClientBridge::ShowNotification(
     const content::PlatformNotificationData& notification_data,
     const content::NotificationResources& notification_resources,
-    std::unique_ptr<content::DesktopNotificationDelegate> delegate,
+//    std::unique_ptr<content::DesktopNotificationDelegate> delegate,
     base::Closure* cancel_callback) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   JNIEnv* env = AttachCurrentThread();
@@ -281,10 +281,10 @@ void XWalkContentsClientBridge::ShowNotification(
   }
 
   int notification_id = g_next_notification_id_++;
-  g_notification_map_[notification_id] = std::move(delegate);
+//  g_notification_map_[notification_id] = std::move(delegate);
   Java_XWalkContentsClientBridge_showNotification(
-      env, obj.obj(), jtitle.obj(), jbody.obj(),
-      jreplace_id.obj(), jicon.obj(), notification_id);
+      env, obj, jtitle, jbody,
+      jreplace_id, jicon, notification_id);
 
   if (cancel_callback)
     *cancel_callback = base::Bind(
@@ -299,7 +299,7 @@ void XWalkContentsClientBridge::OnWebLayoutPageScaleFactorChanged(
   if (obj.is_null())
     return;
   Java_XWalkContentsClientBridge_onWebLayoutPageScaleFactorChanged(
-      env, obj.obj(), page_scale_factor);
+      env, obj, page_scale_factor);
 }
 
 bool XWalkContentsClientBridge::ShouldOverrideUrlLoading(
@@ -313,7 +313,7 @@ bool XWalkContentsClientBridge::ShouldOverrideUrlLoading(
     return false;
   ScopedJavaLocalRef<jstring> jurl = ConvertUTF16ToJavaString(env, url);
   return Java_XWalkContentsClientBridge_shouldOverrideUrlLoading(
-      env, obj.obj(), jurl.obj(), has_user_gesture, is_redirect, is_main_frame);
+      env, obj, jurl, has_user_gesture, is_redirect, is_main_frame);
 }
 
 /**
@@ -353,7 +353,8 @@ bool XWalkContentsClientBridge::RewriteUrlIfNeeded(const std::string& url,
   env->SetObjectField(new_obj, field_url, jurl.obj());
 
   // call java
-  bool did_rewrite = Java_XWalkContentsClientBridge_rewriteUrlIfNeeded(env, obj.obj(), new_obj);
+  bool did_rewrite = Java_XWalkContentsClientBridge_rewriteUrlIfNeeded(
+      env, obj, base::android::JavaParamRef<jobject>(env, new_obj));
 
   jurl.Reset(env, (jstring)env->GetObjectField(new_obj, field_url));
 
@@ -396,45 +397,48 @@ void XWalkContentsClientBridge::CancelJsResult(JNIEnv*, jobject, int id) {
 
 void XWalkContentsClientBridge::NotificationDisplayed(
     JNIEnv*, jobject, jint notification_id) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  content::DesktopNotificationDelegate* notification_delegate = nullptr;
-  auto it = g_notification_map_.find(notification_id);
-  if ( it != g_notification_map_.end() ) {
-    notification_delegate = it->second.get();
-  }
-
-  if (notification_delegate)
-    notification_delegate->NotificationDisplayed();
+  //TODO (iotto): Fix this
+//  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+//  content::DesktopNotificationDelegate* notification_delegate = nullptr;
+//  auto it = g_notification_map_.find(notification_id);
+//  if ( it != g_notification_map_.end() ) {
+//    notification_delegate = it->second.get();
+//  }
+//
+//  if (notification_delegate)
+//    notification_delegate->NotificationDisplayed();
 }
 
 void XWalkContentsClientBridge::NotificationClicked(
     JNIEnv*, jobject, jint id) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  std::unique_ptr<content::DesktopNotificationDelegate> notification_delegate;
-
-  auto it = g_notification_map_.find(id);
-  if ( it != g_notification_map_.end() ) {
-    notification_delegate = std::move(it->second);
-    g_notification_map_.erase(it);
-  }
-
-  if (notification_delegate.get())
-    notification_delegate->NotificationClick();
+  // TODO(iotto): Fix this
+//  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+//  std::unique_ptr<content::DesktopNotificationDelegate> notification_delegate;
+//
+//  auto it = g_notification_map_.find(id);
+//  if ( it != g_notification_map_.end() ) {
+//    notification_delegate = std::move(it->second);
+//    g_notification_map_.erase(it);
+//  }
+//
+//  if (notification_delegate.get())
+//    notification_delegate->NotificationClick();
 }
 
 void XWalkContentsClientBridge::NotificationClosed(
     JNIEnv*, jobject, jint id, bool by_user) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  std::unique_ptr<content::DesktopNotificationDelegate> notification_delegate;
-
-  auto it = g_notification_map_.find(id);
-  if ( it != g_notification_map_.end() ) {
-    notification_delegate = std::move(it->second);
-    g_notification_map_.erase(it);
-  }
-
-  if (notification_delegate.get())
-    notification_delegate->NotificationClosed();
+  // TODO(iotto) :Fix this
+//  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+//  std::unique_ptr<content::DesktopNotificationDelegate> notification_delegate;
+//
+//  auto it = g_notification_map_.find(id);
+//  if ( it != g_notification_map_.end() ) {
+//    notification_delegate = std::move(it->second);
+//    g_notification_map_.erase(it);
+//  }
+//
+//  if (notification_delegate.get())
+//    notification_delegate->NotificationClosed();
 }
 
 void XWalkContentsClientBridge::OnFilesSelected(
@@ -488,7 +492,7 @@ void XWalkContentsClientBridge::OnIconAvailable(const GURL& icon_url) {
   ScopedJavaLocalRef<jstring> jurl(
       ConvertUTF8ToJavaString(env, icon_url.spec()));
 
-  Java_XWalkContentsClientBridge_onIconAvailable(env, obj.obj(), jurl.obj());
+  Java_XWalkContentsClientBridge_onIconAvailable(env, obj, jurl);
 }
 
 void XWalkContentsClientBridge::OnReceivedIcon(const GURL& icon_url,
@@ -502,11 +506,12 @@ void XWalkContentsClientBridge::OnReceivedIcon(const GURL& icon_url,
   ScopedJavaLocalRef<jobject> jicon = gfx::ConvertToJavaBitmap(&bitmap);
 
   Java_XWalkContentsClientBridge_onReceivedIcon(
-      env, obj.obj(), jurl.obj(), jicon.obj());
+      env, obj, jurl, jicon);
 }
 
 bool RegisterXWalkContentsClientBridge(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 // This method is inspired by OnSystemRequestCompletion() in
@@ -519,15 +524,18 @@ void XWalkContentsClientBridge::ProvideClientCertificateResponse(
     const JavaRef<jobject>& private_key_ref) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
-  content::ClientCertificateDelegate* delegate =
-      pending_client_cert_request_delegates_.Lookup(request_id);
+//  content::ClientCertificateDelegate* delegate =
+//      pending_client_cert_request_delegates_.Lookup(request_id);
+  std::unique_ptr<content::ClientCertificateDelegate> delegate =
+      pending_client_cert_request_delegates_.Replace(request_id, nullptr);
+  pending_client_cert_request_delegates_.Remove(request_id);
+
   DCHECK(delegate);
 
   if (encoded_chain_ref.is_null() || private_key_ref.is_null()) {
     LOG(ERROR) << "No client certificate selected";
-    pending_client_cert_request_delegates_.Remove(request_id);
-    delegate->ContinueWithCertificate(nullptr);
-    delete delegate;
+//    pending_client_cert_request_delegates_.Remove(request_id);
+    delegate->ContinueWithCertificate(nullptr, nullptr);
     return;
   }
 
@@ -565,18 +573,20 @@ void XWalkContentsClientBridge::ProvideClientCertificateResponse(
 
   // Release the guard and |pending_client_cert_request_delegates_| references
   // to |delegate|.
-  pending_client_cert_request_delegates_.Remove(request_id);
+//  pending_client_cert_request_delegates_.Remove(request_id);
   ignore_result(guard.Release());
 
-  // RecordClientCertificateKey() must be called on the I/O thread,
-  // before the delegate is called with the selected certificate on
-  // the UI thread.
-  content::BrowserThread::PostTaskAndReply(
-      content::BrowserThread::IO, FROM_HERE,
-      base::Bind(&RecordClientCertificateKey, client_cert,
-         base::Passed(&private_key)),
-      base::Bind(&content::ClientCertificateDelegate::ContinueWithCertificate,
-      base::Owned(delegate), base::RetainedRef(client_cert)));
+//  // RecordClientCertificateKey() must be called on the I/O thread,
+//  // before the delegate is called with the selected certificate on
+//  // the UI thread.
+//  content::BrowserThread::PostTaskAndReply(
+//      content::BrowserThread::IO, FROM_HERE,
+//      base::BindOnce(&RecordClientCertificateKey, client_cert,
+//         base::Passed(&private_key)),
+//      base::BindOnce(&content::ClientCertificateDelegate::ContinueWithCertificate,
+//      base::Owned(delegate), base::RetainedRef(client_cert)));
+  delegate->ContinueWithCertificate(std::move(client_cert),
+                                    std::move(private_key));
 }
 
 // Use to cleanup if there is an error in client certificate response.
@@ -596,7 +606,7 @@ void XWalkContentsClientBridge::SelectClientCertificate(
 
   // Add the callback to id map.
   int request_id =
-      pending_client_cert_request_delegates_.Add(delegate.release());
+      pending_client_cert_request_delegates_.Add(std::move(delegate));
   // Make sure callback is run on error.
   base::ScopedClosureRunner guard(base::Bind(
       &XWalkContentsClientBridge::HandleErrorInClientCertificateResponse,
@@ -648,11 +658,11 @@ void XWalkContentsClientBridge::SelectClientCertificate(
 
   Java_XWalkContentsClientBridge_selectClientCertificate(
       env,
-      obj.obj(),
+      obj,
       request_id,
-      key_types_ref.obj(),
-      principals_ref.obj(),
-      host_name_ref.obj(),
+      key_types_ref,
+      principals_ref,
+      host_name_ref,
       cert_request_info->host_and_port.port());
 
   // Release the guard.
@@ -683,7 +693,7 @@ void XWalkContentsClientBridge::ClientCertificatesCleared(
     return;
 
   Java_XWalkContentsClientBridge_clientCertificatesCleared(
-      env, obj.obj(), callback->obj());
+      env, obj, *callback);
 }
 
 }  // namespace xwalk

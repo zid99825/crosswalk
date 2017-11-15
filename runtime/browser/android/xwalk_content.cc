@@ -108,16 +108,16 @@ class MetaReadToPickle :
 
   }
 
-  void OnData(const char *data, int length) {
+  void OnData(const char *data, int length) override {
     _pickle_to_fill.WriteBytes(data, length);
   }
-  void OnStart(const std::string &guid, int length) {
+  void OnStart(const std::string &guid, int length) override {
   }
-  void OnProgress(float percent) {
+  void OnProgress(float percent) override {
   }
-  void OnDone(int status) {
+  void OnDone(int status) override {
   }
-  bool wasCancelledNotify(int* outStatus = nullptr) {
+  bool wasCancelledNotify(int* outStatus = nullptr) override {
     return false;
   }
  private:
@@ -212,13 +212,13 @@ XWalkContent::XWalkContent(std::unique_ptr<content::WebContents> web_contents)
   XWalkContentLifecycleNotifier::OnXWalkViewCreated();
 }
 
-void XWalkContent::SetXWalkAutofillClient(jobject client) {
+void XWalkContent::SetXWalkAutofillClient(const base::android::JavaRef<jobject>& client) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
   if (obj.is_null())
     return;
-  Java_XWalkContent_setXWalkAutofillClient(env, obj.obj(), client);
+  Java_XWalkContent_setXWalkAutofillClient(env, obj, client);
 }
 
 void XWalkContent::SetSaveFormData(bool enabled) {
@@ -226,8 +226,9 @@ void XWalkContent::SetSaveFormData(bool enabled) {
   xwalk_autofill_manager_->InitAutofillIfNecessary(enabled);
   // We need to check for the existence, since autofill_manager_delegate
   // may not be created when the setting is false.
-  if (auto client = XWalkAutofillClientAndroid::FromWebContents(
-                                                                web_contents_.get()))
+  XWalkAutofillClientAndroid *client = XWalkAutofillClientAndroid::FromWebContents(
+      web_contents_.get());
+  if (client != nullptr )
     client->SetSaveFormData(enabled);
 }
 
@@ -235,11 +236,13 @@ XWalkContent::~XWalkContent() {
   XWalkContentLifecycleNotifier::OnXWalkViewDestroyed();
 }
 
-void XWalkContent::SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
-                                jobject web_contents_delegate,
-                                jobject contents_client_bridge,
-                                jobject io_thread_client,
-                                jobject intercept_navigation_delegate) {
+void XWalkContent::SetJavaPeers(
+    JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
+    const base::android::JavaParamRef<jobject>& xwalk_content,
+    const base::android::JavaParamRef<jobject>& web_contents_delegate,
+    const base::android::JavaParamRef<jobject>& contents_client_bridge,
+    const base::android::JavaParamRef<jobject>& io_thread_client,
+    const base::android::JavaParamRef<jobject>& intercept_navigation_delegate) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   java_ref_ = JavaObjectWeakGlobalRef(env, xwalk_content);
 
@@ -250,7 +253,7 @@ void XWalkContent::SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
                                                               web_contents_.get()));
 
   web_contents_->SetUserData(kXWalkContentUserDataKey,
-                             new XWalkContentUserData(this));
+                             base::MakeUnique<XWalkContentUserData>(this));
 
   XWalkContentsIoThreadClientImpl::RegisterPendingContents(web_contents_.get());
 
@@ -263,8 +266,7 @@ void XWalkContent::SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
   XWalkContentsClientBridgeBase::Associate(web_contents_.get(),
                                            contents_client_bridge_.get());
   XWalkContentsIoThreadClientImpl::Associate(
-                                             web_contents_.get(),
-                                             ScopedJavaLocalRef<jobject>(env, io_thread_client));
+                                             web_contents_.get(),io_thread_client);
   int render_process_id = web_contents_->GetRenderProcessHost()->GetID();
   int render_frame_id = web_contents_->GetRenderViewHost()->GetRoutingID();
   RuntimeResourceDispatcherHostDelegateAndroid::OnIoThreadClientReady(
@@ -336,16 +338,17 @@ void XWalkContent::Destroy(JNIEnv* env, jobject obj) {
   delete this;
 }
 
-void XWalkContent::RequestNewHitTestDataAt(JNIEnv* env, jobject obj, jfloat x,
-                                           jfloat y,
-                                           jfloat touch_major) {
+void XWalkContent::RequestNewHitTestDataAt(
+    JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, jfloat x,
+    jfloat y, jfloat touch_major) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   gfx::PointF touch_center(x, y);
   gfx::SizeF touch_area(touch_major, touch_major);
   render_view_host_ext_->RequestNewHitTestDataAt(touch_center, touch_area);
 }
 
-void XWalkContent::UpdateLastHitTestData(JNIEnv* env, jobject obj) {
+void XWalkContent::UpdateLastHitTestData(
+    JNIEnv* env, const base::android::JavaParamRef<jobject>& obj) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   if (!render_view_host_ext_->HasNewHitTestData())
     return;
@@ -371,10 +374,10 @@ void XWalkContent::UpdateLastHitTestData(JNIEnv* env, jobject obj) {
   if (data.img_src.is_valid())
     img_src = ConvertUTF8ToJavaString(env, data.img_src.spec());
   Java_XWalkContent_updateHitTestData(env, obj, data.type,
-                                      extra_data_for_type.obj(),
-                                      href.obj(),
-                                      anchor_text.obj(),
-                                      img_src.obj());
+                                      extra_data_for_type,
+                                      href,
+                                      anchor_text,
+                                      img_src);
 }
 
 ScopedJavaLocalRef<jstring> XWalkContent::GetVersion(JNIEnv* env, jobject obj) {
@@ -391,12 +394,14 @@ void XWalkContent::SetJsOnlineProperty(JNIEnv* env, jobject obj,
   render_view_host_ext_->SetJsOnlineProperty(network_up);
 }
 
-jboolean XWalkContent::SetManifest(JNIEnv* env, jobject obj, jstring path,
-                                   jstring manifest_string) {
+jboolean XWalkContent::SetManifest(
+    JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
+    const base::android::JavaParamRef<jstring>& path,
+    const base::android::JavaParamRef<jstring>& manifest_string) {
   std::string path_str = base::android::ConvertJavaStringToUTF8(env, path);
   std::string json_input = base::android::ConvertJavaStringToUTF8(
                                                                   env,
-                                                                  manifest_string);
+                                                                  manifest_string.obj());
 
   std::unique_ptr<base::Value> manifest_value = base::JSONReader::Read(
                                                                        json_input);
@@ -510,12 +515,12 @@ jboolean XWalkContent::SetManifest(JNIEnv* env, jobject obj, jstring path,
 
     Java_XWalkContent_onGetUrlAndLaunchScreenFromManifest(
                                                           env,
-                                                          obj, url_buffer.obj(),
-                                                          ready_when_buffer.obj(),
-                                                          image_border_buffer.obj());
+                                                          obj, url_buffer,
+                                                          ready_when_buffer,
+                                                          image_border_buffer);
   } else {
     // No need to display launch screen, load the url directly.
-    Java_XWalkContent_onGetUrlFromManifest(env, obj, url_buffer.obj());
+    Java_XWalkContent_onGetUrlFromManifest(env, obj, url_buffer);
   }
   std::string view_background_color;
   ManifestGetString(manifest, keys::kXWalkViewBackgroundColor,
@@ -1208,7 +1213,8 @@ static jlong Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
 }
 
 bool RegisterXWalkContent(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 namespace {
@@ -1220,8 +1226,8 @@ void ShowGeolocationPromptHelperTask(const JavaObjectWeakGlobalRef& java_ref,
   if (j_ref.obj()) {
     ScopedJavaLocalRef<jstring> j_origin(
                                          ConvertUTF8ToJavaString(env, origin.spec()));
-    Java_XWalkContent_onGeolocationPermissionsShowPrompt(env, j_ref.obj(),
-                                                         j_origin.obj());
+    Java_XWalkContent_onGeolocationPermissionsShowPrompt(env, j_ref,
+                                                         j_origin);
   }
 }
 
@@ -1282,7 +1288,7 @@ void XWalkContent::HideGeolocationPrompt(const GURL& origin) {
     JNIEnv* env = AttachCurrentThread();
     ScopedJavaLocalRef<jobject> j_ref = java_ref_.get(env);
     if (j_ref.obj()) {
-      Java_XWalkContent_onGeolocationPermissionsHidePrompt(env, j_ref.obj());
+      Java_XWalkContent_onGeolocationPermissionsHidePrompt(env, j_ref);
     }
     if (!pending_geolocation_prompts_.empty()) {
       ShowGeolocationPromptHelper(java_ref_,
@@ -1397,7 +1403,7 @@ void XWalkContent::OnFindResultReceived(int active_ordinal, int match_count,
   if (obj.is_null())
     return;
 
-  Java_XWalkContent_onFindResultReceived(env, obj.obj(), active_ordinal,
+  Java_XWalkContent_onFindResultReceived(env, obj, active_ordinal,
                                          match_count,
                                          finished);
 }

@@ -12,6 +12,7 @@
 
 #include "base/macros.h"
 #include "content/public/renderer/render_frame_observer.h"
+#include "services/service_manager/public/cpp/binder_registry.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/geometry/size_f.h"
@@ -31,7 +32,7 @@ class XWalkRenderFrameExt : public content::RenderFrameObserver {
 
  private:
   // will destroy in OnDestruct
-  ~XWalkRenderFrameExt();
+  ~XWalkRenderFrameExt() override;
 
   // RenderFrameObserver:
   void DidCommitProvisionalLoad(bool is_new_navigation,
@@ -60,6 +61,8 @@ class XWalkRenderFrameExt : public content::RenderFrameObserver {
   blink::WebFrameWidget* GetWebFrameWidget();
 
   url::Origin last_origin_;
+
+  std::unique_ptr<service_manager::BinderRegistry> registry_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkRenderFrameExt);
 };

@@ -22,6 +22,9 @@
 #include "xwalk/runtime/renderer/xwalk_render_thread_observer_generic.h"
 #endif
 
+namespace content {
+class URLLoaderThrottle;
+}
 namespace visitedlink {
 class VisitedLinkSlave;
 }
@@ -53,7 +56,9 @@ class XWalkContentRendererClient
   bool WillSendRequest(blink::WebLocalFrame* frame,
                        ui::PageTransition transition_type,
                        const blink::WebURL& url,
+                       std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
                        GURL* new_url) override;
+
   void AddSupportedKeySystems(
       std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems)
       override;

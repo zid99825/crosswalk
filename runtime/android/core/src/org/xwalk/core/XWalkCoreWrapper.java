@@ -29,7 +29,7 @@ import junit.framework.Assert;
 class XWalkCoreWrapper {
     private static final String WRAPPER_PACKAGE = "org.xwalk.core";
     private static final String BRIDGE_PACKAGE = "org.xwalk.core.internal";
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkCoreWrapper";
     private static final String XWALK_CORE_CLASSES_DEX = "classes.dex";
 
     private static XWalkCoreWrapper sProvisionalInstance;

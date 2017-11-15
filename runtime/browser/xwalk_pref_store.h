@@ -43,9 +43,12 @@ class XWalkPrefStore : public PersistentPrefStore {
   PrefReadError GetReadError() const override;
   PersistentPrefStore::PrefReadError ReadPrefs() override;
   void ReadPrefsAsync(ReadErrorDelegate* error_delegate) override;
-  void CommitPendingWrite() override {}
+  void CommitPendingWrite(base::OnceClosure done_callback) override {}
   void SchedulePendingLossyWrites() override {}
   void ClearMutableValues() override {}
+  // Cleans preference data that may have been saved outside of the store.
+  void OnStoreDeletionFromDisk() override;
+
   std::unique_ptr<base::DictionaryValue> GetValues() const override;
 
  protected:

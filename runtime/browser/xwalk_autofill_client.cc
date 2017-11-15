@@ -57,11 +57,11 @@ IdentityProvider* XWalkAutofillClient::GetIdentityProvider() {
   return nullptr;
 }
 
-rappor::RapporServiceImpl* XWalkAutofillClient::GetRapporServiceImpl() {
-  return nullptr;
-}
+//rappor::RapporServiceImpl* XWalkAutofillClient::GetRapporServiceImpl() {
+//  return nullptr;
+//}
 
-ukm::UkmService* XWalkAutofillClient::GetUkmService() {
+ukm::UkmRecorder* XWalkAutofillClient::GetUkmRecorder() {
   return nullptr;
 }
 
@@ -145,10 +145,18 @@ bool XWalkAutofillClient::ShouldShowSigninPromo() {
   return false;
 }
 
-void XWalkAutofillClient::StartSigninFlow() {
+/**
+ *
+ */
+bool XWalkAutofillClient::IsAutofillSupported() {
+  return false;
 }
 
-void XWalkAutofillClient::ShowHttpNotSecureExplanation() {
+/**
+ *
+ */
+void XWalkAutofillClient::ExecuteCommand(int id) {
+
 }
 
 void XWalkAutofillClient::Dismissed(JNIEnv* env,

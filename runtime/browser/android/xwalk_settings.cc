@@ -9,6 +9,7 @@
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
 #include "base/command_line.h"
+#include "base/supports_user_data.h"
 #include "components/user_prefs/user_prefs.h"
 #include "content/browser/android/java/jni_helper.h"
 #include "content/public/browser/navigation_controller.h"
@@ -29,8 +30,12 @@ using base::android::ConvertUTF16ToJavaString;
 using base::android::ConvertUTF8ToJavaString;
 using base::android::GetClass;
 using base::android::ScopedJavaLocalRef;
+using base::android::JavaParamRef;
 using content::GetFieldID;
 
+namespace {
+const void* const kXWalkSettingsUserDataKey = &kXWalkSettingsUserDataKey;
+}
 namespace xwalk {
 
 struct XWalkSettings::FieldIds {
@@ -111,24 +116,50 @@ struct XWalkSettings::FieldIds {
   jfieldID viewport_meta_enabled;
 };
 
+class XWalkSettingsUserData : public base::SupportsUserData::Data {
+ public:
+  explicit XWalkSettingsUserData(XWalkSettings* ptr) : settings_(ptr) {}
+
+  static XWalkSettings* GetSettings(content::WebContents* web_contents) {
+    if (!web_contents)
+      return NULL;
+    XWalkSettingsUserData* data = static_cast<XWalkSettingsUserData*>(
+        web_contents->GetUserData(kXWalkSettingsUserDataKey));
+    return data ? data->settings_ : NULL;
+  }
+
+ private:
+  XWalkSettings* settings_;
+};
+
 XWalkSettings::XWalkSettings(JNIEnv* env,
-                             jobject obj,
+                             const base::android::JavaParamRef<jobject>& obj,
                              content::WebContents* web_contents)
     : WebContentsObserver(web_contents),
-      xwalk_settings_(env, obj) {
+      xwalk_settings_(env, obj),
+      _javascript_can_open_windows_automatically(false) {
+
+  web_contents->SetUserData(kXWalkSettingsUserDataKey,
+                              base::MakeUnique<XWalkSettingsUserData>(this));
 }
 
 XWalkSettings::~XWalkSettings() {
     JNIEnv* env = base::android::AttachCurrentThread();
     ScopedJavaLocalRef<jobject> scoped_obj = xwalk_settings_.get(env);
-    jobject obj = scoped_obj.obj();
-    if (!obj) return;
+    if (!scoped_obj.obj()) return;
     Java_XWalkSettingsInternal_nativeXWalkSettingsGone(
-        env, obj, reinterpret_cast<intptr_t>(this));
+        env, scoped_obj, reinterpret_cast<intptr_t>(this));
 }
 
-void XWalkSettings::Destroy(JNIEnv* env, jobject obj) {
+void XWalkSettings::Destroy(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj) {
   delete this;
+}
+
+/**
+ *
+ */
+XWalkSettings* XWalkSettings::FromWebContents(content::WebContents* web_contents) {
+  return XWalkSettingsUserData::GetSettings(web_contents);
 }
 
 XWalkRenderViewHostExt* XWalkSettings::GetXWalkRenderViewHostExt() {
@@ -142,20 +173,19 @@ void XWalkSettings::UpdateEverything() {
   JNIEnv* env = base::android::AttachCurrentThread();
   CHECK(env);
   ScopedJavaLocalRef<jobject> scoped_obj = xwalk_settings_.get(env);
-  jobject obj = scoped_obj.obj();
-  if (!obj) return;
+  if (!scoped_obj.obj()) return;
 
-  Java_XWalkSettingsInternal_updateEverything(env, obj);
+  Java_XWalkSettingsInternal_updateEverything(env, scoped_obj);
 }
 
-void XWalkSettings::UpdateEverythingLocked(JNIEnv* env, jobject obj) {
+void XWalkSettings::UpdateEverythingLocked(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   UpdateInitialPageScale(env, obj);
   UpdateWebkitPreferences(env, obj);
   UpdateUserAgent(env, obj);
   UpdateFormDataPreferences(env, obj);
 }
 
-void XWalkSettings::UpdateUserAgent(JNIEnv* env, jobject obj) {
+void XWalkSettings::UpdateUserAgent(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   if (!web_contents()) return;
 
   ScopedJavaLocalRef<jstring> str =
@@ -173,7 +203,7 @@ void XWalkSettings::UpdateUserAgent(JNIEnv* env, jobject obj) {
     controller.GetEntryAtIndex(i)->SetIsOverridingUserAgent(ua_overidden);
 }
 
-void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, jobject obj) {
+void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   if (!web_contents()) return;
   XWalkRenderViewHostExt* render_view_host_ext = GetXWalkRenderViewHostExt();
   if (!render_view_host_ext) return;
@@ -208,7 +238,7 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, jobject obj) {
   prefs.allow_file_access_from_file_urls = env->GetBooleanField(
       obj, field_ids_->allow_file_access_from_file_urls);
 
-  prefs.javascript_can_open_windows_automatically = env->GetBooleanField(
+  _javascript_can_open_windows_automatically = env->GetBooleanField(
       obj, field_ids_->java_script_can_open_windows_automatically);
 
   prefs.supports_multiple_windows = env->GetBooleanField(
@@ -228,8 +258,8 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, jobject obj) {
   prefs.double_tap_to_zoom_enabled = prefs.use_wide_viewport =
       env->GetBooleanField(obj, field_ids_->use_wide_viewport);
 
-  prefs.user_gesture_required_for_media_playback = env->GetBooleanField(
-      obj, field_ids_->media_playback_requires_user_gesture);
+//  prefs.user_gesture_required_for_media_playback = env->GetBooleanField(
+//      obj, field_ids_->media_playback_requires_user_gesture);
 
   prefs.password_echo_enabled =
       Java_XWalkSettingsInternal_getPasswordEchoEnabledLocked(env, obj);
@@ -283,12 +313,19 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, jobject obj) {
   render_view_host->UpdateWebkitPreferences(prefs);
 }
 
-void XWalkSettings::UpdateFormDataPreferences(JNIEnv* env, jobject obj) {
+void XWalkSettings::UpdateFormDataPreferences(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   if (!web_contents()) return;
   XWalkContent* content = XWalkContent::FromWebContents(web_contents());
   if (!content) return;
   content->SetSaveFormData(
       Java_XWalkSettingsInternal_getSaveFormDataLocked(env, obj));
+}
+
+/**
+ *
+ */
+bool XWalkSettings::GetJavaScriptCanOpenWindowsAutomatically() {
+  return _javascript_can_open_windows_automatically;
 }
 
 void XWalkSettings::RenderViewCreated(
@@ -313,7 +350,7 @@ void XWalkSettings::RenderFrameForInterstitialPageCreated(content::RenderFrameHo
   UpdateEverything();
 }
 
-void XWalkSettings::UpdateAcceptLanguages(JNIEnv* env, jobject obj) {
+void XWalkSettings::UpdateAcceptLanguages(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   PrefService* pref_service = GetPrefs();
   if (!pref_service) return;
   pref_service->SetString(
@@ -340,7 +377,7 @@ GetDefaultUserAgent(JNIEnv* env, const JavaParamRef<jclass>& clazz) {
   return base::android::ConvertUTF8ToJavaString(env, GetUserAgent());
 }
 
-void XWalkSettings::UpdateInitialPageScale(JNIEnv* env, jobject obj) {
+void XWalkSettings::UpdateInitialPageScale(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   if (!web_contents()) return;
   XWalkRenderViewHostExt* render_view_host_ext = GetXWalkRenderViewHostExt();
   if (!render_view_host_ext) return;
@@ -357,14 +394,15 @@ void XWalkSettings::UpdateInitialPageScale(JNIEnv* env, jobject obj) {
       initial_page_scale_percent / dip_scale / 100.0f);
 }
 
-void XWalkSettings::ResetScrollAndScaleState(JNIEnv* env, jobject obj) {
+void XWalkSettings::ResetScrollAndScaleState(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   XWalkRenderViewHostExt* rvhe = GetXWalkRenderViewHostExt();
   if (!rvhe) return;
   rvhe->ResetScrollAndScaleState();
 }
 
 bool RegisterXWalkSettings(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace xwalk

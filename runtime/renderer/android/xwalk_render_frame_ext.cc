@@ -12,6 +12,8 @@
 #include "base/bind.h"
 #include "base/strings/string_piece.h"
 #include "base/strings/utf_string_conversions.h"
+#include "components/autofill/content/renderer/autofill_agent.h"
+#include "components/autofill/content/renderer/password_autofill_agent.h"
 #include "content/public/common/url_constants.h"
 #include "content/public/renderer/document_state.h"
 #include "content/public/renderer/render_frame.h"
@@ -150,6 +152,15 @@ void PopulateHitTestData(const GURL& absolute_link_url,
 
 XWalkRenderFrameExt::XWalkRenderFrameExt(content::RenderFrame* render_frame)
     : content::RenderFrameObserver(render_frame) {
+
+  registry_ = base::MakeUnique<service_manager::BinderRegistry>();
+  // TODO(sgurun) do not create a password autofill agent (change
+  // autofill agent to store a weakptr).
+  autofill::PasswordAutofillAgent* password_autofill_agent =
+      new autofill::PasswordAutofillAgent(render_frame, registry_.get());
+  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr,
+                              registry_.get());
+
 }
 
 XWalkRenderFrameExt::~XWalkRenderFrameExt() {
@@ -180,23 +191,24 @@ bool XWalkRenderFrameExt::OnMessageReceived(const IPC::Message& message) {
 }
 
 void XWalkRenderFrameExt::OnDocumentHasImagesRequest(uint32_t id) {
-  bool hasImages = false;
-  blink::WebView* webview = GetWebView();
-  if (webview) {
-    blink::WebDocument document = webview->MainFrame()->GetDocument();
-    const blink::WebElement child_img = GetImgChild(document);
-    hasImages = !child_img.IsNull();
-  }
+  blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
+
+  // AwViewMsg_DocumentHasImages should only be sent to the main frame.
+  DCHECK(frame);
+  DCHECK(!frame->Parent());
+
+  const blink::WebElement child_img = GetImgChild(frame->GetDocument());
+  bool has_images = !child_img.IsNull();
+
   Send(new XWalkViewHostMsg_DocumentHasImagesResponse(routing_id(), id,
-                                                   hasImages));
+                                                      has_images));
 }
 
 void XWalkRenderFrameExt::DidCommitProvisionalLoad(
     bool is_new_navigation, bool is_same_document_navigation) {
-
   blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
   content::DocumentState* document_state =
-      content::DocumentState::FromDataSource(frame->DataSource());
+      content::DocumentState::FromDocumentLoader(frame->GetDocumentLoader());
   if (document_state->can_load_local_resources()) {
     blink::WebSecurityOrigin origin = frame->GetDocument().GetSecurityOrigin();
     origin.GrantLoadLocalResources();

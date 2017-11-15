@@ -224,7 +224,7 @@ public class XWalkDialogManager {
      */
     public static final int DIALOG_DOWNLOADING = 12;
 
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkDialogManager";
 
     private Context mContext;
     private Dialog mActiveDialog;

@@ -68,7 +68,7 @@ net::URLRequestJob* XWalkRequestInterceptor::MaybeInterceptRequest(
     return nullptr;
 
   request->SetUserData(kURLRequestUserDataKey,
-                       new base::SupportsUserData::Data());
+                       base::WrapUnique(new base::SupportsUserData::Data()));
 
   std::unique_ptr<XWalkWebResourceResponse> xwalk_web_resource_response =
       QueryForXWalkWebResourceResponse(request->url(), request);

@@ -19,8 +19,8 @@ void XWalkAccessTokenStore::LoadAccessTokens(
     const LoadAccessTokensCallback& callback) {
   base::MessageLoop::current()->task_runner()->PostTask(
       FROM_HERE,
-      base::Bind(&XWalkAccessTokenStore::DidLoadAccessTokens,
-                 request_context_, callback));
+      base::BindOnce(&XWalkAccessTokenStore::DidLoadAccessTokens,
+                 base::Unretained(request_context_), std::move(callback)));
 }
 
 void XWalkAccessTokenStore::DidLoadAccessTokens(

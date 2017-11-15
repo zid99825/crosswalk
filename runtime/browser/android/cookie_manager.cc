@@ -213,7 +213,7 @@ class CookieManager {
 
   void RemoveSessionCookieAsyncHelper(base::WaitableEvent* completion);
   void RemoveAllCookieAsyncHelper(base::WaitableEvent* completion);
-  void RemoveCookiesCompleted(int num_deleted);
+  void RemoveCookiesCompleted(uint32_t num_deleted);
 
   void FlushCookieStoreAsyncHelper(base::WaitableEvent* completion);
 
@@ -283,7 +283,7 @@ base::SingleThreadTaskRunner* CookieManager::GetCookieStoreTaskRunner() {
 }
 
 net::CookieStore* CookieManager::GetCookieStore() {
-  DCHECK(cookie_store_task_runner_->RunsTasksOnCurrentThread());
+  DCHECK(cookie_store_task_runner_->BelongsToCurrentThread());
 
   if (!cookie_store_) {
     FilePath user_data_dir;
@@ -304,7 +304,7 @@ net::CookieStore* CookieManager::GetCookieStore() {
 #endif
     content::CookieStoreConfig cookie_config(
         cookie_store_path, content::CookieStoreConfig::RESTORED_SESSION_COOKIES,
-        nullptr, nullptr);
+        nullptr);
     cookie_config.client_task_runner = cookie_store_task_runner_;
     cookie_config.background_task_runner = cookie_store_backend_thread_
         .task_runner();
@@ -409,11 +409,11 @@ void CookieManager::RemoveSessionCookieAsyncHelper(
     base::WaitableEvent* completion) {
   DCHECK(!completion);
   GetCookieStore()->DeleteSessionCookiesAsync(
-      base::Bind(&CookieManager::RemoveCookiesCompleted,
+      base::BindOnce(&CookieManager::RemoveCookiesCompleted,
                  base::Unretained(this)));
 }
 
-void CookieManager::RemoveCookiesCompleted(int num_deleted) {
+void CookieManager::RemoveCookiesCompleted(uint32_t num_deleted) {
 // The CookieManager API does not return a value for removeSessionCookie or
 // removeAllCookie, so we don't need to propagate the |num_deleted| value
 // back to the caller.
@@ -590,7 +590,7 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
     base::Pickle pickle(cb->data(), cb->len());
     base::PickleIterator it(pickle);
 
-    net::CookieStore::SetCookiesCallback callback = base::Bind(
+    net::CookieStore::SetCookiesCallback callback = base::BindOnce(
         &CookieManager::RestoreCookieCallback, base::Unretained(this));
 
     int cnt;  // cookie count
@@ -620,7 +620,7 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
               base::Time::FromInternalValue(e_time),
               base::Time::FromInternalValue(l_time), secure, http_only,
               static_cast<net::CookieSameSite>(same_site),
-              static_cast<net::CookiePriority>(prio), callback);
+              static_cast<net::CookiePriority>(prio), std::move(callback));
 
 #if TENTA_LOG_COOKIE_ENABLE == 1
           LOG(INFO) << "Cookie restored name=" << name << " value=" << value
@@ -761,7 +761,8 @@ net::CookieStore* GetCookieStore() {
 }
 
 bool RegisterCookieManager(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace xwalk

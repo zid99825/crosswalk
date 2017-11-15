@@ -29,7 +29,7 @@ XWalkRenderViewHostExt::XWalkRenderViewHostExt(content::WebContents* contents)
 XWalkRenderViewHostExt::~XWalkRenderViewHostExt() {}
 
 void XWalkRenderViewHostExt::DocumentHasImages(DocumentHasImagesResult result) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (!web_contents()->GetRenderViewHost()) {
     result.Run(false);
     return;
@@ -42,7 +42,7 @@ void XWalkRenderViewHostExt::DocumentHasImages(DocumentHasImagesResult result) {
 }
 
 void XWalkRenderViewHostExt::ClearCache() {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   Send(new XWalkViewMsg_ClearCache);
 }
 
@@ -57,25 +57,25 @@ void XWalkRenderViewHostExt::MarkHitTestDataRead() {
 void XWalkRenderViewHostExt::RequestNewHitTestDataAt(
     const gfx::PointF& touch_center,
     const gfx::SizeF& touch_area) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   Send(new XWalkViewMsg_DoHitTest(web_contents()->GetMainFrame()->GetRoutingID(),
                                touch_center,
                                touch_area));
 }
 
 const XWalkHitTestData& XWalkRenderViewHostExt::GetLastHitTestData() const {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   return last_hit_test_data_;
 }
 
 void XWalkRenderViewHostExt::SetTextZoomLevel(double level) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   Send(new XWalkViewMsg_SetTextZoomLevel(
       web_contents()->GetMainFrame()->GetRoutingID(), level));
 }
 
 void XWalkRenderViewHostExt::ResetScrollAndScaleState() {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   Send(new XWalkViewMsg_ResetScrollAndScaleState(
       web_contents()->GetMainFrame()->GetRoutingID()));
@@ -84,7 +84,7 @@ void XWalkRenderViewHostExt::ResetScrollAndScaleState() {
 }
 
 void XWalkRenderViewHostExt::SetInitialPageScale(double page_scale_factor) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   Send(new XWalkViewMsg_SetInitialPageScale(web_contents()->GetMainFrame()->GetRoutingID(),
                                          page_scale_factor));
 //  Send(new XWalkViewMsg_SetInitialPageScale(web_contents()->GetRenderViewHost()->GetRoutingID(),
@@ -105,7 +105,7 @@ void XWalkRenderViewHostExt::SetJsOnlineProperty(bool network_up) {
 }
 
 void XWalkRenderViewHostExt::RenderProcessGone(base::TerminationStatus status) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   for (std::map<int, DocumentHasImagesResult>::iterator pending_req =
            pending_document_has_images_requests_.begin();
        pending_req != pending_document_has_images_requests_.end();
@@ -120,7 +120,7 @@ void XWalkRenderViewHostExt::DidFinishNavigation(content::NavigationHandle* navi
     const content::LoadCommittedDetails& details,
     const content::FrameNavigateParams& params) {
 */
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 /*  XWalkBrowserContext::FromWebContents(web_contents())
       ->AddVisitedURLs(params.redirects);
 */
@@ -151,7 +151,7 @@ bool XWalkRenderViewHostExt::OnMessageReceived(
 void XWalkRenderViewHostExt::OnDocumentHasImagesResponse(
     content::RenderFrameHost* render_frame_host, int msg_id, bool has_images) {
   LOG(INFO) << __func__ << " msg_id=" << msg_id;
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   std::map<int, DocumentHasImagesResult>::iterator pending_req =
       pending_document_has_images_requests_.find(msg_id);
   if (pending_req == pending_document_has_images_requests_.end()) {
@@ -164,7 +164,7 @@ void XWalkRenderViewHostExt::OnDocumentHasImagesResponse(
 
 void XWalkRenderViewHostExt::OnUpdateHitTestData(
     const XWalkHitTestData& hit_test_data) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   last_hit_test_data_ = hit_test_data;
   has_new_hit_test_data_ = true;
 }
@@ -172,7 +172,7 @@ void XWalkRenderViewHostExt::OnUpdateHitTestData(
 void XWalkRenderViewHostExt::SetOriginAccessWhitelist(
     const std::string& base_url,
     const std::string& match_patterns) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   pending_base_url_ = base_url;
   pending_match_patterns_ = match_patterns;
 
@@ -183,13 +183,13 @@ void XWalkRenderViewHostExt::SetOriginAccessWhitelist(
 }
 
 void XWalkRenderViewHostExt::SetBackgroundColor(SkColor c) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   Send(new XWalkViewMsg_SetBackgroundColor(web_contents()->GetMainFrame()->GetRoutingID(), c));
 //  Send(new XWalkViewMsg_SetBackgroundColor(web_contents()->GetRenderViewHost()->GetRoutingID(), c));
 }
 
 void XWalkRenderViewHostExt::SetTextZoomFactor(float factor) {
-  DCHECK(CalledOnValidThread());
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   Send(new XWalkViewMsg_SetTextZoomFactor(web_contents()->GetMainFrame()->GetRoutingID(),
       factor));

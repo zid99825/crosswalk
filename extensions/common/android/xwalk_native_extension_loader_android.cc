@@ -26,7 +26,8 @@ void RegisterExtensionInPath(JNIEnv* env,
 }
 
 bool RegisterXWalkNativeExtensionLoaderAndroid(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace extensions

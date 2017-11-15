@@ -45,7 +45,7 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   // Called by WebContents to override the WebKit preferences that are used by
   // the renderer. The content layer will add its own settings, and then it's up
   // to the embedder to update it if it wants.
-  virtual void OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
+  void OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
                                    content::WebPreferences* prefs) override;
 
   explicit XWalkContentBrowserClient(XWalkRunner* xwalk_runner);
@@ -92,6 +92,7 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   void SelectClientCertificate(
       content::WebContents* web_contents,
       net::SSLCertRequestInfo* cert_request_info,
+      net::ClientCertIdentityList client_certs,
       std::unique_ptr<content::ClientCertificateDelegate> delegate) override;
 
   content::SpeechRecognitionManagerDelegate*
@@ -100,23 +101,19 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   content::PlatformNotificationService* GetPlatformNotificationService()
       override;
 
-#if !defined(OS_ANDROID)
-  bool CanCreateWindow(const GURL& opener_url,
+  bool CanCreateWindow(content::RenderFrameHost* opener,
+                       const GURL& opener_url,
                        const GURL& opener_top_level_frame_url,
                        const GURL& source_origin,
-                       WindowContainerType container_type,
+                       content::mojom::WindowContainerType container_type,
                        const GURL& target_url,
                        const content::Referrer& referrer,
+                       const std::string& frame_name,
                        WindowOpenDisposition disposition,
-                       const blink::WebWindowFeatures& features,
+                       const blink::mojom::WindowFeatures& features,
                        bool user_gesture,
                        bool opener_suppressed,
-                       content::ResourceContext* context,
-                       int render_process_id,
-                       int opener_render_view_id,
-                       int opener_render_frame_id,
                        bool* no_javascript_access) override;
-#endif
 
   void DidCreatePpapiPlugin(
       content::BrowserPpapiHost* browser_host) override;
@@ -141,10 +138,10 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   content::DevToolsManagerDelegate* GetDevToolsManagerDelegate() override;
 
 #if defined(OS_ANDROID)
-  virtual void GetAdditionalMappedFilesForChildProcess(
+  void GetAdditionalMappedFilesForChildProcess(
       const base::CommandLine& command_line,
       int child_process_id,
-      content::FileDescriptorInfo* mappings) override {}
+      content::PosixFileDescriptorInfo* mappings) override {}
 #elif defined(OS_POSIX) && !defined(OS_MACOSX)
   void GetAdditionalMappedFilesForChildProcess(
       const base::CommandLine& command_line,

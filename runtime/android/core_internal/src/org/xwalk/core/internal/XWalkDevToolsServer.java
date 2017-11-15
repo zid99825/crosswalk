@@ -7,6 +7,8 @@ package org.xwalk.core.internal;
 import org.chromium.base.annotations.JNINamespace;
 import android.content.Context;
 import android.content.pm.PackageManager;
+
+import org.chromium.base.ContextUtils;
 import org.chromium.base.annotations.CalledByNative;
 
 /**
@@ -68,7 +70,9 @@ class XWalkDevToolsServer {
             long devToolsServer, boolean enabled, boolean allowDebugPermission, boolean allowSocketAccess);
 
     @CalledByNative
-    private static boolean checkDebugPermission(Context context, int pid, int uid) {
+    private static boolean checkDebugPermission(int pid, int uid) {
+        final Context context = ContextUtils.getApplicationContext();
+        
         String debugPermissionName = context.getPackageName() + DEBUG_PERMISSION_SIFFIX;
         return context.checkPermission(debugPermissionName, pid, uid)
                 == PackageManager.PERMISSION_GRANTED;

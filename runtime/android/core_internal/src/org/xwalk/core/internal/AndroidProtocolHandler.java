@@ -18,6 +18,7 @@ import java.net.URLConnection;
 import java.util.List;
 import java.util.Locale;
 
+import org.chromium.base.ContextUtils;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
 
@@ -27,7 +28,7 @@ import org.chromium.base.annotations.JNINamespace;
  */
 @JNINamespace("xwalk")
 class AndroidProtocolHandler {
-    private static final String TAG = "AndroidProtocolHandler";
+    private static final String TAG = "cr.AndroidProtocolHandler";
 
     // Supported URL schemes. This needs to be kept in sync with
     // clank/native/framework/chrome/url_request_android_job.cc.
@@ -44,12 +45,13 @@ class AndroidProtocolHandler {
      * @return An InputStream to the Android resource.
      */
     @CalledByNative
-    public static InputStream open(Context context, String url) {
+    public static InputStream open(String url) {
         Uri uri = verifyUrl(url);
         if (uri == null) {
             return null;
         }
         try {
+            Context context = ContextUtils.getApplicationContext();
             String path = uri.getPath();
             if (uri.getScheme().equals(FILE_SCHEME)) {
                 if (path.startsWith(nativeGetAndroidAssetPath())) {
@@ -103,7 +105,7 @@ class AndroidProtocolHandler {
     }
 
     static String getUrlContent(Context context, String url) throws IOException {
-        InputStream stream = open(context, url);
+        InputStream stream = open(url);
         if (stream == null) {
             throw new RuntimeException("Failed to open the url: " + url);
         }
@@ -220,12 +222,13 @@ class AndroidProtocolHandler {
      * @return The mime type or null if the type is unknown.
      */
     @CalledByNative
-    public static String getMimeType(Context context, InputStream stream, String url) {
+    public static String getMimeType(InputStream stream, String url) {
         Uri uri = verifyUrl(url);
         if (uri == null) {
             return null;
         }
         try {
+            Context context = ContextUtils.getApplicationContext();
             String path = uri.getPath();
             // The content URL type can be queried directly.
             if (uri.getScheme().equals(CONTENT_SCHEME)) {
@@ -257,11 +260,11 @@ class AndroidProtocolHandler {
      * @return Package name.
      */
     @CalledByNative
-    public static String getPackageName(Context context) {
+    public static String getPackageName() {
         try {
             // Make sure the context is the application context.
             // Or it will get the wrong package name in shared mode.
-            return context.getPackageName();
+            return ContextUtils.getApplicationContext().getPackageName();
         } catch (Exception ex) {
             Log.e(TAG, "Unable to get package name");
             return null;

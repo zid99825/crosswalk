@@ -80,6 +80,7 @@ def IsMergeableJar(jar_path):
       if entry_name.endswith('/'):  # Directories are irrelevant.
         continue
       if any(fnmatch.fnmatchcase(entry_name, f) for f in JAR_ENTRY_WHITELIST):
+#         print("entry_name: %s" %(entry_name))
         continue
       return False
   return True

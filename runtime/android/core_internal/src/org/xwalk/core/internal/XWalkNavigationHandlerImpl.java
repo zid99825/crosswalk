@@ -299,13 +299,14 @@ public class XWalkNavigationHandlerImpl implements XWalkNavigationHandler {
         // security (only access to BROWSABLE activities).
         intent.addCategory(Intent.CATEGORY_BROWSABLE);
         intent.setComponent(null);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+        //Unnecessary; SDK_INT is always >= 16: ObsoleteSdkInt [warning]
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
             Intent selector = intent.getSelector();
             if (selector != null) {
                 selector.addCategory(Intent.CATEGORY_BROWSABLE);
                 selector.setComponent(null);
             }
-        }
+//        }
 
         // Set the Browser application ID to us in case the user chooses Chrome
         // as the app.  This will make sure the link is opened in the same tab

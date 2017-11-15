@@ -167,12 +167,14 @@ def MakeResourceTuple(resource_zip, resource_src):
 
   # With GN, |resource_src| is None and we derive the source path from
   # |resource_zip|.
-  if not resource_zip.startswith('gen/'):
-    raise ValueError('%s is expected to be in gen/.' % resource_zip)
+  #if not resource_zip.startswith('gen/'):
+  if not resource_zip.startswith('resource_zips/'):
+    raise ValueError('%s is expected to be in resource_zips/.' % resource_zip)
+
   src_subpath = os.path.dirname(resource_zip)
   for res_subpath in ('android/java/res', 'java/res', 'res'):
     path = os.path.join(SRC_ROOT,
-                        src_subpath[4:],  # Drop the gen/ part.
+                        src_subpath[14:],  # Drop the gen/ part.
                         res_subpath)
     if os.path.isdir(path):
       return Resource(filename=resource_zip, src=path)
@@ -233,6 +235,9 @@ def main(argv):
       resources.append(MakeResourceTuple(resource_zip, appcompat_path))
       continue
 
+    if resource_zip.find('google_play_services') != -1:
+      continue
+    
     if resource_zip.endswith('_grd.resources.zip'): 
       # In GN, we just use --resource-zips, and the string files are
       # part of the list.

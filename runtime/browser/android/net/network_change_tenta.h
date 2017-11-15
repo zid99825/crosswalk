@@ -24,7 +24,7 @@ class NetworkChangeTenta : public net::NetworkChangeNotifier::IPAddressObserver,
   friend struct base::LazyInstanceTraitsBase<NetworkChangeTenta>;
 
   NetworkChangeTenta();
-  virtual ~NetworkChangeTenta();
+  ~NetworkChangeTenta() final;
 
   // from net::NetworkChangeNotifier::IPAddressObserver:
   void OnIPAddressChanged() override;

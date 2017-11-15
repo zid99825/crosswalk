@@ -29,9 +29,10 @@
       <message desc="Prompt for finished to download toast [CHAR-LIMIT=32]" name="IDS_DOWNLOAD_FINISHED_TOAST">
         Finished to download file.
       </message>
-      <message desc="Title for the Ssl Alert dialog [CHAR-LIMIT=32]" name="IDS_SSL_ALERT_TITLE">
+<!--      <message desc="Title for the Ssl Alert dialog [CHAR-LIMIT=32]" name="IDS_SSL_ALERT_TITLE">
         Ssl Certificate Error Alert
       </message>
+-->
       <message desc="Title for the http authentication dialog [CHAR-LIMIT=32]" name="IDS_HTTP_AUTH_TITLE">
         Authentication Required
       </message>

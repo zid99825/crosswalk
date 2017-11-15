@@ -237,7 +237,9 @@ void XWalkExtensionServer::PostMessageToJSCallback(
   base::Process process =
       base::Process::OpenWithExtraPrivileges(_peer_pid);
   CHECK(process.IsValid());
-  if (!shared_memory.GiveReadOnlyToProcess(process.Handle(), &handle)) {
+
+  handle = shared_memory.GetReadOnlyHandle();
+  if (!handle.IsValid()) {
 #if TENTA_LOG_ENABLE == 1
     LOG(WARNING) << "Can't share memory handle to send out of line message";
 #endif

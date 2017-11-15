@@ -20,6 +20,7 @@
 #include "components/user_prefs/user_prefs.h"
 #include "components/visitedlink/browser/visitedlink_master.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/browsing_data_remover_delegate.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/resource_context.h"
 #include "content/public/browser/storage_partition.h"
@@ -54,6 +55,9 @@ using content::BrowserThread;
 using content::DownloadManager;
 
 namespace xwalk {
+//class XWalkBrowsingDataRemoverDelegate : public content::BrowsingDataRemoverDelegate {
+//
+//};
 
 class XWalkBrowserContext::RuntimeResourceContext :
     public content::ResourceContext {
@@ -170,12 +174,6 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
 #endif
 }
 
-std::unique_ptr<content::ZoomLevelDelegate>
-XWalkBrowserContext::CreateZoomLevelDelegate(
-                                             const base::FilePath& partition_path) {
-  return nullptr;
-}
-
 base::FilePath XWalkBrowserContext::GetPath() const {
   base::FilePath result;
 #if defined(OS_ANDROID)
@@ -248,6 +246,16 @@ content::PermissionManager* XWalkBrowserContext::GetPermissionManager() {
 
 content::BackgroundSyncController*
 XWalkBrowserContext::GetBackgroundSyncController() {
+  return nullptr;
+}
+
+/**
+ *
+ */
+content::BrowsingDataRemoverDelegate*
+XWalkBrowserContext::GetBrowsingDataRemoverDelegate() {
+  // TODO(iotto): Implement
+  // see chrome/browser/browsing_data/chrome_browsing_data_remover_delegate.h
   return nullptr;
 }
 

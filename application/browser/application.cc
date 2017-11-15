@@ -73,7 +73,7 @@ namespace application {
 std::unique_ptr<Application> Application::Create(
     scoped_refptr<ApplicationData> data,
     XWalkBrowserContext* context) {
-  return base::WrapUnique(new Application(data, context));
+  return base::WrapUnique( new Application(data, context));
 }
 
 Application::Application(
@@ -263,7 +263,7 @@ GURL Application::GetAbsoluteURLFromKey(const std::string& key) const {
 }
 
 void Application::Terminate() {
-  std::vector<Runtime*> to_be_closed(runtimes_.get());
+  std::vector<Runtime*> to_be_closed(runtimes_);
   for (Runtime* runtime : to_be_closed)
     runtime->Close();
 }
