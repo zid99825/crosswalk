@@ -233,18 +233,16 @@ template("generate_android_project") {
         _ordered_libraries_json,
       ]
       deps = [
-#         ":$_build_config_target",
-        ":${_ordered_libraries_target}",
+        ":$_ordered_libraries_target",
       ]
-#       defines =
-#           [ "NATIVE_LIBRARIES_LIST=" +
-#             "@FileArg($_rebased_build_config:native:java_libraries_list)" ]
       defines = [
         "NATIVE_LIBRARIES_LIST=" +
             "@FileArg($_rebased_ordered_libraries_json:java_libraries_list)",
       ]
     }
     _srcjar_deps += [ ":${target_name}__native_libraries_java" ]
+
+  }
 
     # We also need to generate BuildConfig.java, which some classes in //base
     # may use.
@@ -258,31 +256,32 @@ template("generate_android_project") {
       sources = [
         "//base/android/java/templates/BuildConfig.template",
       ]
+      deps = [ ":$_build_config_target" ]
     }
     _srcjar_deps += [ ":${target_name}__build_config_java" ]
-  }
-
+    
   # Compile the files we have generated (the .srcjar containing the R.java's
   # and the wrappers).
   _java_target = "${target_name}__java"
   java_library_impl(_java_target) {
+          forward_variables_from(invoker,
+                             [
+                               "chromium_code",
+                             ])
     android_manifest = "//build/android/AndroidManifest.xml"
     deps = [
       ":$_build_config_target",
     ]
     dex_path = _base_path + "__unused.dex.jar"
     emma_never_instrument = true
-#    chromium_code = true
+
     jar_excluded_patterns = []
     if (defined(invoker.resource_excluded_patterns)) {
       jar_excluded_patterns += invoker.resource_excluded_patterns
     }
-
     if (defined(invoker.jar_excluded_patterns)) {
       jar_excluded_patterns += invoker.jar_excluded_patterns
     }
-                                   
-    print("java_library_impl", _java_target, " exclude_patterns", jar_excluded_patterns)
     jar_path = _resource_jar_path
     if (defined(invoker.java_files)) {
         java_files = invoker.java_files

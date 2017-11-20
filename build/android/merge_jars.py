@@ -40,6 +40,8 @@ JAR_ENTRY_WHITELIST = (
   'org/chromium/*.class',
   'org/xwalk/*.class',
   'com/tenta/*.class',
+#   'com/google/*.class',
+#   'android/support/*.class',
 )
 #'android/support/*.class',
 
@@ -47,6 +49,28 @@ JAR_ENTRY_WHITELIST = (
 # namespaces we do not allow -- they are either not necessary or users must
 # embed them on their own together with Crosswalk.
 KNOWN_SKIPPED_JARS = (
+  'Desugar-runtime.jar',
+  'support-annotations-25.0.1.jar',
+  'jsr_305_javalib.jar',
+  'android_support_multidex_java.jar',
+  'android_support_compat_java-internal_impl-25.0.1.jar',
+  'android_support_core_utils_java-internal_impl-25.0.1.jar',
+  'android_support_core_ui_java-internal_impl-25.0.1.jar',
+  'android_support_fragment_java-internal_impl-25.0.1.jar',
+  'android_support_media_compat_java-internal_impl-25.0.1.jar',
+  'android_support_compat_java.jar',
+  'android_support_core_ui_java.jar',
+  'android_support_media_compat_java.jar',
+  'android_support_vector_drawable_java.jar',
+  'android_support_core_utils_java.jar',
+  'android_support_fragment_java.jar',
+  'android_support_v7_appcompat_java_internal.jar',
+  'google_play_services_basement_java.jar',
+  'google_play_services_tasks_java.jar',
+  'google_play_services_base_java.jar',
+  'google_play_services_vision_java.jar',
+  'google_play_services_location_java.jar',
+  
   # android.support.multidex is used by BaseChromiumApplication via
   # ChromiumMultiDexInstaller, but not in release mode. We have not needed it
   # so far (as of Crosswalk 21).
@@ -75,13 +99,17 @@ def IsMergeableJar(jar_path):
   Returns True if a certain JAR does not have any classes outside the
   allowed namespaces.
   """
+  if any(fnmatch.fnmatchcase(os.path.basename(jar_path), f) for f in KNOWN_SKIPPED_JARS):
+    return False
+  
   with zipfile.ZipFile(jar_path) as zip_file:
     for entry_name in zip_file.namelist():
       if entry_name.endswith('/'):  # Directories are irrelevant.
         continue
       if any(fnmatch.fnmatchcase(entry_name, f) for f in JAR_ENTRY_WHITELIST):
-#         print("entry_name: %s" %(entry_name))
         continue
+      
+      print("entry_name not match: %s" %(entry_name))
       return False
   return True
 
@@ -143,9 +171,9 @@ def main():
       # another package with one of these non-allowed namespaces (see
       # XWALK-5092, XWALK-6597).
       if not IsMergeableJar(jar_file):
-        print('NOT MergeableJar %s' %(jar_file))
+        print('NOT Merged jar %s' %(jar_file))
         continue
-      print('Merge jar %s' %(jar_file))
+      print('... Merged jar %s' %(jar_file))
       build_utils.ExtractAll(jar_file, path=temp_dir, pattern='*.class')
     jar.JarDirectory(temp_dir, options.output_jar)
 

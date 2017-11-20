@@ -188,11 +188,11 @@ void XWalkBrowserMainPartsAndroid::PostMainMessageLoopStart() {
 
 void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
   net::NetModule::SetResourceProvider(PlatformResourceProvider);
-  if (parameters_.ui_task) {
-    parameters_.ui_task->Run();
-    delete parameters_.ui_task;
-    run_default_message_loop_ = false;
-  }
+//  if (parameters_.ui_task) {
+//    parameters_.ui_task->Run();
+//    delete parameters_.ui_task;
+//    run_default_message_loop_ = false;
+//  }
 
   xwalk_runner_->PreMainMessageLoopRun();
 

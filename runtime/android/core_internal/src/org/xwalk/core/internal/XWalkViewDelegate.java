@@ -183,10 +183,10 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         // Use MixedContext to initialize the ResourceExtractor, as the pak file
         // is in the library apk if in shared apk mode.
 //        ResourceExtractor.get();
-//        ResourceExtractor resourceExtractor = ResourceExtractor.get();
-//        resourceExtractor.startExtractingResources();
+        ResourceExtractor resourceExtractor = ResourceExtractor.get();
+        resourceExtractor.startExtractingResources();
 
-//        resourceExtractor.waitForCompletion();
+        resourceExtractor.waitForCompletion();
 
 //        final AssetManager mgr = context.getApplicationContext().getAssets();
 //        displayFiles(mgr, "",0);
@@ -204,9 +204,9 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         XWalkPresentationHost.createInstanceOnce(context);
         // ContextUtils.initApplicationContextForNative();
 
-        ResourceExtractor resourceExtractor = ResourceExtractor.get();
-
-        resourceExtractor.waitForCompletion();
+//        ResourceExtractor resourceExtractor = ResourceExtractor.get();
+//
+//        resourceExtractor.waitForCompletion();
         XWalkInternalResources.resetIds(context.getApplicationContext());
         sInitialized = true;
     }
@@ -223,11 +223,11 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         if (sLibraryLoaded)
             return true;
 
-        try {
-            LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
-//            libraryLoader.ensureInitialized();
-        } catch (ProcessInitException e) {
-        }
+//        try {
+//            LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
+////            libraryLoader.ensureInitialized();
+//        } catch (ProcessInitException e) {
+//        }
 
 //TODO(iotto) workarround for lint error using System.load
 
@@ -249,7 +249,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         try {
             LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
             libraryLoader.loadNow();
-//            libraryLoader.ensureInitialized();
+            libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {
             org.chromium.base.Log.e("iotto|chromium", "error loading library %s", e);
         }
