@@ -37,6 +37,7 @@ namespace xwalk {
 
 XWalkWebContentsDelegate::XWalkWebContentsDelegate(JNIEnv* env, jobject obj)
     : WebContentsDelegateAndroid(env, obj) {
+  LOG(INFO) << __func__;
 }
 
 XWalkWebContentsDelegate::~XWalkWebContentsDelegate() {
@@ -46,6 +47,8 @@ void XWalkWebContentsDelegate::AddNewContents(
     content::WebContents* source, content::WebContents* new_contents,
     WindowOpenDisposition disposition, const gfx::Rect& initial_pos,
     bool user_gesture, bool* was_blocked) {
+  LOG(INFO) << __func__;
+
   JNIEnv* env = AttachCurrentThread();
 
   bool is_dialog = disposition == WindowOpenDisposition::NEW_POPUP;
@@ -80,6 +83,7 @@ void XWalkWebContentsDelegate::CloseContents(content::WebContents* source) {
 }
 
 void XWalkWebContentsDelegate::ActivateContents(content::WebContents* source) {
+  LOG(INFO) << __func__;
   JNIEnv* env = AttachCurrentThread();
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
@@ -90,6 +94,7 @@ void XWalkWebContentsDelegate::ActivateContents(content::WebContents* source) {
 
 void XWalkWebContentsDelegate::UpdatePreferredSize(
     content::WebContents* contents, const gfx::Size& pref_size) {
+  LOG(INFO) << __func__;
   JNIEnv* env = AttachCurrentThread();
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
@@ -166,6 +171,7 @@ void XWalkWebContentsDelegate::RequestMediaAccessPermission(
 
 void XWalkWebContentsDelegate::RendererUnresponsive(WebContents* source,
     const content::WebContentsUnresponsiveState& unresponsive_state) {
+  LOG(INFO) << __func__;
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
@@ -174,6 +180,7 @@ void XWalkWebContentsDelegate::RendererUnresponsive(WebContents* source,
 }
 
 void XWalkWebContentsDelegate::RendererResponsive(WebContents* source) {
+  LOG(INFO) << __func__;
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
@@ -276,6 +283,7 @@ bool XWalkWebContentsDelegate::ShouldCreateWebContents(
     const GURL& opener_url, const std::string& frame_name,
     const GURL& target_url, const std::string& partition_id,
     content::SessionStorageNamespace* session_storage_namespace) {
+  LOG(INFO) << __func__;
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
@@ -300,10 +308,10 @@ void XWalkWebContentsDelegate::FindReply(WebContents* web_contents,
                                                   final_update);
 }
 
-bool RegisterXWalkWebContentsDelegate(JNIEnv* env) {
-  // TODO(iotto) remove registering too
-//  return RegisterNativesImpl(env);
-  return true;
+void XWalkWebContentsDelegate::SetOverlayMode(bool use_overlay_mode) {
+  LOG(INFO) << __func__ << " use_overlay_mode=" << use_overlay_mode;
+//  JNIEnv* env = base::android::AttachCurrentThread();
+//  return Java_Shell_setOverlayMode(env, java_object_, use_overlay_mode);
 }
 
 }  // namespace xwalk

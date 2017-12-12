@@ -36,7 +36,8 @@ IPC_STRUCT_TRAITS_BEGIN(xwalk::XWalkHitTestData)
   IPC_STRUCT_TRAITS_MEMBER(img_src)
 IPC_STRUCT_TRAITS_END()
 
-#define IPC_MESSAGE_START AndroidWebViewMsgStart
+//#define IPC_MESSAGE_START AndroidWebViewMsgStart
+#define IPC_MESSAGE_START GuestViewMsgStart
 
 //-----------------------------------------------------------------------------
 // RenderView messages

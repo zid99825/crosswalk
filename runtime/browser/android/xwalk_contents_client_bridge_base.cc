@@ -59,6 +59,8 @@ XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromWebContents(
 XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromRenderViewID(
     int render_process_id,
     int render_view_id) {
+  LOG(INFO) << __func__ << " render_process_id=" << render_process_id
+               << " render_view_id=" << render_view_id;
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   content::RenderViewHost* rvh =
       content::RenderViewHost::FromID(render_process_id, render_view_id);
@@ -72,6 +74,8 @@ XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromRenderViewID(
 XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromRenderFrameID(
     int render_process_id,
     int render_frame_id) {
+  LOG(INFO) << __func__ << " render_process_id=" << render_process_id
+               << " render_frame_id=" << render_frame_id;
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   content::RenderFrameHost* rfh =
       content::RenderFrameHost::FromID(render_process_id, render_frame_id);

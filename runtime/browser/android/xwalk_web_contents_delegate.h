@@ -83,6 +83,7 @@ class XWalkWebContentsDelegate
                  int active_match_ordinal,
                  bool final_update) override;
 
+  void SetOverlayMode(bool use_overlay_mode) override;
  private:
   std::unique_ptr<content::JavaScriptDialogManager> javascript_dialog_manager_;
   DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsDelegate);

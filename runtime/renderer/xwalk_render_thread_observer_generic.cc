@@ -61,6 +61,7 @@ XWalkRenderThreadObserver::~XWalkRenderThreadObserver() {
 
 bool XWalkRenderThreadObserver::OnControlMessageReceived(
     const IPC::Message& message) {
+  LOG(INFO) << __func__ << " msg.type=" << message.type();
   bool handled = true;
   IPC_BEGIN_MESSAGE_MAP(XWalkRenderThreadObserver, message)
     IPC_MESSAGE_HANDLER(ViewMsg_SetAccessWhiteList, OnSetAccessWhiteList)

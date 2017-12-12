@@ -14,6 +14,7 @@
 #include "base/files/file.h"
 #include "base/strings/string16.h"
 #include "content/public/renderer/content_renderer_client.h"
+#include "components/safe_browsing/common/safe_browsing.mojom.h"
 #include "ui/base/page_transition_types.h"
 #include "xwalk/extensions/renderer/xwalk_extension_renderer_controller.h"
 #if defined(OS_ANDROID)
@@ -62,6 +63,9 @@ class XWalkContentRendererClient
   void AddSupportedKeySystems(
       std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems)
       override;
+  std::unique_ptr<blink::WebSocketHandshakeThrottle>
+    CreateWebSocketHandshakeThrottle() override;
+
 #if defined(OS_ANDROID)
   bool HandleNavigation(content::RenderFrame* render_frame,
                         bool is_content_initiated,
@@ -71,12 +75,17 @@ class XWalkContentRendererClient
                         blink::WebNavigationType type,
                         blink::WebNavigationPolicy default_policy,
                         bool is_redirect) override;
+  bool ShouldUseMediaPlayerForURL(const GURL& url) override;
 #endif
 
  protected:
   std::unique_ptr<XWalkRenderThreadObserver> xwalk_render_thread_observer_;
 
  private:
+  // Returns |true| if we should use the SafeBrowsing mojo service. Initialises
+  // |safe_browsing_| on the first call as a side-effect.
+  bool UsingSafeBrowsingMojoService();
+
   // XWalkExtensionRendererController::Delegate implementation.
   void DidCreateModuleSystem(
       extensions::XWalkModuleSystem* module_system) override;
@@ -85,6 +94,7 @@ class XWalkContentRendererClient
       extension_controller_;
 
   std::unique_ptr<visitedlink::VisitedLinkSlave> visited_link_slave_;
+  safe_browsing::mojom::SafeBrowsingPtr safe_browsing_;
 
   void GetNavigationErrorStrings(
       content::RenderFrame* render_frame,

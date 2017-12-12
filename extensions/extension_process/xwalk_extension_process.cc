@@ -86,6 +86,7 @@ void XWalkExtensionProcess::OnRegisterExtensions(
 
 void XWalkExtensionProcess::CreateBrowserProcessChannel(
     const mojo::edk::NamedPlatformHandle& channelHandle) {
+  LOG(INFO) << __func__;
 /*  if (channel_handle.name.empty()) {
     std::string channel_id =
         base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(

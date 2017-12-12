@@ -43,6 +43,7 @@ class XWalkBrowserMainPartsAndroid : public XWalkBrowserMainParts {
 
  private:
   extensions::XWalkExtensionVector extensions_;
+  std::unique_ptr<base::MessageLoop> main_message_loop_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkBrowserMainPartsAndroid);
 };

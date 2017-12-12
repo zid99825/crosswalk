@@ -24,6 +24,12 @@ class XWalkRenderThreadObserver : public content::RenderThreadObserver {
   bool OnControlMessageReceived(const IPC::Message& message) override;
 
  private:
+//  // content::RenderThreadObserver:
+//  void RegisterMojoInterfaces(
+//      content::AssociatedInterfaceRegistry* associated_interfaces) override;
+//  void UnregisterMojoInterfaces(
+//      content::AssociatedInterfaceRegistry* associated_interfaces) override;
+
   void OnSetJsOnlineProperty(bool network_up);
   void OnClearCache();
   void OnSetOriginAccessWhitelist(std::string base_url,

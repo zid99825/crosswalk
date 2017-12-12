@@ -17,9 +17,12 @@
 #include "base/files/file.h"
 #include "base/posix/global_descriptors.h"
 #include "content/public/browser/browser_main_runner.h"
+#include "content/public/common/content_switches.h"
+#include "gpu/config/gpu_switches.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/ui_base_switches.h"
+#include "ui/display/display_switches.h"
 #include "xwalk/runtime/common/android/xwalk_globals_android.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 
@@ -32,6 +35,13 @@ XWalkMainDelegateAndroid::~XWalkMainDelegateAndroid() {
 }
 
 bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
+  LOG(INFO) << __func__;
+  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+  command_line.AppendSwitch(switches::kEnableThreadedCompositing);
+  command_line.AppendSwitch(switches::kEnablePartialRaster);
+  command_line.AppendSwitch(switches::kEnableGpuRasterization);
+  command_line.AppendSwitchASCII(switches::kForceColorProfile, "srgb");
+
   content_client_.reset(new XWalkContentClient);
   content::SetContentClient(content_client_.get());
   return false;

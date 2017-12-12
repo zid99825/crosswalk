@@ -45,7 +45,6 @@ class XWalkEnvironment {
     private static Boolean sIsXWalkVerify;
 
     public static void init(Context context) {
-        Log.d(TAG, "init " + context);
         sApplicationContext = context.getApplicationContext();
     }
 

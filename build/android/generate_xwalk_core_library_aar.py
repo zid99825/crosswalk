@@ -48,6 +48,8 @@ def main():
                       help='Architecture-specific libraries to copy.')
   parser.add_argument('--res-dir', required=True,
                       help='/path/to/res to copy to res/ in the AAR file.')
+  parser.add_argument('--assets-dir', required=True,
+                      help='/path/to/assets to copy to assets/ in the AAR file.')
   parser.add_argument('--r-txt', required=True,
                       help='Path to the R.txt file to copy to the AAR file.')
 
@@ -63,7 +65,8 @@ def main():
       aar.write(native_library,
                 os.path.join('jni', options.jni_abi, native_library))
     AddDirectoryToAAR(aar, options.res_dir, 'res')
-
+    AddDirectoryToAAR(aar, options.assets_dir, 'assets')
+    
     aar.write(options.android_manifest, 'AndroidManifest.xml')
     aar.write(options.classes_jar, 'classes.jar')
     aar.write(options.r_txt, 'R.txt')

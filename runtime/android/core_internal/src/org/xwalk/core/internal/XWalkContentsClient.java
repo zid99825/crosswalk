@@ -85,6 +85,7 @@ abstract class XWalkContentsClient {
         @Override
         public void didStartNavigation(String url, boolean isInMainFrame, boolean isSameDocument,
                 boolean isErrorPage) {
+            org.chromium.base.Log.d("iotto|chromium", "didStartNavigation %s", url);
             if (isInMainFrame) {
                 onNavigationStart(url);
             }

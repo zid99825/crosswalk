@@ -668,6 +668,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     // Used by the native peer to set/reset a weak ref to the native peer.
     @CalledByNative
     private void setNativeContentsClientBridge(long nativeContentsClientBridge) {
+        org.chromium.base.Log.d("iotto|chromium", "setNativeContentsClientBridge");
         mNativeContentsClientBridge = nativeContentsClientBridge;
     }
 

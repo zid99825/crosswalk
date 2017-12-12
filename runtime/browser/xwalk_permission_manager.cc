@@ -51,6 +51,7 @@ XWalkPermissionManager::XWalkPermissionManager(
     : content::PermissionManager(),
       application_service_(application_service),
       weak_ptr_factory_(this) {
+  LOG(INFO) << __func__;
 }
 
 XWalkPermissionManager::~XWalkPermissionManager() {
@@ -72,6 +73,7 @@ int XWalkPermissionManager::RequestPermission(
       const GURL& requesting_origin,
       bool user_gesture,
       const base::Callback<void(blink::mojom::PermissionStatus)>& callback) {
+  LOG(INFO) << __func__;
   bool should_delegate_request = true;
   for (PendingRequestsMap::Iterator<PendingRequest> it(&pending_requests_);
       !it.IsAtEnd(); it.Advance()) {
@@ -163,6 +165,7 @@ const std::vector<content::PermissionType>& permission,
       bool user_gesture,
       const base::Callback<void(
           const std::vector<blink::mojom::PermissionStatus>&)>& callback) {
+  LOG(INFO) << __func__;
 
   // TODO(mrunalk): Rework this as per,
   // https://codereview.chromium.org/1419083002
@@ -255,6 +258,7 @@ int XWalkPermissionManager::SubscribePermissionStatusChange(
     const GURL& requesting_origin,
     const GURL& embedding_origin,
     const base::Callback<void(PermissionStatus)>& callback) {
+  LOG(INFO) << __func__;
   return kNoPendingOperation;
 }
 

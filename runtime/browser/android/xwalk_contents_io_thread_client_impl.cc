@@ -23,6 +23,7 @@
 #include "content/public/browser/resource_request_info.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_contents_observer.h"
+//#include "content/public/common/bindings_policy.h"
 #include "jni/XWalkContentsIoThreadClient_jni.h"
 #include "net/http/http_request_headers.h"
 #include "net/http/http_response_headers.h"
@@ -38,6 +39,7 @@ using base::android::ToJavaArrayOfStrings;
 using base::LazyInstance;
 using content::BrowserThread;
 using content::RenderFrameHost;
+using content::RenderViewHost;
 using content::WebContents;
 using std::map;
 using std::pair;
@@ -59,6 +61,10 @@ IoThreadClientData::IoThreadClientData() : pending_association(false) {}
 
 typedef map<pair<int, int>, IoThreadClientData>
     RenderFrameHostToIoThreadClientType;
+// When browser side navigation is enabled, RenderFrameIDs do not have
+// valid render process host and render frame ids for frame navigations.
+// We need to identify these by using Frame Tree Node ids.
+typedef map<int, IoThreadClientData> FrameTreeNodeToIoThreadClientType;
 
 static pair<int, int> GetRenderFrameHostIdPair(RenderFrameHost* rfh) {
   return pair<int, int>(rfh->GetProcess()->GetID(), rfh->GetRoutingID());
@@ -72,10 +78,15 @@ class RfhToIoThreadClientMap {
   bool Get(pair<int, int> rfh_id, IoThreadClientData* client);
   void Erase(pair<int, int> rfh_id);
 
+  void Set(int frame_tree_node_id, const IoThreadClientData& client);
+  bool Get(int frame_tree_node_id, IoThreadClientData* client);
+  void Erase(int frame_tree_node_id);
+
  private:
   friend struct base::LazyInstanceTraitsBase<RfhToIoThreadClientMap>;
   base::Lock map_lock_;
   RenderFrameHostToIoThreadClientType rfh_to_io_thread_client_;
+  FrameTreeNodeToIoThreadClientType frame_tree_node_to_io_thread_client_;
 };
 
 // static
@@ -89,6 +100,8 @@ RfhToIoThreadClientMap* RfhToIoThreadClientMap::GetInstance() {
 
 void RfhToIoThreadClientMap::Set(pair<int, int> rfh_id,
                                  const IoThreadClientData& client) {
+  LOG(INFO) << __func__ << " render_process_id=" << rfh_id.first
+               << " render_frame_id=" << rfh_id.second ;
   base::AutoLock lock(map_lock_);
   rfh_to_io_thread_client_[rfh_id] = client;
 }
@@ -110,6 +123,29 @@ void RfhToIoThreadClientMap::Erase(pair<int, int> rfh_id) {
   rfh_to_io_thread_client_.erase(rfh_id);
 }
 
+void RfhToIoThreadClientMap::Set(int frame_tree_node_id,
+                                 const IoThreadClientData& client) {
+  base::AutoLock lock(map_lock_);
+  frame_tree_node_to_io_thread_client_[frame_tree_node_id] = client;
+}
+
+bool RfhToIoThreadClientMap::Get(int frame_tree_node_id,
+                                 IoThreadClientData* client) {
+  base::AutoLock lock(map_lock_);
+  FrameTreeNodeToIoThreadClientType::iterator iterator =
+      frame_tree_node_to_io_thread_client_.find(frame_tree_node_id);
+  if (iterator == frame_tree_node_to_io_thread_client_.end())
+    return false;
+
+  *client = iterator->second;
+  return true;
+}
+
+void RfhToIoThreadClientMap::Erase(int frame_tree_node_id) {
+  base::AutoLock lock(map_lock_);
+  frame_tree_node_to_io_thread_client_.erase(frame_tree_node_id);
+}
+
 // ClientMapEntryUpdater ------------------------------------------------------
 
 class ClientMapEntryUpdater : public content::WebContentsObserver {
@@ -121,6 +157,13 @@ class ClientMapEntryUpdater : public content::WebContentsObserver {
   void RenderFrameDeleted(RenderFrameHost* render_frame_host) override;
   void WebContentsDestroyed() override;
 
+  void RenderFrameHostChanged(RenderFrameHost* old_host,
+                                        RenderFrameHost* new_host) override {
+    LOG(INFO) << __func__;
+  }
+  void RenderViewCreated(RenderViewHost* render_view_host) override {
+    LOG(INFO) << __func__;
+  }
  private:
   JavaObjectWeakGlobalRef jdelegate_;
 };
@@ -138,16 +181,22 @@ ClientMapEntryUpdater::ClientMapEntryUpdater(JNIEnv* env,
 }
 
 void ClientMapEntryUpdater::RenderFrameCreated(RenderFrameHost* rfh) {
+  LOG(INFO) << __func__;
   IoThreadClientData client_data;
   client_data.io_thread_client = jdelegate_;
   client_data.pending_association = false;
-  RfhToIoThreadClientMap::GetInstance()->Set(
-      GetRenderFrameHostIdPair(rfh), client_data);
+  RfhToIoThreadClientMap::GetInstance()->Set(GetRenderFrameHostIdPair(rfh),
+                                             client_data);
+  RfhToIoThreadClientMap::GetInstance()->Set(rfh->GetFrameTreeNodeId(),
+                                             client_data);
+//  rfh->AllowBindings(content::BINDINGS_POLICY_WEB_UI);
 }
 
 
 void ClientMapEntryUpdater::RenderFrameDeleted(RenderFrameHost* rfh) {
+  LOG(INFO) << __func__;
   RfhToIoThreadClientMap::GetInstance()->Erase(GetRenderFrameHostIdPair(rfh));
+  RfhToIoThreadClientMap::GetInstance()->Erase(rfh->GetFrameTreeNodeId());
 }
 
 void ClientMapEntryUpdater::WebContentsDestroyed() {
@@ -208,6 +257,21 @@ XWalkContentsIoThreadClient::FromID(int render_process_id,
           client_data.pending_association, java_delegate));
 }
 
+std::unique_ptr<XWalkContentsIoThreadClient>
+XWalkContentsIoThreadClient::FromID(int frame_tree_node_id) {
+  IoThreadClientData client_data;
+  if (!RfhToIoThreadClientMap::GetInstance()->Get(frame_tree_node_id,
+                                                  &client_data))
+    return std::unique_ptr<XWalkContentsIoThreadClient>();
+
+  JNIEnv* env = AttachCurrentThread();
+  ScopedJavaLocalRef<jobject> java_delegate =
+      client_data.io_thread_client.get(env);
+  DCHECK(!client_data.pending_association || java_delegate.is_null());
+  return std::unique_ptr<XWalkContentsIoThreadClient>(new XWalkContentsIoThreadClientImpl(
+      client_data.pending_association, java_delegate));
+}
+
 // static
 void XWalkContentsIoThreadClient::SubFrameCreated(int render_process_id,
                                                   int parent_render_frame_id,
@@ -238,6 +302,7 @@ void XWalkContentsIoThreadClientImpl::RegisterPendingContents(
 void XWalkContentsIoThreadClientImpl::Associate(
     WebContents* web_contents,
     const JavaRef<jobject>& jclient) {
+  LOG(INFO) << __func__ << " client=" << jclient.obj();
   JNIEnv* env = AttachCurrentThread();
   // The ClientMapEntryUpdater lifespan is tied to the WebContents.
   new ClientMapEntryUpdater(env, web_contents, jclient.obj());

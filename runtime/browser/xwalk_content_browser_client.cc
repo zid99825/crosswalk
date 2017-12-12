@@ -14,6 +14,7 @@
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/browser/browser_ppapi_host.h"
 #include "content/public/browser/child_process_data.h"
+#include "content/public/browser/child_process_security_policy.h"
 #include "content/public/browser/client_certificate_delegate.h"
 #include "device/geolocation/geolocation_delegate.h"
 #include "device/geolocation/geolocation_provider.h"
@@ -25,6 +26,8 @@
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_descriptors.h"
+#include "content/public/common/content_features.h"
+#include "content/public/common/content_switches.h"
 #include "content/public/common/main_function_params.h"
 #include "content/public/common/web_preferences.h"
 #include "gin/v8_initializer.h"
@@ -141,7 +144,7 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
  */
 void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
                                    content::WebPreferences* prefs) {
-#if TENTA_LOG_ENABLE == 1
+//#if TENTA_LOG_ENABLE == 1
 #if 0
   LOG(INFO) << "webPref images_enabled=" << prefs->images_enabled;
   LOG(INFO) << "webPref plugins_enabled=" << prefs->plugins_enabled;
@@ -183,7 +186,7 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
   LOG(INFO) << "webPref shrinks_viewport_contents_to_fit=" << prefs->shrinks_viewport_contents_to_fit;
   LOG(INFO) << "webPref viewport_style=" << static_cast<int>(prefs->viewport_style);
   LOG(INFO) << "webPref initialize_at_minimum_page_scale=" << prefs->initialize_at_minimum_page_scale;
-  LOG(INFO) << "webPref inert_visual_viewport=" << prefs->inert_visual_viewport;
+//  LOG(INFO) << "webPref inert_visual_viewport=" << prefs->inert_visual_viewport;
 
   LOG(INFO) << "webPref double_tap_to_zoom_enabled=" << prefs->double_tap_to_zoom_enabled;
   LOG(INFO) << "webPref support_deprecated_target_density_dpi=" << prefs->support_deprecated_target_density_dpi;
@@ -193,19 +196,33 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
   LOG(INFO) << "webPref cookie_enabled=" << prefs->cookie_enabled;
   LOG(INFO) << "webPref progress_bar_completion=" << static_cast<int>(prefs->progress_bar_completion);
   LOG(INFO) << "webPref viewport_meta_enabled=" << prefs->viewport_meta_enabled;
-#endif
+
   LOG(INFO) << "webPref context_menu_on_mouse_up=" << prefs->context_menu_on_mouse_up;
   LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
+  LOG(INFO) << "webPref scroll_top_left_interop_enabled=" << prefs->scroll_top_left_interop_enabled;
 #endif
-  prefs->viewport_meta_enabled = true;
-  prefs->context_menu_on_mouse_up = true;
-  prefs->always_show_context_menu_on_touch = true;
-//  prefs->viewport_style = content::ViewportStyle::DEFAULT;
-//  prefs->accelerated_filters_enabled = true;
+  prefs->context_menu_on_mouse_up = false;
+  prefs->allow_scripts_to_close_windows = false;  // todo analyse; was true
+  prefs->allow_universal_access_from_file_urls = false; // todo analyse; was true
+  prefs->allow_file_access_from_file_urls = false;  // todo analyse; was true
+  prefs->password_echo_enabled = false; // todo analyse; was true
+  prefs->supports_multiple_windows = true;  // todo; was false;
+  prefs->initialize_at_minimum_page_scale = true; // todo was false;
+  prefs->spatial_navigation_enabled = false;  // todo was true
+  prefs->text_autosizing_enabled = true;  // todo was false
+  prefs->double_tap_to_zoom_enabled = true; // todo was false
+  prefs->wide_viewport_quirk = false; // todo was true
+  prefs->use_wide_viewport = true;  // todo was false
+  prefs->scroll_top_left_interop_enabled = true;  // todo was false
+
+//  prefs->viewport_meta_enabled = true;
+//  prefs->always_show_context_menu_on_touch = true;
+//  prefs->scroll_top_left_interop_enabled = false;
 }
 
 content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
     const content::MainFunctionParams& parameters) {
+  LOG(INFO) << __func__;
 #if defined(OS_MACOSX)
   main_parts_ = new XWalkBrowserMainPartsMac(parameters);
 #elif defined(OS_ANDROID)
@@ -238,6 +255,8 @@ void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
 
   command_line->CopySwitchesFrom(
       browser_process_cmd_line, extra_switches, arraysize(extra_switches));
+
+  LOG(INFO) << __func__ << " switches::kDisable3DAPIs=" << command_line->HasSwitch(switches::kDisable3DAPIs);
 }
 
 content::QuotaPermissionContext*
@@ -248,8 +267,10 @@ XWalkContentBrowserClient::CreateQuotaPermissionContext() {
 content::WebContentsViewDelegate*
 XWalkContentBrowserClient::GetWebContentsViewDelegate(
     content::WebContents* web_contents) {
+  LOG(INFO) << __func__;
 #if defined(OS_ANDROID)
   return new XWalkWebContentsViewDelegate(web_contents);
+  return nullptr;
 #else
   return nullptr;
 #endif
@@ -257,6 +278,7 @@ XWalkContentBrowserClient::GetWebContentsViewDelegate(
 
 void XWalkContentBrowserClient::RenderProcessWillLaunch(
     content::RenderProcessHost* host) {
+  LOG(INFO) << __func__;
 #if !defined(DISABLE_NACL)
   int id = host->GetID();
   net::URLRequestContextGetter* context =
@@ -269,10 +291,13 @@ void XWalkContentBrowserClient::RenderProcessWillLaunch(
       host->GetBrowserContext()->GetPath(),
       context));
 #endif
+  content::ChildProcessSecurityPolicy::GetInstance()->GrantScheme(
+      host->GetID(), url::kContentScheme);
+
   xwalk_runner_->OnRenderProcessWillLaunch(host);
   host->AddFilter(new XWalkRenderMessageFilter);
 #if defined(OS_ANDROID)
-  host->AddFilter(new cdm::CdmMessageFilterAndroid(true, false));
+  host->AddFilter(new cdm::CdmMessageFilterAndroid(true /*can_persist_data*/, false));
   host->AddFilter(new XWalkRenderMessageFilter(host->GetID()));
 #endif
 }
@@ -330,6 +355,7 @@ void XWalkContentBrowserClient::SelectClientCertificate(
     net::SSLCertRequestInfo* cert_request_info,
     net::ClientCertIdentityList client_certs,
     std::unique_ptr<content::ClientCertificateDelegate> delegate) {
+  LOG(INFO) << __func__;
 #if defined(OS_ANDROID)
   XWalkContentsClientBridgeBase* client =
       XWalkContentsClientBridgeBase::FromWebContents(web_contents);
@@ -410,6 +436,7 @@ content::BrowserPpapiHost*
 
 #if defined(OS_ANDROID) || defined(OS_LINUX)
 void XWalkContentBrowserClient::ResourceDispatcherHostCreated() {
+  LOG(INFO) << __func__;
   resource_dispatcher_host_delegate_ =
       (RuntimeResourceDispatcherHostDelegate::Create());
   content::ResourceDispatcherHost::Get()->SetDelegate(
@@ -436,6 +463,7 @@ bool XWalkContentBrowserClient::CanCreateWindow(content::RenderFrameHost* opener
                                                 bool opener_suppressed,
                                                 bool* no_javascript_access) {
 
+  LOG(INFO) << __func__ ;
   if (no_javascript_access) {
     *no_javascript_access = false;
   }
@@ -484,6 +512,7 @@ void XWalkContentBrowserClient::GetStoragePartitionConfigForSite(
 
 void XWalkContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
     std::vector<std::string>* additional_schemes) {
+  LOG(INFO) << __func__;
 #if !defined(OS_ANDROID)
   additional_schemes->push_back("app");
 #endif
@@ -491,6 +520,7 @@ void XWalkContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
 
 content::DevToolsManagerDelegate* 
 XWalkContentBrowserClient::GetDevToolsManagerDelegate() {
+  LOG(INFO) << __func__;
   return new XWalkDevToolsManagerDelegate(xwalk_runner_->browser_context());
 }
 
@@ -519,6 +549,7 @@ std::string XWalkContentBrowserClient::GetApplicationLocale() {
 std::vector<std::unique_ptr<content::NavigationThrottle>>
 XWalkContentBrowserClient::CreateThrottlesForNavigation(
     content::NavigationHandle* navigation_handle) {
+  LOG(INFO) << __func__;
   std::vector<std::unique_ptr<content::NavigationThrottle>> throttles;
   // We allow intercepting only navigations within main frames. This
   // is used to post onPageStarted. We handle shouldOverrideUrlLoading
@@ -531,5 +562,41 @@ XWalkContentBrowserClient::CreateThrottlesForNavigation(
   return throttles;
 }
 #endif
+
+void XWalkContentBrowserClient::ExposeInterfacesToRenderer(
+    service_manager::BinderRegistry* registry,
+    content::AssociatedInterfaceRegistry* associated_registry,
+    content::RenderProcessHost* render_process_host) {
+  LOG(INFO) << __func__ << " IsEnabled(features::kNetworkService)=" << base::FeatureList::IsEnabled(features::kNetworkService);
+}
+
+std::unique_ptr<base::Value>
+XWalkContentBrowserClient::GetServiceManifestOverlay(base::StringPiece name) {
+  LOG(INFO) << __func__ << " name=" << name;
+  return nullptr;
+}
+
+void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
+    content::RenderFrameHost* render_frame_host,
+    const std::string& interface_name,
+    mojo::ScopedMessagePipeHandle interface_pipe) {
+  LOG(INFO) << __func__ << " interface_name=" << interface_name;
+  if (!frame_interfaces_) {
+    frame_interfaces_ = base::MakeUnique<
+        service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();
+//    ExposeInterfacesToFrame(frame_interfaces_.get());
+  }
+
+  frame_interfaces_->TryBindInterface(interface_name, &interface_pipe,
+                                      render_frame_host);
+}
+
+void XWalkContentBrowserClient::GetQuotaSettings(
+    content::BrowserContext* context,
+    content::StoragePartition* partition,
+    storage::OptionalQuotaSettingsCallback callback) {
+  LOG(INFO) << __func__;
+  std::move(callback).Run(storage::GetHardCodedSettings(100 * 1024 * 1024));
+}
 
 }  // namespace xwalk

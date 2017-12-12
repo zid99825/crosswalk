@@ -33,10 +33,13 @@ import com.tenta.fs.MetaErrors;
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
+import org.chromium.base.annotations.SuppressFBWarnings;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
+import org.chromium.content.browser.ContentView;
 import org.chromium.content.browser.ContentViewCore;
 import org.chromium.content.browser.ContentViewRenderView;
 import org.chromium.content.browser.ContentViewStatics;
+import org.chromium.content_public.browser.ChildProcessImportance;
 import org.chromium.content_public.browser.ContentBitmapCallback;
 import org.chromium.content_public.browser.JavaScriptCallback;
 import org.chromium.content_public.browser.LoadUrlParams;
@@ -57,6 +60,7 @@ import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 @JNINamespace("xwalk")
 /**
@@ -139,9 +143,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mIoThreadClient = new XWalkIoThreadClientImpl();
 
         // Initialize mWindow which is needed by content.
-        mWindow = WindowAndroid.activityFromContext(context) != null
-                ? new ActivityWindowAndroid(context)
-                : new WindowAndroid(context);
+        mWindow = WindowAndroid.activityFromContext(mViewContext) != null
+                ? new ActivityWindowAndroid(mViewContext)
+                : new WindowAndroid(mViewContext);
 
         SharedPreferences sharedPreferences = new InMemorySharedPreferences();
         mGeolocationPermissions = new XWalkGeolocationPermissions(sharedPreferences);
@@ -202,15 +206,14 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
 //        CompositingSurfaceType surfaceType = mAnimated ? CompositingSurfaceType.TEXTURE_VIEW
 //                : CompositingSurfaceType.SURFACE_VIEW;
 //        Log.d(TAG, "CompositingSurfaceType is " + (mAnimated ? "TextureView" : "SurfaceView"));
-        mContentViewRenderView = new ContentViewRenderView(mViewContext) {
-            protected void onReadyToRender() {
-                // Anything depending on the underlying Surface readiness should
-                // be placed here.
-            }
-        };
+        mContentViewRenderView = new ContentViewRenderView(mViewContext);
         mContentViewRenderView.onNativeLibraryLoaded(mWindow);
+        
+        // TODO (iotto) : Check if we need this for tenta
         mLaunchScreenManager = new XWalkLaunchScreenManager(mViewContext, mXWalkView);
         mContentViewRenderView.registerFirstRenderedFrameListener(mLaunchScreenManager);
+        
+        
         mXWalkView.addView(mContentViewRenderView,
                 new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT));
@@ -222,34 +225,48 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         // bind all the native->java relationships.
         mXWalkCleanupReference = new XWalkCleanupReference(this, new DestroyRunnable(mNativeContent));
 
+        // TODO (iotto) : See how to restore!!
         mWebContents = nativeGetWebContents(mNativeContent);
 
-        // Initialize ContentView.
+        // TODO (iotto): See how to generate a ChromeVersionConstants like class
         mContentViewCore = new ContentViewCore(mViewContext, "Crosswalk");
         mContentView = XWalkContentView.createContentView(mViewContext, mContentViewCore,
                 mXWalkView);
-        // TODO(iotto) create propper delegate
-        mContentViewCore.initialize(ViewAndroidDelegate.createBasicDelegate(mContentView), 
-                 mContentView, mWebContents, mWindow);
+        mContentView.setContentDescription("Web View");
+        mContentViewCore.initialize(ViewAndroidDelegate.createBasicDelegate(mContentView),
+                mContentView, mWebContents, mWindow);
+
+        XWalkActionModeCallback actionModeCallback = new XWalkActionModeCallback(mViewContext, this,
+                mContentViewCore.getActionModeCallbackHelper());
+        mContentViewCore.setActionModeCallback(actionModeCallback);
         
-        mContentViewCore.setActionModeCallback(
-                new XWalkActionModeCallback(mViewContext, this,
-                        mContentViewCore.getActionModeCallbackHelper()));
+        // TODO (iotto) :Implement
+//        mContentViewCore.addGestureStateListener(new GestureStateListener() {});
         
-        // iotto: returnes nativeGetWebContentsAndroid
         mWebContents = mContentViewCore.getWebContents();
+//        mWebContents.setImportance(ChildProcessImportance.NORMAL);
+        
         mNavigationController = mWebContents.getNavigationController();
+        if (mXWalkView.getParent() != null) mContentViewCore.onShow();
+        
         mXWalkView.addView(mContentView,
                 new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT));
+        
+        mContentView.requestFocus();
+        
 //        mContentViewCore.setContentViewClient(mContentsClientBridge);
         mContentViewRenderView.setCurrentContentViewCore(mContentViewCore);
+
         // For addJavascriptInterface
         mContentsClientBridge.installWebContentsObserver(mWebContents);
         // For swipe-to-refresh
         mSwipeRefreshHandler = new SwipeRefreshHandler(mViewContext);
         mSwipeRefreshHandler.setContentViewCore(mContentViewCore);
 
+        // TODO added
+        mWindow.setAnimationPlaceholderView(mContentViewRenderView.getSurfaceView());
+        
         // Set the third argument isAccessFromFileURLsGrantedByDefault to false,
         // so that
         // the members mAllowUniversalAccessFromFileURLs and
@@ -264,10 +281,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mSettings.setAllowFileAccessFromFileURLs(true);
 
         // Set DIP scale.
-        WindowAndroid windowAndroid = mContentViewCore.getWindowAndroid();
-
-        mDIPScale = windowAndroid.getDisplay().getDipScale();
-//DeviceDisplayInfo.create(mViewContext).getDIPScale();
+        mDIPScale = mWindow.getDisplay().getDipScale();
         
         mContentsClientBridge.setDIPScale(mDIPScale);
         mSettings.setDIPScale(mDIPScale);
@@ -292,6 +306,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
                 mContentsClientBridge.getInterceptNavigationDelegate());
     }
 
+    
     public void supplyContentsForPopup(XWalkContent newContents) {
         if (mNativeContent == 0)
             return;
@@ -320,7 +335,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private void doLoadUrl(LoadUrlParams params) {
         params.setOverrideUserAgent(UserAgentOverrideOption.TRUE);
         mNavigationController.loadUrl(params);
-        mContentView.requestFocus();
+//        mContentView.requestFocus();
+        mContentViewCore.getContainerView().clearFocus();
+        mContentViewCore.getContainerView().requestFocus();
         mIsLoaded = true;
     }
 
@@ -433,7 +450,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     public String getUrl() {
         if (mNativeContent == 0)
             return null;
-        String url = mWebContents.getLastCommittedUrl();
+        String url = mWebContents.getVisibleUrl();
         if (url == null || url.trim().isEmpty())
             return null;
         return url;
@@ -1065,9 +1082,15 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
 
         // Destroy the native resources.
         mXWalkCleanupReference.cleanupNow();
+        
         mContentViewRenderView.destroy();
+        mContentViewRenderView = null;
         mContentViewCore.destroy();
+        mContentViewCore = null;
 
+        mWindow.destroy();
+        mWindow = null;
+        
         mXWalkCleanupReference = null;
         mNativeContent = 0;
     }

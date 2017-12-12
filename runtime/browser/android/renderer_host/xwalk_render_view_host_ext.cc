@@ -100,6 +100,13 @@ void XWalkRenderViewHostExt::RenderViewCreated(
   is_render_view_created_ = true;
 }
 
+//void XWalkRenderViewHostExt::RenderFrameCreated(
+//    content::RenderFrameHost* frame_host) {
+//  registry_.AddInterface(
+//      base::Bind(&web_restrictions::WebRestrictionsMojoImplementation::Create,
+//                 AwBrowserContext::GetDefault()->GetWebRestrictionProvider()));
+//}
+
 void XWalkRenderViewHostExt::SetJsOnlineProperty(bool network_up) {
   Send(new XWalkViewMsg_SetJsOnlineProperty(network_up));
 }
@@ -136,6 +143,7 @@ void XWalkRenderViewHostExt::OnPageScaleFactorChanged(float page_scale_factor) {
 
 bool XWalkRenderViewHostExt::OnMessageReceived(
     const IPC::Message& message, content::RenderFrameHost* render_frame_host) {
+  LOG(INFO) << __func__ << " msg.type=" << message.type();
   bool handled = true;
   IPC_BEGIN_MESSAGE_MAP_WITH_PARAM(XWalkRenderViewHostExt, message, render_frame_host)
     IPC_MESSAGE_HANDLER(XWalkViewHostMsg_DocumentHasImagesResponse,

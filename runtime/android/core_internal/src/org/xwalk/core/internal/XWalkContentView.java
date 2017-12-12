@@ -59,7 +59,8 @@ public class XWalkContentView extends ContentView {
         if(mXWalkView.onTouchEventDelegate(event)) {
             return true;
         }
-        return mContentViewCore.getWebContents().getEventForwarder().onTouchEvent(event);
+//        return mContentViewCore.getWebContents().getEventForwarder().onTouchEvent(event);
+        return super.onTouchEvent(event);
     }
 
     @Override

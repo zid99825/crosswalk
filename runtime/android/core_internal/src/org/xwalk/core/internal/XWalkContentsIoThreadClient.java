@@ -53,6 +53,7 @@ public abstract class XWalkContentsIoThreadClient {
     protected XWalkWebResourceResponseInternal shouldInterceptRequest(String url, boolean isMainFrame,
             boolean hasUserGesture, String method, String[] requestHeaderNames,
             String[] requestHeaderValues) {
+        org.chromium.base.Log.d("iotto|chromium", "shouldInterceptRequest %s", url);
 
         //Log.i("XWalkWebResponseInternal", "Called [" + String.valueOf(Thread.currentThread().getId()) + "]");
 

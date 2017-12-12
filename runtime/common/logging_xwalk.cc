@@ -130,6 +130,7 @@ void InitXwalkLogging(const base::CommandLine& command_line,
   settings.delete_old = delete_old_log_file;
   bool success = logging::InitLogging(settings);
 
+  LOG(INFO) << __func__ << "log_file " << log_path.value();
   if (!success) {
     DPLOG(ERROR) << "Unable to initialize logging to " << log_path.value();
     xwalk_logging_failed_ = true;
@@ -161,6 +162,7 @@ void InitXwalkLogging(const base::CommandLine& command_line,
     if (base::StringToInt(log_level, &level) && level >= 0 &&
         level < LOG_NUM_SEVERITIES) {
       logging::SetMinLogLevel(level);
+      LOG(INFO) << __func__ << " min log level=" << level;
     } else {
       DLOG(WARNING) << "Bad log level: " << log_level;
     }

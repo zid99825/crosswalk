@@ -123,14 +123,17 @@ void XWalkBrowserMainParts::PreMainMessageLoopStart() {
   // FIXME: Add comment why this is needed on Android.
   command_line->AppendSwitch(switches::kAllowFileAccessFromFiles);
 
+  // TODO(iotto): simd not recognised
   // Enable SIMD.JS API by default.
-  std::string js_flags("--harmony-simd");
+  //std::string js_flags("--harmony-simd");
   if (command_line->HasSwitch(switches::kJavaScriptFlags)) {
-    js_flags += " ";
-    js_flags +=
+    std::string js_flags;
+    // js_flags += " ";
+    js_flags =
         command_line->GetSwitchValueASCII(switches::kJavaScriptFlags);
+    command_line->AppendSwitchASCII(switches::kJavaScriptFlags, js_flags);
   }
-  command_line->AppendSwitchASCII(switches::kJavaScriptFlags, js_flags);
+  //command_line->AppendSwitchASCII(switches::kJavaScriptFlags, js_flags);
   startup_url_ = GetURLFromCommandLine(*command_line);
 }
 
@@ -183,7 +186,8 @@ void XWalkBrowserMainParts::RegisterExternalExtensions() {
 void XWalkBrowserMainParts::PreMainMessageLoopRun() {
   xwalk_runner_->PreMainMessageLoopRun();
 
-  XWalkDevToolsManagerDelegate::StartHttpHandler(xwalk_runner_->browser_context());
+  LOG(INFO) << __func__ << "StartHttpHandler";
+//  XWalkDevToolsManagerDelegate::StartHttpHandler(xwalk_runner_->browser_context());
 
 /*  devtools_http_handler_.reset(
       XWalkDevToolsManagerDelegate::CreateHttpHandler(

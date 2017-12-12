@@ -136,6 +136,7 @@ XWalkBrowserContext* XWalkBrowserContext::FromWebContents(
 }
 
 void XWalkBrowserContext::InitWhileIOAllowed() {
+  LOG(INFO) << __func__;
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
   base::FilePath path;
   if (cmd_line->HasSwitch(switches::kXWalkDataPath)) {
@@ -209,6 +210,7 @@ XWalkBrowserContext::GetDownloadManagerDelegate() {
 }
 
 content::ResourceContext* XWalkBrowserContext::GetResourceContext() {
+  LOG(INFO) << __func__ << " " << resource_context_.get();
   return resource_context_.get();
 }
 
@@ -218,6 +220,7 @@ XWalkBrowserContext::GetGuestManager() {
 }
 
 storage::SpecialStoragePolicy* XWalkBrowserContext::GetSpecialStoragePolicy() {
+  LOG(INFO) << __func__;
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
                                                         switches::kUnlimitedStorage)) {
     if (!special_storage_policy_.get())
@@ -228,6 +231,7 @@ storage::SpecialStoragePolicy* XWalkBrowserContext::GetSpecialStoragePolicy() {
 }
 
 content::PushMessagingService* XWalkBrowserContext::GetPushMessagingService() {
+  LOG(INFO) << __func__;
   return NULL;
 }
 
@@ -239,6 +243,7 @@ content::SSLHostStateDelegate* XWalkBrowserContext::GetSSLHostStateDelegate() {
 }
 
 content::PermissionManager* XWalkBrowserContext::GetPermissionManager() {
+  LOG(INFO) << __func__;
   if (!permission_manager_.get())
     permission_manager_.reset(new XWalkPermissionManager(application_service_));
   return permission_manager_.get();
@@ -254,6 +259,7 @@ XWalkBrowserContext::GetBackgroundSyncController() {
  */
 content::BrowsingDataRemoverDelegate*
 XWalkBrowserContext::GetBrowsingDataRemoverDelegate() {
+  LOG(INFO) << __func__;
   // TODO(iotto): Implement
   // see chrome/browser/browsing_data/chrome_browsing_data_remover_delegate.h
   return nullptr;
@@ -262,6 +268,7 @@ XWalkBrowserContext::GetBrowsingDataRemoverDelegate() {
 RuntimeURLRequestContextGetter*
 XWalkBrowserContext::GetURLRequestContextGetterById(
                                                     const std::string& pkg_id) {
+  LOG(INFO) << __func__;
   for (PartitionPathContextGetterMap::iterator it = context_getters_.begin();
       it != context_getters_.end(); ++it) {
 #if defined(OS_WIN)
@@ -277,6 +284,7 @@ XWalkBrowserContext::GetURLRequestContextGetterById(
 net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
     content::ProtocolHandlerMap* protocol_handlers,
     content::URLRequestInterceptorScopedVector request_interceptors) {
+  LOG(INFO) << __func__;
   if (url_request_getter_)
     return url_request_getter_.get();
 
@@ -363,6 +371,7 @@ XWalkFormDatabaseService* XWalkBrowserContext::GetFormDatabaseService() {
 
 // Create user pref service for autofill functionality.
 void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
+  LOG(INFO) << __func__;
   if (user_pref_service_)
     return;
 
@@ -402,6 +411,7 @@ void XWalkBrowserContext::InitFormDatabaseService() {
 
 #if defined(OS_ANDROID)
 void XWalkBrowserContext::SetCSPString(const std::string& csp) {
+  LOG(INFO) << __func__ << " csp=" << csp;
   // Check format of csp string.
   std::vector<std::string> policies = base::SplitString(
                                                         csp,
@@ -418,11 +428,13 @@ void XWalkBrowserContext::SetCSPString(const std::string& csp) {
 }
 
 std::string XWalkBrowserContext::GetCSPString() const {
+  LOG(INFO) << __func__;
   return csp_;
 }
 #endif
 
 void XWalkBrowserContext::InitVisitedLinkMaster() {
+  LOG(INFO) << __func__;
   visitedlink_master_.reset(
                             new visitedlink::VisitedLinkMaster(this, this, false));
   visitedlink_master_->Init();

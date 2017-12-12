@@ -25,6 +25,7 @@ XWalkRenderThreadObserver::~XWalkRenderThreadObserver() {
 
 bool XWalkRenderThreadObserver::OnControlMessageReceived(
     const IPC::Message& message) {
+  LOG(INFO) << __func__ << " msg.type=" << message.type();
   bool handled = true;
   IPC_BEGIN_MESSAGE_MAP(XWalkRenderThreadObserver, message)
     IPC_MESSAGE_HANDLER(XWalkViewMsg_SetJsOnlineProperty, OnSetJsOnlineProperty)
@@ -47,6 +48,7 @@ void XWalkRenderThreadObserver::OnClearCache() {
 void XWalkRenderThreadObserver::OnSetOriginAccessWhitelist(
     std::string base_url,
     std::string match_patterns) {
+  LOG(INFO) << __func__;
   blink::WebSecurityPolicy::ResetOriginAccessWhitelists();
 
   DCHECK(!base_url.empty());
@@ -88,5 +90,23 @@ void XWalkRenderThreadObserver::OnSetOriginAccessWhitelist(
     }
   }
 }
+
+//void XWalkRenderThreadObserver::RegisterMojoInterfaces(
+//    content::AssociatedInterfaceRegistry* associated_interfaces) {
+//  associated_interfaces->AddInterface(base::Bind(
+//      &ChromeRenderThreadObserver::OnRendererConfigurationAssociatedRequest,
+//      base::Unretained(this)));
+//}
+//
+//void XWalkRenderThreadObserver::UnregisterMojoInterfaces(
+//    content::AssociatedInterfaceRegistry* associated_interfaces) {
+//  associated_interfaces->RemoveInterface(
+//      chrome::mojom::RendererConfiguration::Name_);
+//}
+//
+//void ChromeRenderThreadObserver::OnRendererConfigurationAssociatedRequest(
+//    chrome::mojom::RendererConfigurationAssociatedRequest request) {
+//  renderer_configuration_bindings_.AddBinding(this, std::move(request));
+//}
 
 }  // namespace xwalk

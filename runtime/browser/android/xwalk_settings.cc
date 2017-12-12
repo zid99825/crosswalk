@@ -179,6 +179,7 @@ void XWalkSettings::UpdateEverything() {
 }
 
 void XWalkSettings::UpdateEverythingLocked(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  LOG(INFO) << __func__;
   UpdateInitialPageScale(env, obj);
   UpdateWebkitPreferences(env, obj);
   UpdateUserAgent(env, obj);
@@ -204,6 +205,7 @@ void XWalkSettings::UpdateUserAgent(JNIEnv* env, const JavaParamRef<jobject>& ob
 }
 
 void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  LOG(INFO) << __func__;
   if (!web_contents()) return;
   XWalkRenderViewHostExt* render_view_host_ext = GetXWalkRenderViewHostExt();
   if (!render_view_host_ext) return;
@@ -224,10 +226,10 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobj
   // Blink's LoadsImagesAutomatically and ImagesEnabled must be
   // set cris-cross to Android's. See
   // https://code.google.com/p/chromium/issues/detail?id=224317#c26
-  prefs.images_enabled =
-      env->GetBooleanField(obj, field_ids_->load_images_automatically);
+  prefs.images_enabled = env->GetBooleanField(
+      obj, field_ids_->images_enabled);
   prefs.loads_images_automatically =
-      env->GetBooleanField(obj, field_ids_->images_enabled);
+      env->GetBooleanField(obj, field_ids_->load_images_automatically);
 
   prefs.javascript_enabled =
       env->GetBooleanField(obj, field_ids_->java_script_enabled);
@@ -309,6 +311,21 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobj
 
   prefs.wide_viewport_quirk = true;
   prefs.viewport_meta_enabled = env->GetBooleanField(obj, field_ids_->viewport_meta_enabled);
+
+  // TODO (iotto): hack, remove and repair!!!
+  prefs.context_menu_on_mouse_up = false;
+  prefs.allow_scripts_to_close_windows = false;  // todo analyse; was true
+  prefs.allow_universal_access_from_file_urls = false; // todo analyse; was true
+  prefs.allow_file_access_from_file_urls = false;  // todo analyse; was true
+  prefs.password_echo_enabled = false; // todo analyse; was true
+  prefs.supports_multiple_windows = true;  // todo; was false;
+  prefs.initialize_at_minimum_page_scale = true; // todo was false;
+  prefs.spatial_navigation_enabled = false;  // todo was true
+  prefs.text_autosizing_enabled = true;  // todo was false
+  prefs.double_tap_to_zoom_enabled = true; // todo was false
+  prefs.wide_viewport_quirk = false; // todo was true
+  prefs.use_wide_viewport = true;  // todo was false
+  prefs.scroll_top_left_interop_enabled = true;  // todo was false
 
   render_view_host->UpdateWebkitPreferences(prefs);
 }

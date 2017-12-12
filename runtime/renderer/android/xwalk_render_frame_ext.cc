@@ -172,6 +172,7 @@ XWalkRenderFrameExt::~XWalkRenderFrameExt() {
 //}
 
 bool XWalkRenderFrameExt::OnMessageReceived(const IPC::Message& message) {
+  LOG(INFO) << __func__ << " msg.type=" << message.type();
   bool handled = true;
   IPC_BEGIN_MESSAGE_MAP(XWalkRenderFrameExt, message)
     IPC_MESSAGE_HANDLER(XWalkViewMsg_DocumentHasImages,
@@ -202,6 +203,12 @@ void XWalkRenderFrameExt::OnDocumentHasImagesRequest(uint32_t id) {
 
   Send(new XWalkViewHostMsg_DocumentHasImagesResponse(routing_id(), id,
                                                       has_images));
+}
+
+void XWalkRenderFrameExt::OnInterfaceRequestForFrame(
+    const std::string& interface_name,
+    mojo::ScopedMessagePipeHandle* interface_pipe) {
+  registry_->TryBindInterface(interface_name, interface_pipe);
 }
 
 void XWalkRenderFrameExt::DidCommitProvisionalLoad(

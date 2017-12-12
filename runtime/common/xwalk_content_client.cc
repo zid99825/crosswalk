@@ -18,6 +18,8 @@
 #include "content/public/common/content_constants.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/user_agent.h"
+#include "gpu/config/gpu_info.h"
+#include "gpu/config/gpu_util.h"
 #if defined(ENABLE_PLUGINS)
 #include "content/public/common/pepper_plugin_info.h"
 #include "ppapi/shared_impl/ppapi_permissions.h"
@@ -29,6 +31,7 @@
 #include "ui/base/resource/resource_bundle.h"
 #include "xwalk/application/common/constants.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
+#include "xwalk/runtime/browser/media/xwalk_media_drm_bridge_client.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/common/xwalk_paths.h"
 
@@ -215,41 +218,13 @@ void XWalkContentClient::AddAdditionalSchemes(Schemes* schemes) {
   schemes->savable_schemes.push_back(application::kApplicationScheme);
   schemes->secure_schemes.push_back(application::kApplicationScheme);
 
-// TODO see if further registration needed
-// content from  runtime/renderer/xwalk_content_renderer_client.cc
-/*  blink::WebString application_scheme(
-      blink::WebString::fromASCII(application::kApplicationScheme));
-  blink::WebSecurityPolicy::registerURLSchemeAsSecure(application_scheme);
-  blink::WebSecurityPolicy::registerURLSchemeAsCORSEnabled(application_scheme);
-*/
   schemes->cors_enabled_schemes.push_back(application::kApplicationScheme);
 #if defined(OS_ANDROID)
+  // TODO (iotto): replace with url::kContentScheme
   schemes->local_schemes.push_back(xwalk::kContentScheme);
-/*  blink::WebString content_scheme(
-      blink::WebString::fromASCII(xwalk::kContentScheme));
-  blink::WebSecurityPolicy::registerURLSchemeAsLocal(content_scheme);
-*/
 #endif
 
 }
-
-/*void XWalkContentClient::AddAdditionalSchemes(
-    std::vector<url::SchemeWithType>* standard_schemes,
-    std::vector<url::SchemeWithType>* referrer_schemes,
-    std::vector<std::string>* savable_schemes) {
-  url::SchemeWithType app_scheme = {application::kApplicationScheme,
-                                    url::SCHEME_WITHOUT_PORT};
-  standard_schemes->push_back(app_scheme);
-  savable_schemes->push_back(application::kApplicationScheme);
-}
-
-void XWalkContentClient::AddSecureSchemesAndOrigins(
-    std::set<std::string>* schemes,
-    std::set<GURL>* origins) {
-    schemes->insert(application::kApplicationScheme);
-}
-*/
-
 
 std::string XWalkContentClient::GetProcessTypeNameInEnglish(int type) {
   switch (type) {
@@ -262,5 +237,25 @@ std::string XWalkContentClient::GetProcessTypeNameInEnglish(int type) {
   DCHECK(false) << "Unknown child process type!";
   return "Unknown";
 }
+
+bool XWalkContentClient::UsingSynchronousCompositing() {
+  return true;
+}
+
+void XWalkContentClient::SetGpuInfo(const gpu::GPUInfo& gpu_info) {
+  gpu_fingerprint_ = gpu_info.gl_version + '|' + gpu_info.gl_vendor + '|' +
+                     gpu_info.gl_renderer;
+  std::replace_if(gpu_fingerprint_.begin(), gpu_fingerprint_.end(),
+                  [](char c) { return !::isprint(c); }, '_');
+
+  LOG(INFO) << __func__ << " gpu_fingerprint=" << gpu_fingerprint_;
+  gpu::SetKeysForCrashLogging(gpu_info);
+}
+
+#if defined(OS_ANDROID)
+media::MediaDrmBridgeClient* XWalkContentClient::GetMediaDrmBridgeClient() {
+  return new XWalkMediaDrmBridgeClient();
+}
+#endif // OS_ANDROID
 
 }  // namespace xwalk

@@ -8,13 +8,14 @@
 #include "base/command_line.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/context_menu_params.h"
-
+#include "ui/gfx/color_space.h"
 namespace xwalk {
 
 XWalkWebContentsViewDelegate::XWalkWebContentsViewDelegate(
     content::WebContents* web_contents)
 //    : web_contents_(web_contents)
 {
+  LOG(INFO) << __func__;
 }
 
 XWalkWebContentsViewDelegate::~XWalkWebContentsViewDelegate() {
@@ -40,9 +41,23 @@ XWalkWebContentsViewDelegate::~XWalkWebContentsViewDelegate() {
 ////  }
 //}
 
+gfx::NativeWindow XWalkWebContentsViewDelegate::GetNativeWindow() {
+  LOG(INFO) << __func__;
+  return nullptr;
+}
+
 content::WebDragDestDelegate*
     XWalkWebContentsViewDelegate::GetDragDestDelegate() {
   return NULL;
+}
+
+void XWalkWebContentsViewDelegate::OverrideDisplayColorSpace(
+    gfx::ColorSpace* color_space) {
+  // TODO(ccameron): WebViews that are embedded in WCG windows will want to
+  // override the display color space to gfx::ColorSpace::CreateExtendedSRGB().
+  // This situation is not yet detected.
+  // https://crbug.com/735658
+  *color_space = gfx::ColorSpace::CreateSRGB();
 }
 
 }  // namespace xwalk

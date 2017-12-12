@@ -173,6 +173,9 @@ XWalkDevToolsManagerDelegate::XWalkDevToolsManagerDelegate(XWalkBrowserContext* 
 {
 }
 
+XWalkDevToolsManagerDelegate::~XWalkDevToolsManagerDelegate() {
+}
+
 // static
 int XWalkDevToolsManagerDelegate::GetHttpHandlerPort() {
   return base::subtle::NoBarrier_Load(&g_last_used_port);
@@ -189,17 +192,21 @@ void XWalkDevToolsManagerDelegate::StartHttpHandler(XWalkBrowserContext* browser
   content::DevToolsAgentHost::StartRemoteDebuggingServer(
     CreateSocketFactory(GetInspectorPort()),
     frontend_url,
-    browserContext->GetPath(),
+//    browserContext->GetPath(),
+    base::FilePath(),
     base::FilePath());
+  LOG(INFO) << __func__;
 }
 
 // static
 void XWalkDevToolsManagerDelegate::StopHttpHandler() {
+  LOG(INFO) << __func__;
   content::DevToolsAgentHost::StopRemoteDebuggingServer();
 }
 
 scoped_refptr<content::DevToolsAgentHost> 
 XWalkDevToolsManagerDelegate::CreateNewTarget(const GURL& url) {
+  LOG(INFO) << __func__;
   Runtime* runtime = Runtime::Create(_browser_context);
   return content::DevToolsAgentHost::GetOrCreateFor(runtime->web_contents());
 }
@@ -221,9 +228,6 @@ std::string XWalkDevToolsManagerDelegate::GetFrontendResource(
   return content::DevToolsFrontendHost::GetFrontendResource(path).as_string();
 #endif
 
-}
-
-XWalkDevToolsManagerDelegate::~XWalkDevToolsManagerDelegate() {
 }
 
 }  // namespace xwalk

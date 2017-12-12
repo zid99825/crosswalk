@@ -27,6 +27,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/devtools_agent_host.h"
 #include "content/public/browser/navigation_entry.h"
+#include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/ssl_status.h"
@@ -191,6 +192,8 @@ XWalkContent* XWalkContent::FromID(int render_process_id, int render_view_id) {
   content::RenderViewHost* rvh = content::RenderViewHost::FromID(
                                                                  render_process_id,
                                                                  render_view_id);
+  LOG(INFO) << __func__ << " render_process_id=" << render_process_id
+               << " render_view_id=" << render_view_id;
   if (!rvh)
     return NULL;
   content::WebContents* web_contents = content::WebContents::FromRenderViewHost(
@@ -247,10 +250,14 @@ void XWalkContent::SetJavaPeers(
   java_ref_ = JavaObjectWeakGlobalRef(env, xwalk_content);
 
   web_contents_delegate_.reset(
-                               new XWalkWebContentsDelegate(env, web_contents_delegate));
+      new XWalkWebContentsDelegate(env, web_contents_delegate));
+  web_contents_->SetDelegate(web_contents_delegate_.get());
+
   contents_client_bridge_.reset(
-                                new XWalkContentsClientBridge(env, contents_client_bridge,
-                                                              web_contents_.get()));
+      new XWalkContentsClientBridge(env, contents_client_bridge,
+                                    web_contents_.get()));
+  XWalkContentsClientBridgeBase::Associate(web_contents_.get(),
+                                           contents_client_bridge_.get());
 
   web_contents_->SetUserData(kXWalkContentUserDataKey,
                              base::MakeUnique<XWalkContentUserData>(this));
@@ -263,22 +270,32 @@ void XWalkContent::SetJavaPeers(
   prefs->tap_multiple_targets_strategy =
       content::TAP_MULTIPLE_TARGETS_STRATEGY_NONE;
 
-  XWalkContentsClientBridgeBase::Associate(web_contents_.get(),
-                                           contents_client_bridge_.get());
+
   XWalkContentsIoThreadClientImpl::Associate(
                                              web_contents_.get(),io_thread_client);
-  int render_process_id = web_contents_->GetRenderProcessHost()->GetID();
-  int render_frame_id = web_contents_->GetRenderViewHost()->GetRoutingID();
-  RuntimeResourceDispatcherHostDelegateAndroid::OnIoThreadClientReady(
-                                                                      render_process_id,
-                                                                      render_frame_id);
+//  int render_process_id = web_contents_->GetRenderProcessHost()->GetID();
+//  int render_frame_id = web_contents_->GetRenderViewHost()->GetRoutingID();
+//  LOG(INFO) << __func__ << " render_process_id=" << render_process_id
+//               << " render_frame_id=" << render_frame_id;
+//  RuntimeResourceDispatcherHostDelegateAndroid::OnIoThreadClientReady(
+//                                                                      render_process_id,
+//                                                                      render_frame_id);
+
   InterceptNavigationDelegate::Associate(
       web_contents_.get(),
       base::WrapUnique(
                        new InterceptNavigationDelegate(env, intercept_navigation_delegate)));
-  web_contents_->SetDelegate(web_contents_delegate_.get());
 
   render_view_host_ext_.reset(new XWalkRenderViewHostExt(web_contents_.get()));
+
+  for (content::RenderFrameHost* rfh : web_contents_->GetAllFrames()) {
+    int render_process_id = rfh->GetProcess()->GetID();
+    int render_frame_id = rfh->GetRoutingID();
+    RuntimeResourceDispatcherHostDelegateAndroid::OnIoThreadClientReady(render_process_id,
+                                                            render_frame_id);
+    LOG(INFO) << __func__ << " render_process_id=" << render_process_id
+                 << " render_frame_id=" << render_frame_id;
+  }
 }
 
 base::android::ScopedJavaLocalRef<jobject> XWalkContent::GetWebContents(

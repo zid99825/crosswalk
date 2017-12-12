@@ -79,11 +79,11 @@ class XWalkViewDelegate {
             "xwalk.pak",
             "icudtl.dat",
             "xwalk_100_percent.pak",
-            "xwalk_200_percent.pak"
+            "xwalk_200_percent.pak",
             // Please refer to XWALK-3516, disable v8 use external startup data,
             // reopen it if needed later.
-            // "natives_blob.bin",
-            // "snapshot_blob.bin"
+             "natives_blob.bin",
+             "snapshot_blob.bin"
     };
 
     private static final String[] MANDATORY_LIBRARIES = {
@@ -171,7 +171,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         // the object to guarantee the CommandLine object is not null and the
         // consequent prodedure does not crash.
         if (!CommandLine.isInitialized()) {
-            CommandLine.init(readCommandLine(context.getApplicationContext()));
+            CommandLine.init(readCommandLine(ContextUtils.getApplicationContext()));
         }
 
         try {
@@ -195,11 +195,15 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
 
         startBrowserProcess(context);
 
+        org.chromium.base.Log.d("iotto|chromium", "appContext=%s", appContext);
+        
         if (appContext instanceof Activity) {
-            ApplicationStatusManager.init((BaseChromiumApplication)((Activity) appContext).getApplication());
-        } else if (appContext instanceof Service) {
-            ApplicationStatusManager.init((BaseChromiumApplication)((Service) appContext).getApplication());
+            ApplicationStatusManager.informActivityStarted((Activity)appContext);
         }
+//            ApplicationStatusManager.init((BaseChromiumApplication)((Activity) appContext).getApplication());
+//        } else if (appContext instanceof Service) {
+//            ApplicationStatusManager.init((BaseChromiumApplication)((Service) appContext).getApplication());
+//        }
 
         XWalkPresentationHost.createInstanceOnce(context);
         // ContextUtils.initApplicationContextForNative();
@@ -219,37 +223,14 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
     // If context is null, it's running in embedded mode, otherwise in shared mode.
     public static boolean loadXWalkLibrary(Context context, String libDir)
             throws UnsatisfiedLinkError {
-        org.chromium.base.Log.d("iotto|chromium", "loadXWalkLibrary context=%s, libdir=%s", context, libDir);
         if (sLibraryLoaded)
             return true;
-
-//        try {
-//            LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
-////            libraryLoader.ensureInitialized();
-//        } catch (ProcessInitException e) {
-//        }
-
-//TODO(iotto) workarround for lint error using System.load
-
-/*        if (libDir != null && sLoadedByHoudini == false) {
-            for (String library : MANDATORY_LIBRARIES) {
-                System.load(libDir + File.separator + "lib" + library + ".so");
-            }
-        } else {
-*/
-//            for (String library : MANDATORY_LIBRARIES) {
-//                org.chromium.base.Log.d("iotto", "Loading library %s", library);
-//                System.loadLibrary(library);
-//            }
-//        }
-
         
         // Load libraries what is wrote in NativeLibraries.java at compile time. It may duplicate
         // with System.loadLibrary("xwalkcore") above, but same library won't be loaded repeatedly.
         try {
             LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
             libraryLoader.loadNow();
-            libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {
             org.chromium.base.Log.e("iotto|chromium", "error loading library %s", e);
         }
@@ -292,6 +273,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
                 }
 
                 try {
+                    BrowserStartupController.setShouldStartGpuProcessOnBrowserStartup(true);
                     BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
                             .startBrowserProcessesSync(true);
                 } catch (ProcessInitException e) {

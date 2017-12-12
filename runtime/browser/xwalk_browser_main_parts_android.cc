@@ -134,7 +134,6 @@ XWalkBrowserMainPartsAndroid::~XWalkBrowserMainPartsAndroid() {
 
 void XWalkBrowserMainPartsAndroid::PreEarlyInitialization() {
   net::NetworkChangeNotifier::SetFactory(
-//		  new tenta::NetworkChangeNotifierFactoryTenta());
       new net::NetworkChangeNotifierFactoryAndroid());
 
   // As Crosswalk uses in-process mode, that's easier than Chromium
@@ -144,6 +143,9 @@ void XWalkBrowserMainPartsAndroid::PreEarlyInitialization() {
 
   // Initialize the Compositor.
   content::Compositor::Initialize();
+
+  main_message_loop_.reset(new base::MessageLoopForUI);
+  base::MessageLoopForUI::current()->Start();
 
   XWalkBrowserMainParts::PreEarlyInitialization();
 }
@@ -183,7 +185,7 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopStart() {
 }
 
 void XWalkBrowserMainPartsAndroid::PostMainMessageLoopStart() {
-  base::MessageLoopForUI::current()->Start();
+//  base::MessageLoopForUI::current()->Start();
 }
 
 void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
@@ -203,6 +205,7 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
   // So lift this limitation here to enable XWalkView.evaluateJavaScript
   // to work.
   content::RenderFrameHost::AllowInjectingJavaScriptForAndroidWebView();
+  content::RenderFrameHost::AllowDataUrlNavigationForAndroidWebView();
 
   // Prepare the cookie store.
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
@@ -219,7 +222,7 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
 void XWalkBrowserMainPartsAndroid::PostMainMessageLoopRun() {
   XWalkBrowserMainParts::PostMainMessageLoopRun();
 
-  base::MessageLoopForUI::current()->Start();
+//  base::MessageLoopForUI::current()->Start();
 }
 
 void XWalkBrowserMainPartsAndroid::CreateInternalExtensionsForExtensionThread(

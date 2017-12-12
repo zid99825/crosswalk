@@ -5,6 +5,7 @@
 import("//build/config/android/rules.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/build/xwalk.gni")
+import("//xwalk/build/tenta.gni")
 import("//xwalk/runtime/android/core_internal/chromium_java_deps.gni")
 
 
@@ -72,7 +73,6 @@ android_library("xwalk_core_internal_java") {
     "src/org/xwalk/core/internal/SslUtil.java",
     "src/org/xwalk/core/internal/SwipeRefreshHandler.java",
     "src/org/xwalk/core/internal/DummyNativeTest.java",
-    "src/org/xwalk/core/internal/HostResolverTenta.java",
     "src/org/xwalk/core/internal/UrlUtilities.java",
     "src/org/xwalk/core/internal/XWalkActionModeCallback.java",
     "src/org/xwalk/core/internal/XWalkAPI.java",
@@ -121,6 +121,9 @@ android_library("xwalk_core_internal_java") {
   ]
   java_files += internal_java_files
   java_files += reflection_java_files
+  if (tenta_chromium_build) {
+    java_files += [ "src/org/xwalk/core/internal/HostResolverTenta.java", ]
+  }
 }
 
 java_strings_grd("xwalk_core_strings_grd") {
@@ -208,8 +211,10 @@ generate_jni("xwalk_core_native_jni") {
     "src/org/xwalk/core/internal/XWalkWebContentsDelegate.java",
     "src/org/xwalk/core/internal/XWalkWebResourceResponseInternal.java",
     "src/org/xwalk/core/internal/DummyNativeTest.java",
-    "src/org/xwalk/core/internal/HostResolverTenta.java",
   ]
+  if (tenta_chromium_build) {
+    sources += [ "src/org/xwalk/core/internal/HostResolverTenta.java", ]
+  }
 }
 
 generate_jar_jni("xwalk_core_jar_jni") {

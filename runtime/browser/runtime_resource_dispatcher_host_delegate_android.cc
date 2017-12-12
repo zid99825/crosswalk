@@ -99,6 +99,7 @@ IoThreadClientThrottle::~IoThreadClientThrottle() {
 }
 
 void IoThreadClientThrottle::WillStartRequest(bool* defer) {
+  LOG(INFO) << __func__;
   if (render_frame_id_ < 1) {
     // OPTIONS is used for preflighted requests which are generated internally.
     DCHECK_EQ("OPTIONS", request_->method());
@@ -297,6 +298,7 @@ void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(
     net::URLRequest* request,
     content::ResourceContext* resource_context,
     content::ResourceResponse* response) {
+  LOG(INFO) << __func__;
 //    IPC::Sender* sender) {
   const content::ResourceRequestInfo* request_info =
       content::ResourceRequestInfo::ForRequest(request);

@@ -41,6 +41,7 @@ ApplicationService::~ApplicationService() {
 
 Application* ApplicationService::Launch(
     scoped_refptr<ApplicationData> application_data) {
+  LOG(INFO) << "iotto " << __func__;
   if (GetApplicationByID(application_data->ID()) != NULL) {
     LOG(INFO) << "Application with id: " << application_data->ID()
               << " is already running.";

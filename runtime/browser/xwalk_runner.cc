@@ -212,6 +212,7 @@ std::unique_ptr<XWalkRunner> XWalkRunner::Create() {
 }
 
 content::ContentBrowserClient* XWalkRunner::GetContentBrowserClient() {
+  LOG(INFO) << __func__;
   return content_browser_client_.get();
 }
 

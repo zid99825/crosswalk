@@ -31,6 +31,7 @@ XWalkRenderMessageFilter::XWalkRenderMessageFilter(int process_id)
 void XWalkRenderMessageFilter::OverrideThreadForMessage(
                                                         const IPC::Message& message,
                                                         BrowserThread::ID* thread) {
+  LOG(INFO) << __func__ << " msg.type=" << message.type();
   if (message.type() == XWalkViewHostMsg_ShouldOverrideUrlLoading::ID ||
       message.type() == XWalkViewHostMsg_WillSendRequest::ID) {
     *thread = BrowserThread::UI;
@@ -40,6 +41,7 @@ void XWalkRenderMessageFilter::OverrideThreadForMessage(
 
 bool XWalkRenderMessageFilter::OnMessageReceived(
                                                  const IPC::Message& message) {
+  LOG(INFO) << __func__ << " msg.type=" << message.type();
   bool handled = true;
   IPC_BEGIN_MESSAGE_MAP(XWalkRenderMessageFilter, message)
     IPC_MESSAGE_HANDLER(ViewMsg_OpenLinkExternal, OnOpenLinkExternal)
@@ -57,13 +59,14 @@ bool XWalkRenderMessageFilter::OnMessageReceived(
 }
 
 void XWalkRenderMessageFilter::OnOpenLinkExternal(const GURL& url) {
-  LOG(INFO) << "OpenLinkExternal: " << url.spec();
+  LOG(INFO) << __func__ << " url=" << url.spec();
   platform_util::OpenExternal(url);
 }
 
 #if defined(OS_ANDROID)
 void XWalkRenderMessageFilter::OnSubFrameCreated(int parent_render_frame_id,
                                                  int child_render_frame_id) {
+  LOG(INFO) << __func__;
   XWalkContentsIoThreadClient::SubFrameCreated(
                                                process_id_,
                                                parent_render_frame_id, child_render_frame_id);

@@ -167,6 +167,25 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
       content::NavigationHandle* navigation_handle) override;
 #endif
 
+  void ExposeInterfacesToRenderer(
+        service_manager::BinderRegistry* registry,
+        content::AssociatedInterfaceRegistry* associated_registry,
+        content::RenderProcessHost* render_process_host) override;
+
+  std::unique_ptr<base::Value> GetServiceManifestOverlay(
+        base::StringPiece name) override;
+  void BindInterfaceRequestFromFrame(
+        content::RenderFrameHost* render_frame_host,
+        const std::string& interface_name,
+        mojo::ScopedMessagePipeHandle interface_pipe) override;
+  void GetQuotaSettings(
+      content::BrowserContext* context,
+      content::StoragePartition* partition,
+      storage::OptionalQuotaSettingsCallback callback) override;
+
+
+
+
   // TODO (iotto) : use the method to register autofill interfaces
 //  void RegisterRenderFrameMojoInterfaces(
 //      service_manager::InterfaceRegistry* registry,
@@ -186,6 +205,9 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   std::unique_ptr<RuntimeResourceDispatcherHostDelegate>
       resource_dispatcher_host_delegate_;
 
+  std::unique_ptr<
+      service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>
+      frame_interfaces_;
   DISALLOW_COPY_AND_ASSIGN(XWalkContentBrowserClient);
 };
 

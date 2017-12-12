@@ -6,6 +6,7 @@
 #include "xwalk/runtime/renderer/xwalk_content_renderer_client.h"
 
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/strings/utf_string_conversions.h"
 #include "components/visitedlink/renderer/visitedlink_slave.h"
 #include "content/public/renderer/render_frame.h"
@@ -13,12 +14,18 @@
 #include "content/public/renderer/render_frame_observer_tracker.h"
 #include "content/public/renderer/render_thread.h"
 #include "content/public/renderer/render_view.h"
+#include "content/public/common/content_features.h"
 #include "content/public/common/service_manager_connection.h"
+#include "content/public/common/service_names.mojom.h"
 #include "content/public/common/simple_connection_filter.h"
 #include "content/public/common/url_loader_throttle.h"
+#include "components/data_reduction_proxy/content/renderer/content_previews_render_frame_observer.h"
+#include "components/safe_browsing/renderer/websocket_sb_handshake_throttle.h"
 #include "grit/xwalk_application_resources.h"
 #include "grit/xwalk_sysapps_resources.h"
 #include "net/base/net_errors.h"
+#include "services/service_manager/public/cpp/connector.h"
+#include "third_party/WebKit/public/platform/scheduler/renderer_process_type.h"
 #include "third_party/WebKit/public/platform/WebString.h"
 #include "third_party/WebKit/public/platform/WebURLError.h"
 #include "third_party/WebKit/public/platform/WebURLRequest.h"
@@ -109,7 +116,10 @@ XWalkContentRendererClient::~XWalkContentRendererClient() {
 }
 
 void XWalkContentRendererClient::RenderThreadStarted() {
+  LOG(INFO) << __func__;
   content::RenderThread* thread = content::RenderThread::Get();
+
+  thread->SetRendererProcessType(blink::scheduler::RendererProcessType::kRenderer);
 
   xwalk_render_thread_observer_.reset(new XWalkRenderThreadObserver);
   thread->AddObserver(xwalk_render_thread_observer_.get());
@@ -142,6 +152,7 @@ bool XWalkContentRendererClient::HandleNavigation(
     blink::WebNavigationType type,
     blink::WebNavigationPolicy default_policy,
     bool is_redirect) {
+  LOG(INFO) << __func__;
 #if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "!!! " << __func__ << " is_content_initiated=" << is_content_initiated
       << " render_view_was_created_by_renderer=" << render_view_was_created_by_renderer
@@ -168,6 +179,7 @@ bool XWalkContentRendererClient::HandleNavigation(
   // Don't offer application-initiated navigations unless it's a redirect.
   if (application_initiated && !is_redirect)
     return false;
+
   bool is_main_frame = !frame->Parent();
   const GURL& gurl = request.Url();
   // For HTTP schemes, only top-level navigations can be overridden. Similarly,
@@ -177,6 +189,19 @@ bool XWalkContentRendererClient::HandleNavigation(
       (gurl.SchemeIs(url::kHttpScheme) || gurl.SchemeIs(url::kHttpsScheme) ||
        gurl.SchemeIs(url::kAboutScheme)))
     return false;
+  // use NavigationInterception throttle to handle the call as that can
+  // be deferred until after the java side has been constructed.
+  //
+  // TODO(nick): |render_view_was_created_by_renderer| was plumbed in to
+  // preserve the existing code behavior, but it doesn't appear to be correct.
+  // In particular, this value will be true for the initial navigation of a
+  // RenderView created via window.open(), but it will also be true for all
+  // subsequent navigations in that RenderView, no matter how they are
+  // initiated.
+  if (render_view_was_created_by_renderer) {
+    return false;
+  }
+
   // TODO(iotto) analyse how to replace opener_id with render_view_was_created_by_renderer
 
   // use NavigationInterception throttle to handle the call as that can
@@ -198,6 +223,7 @@ bool XWalkContentRendererClient::HandleNavigation(
 
 void XWalkContentRendererClient::RenderFrameCreated(
     content::RenderFrame* render_frame) {
+  LOG(INFO) << __func__;
   new XWalkFrameHelper(render_frame, extension_controller_.get());
   new XWalkRenderFrameExt(render_frame);
 #if defined(OS_ANDROID)
@@ -225,11 +251,16 @@ void XWalkContentRendererClient::RenderFrameCreated(
     RenderThread::Get()->Send(new XWalkViewHostMsg_SubFrameCreated(
         parent_frame->GetRoutingID(), render_frame->GetRoutingID()));
   }
+
+  if (render_frame->IsMainFrame())
+    new data_reduction_proxy::ContentPreviewsRenderFrameObserver(render_frame);
+
 #endif
 }
 
 void XWalkContentRendererClient::RenderViewCreated(
     content::RenderView* render_view) {
+  LOG(INFO) << __func__;
 #if defined(OS_ANDROID)
   // TODO (iotto) replaced with XWalkRenderFrameExt
 //  XWalkRenderViewExt::RenderViewCreated(render_view);
@@ -275,19 +306,16 @@ bool XWalkContentRendererClient::WillSendRequest(
                        const blink::WebURL& url,
                        std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
                        GURL* new_url) {
+  LOG(INFO) << __func__;
 #if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
                << frame->GetDocument().Url().GetString().Utf8() << " url="
                << url.GetString().Utf8();
 #endif
 #if defined(OS_ANDROID)
-  content::RenderView* render_view =
-      content::RenderView::FromWebView(frame->View());
-  if ( render_view == nullptr ) {
-    return false; // no overwrite
-  }
+  content::RenderFrame* render_frame =
+      content::RenderFrame::FromWebFrame(frame);
 
-  content::RenderFrame* render_frame = render_view->GetMainRenderFrame();
   if ( render_frame == nullptr ) {
     return false; // no overwrite
   }
@@ -351,6 +379,7 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
     const blink::WebURLError& error,
     std::string* error_html,
     base::string16* error_description) {
+  LOG(INFO) << __func__;
   // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
 
   if (error_description) {
@@ -365,7 +394,77 @@ void XWalkContentRendererClient::AddSupportedKeySystems(
     std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) {
 #if defined(OS_ANDROID)
   cdm::AddAndroidWidevine(key_systems);
+  cdm::AddAndroidPlatformKeySystems(key_systems);
 #endif  // defined(OS_ANDROID)
+}
+
+bool XWalkContentRendererClient::ShouldUseMediaPlayerForURL(const GURL& url) {
+  LOG(INFO) << __func__;
+  // TODO(iotto): Implement
+
+//  // Android WebView needs to support codecs that Chrome does not, for these
+//  // cases we must force the usage of Android MediaPlayer instead of Chrome's
+//  // internal player.
+//  //
+//  // Note: Despite these extensions being forwarded for playback to MediaPlayer,
+//  // HTMLMediaElement.canPlayType() will return empty for these containers.
+//  // TODO(boliu): If this is important, extend media::MimeUtil for WebView.
+//  //
+//  // Format list mirrors:
+//  // http://developer.android.com/guide/appendix/media-formats.html
+//  //
+//  // Enum and extension list are parallel arrays and must stay in sync. These
+//  // enum values are written to logs. New enum values can be added, but existing
+//  // enums must never be renumbered or deleted and reused.
+//  enum MediaPlayerContainers {
+//    CONTAINER_3GP = 0,
+//    CONTAINER_TS = 1,
+//    CONTAINER_MID = 2,
+//    CONTAINER_XMF = 3,
+//    CONTAINER_MXMF = 4,
+//    CONTAINER_RTTTL = 5,
+//    CONTAINER_RTX = 6,
+//    CONTAINER_OTA = 7,
+//    CONTAINER_IMY = 8,
+//    MEDIA_PLAYER_CONTAINERS_COUNT,
+//  };
+//  static const char* kMediaPlayerExtensions[] = {
+//      ".3gp", ".ts", ".mid", ".xmf", ".mxmf", ".rtttl", ".rtx", ".ota", ".imy"};
+//  static_assert(arraysize(kMediaPlayerExtensions) ==
+//                    MediaPlayerContainers::MEDIA_PLAYER_CONTAINERS_COUNT,
+//                "Invalid enum or extension change.");
+//
+//  for (size_t i = 0; i < arraysize(kMediaPlayerExtensions); ++i) {
+//    if (base::EndsWith(url.path(), kMediaPlayerExtensions[i],
+//                       base::CompareCase::INSENSITIVE_ASCII)) {
+//      UMA_HISTOGRAM_ENUMERATION(
+//          "Media.WebView.UnsupportedContainer",
+//          static_cast<MediaPlayerContainers>(i),
+//          MediaPlayerContainers::MEDIA_PLAYER_CONTAINERS_COUNT);
+//      return true;
+//    }
+//  }
+  return false;
+}
+
+std::unique_ptr<blink::WebSocketHandshakeThrottle>
+XWalkContentRendererClient::CreateWebSocketHandshakeThrottle() {
+  LOG(INFO) << __func__;
+  if (!UsingSafeBrowsingMojoService())
+    return nullptr;
+  return base::MakeUnique<safe_browsing::WebSocketSBHandshakeThrottle>(
+      safe_browsing_.get());
+}
+
+bool XWalkContentRendererClient::UsingSafeBrowsingMojoService() {
+  if (safe_browsing_)
+    return true;
+  LOG(INFO) << __func__ << " IsEnabled(features::kNetworkService)=" << base::FeatureList::IsEnabled(features::kNetworkService);
+  if (!base::FeatureList::IsEnabled(features::kNetworkService))
+    return false;
+  RenderThread::Get()->GetConnector()->BindInterface(
+      content::mojom::kBrowserServiceName, &safe_browsing_);
+  return true;
 }
 
 }  // namespace xwalk

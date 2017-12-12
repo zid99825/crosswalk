@@ -35,6 +35,9 @@ class XWalkRenderFrameExt : public content::RenderFrameObserver {
   ~XWalkRenderFrameExt() override;
 
   // RenderFrameObserver:
+  void OnInterfaceRequestForFrame(
+      const std::string& interface_name,
+      mojo::ScopedMessagePipeHandle* interface_pipe) override;
   void DidCommitProvisionalLoad(bool is_new_navigation,
                                 bool is_same_document_navigation) override;
 

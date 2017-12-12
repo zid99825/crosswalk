@@ -40,8 +40,7 @@ JAR_ENTRY_WHITELIST = (
   'org/chromium/*.class',
   'org/xwalk/*.class',
   'com/tenta/*.class',
-#   'com/google/*.class',
-#   'android/support/*.class',
+  'com/google/*.class',
 )
 #'android/support/*.class',
 
@@ -109,7 +108,7 @@ def IsMergeableJar(jar_path):
       if any(fnmatch.fnmatchcase(entry_name, f) for f in JAR_ENTRY_WHITELIST):
         continue
       
-      print("entry_name not match: %s" %(entry_name))
+      print("entry_name doesn't match: %s" %(entry_name))
       return False
   return True
 

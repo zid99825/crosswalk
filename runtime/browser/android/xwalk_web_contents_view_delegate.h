@@ -17,10 +17,16 @@ class XWalkWebContentsViewDelegate : public content::WebContentsViewDelegate {
   explicit XWalkWebContentsViewDelegate(content::WebContents* web_contents);
   ~XWalkWebContentsViewDelegate() override;
 
-  // Overridden from WebContentsViewDelegate:
+//  // Overridden from WebContentsViewDelegate:
+//  // Returns the native window containing the WebContents, or nullptr if the
+//  // WebContents is not in any window.
+  gfx::NativeWindow GetNativeWindow() override;
+
 //  void ShowContextMenu(content::RenderFrameHost* render_frame_host,
 //      const content::ContextMenuParams& params) override;
   content::WebDragDestDelegate* GetDragDestDelegate() override;
+
+  void OverrideDisplayColorSpace(gfx::ColorSpace* color_space) override;
 
  private:
 //  content::WebContents* web_contents_;

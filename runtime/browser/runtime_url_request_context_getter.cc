@@ -67,8 +67,9 @@
 #endif
 
 using content::BrowserThread;
-
+#ifdef TENTA_CHROMIUM_BUILD
 namespace tenta_cache = tenta::fs::cache;
+#endif
 
 namespace xwalk {
 
@@ -177,6 +178,7 @@ RuntimeURLRequestContextGetter::~RuntimeURLRequestContextGetter() {
 }
 
 net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
+  LOG(INFO) << __func__;
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
 
   if (!url_request_context_) {
@@ -212,7 +214,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
             new net::StaticHttpUserAgentSettings("en-us,en",
                                                  xwalk::GetUserAgent())));
 
-#ifdef TENTA_CHROMIUM_BUILD
+//#ifdef TENTA_CHROMIUM_BUILD
+#if 0
     std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(new tenta_cache::ChromiumCacheFactory());
 
     //TODO (iotto): Remove backup, needed for speed comparison
@@ -232,8 +235,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     std::unique_ptr<net::HttpCache::DefaultBackend> main_backend(
         new net::HttpCache::DefaultBackend(
             net::DISK_CACHE, net::CACHE_BACKEND_DEFAULT, cache_path,
-            GetDiskCacheSize(),
-            BrowserThread::GetTaskRunnerForThread(BrowserThread::CACHE)));
+            GetDiskCacheSize()));
 
     std::unique_ptr<net::MappedHostResolver> host_resolver(
         new net::MappedHostResolver(
@@ -400,10 +402,12 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 }
 
 scoped_refptr<base::SingleThreadTaskRunner> RuntimeURLRequestContextGetter::GetNetworkTaskRunner() const {
+  LOG(INFO) << __func__;
   return BrowserThread::GetTaskRunnerForThread(BrowserThread::IO);
 }
 
 net::HostResolver* RuntimeURLRequestContextGetter::host_resolver() {
+  LOG(INFO) << __func__;
   return url_request_context_->host_resolver();
 }
 
