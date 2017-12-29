@@ -1046,6 +1046,12 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             mSwipeRefreshHandler.didStopRefreshing();
         }
     }
+    
+    void enableSwipeRefresh(boolean enable) {
+        if (mSwipeRefreshHandler != null) {
+            mSwipeRefreshHandler.setEnabled(enable);
+        }
+    }
 
     public void destroy() {
         if (mNativeContent == 0)
