@@ -269,10 +269,10 @@ void XWalkContentBrowserClient::RenderProcessWillLaunch(
       context));
 #endif
   xwalk_runner_->OnRenderProcessWillLaunch(host);
-  host->AddFilter(new XWalkRenderMessageFilter);
+//  host->AddFilter(new XWalkRenderMessageFilter);
 #if defined(OS_ANDROID)
-  host->AddFilter(new cdm::CdmMessageFilterAndroid());
   host->AddFilter(new XWalkRenderMessageFilter(host->GetID()));
+  host->AddFilter(new cdm::CdmMessageFilterAndroid());
 #endif
 }
 

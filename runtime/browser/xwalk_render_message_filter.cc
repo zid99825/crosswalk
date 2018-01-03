@@ -79,6 +79,8 @@ void XWalkRenderMessageFilter::OnShouldOverrideUrlLoading(int render_frame_id,
   *ignore_navigation = false;
   XWalkContentsClientBridgeBase* client =
       XWalkContentsClientBridgeBase::FromRenderFrameID(process_id_, render_frame_id);
+  LOG(INFO) << __func__ << " pocess_id=" << process_id_ << " frame_id="
+               << render_frame_id;
   if (client) {
     *ignore_navigation = client->ShouldOverrideUrlLoading(
                                                           url,
@@ -86,8 +88,9 @@ void XWalkRenderMessageFilter::OnShouldOverrideUrlLoading(int render_frame_id,
                                                           is_main_frame);
   } else {
 #if TENTA_LOG_ENABLE == 1
-    LOG(WARNING) << "Failed to find the associated render view host for url: "
-                    << url;
+    LOG(WARNING) << "Failed to find the associated render view host pocess_id="
+                    << process_id_ << " frame_id=" << render_frame_id
+                    << " for url: " << url;
 #endif
   }
 }
@@ -105,8 +108,9 @@ void XWalkRenderMessageFilter::OnWillSendRequest(int render_frame_id, const std:
     *did_overwrite = client->RewriteUrlIfNeeded(url, transition_type, new_url);
   } else {
 #if TENTA_LOG_ENABLE == 1
-    LOG(WARNING) << "Failed to find the associated render view host for url: "
-                    << url;
+    LOG(WARNING) << "Failed to find the associated render view host pocess_id="
+                    << process_id_ << " frame_id=" << render_frame_id
+                    << " for url: " << url;
 #endif
   }
 }
