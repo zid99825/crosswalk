@@ -17,7 +17,7 @@ class XWalkInternalResources {
     private final static String INTERNAL_RESOURCE_CLASSES[] = {
         "org.chromium.components.web_contents_delegate_android.R",
         "org.chromium.components.autofill.R",
-        "org.chromium.android_webview.R",
+//        "org.chromium.android_webview.R",
         "org.chromium.content.R",
         "org.chromium.ui.R",
 //        "android.support.v7.appcompat.R",
@@ -28,7 +28,6 @@ class XWalkInternalResources {
     // Doing org.chromium.content.R.<class>.<name> = org.xwalk.core.R.<class>.<name>
     // Use reflection to iterate over the target class is to avoid hardcode.
     private static void doResetIds(Context context) {
-//        Log.d(TAG, "XWalkInternalResources.doResetIds");
         // internal classes are loaded with the same classLoader of XWalkInternalResources
         ClassLoader classLoader = XWalkInternalResources.class.getClassLoader();
         ClassLoader appClassLoader = context.getApplicationContext().getClassLoader();
@@ -38,30 +37,20 @@ class XWalkInternalResources {
                 Class<?>[] innerClazzs = internalResource.getClasses();
                 for (Class<?> innerClazz : innerClazzs) {
                     Class<?> generatedInnerClazz;
-//                    Log.d("iotto", "innerClazz.getName() " + innerClazz.getName());
                     String generatedInnerClassName = innerClazz.getName().replace(
                             resourceClass, GENERATED_RESOURCE_CLASS);
-//                    Log.d("iotto", "generatedInnerClassName " + generatedInnerClassName);
                     try {
                         generatedInnerClazz = appClassLoader.loadClass(generatedInnerClassName);
                     } catch (ClassNotFoundException e) {
                         Log.w(TAG, generatedInnerClassName + " (generatedInnerClassName) is not found.");
                         continue;
                     }
-/*                    Field[] genFields = generatedInnerClazz.getFields();
-                    Log.d("iotto", "Fields for: " + generatedInnerClassName);
-                    for ( Field gf : genFields ) {
-                        Log.d("iotto", "  field " + gf.getName());
-                    }
-*/
                     Field[] fields = innerClazz.getFields();
                     for (Field field : fields) {
-//                        Log.d("iotto", "field " + field.getName());
                         // It's final means we are probably not used as library project.
                         if (Modifier.isFinal(field.getModifiers())) field.setAccessible(true);
                         try {
                             int value = generatedInnerClazz.getField(field.getName()).getInt(null);
-//                            Log.d("iotto", "field " + field.getName() + ": oldInt " + field.getInt(null) + " newInt " + value);
                             field.setInt(null, value);
                         } catch (IllegalAccessException e) {
                             Log.w(TAG, generatedInnerClazz.getName() + "." +
