@@ -202,7 +202,6 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mAnimated = false;
         CompositingSurfaceType surfaceType = mAnimated ? CompositingSurfaceType.TEXTURE_VIEW
                 : CompositingSurfaceType.SURFACE_VIEW;
-        Log.d(TAG, "CompositingSurfaceType is " + (mAnimated ? "TextureView" : "SurfaceView"));
         mContentViewRenderView = new ContentViewRenderView(mViewContext, CompositingSurfaceType.SURFACE_VIEW/*surfaceType*/) {
             protected void onReadyToRender() {
                 // Anything depending on the underlying Surface readiness should
