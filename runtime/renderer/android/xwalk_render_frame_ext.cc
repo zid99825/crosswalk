@@ -235,6 +235,12 @@ void XWalkRenderFrameExt::FocusedNodeChanged(const blink::WebNode& node) {
 
   GURL absolute_image_url = GetChildImageUrlFromElement(element);
 
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << __func__
+      << " link=" << absolute_link_url
+      << " IsContentEditable=" << element.IsContentEditable();
+#endif
+
   PopulateHitTestData(absolute_link_url, absolute_image_url,
                       element.IsEditable(), &data);
   Send(new XWalkViewHostMsg_UpdateHitTestData(routing_id(), data));
@@ -266,9 +272,14 @@ void XWalkRenderFrameExt::OnDoHitTest(const gfx::PointF& touch_center,
     }
   }
 
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << __func__
+      << " link=" << result.AbsoluteLinkURL()
+      << " IsContentEditable=" << result.IsContentEditable();
+#endif
   PopulateHitTestData(result.AbsoluteLinkURL(), absolute_image_url,
                       result.IsContentEditable(), &data);
-  Send(new XWalkViewHostMsg_UpdateHitTestData(render_frame()->GetRenderView()->GetRoutingID(), data));
+  Send(new XWalkViewHostMsg_UpdateHitTestData(routing_id(), data));
 }
 
 void XWalkRenderFrameExt::OnSetTextZoomLevel(double zoom_level) {

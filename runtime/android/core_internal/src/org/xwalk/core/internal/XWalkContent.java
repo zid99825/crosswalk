@@ -1087,13 +1087,15 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     }
 
     public boolean onTouchEvent(MotionEvent event) {
+        boolean retVal =  mWebContents.getEventForwarder().onTouchEvent(event);
+        
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             // Note this will trigger IPC back to browser even if nothing is
             // hit.
             nativeRequestNewHitTestDataAt(mNativeContent, event.getX() / (float) mDIPScale,
                     event.getY() / (float) mDIPScale, event.getTouchMajor() / (float) mDIPScale);
         }
-        return mWebContents.getEventForwarder().onTouchEvent(event);
+        return retVal;
 //        return mContentViewCore.onTouchEvent(event);
     }
 
