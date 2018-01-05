@@ -61,9 +61,17 @@ void XWalkRenderViewHostExt::RequestNewHitTestDataAt(
   Send(new XWalkViewMsg_DoHitTest(web_contents()->GetMainFrame()->GetRoutingID(),
                                touch_center,
                                touch_area));
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << __func__
+      << " center=" << touch_center.ToString()
+      << " area=" << touch_area.ToString();
+#endif
 }
 
 const XWalkHitTestData& XWalkRenderViewHostExt::GetLastHitTestData() const {
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << __func__;
+#endif
   DCHECK(CalledOnValidThread());
   return last_hit_test_data_;
 }
@@ -78,7 +86,7 @@ void XWalkRenderViewHostExt::ResetScrollAndScaleState() {
   DCHECK(CalledOnValidThread());
 
   Send(new XWalkViewMsg_ResetScrollAndScaleState(
-      web_contents()->GetMainFrame()->GetRoutingID()));
+      web_contents()->GetRenderViewHost()->GetRoutingID()));
 //  Send(new XWalkViewMsg_ResetScrollAndScaleState(
 //      web_contents()->GetRenderViewHost()->GetRoutingID()));
 }
@@ -150,7 +158,9 @@ bool XWalkRenderViewHostExt::OnMessageReceived(
 
 void XWalkRenderViewHostExt::OnDocumentHasImagesResponse(
     content::RenderFrameHost* render_frame_host, int msg_id, bool has_images) {
+#if TENTA_LOG_ENABLE == 1
   LOG(INFO) << __func__ << " msg_id=" << msg_id;
+#endif
   DCHECK(CalledOnValidThread());
   std::map<int, DocumentHasImagesResult>::iterator pending_req =
       pending_document_has_images_requests_.find(msg_id);
@@ -164,6 +174,9 @@ void XWalkRenderViewHostExt::OnDocumentHasImagesResponse(
 
 void XWalkRenderViewHostExt::OnUpdateHitTestData(
     const XWalkHitTestData& hit_test_data) {
+#if TENTA_LOG_ENABLE == 1
+  LOG(INFO) << __func__;
+#endif
   DCHECK(CalledOnValidThread());
   last_hit_test_data_ = hit_test_data;
   has_new_hit_test_data_ = true;
