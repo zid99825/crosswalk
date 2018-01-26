@@ -25,6 +25,7 @@ deps = {
     'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:mikandi/android-database-sqlitecrypt.git',
     'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:mikandi/file-metadata-sqlite.git@origin/feature/refactor_statements',
     'src/xwalk/third_party/tenta/chromium_cache' : 'git@bitbucket.org:mikandi/chromium-cache-metafs.git@origin/feature/refactor_speed',
+    'src/xwalk/third_party/tenta/mimicvpn' : 'git@bitbucket.org:mikandi/chromium-mimicvpn.git',
 }
 
 hooks = [
