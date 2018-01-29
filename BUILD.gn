@@ -428,8 +428,10 @@ source_set("xwalk_runtime") {
 #    "//xwalk/third_party/tenta/file_blocks",
     "//xwalk/third_party/tenta/meta_fs",
     "//xwalk/third_party/tenta/chromium_cache",
+    "//xwalk/third_party/tenta/mimicvpn",
   ]
 
+public_deps = [ "//xwalk/third_party/tenta/mimicvpn:mimicvpn_src" ]
     # TODO remove  
 #  if ( enable_tenta_log ) {
 #    defines += [ "TENTA_LOG_ENABLE=1" ]
