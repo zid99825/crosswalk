@@ -1112,23 +1112,38 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     }
 
     public int computeHorizontalScrollRange() {
-        return mContentView.computeHorizontalScrollRangeDelegate();
+        if (mContentView != null) {
+            return mContentView.computeHorizontalScrollRangeDelegate();
+        }
+        return 0;
     }
 
     public int computeHorizontalScrollOffset() {
-        return mContentView.computeHorizontalScrollOffsetDelegate();
+        if (mContentView != null) {
+            return mContentView.computeHorizontalScrollOffsetDelegate();
+        }
+        return 0;
     }
 
     public int computeVerticalScrollRange() {
-        return mContentView.computeVerticalScrollRangeDelegate();
+        if (mContentView != null) {
+            return mContentView.computeVerticalScrollRangeDelegate();
+        }
+        return 0;
     }
 
     public int computeVerticalScrollOffset() {
-        return mContentView.computeVerticalScrollOffsetDelegate();
+        if (mContentView != null) {
+            return mContentView.computeVerticalScrollOffsetDelegate();
+        }
+        return 0;
     }
 
     public int computeVerticalScrollExtent() {
-        return mContentView.computeVerticalScrollExtentDelegate();
+        if (mContentView != null) {
+            return mContentView.computeVerticalScrollExtentDelegate();
+        }
+        return 0;
     }
 
     // --------------------------------------------------------------------------------------------
