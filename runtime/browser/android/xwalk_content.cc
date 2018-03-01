@@ -84,7 +84,7 @@ namespace {
  */
 class AutoCloseMetaFile {
  public:
-  AutoCloseMetaFile(std::shared_ptr<metafs::MetaFile>& mvf)
+  AutoCloseMetaFile(scoped_refptr<metafs::MetaFile>& mvf)
       : _mvf(mvf) {
   }
   ~AutoCloseMetaFile() {
@@ -93,7 +93,7 @@ class AutoCloseMetaFile {
     }
   }
  private:
-  std::shared_ptr<metafs::MetaFile>& _mvf;
+  scoped_refptr<metafs::MetaFile>& _mvf;
 };
 
 /**
@@ -574,7 +574,7 @@ jboolean XWalkContent::SetState(JNIEnv* env, jobject obj, jbyteArray state) {
  */
 int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
                                   const JavaParamRef<jstring>& key,
-                                  std::shared_ptr<metafs::MetaFile>& out,
+                                  scoped_refptr<metafs::MetaFile>& out,
                                   int mode) {
 
   using namespace metafs;
@@ -615,7 +615,7 @@ int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
   std::string idStr;
   ConvertJavaStringToUTF8(env, id, &idStr);
 
-  std::weak_ptr<MetaFile> weak_file;
+  scoped_refptr<MetaFile> weak_file;
 
   int status;
   status = db->OpenFile(idStr, "", weak_file, mode);
@@ -627,7 +627,7 @@ int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
     return status;
   }
 
-  out = weak_file.lock();
+  out = weak_file;
   if (out.get() == nullptr) {
 #if TENTA_LOG_ENABLE == 1
     LOG(ERROR) << "File pointer NULL";
@@ -647,7 +647,7 @@ jint XWalkContent::SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& jcal
                                   const JavaParamRef<jstring>& key) {
   using namespace metafs;
 
-  std::shared_ptr < MetaFile > file;
+  scoped_refptr< MetaFile > file;
   AutoCloseMetaFile mvfClose(file);
 
   int status;
@@ -704,7 +704,7 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
     return ERR_XWALK_INTERNAL;  // error occured
   }
 
-  std::shared_ptr < MetaFile > file;
+  scoped_refptr < MetaFile > file;
   AutoCloseMetaFile mvfClose(file);
 
   int status;
@@ -732,7 +732,7 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
   using namespace metafs;
   using namespace ::base::android;
 
-  std::shared_ptr < MetaFile > file;
+  scoped_refptr < MetaFile > file;
   AutoCloseMetaFile mvfClose(file);
 
   int status;
@@ -794,7 +794,7 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                const JavaParamRef<jstring>& key) {
   using namespace metafs;
 
-  std::shared_ptr < MetaFile > file;
+  scoped_refptr < MetaFile > file;
   AutoCloseMetaFile mvfClose(file);
 
   int status;

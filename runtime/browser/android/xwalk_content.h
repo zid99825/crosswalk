@@ -68,7 +68,7 @@ class XWalkContent : public FindHelper::Listener {
   //TODO make this private
   int OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
                       const JavaParamRef<jstring>& key,
-                      std::shared_ptr<MetaFile>& out,
+                      scoped_refptr<MetaFile>& out,
                       int mode);
 
   jint SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
