@@ -381,7 +381,6 @@ source_set("xwalk_runtime") {
     "//base:i18n",
     "//base/third_party/dynamic_annotations",
     "//cc",
-    "//components/autofill/android:autofill_java",
     "//components/autofill/content/browser",
     "//components/autofill/content/renderer",
     "//components/autofill/core/browser",
@@ -399,7 +398,6 @@ source_set("xwalk_runtime") {
     "//content/public/child",
     "//content/public/common",
     "//content/public/utility",
-    "//content/public/android:content_java",
     "//gin",
     "//ipc",
     "//media",
@@ -441,6 +439,8 @@ source_set("xwalk_runtime") {
 
   if (is_android) {
     deps += [
+      "//content/public/android:content_java",
+      "//components/autofill/android:autofill_java",
       "//components/cdm/browser",
       "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
       "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",
