@@ -22,9 +22,9 @@ vars = {
 }
 
 deps = {
-    'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:mikandi/android-database-sqlitecrypt.git@origin/feature/fast_transaction',
-    'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:mikandi/file-metadata-sqlite.git@origin/feature/fast_transaction',
-    'src/xwalk/third_party/tenta/chromium_cache' : 'git@bitbucket.org:mikandi/chromium-cache-metafs.git@origin/feature/refactor_speed',
+    'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:mikandi/android-database-sqlitecrypt.git@origin/master',
+    'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:mikandi/file-metadata-sqlite.git@origin/master',
+    'src/xwalk/third_party/tenta/chromium_cache' : 'git@bitbucket.org:mikandi/chromium-cache-metafs.git@origin/master',
 }
 
 hooks = [
