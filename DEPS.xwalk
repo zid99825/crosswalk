@@ -99,20 +99,6 @@ solutions = [
 ]
 
 hooks = [
-  {
-    'action': [
-      'python',
-      'src/build/util/lastchange.py',
-      '--git-hash-only',
-      '--source-dir',
-      'src/third_party/WebKit',
-      '--output',
-      'src/xwalk/build/UPSTREAM.blink'
-    ],
-    'pattern': '.',
-    'name': 'upstream_revision'
-  },
-
   # Pull clang-format and gn binaries like Chromium itself does.
   # We need our own copy for them to be found correctly when working in
   # src/xwalk.
