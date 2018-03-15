@@ -30,7 +30,8 @@ v8_crosswalk_rev = 'b8e695a5f1f59576670206aef30f8b896f0813cd'
 # our bots as well as locally for our developers. Its hash does not necessarily
 # need to be rolled together with |chromium_crosswalk_rev|, but it is good
 # practice to not have it lag behind too much.
-buildtools_rev = 'b3771b1935ea74c388b6fb1750e83f5d83b39dec'
+buildtools_rev = '505de88083136eefd056e5ee4ca0f01fe9b33de8'
+#b3771b1935ea74c388b6fb1750e83f5d83b39dec'
 
 chromium_git = 'https://chromium.googlesource.com'
 tenta_git = 'https://github.com/tenta-browser'
@@ -76,7 +77,9 @@ solutions = [
       'src/chrome/tools/test/reference_build/chrome_mac': None,
       'src/chrome/tools/test/reference_build/chrome_win': None,
     },
-
+    "custom_vars": {
+      "checkout_android": True,
+    },
     'custom_hooks': [
       # Disable the hook that downloads the Google Play services library and
       # asks the user to accept its EULA if necessary. The prompt is not show
