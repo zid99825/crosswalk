@@ -26,7 +26,6 @@ android_apk("xwalk_runtime_lib_apk") {
 }
 
 android_resources("xwalk_runtime_lib_apk_resources") {
-  visibility = [ ":*" ]
   resource_dirs = [ "res" ]
   custom_package = "org.xwalk.core"
 }

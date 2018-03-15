@@ -17,7 +17,6 @@ android_apk("xwalk_app_hello_world_apk") {
 }
 
 android_resources("xwalk_app_hello_world_apk_resources") {
-  visibility = [ ":*" ]
   resource_dirs = [ "res" ]
   custom_package = "org.xwalk.app.hello.world"
 }

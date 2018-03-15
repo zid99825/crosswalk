@@ -18,7 +18,7 @@ import("//xwalk/build/common.gni")
 # Make release builds smaller by omitting stack unwind support for backtrace()
 # TODO(rakuco): determine if we only want this in official builds.
 # From //build/config/compiler/BUILD.gn
-exclude_unwind_tables = true
+#exclude_unwind_tables = true
 
 # Temporarily disable use of external snapshot files (XWALK-3516).
 # From //v8/gni/v8.gni
