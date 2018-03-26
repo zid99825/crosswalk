@@ -592,18 +592,16 @@ int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
 
   ConvertJavaStringToUTF8(env, key, &keyStr);
 
-  std::weak_ptr<MetaDb> weak;
+  scoped_refptr<MetaDb> db;
   int result;
 
-  result = mng->OpenDb(cHistoryDb, keyStr, cHistoryBlockSize, weak);
+  result = mng->OpenDb(cHistoryDb, keyStr, cHistoryBlockSize, db);
   if (result != FS_OK) {
 #if TENTA_LOG_ENABLE == 1
     LOG(ERROR) << "OpenDb failed";
 #endif
     return mng->error();
   }
-
-  std::shared_ptr<MetaDb> db = weak.lock();
 
   if (db.get() == nullptr) {
 #if TENTA_LOG_ENABLE == 1
@@ -825,15 +823,13 @@ jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
 
   ConvertJavaStringToUTF8(env, oldKey, &oldKeyStr);
 
-  std::weak_ptr<MetaDb> weak;
+  scoped_refptr<MetaDb> db;
   int result;
 
-  result = mng->OpenDb(cHistoryDb, oldKeyStr, cHistoryBlockSize, weak);
+  result = mng->OpenDb(cHistoryDb, oldKeyStr, cHistoryBlockSize, db);
   if (result != FS_OK) {
     return mng->error();
   }
-
-  std::shared_ptr<MetaDb> db = weak.lock();
 
   if (db.get() == nullptr) {
     // TODO log error
