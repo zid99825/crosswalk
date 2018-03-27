@@ -26,6 +26,13 @@ class BrowserContext;
 class WebContents;
 }
 
+namespace tenta {
+namespace fs {
+class MetaDb;
+class MetaFile;
+} // namespace fs
+} // namespace tenta
+
 namespace xwalk {
 namespace tenta {
 class FsDelegateSqlite;
@@ -68,7 +75,8 @@ class XWalkContent : public FindHelper::Listener {
   //TODO make this private
   int OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
                       const JavaParamRef<jstring>& key,
-                      scoped_refptr<MetaFile>& out,
+                      scoped_refptr<::tenta::fs::MetaFile>& fileOut,
+                      scoped_refptr<::tenta::fs::MetaDb>& dbOut,
                       int mode);
 
   jint SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
