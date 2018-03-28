@@ -663,12 +663,8 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
     return status;
   }
 
-  if (pickle->payload_size() == 0) {  // file truncated allready
-    return FS_OK;  // no data to save
-  }
-
-  int iolen = pickle->payload_size();
-  status = file->Append(pickle->payload(), iolen);
+  int iolen = pickle->size();
+  status = file->Append(reinterpret_cast<const char*>(pickle->data()), iolen);
   if (status != FS_OK) {
     return status;
   }
@@ -717,18 +713,19 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
     // so it has no history to be cleared
   }
 
-  base::Pickle pickle;
-  MetaReadToPickle intoPickle(pickle);
+  std::vector<char> state_vector;
+  state_vector.resize(length);
 
-  pickle.Reserve(length);  // makes write faster
-
-  status = file->Read(0, nullptr, length, &intoPickle);
+  status = file->Read(0, &state_vector[0], length, nullptr);
   if (status != FS_OK) {
 #if TENTA_LOG_ENABLE == 1
     LOG(ERROR) << "RestoreHistory read error " << status;
 #endif
     return status;
   }
+
+  base::Pickle pickle(&state_vector[0], length);
+  state_vector.clear();
 
   base::PickleIterator iterator(pickle);
   if (!RestoreFromPickle(&iterator, web_contents_.get())) {
@@ -766,7 +763,7 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
 
   status = file->Delete();
 
-  if ( status != FS_OK ) {
+  if (status != FS_OK) {
     return status;
   }
 
