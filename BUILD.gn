@@ -425,7 +425,6 @@ source_set("xwalk_runtime") {
     "//xwalk/resources:xwalk_resources_300_percent_pak",
     "//xwalk/sysapps",
     "//xwalk/sysapps:xwalk_sysapps_resources",
-#    "//xwalk/third_party/tenta/file_blocks",
     "//xwalk/third_party/tenta/meta_fs",
     "//xwalk/third_party/tenta/chromium_cache",
   ]

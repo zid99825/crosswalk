@@ -12,79 +12,53 @@
 
 namespace xwalk {
 
-class XWalkWebContentsDelegate
-    : public web_contents_delegate_android::WebContentsDelegateAndroid {
+class XWalkWebContentsDelegate : public web_contents_delegate_android::WebContentsDelegateAndroid {
  public:
   XWalkWebContentsDelegate(JNIEnv* env, jobject obj);
   ~XWalkWebContentsDelegate() override;
 
-  void AddNewContents(content::WebContents* source,
-                      content::WebContents* new_contents,
-                      WindowOpenDisposition disposition,
-                      const gfx::Rect& initial_pos,
+  void AddNewContents(content::WebContents* source, content::WebContents* new_contents,
+                      WindowOpenDisposition disposition, const gfx::Rect& initial_pos,
                       bool user_gesture,
                       bool* was_blocked) override;
   void CloseContents(content::WebContents* source) override;
   void ActivateContents(content::WebContents* contents) override;
-  void UpdatePreferredSize(content::WebContents* web_contents,
-                           const gfx::Size& pref_size) override;
-  void RunFileChooser(content::RenderFrameHost* render_frame_host,
-                      const content::FileChooserParams& params) override;
-  content::JavaScriptDialogManager* GetJavaScriptDialogManager(
-      content::WebContents* web_contents) override;
+  void UpdatePreferredSize(content::WebContents* web_contents, const gfx::Size& pref_size) override;
+  void RunFileChooser(content::RenderFrameHost* render_frame_host, const content::FileChooserParams& params) override;
+  content::JavaScriptDialogManager* GetJavaScriptDialogManager(content::WebContents* web_contents) override;
 
-  void RequestMediaAccessPermission(
-      content::WebContents* web_contents,
-      const content::MediaStreamRequest& request,
-      const content::MediaResponseCallback& callback) override;
+  void RequestMediaAccessPermission(content::WebContents* web_contents, const content::MediaStreamRequest& request,
+                                    const content::MediaResponseCallback& callback) override;
 
-  void RendererUnresponsive(
-      content::WebContents* source,
-      const content::WebContentsUnresponsiveState& unresponsive_state) override;
+  void RendererUnresponsive(content::WebContents* source,
+                            const content::WebContentsUnresponsiveState& unresponsive_state) override;
   void RendererResponsive(content::WebContents* source) override;
 
-  bool DidAddMessageToConsole(content::WebContents* source,
-                           int32_t level,
-                           const base::string16& message,
-                           int32_t line_no,
-                           const base::string16& source_id) override;
-  void HandleKeyboardEvent(
-      content::WebContents* source,
-      const content::NativeWebKeyboardEvent& event) override;
+  bool DidAddMessageToConsole(content::WebContents* source, int32_t level, const base::string16& message,
+                              int32_t line_no, const base::string16& source_id) override;
+  void HandleKeyboardEvent(content::WebContents* source, const content::NativeWebKeyboardEvent& event) override;
 
   void ShowRepostFormWarningDialog(content::WebContents* source) override;
 
-  void EnterFullscreenModeForTab(
-      content::WebContents* web_contents,
-      const GURL& origin) override;
-  void ExitFullscreenModeForTab(
-      content::WebContents* web_contents) override;
-  bool IsFullscreenForTabOrPending(
+  void EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL& origin) override;
+  void ExitFullscreenModeForTab(content::WebContents* web_contents) override;bool IsFullscreenForTabOrPending(
       const content::WebContents* web_contents) const override;
 
-  bool ShouldCreateWebContents(
-      content::WebContents* web_contents,
-      content::SiteInstance* source_site_instance,
-      int32_t route_id,
-      int32_t main_frame_route_id,
-      int32_t main_frame_widget_route_id,
-      content::mojom::WindowContainerType window_container_type,
-      const GURL& opener_url,
-      const std::string& frame_name,
-      const GURL& target_url,
-      const std::string& partition_id,
-      content::SessionStorageNamespace* session_storage_namespace) override;
+  bool ShouldCreateWebContents(content::WebContents* web_contents, content::SiteInstance* source_site_instance,
+                               int32_t route_id, int32_t main_frame_route_id, int32_t main_frame_widget_route_id,
+                               content::mojom::WindowContainerType window_container_type, const GURL& opener_url,
+                               const std::string& frame_name, const GURL& target_url, const std::string& partition_id,
+                               content::SessionStorageNamespace* session_storage_namespace) override;
 
-  void FindReply(content::WebContents* web_contents,
-                 int request_id,
-                 int number_of_matches,
-                 const gfx::Rect& selection_rect,
-                 int active_match_ordinal,
+  void FindReply(content::WebContents* web_contents, int request_id, int number_of_matches,
+                 const gfx::Rect& selection_rect, int active_match_ordinal,
                  bool final_update) override;
 
+  void NavigationStateChanged(content::WebContents* source, content::InvalidateTypes changed_flags) override;
+  void LoadingStateChanged(content::WebContents* source, bool to_different_document) override;
  private:
-  std::unique_ptr<content::JavaScriptDialogManager> javascript_dialog_manager_;
-  DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsDelegate);
+  std::unique_ptr<content::JavaScriptDialogManager> javascript_dialog_manager_;DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsDelegate)
+  ;
 };
 
 bool RegisterXWalkWebContentsDelegate(JNIEnv* env);
