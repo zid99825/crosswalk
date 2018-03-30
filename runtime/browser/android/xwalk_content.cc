@@ -59,6 +59,9 @@
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_file_system.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/java_byte_array.h"
+#if defined(TENTA_CHROMIUM_BUILD)
+#include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
+#endif
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertUTF8ToJavaString;
@@ -314,6 +317,10 @@ ScopedJavaLocalRef<jstring> XWalkContent::DevToolsAgentId(JNIEnv* env, jobject o
 }
 
 void XWalkContent::Destroy(JNIEnv* env, jobject obj) {
+#if defined(TENTA_CHROMIUM_BUILD)
+  ::tenta::fs::cache::MetaCacheBackend* backend = ::tenta::fs::cache::MetaCacheBackend::GetInstance();
+  backend->FlushBuffer();
+#endif
   delete this;
 }
 

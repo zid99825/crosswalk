@@ -277,11 +277,12 @@ void XWalkWebContentsDelegate::FindReply(WebContents* web_contents, int request_
 void XWalkWebContentsDelegate::NavigationStateChanged(content::WebContents* source,
                                                       content::InvalidateTypes changed_flags) {
 #if defined(TENTA_CHROMIUM_BUILD)
-//  ::tenta::fs::cache::MetaCacheBackend* backend = ::tenta::fs::cache::MetaCacheBackend::GetInstance();
-//  if ( changed_flags == content::InvalidateTypes::INVALIDATE_TYPE_ALL) {
-//    // start all over
-//    backend->FlushBuffer();
-//  }
+  TENTA_LOG_CACHE(INFO) << __func__ << " changed_flags=" << changed_flags << " url=" << source->GetLastCommittedURL();
+  ::tenta::fs::cache::MetaCacheBackend* backend = ::tenta::fs::cache::MetaCacheBackend::GetInstance();
+  if ( changed_flags == content::InvalidateTypes::INVALIDATE_TYPE_ALL) {
+    // start all over
+    backend->DropBuffer();
+  }
 #endif
 }
 
