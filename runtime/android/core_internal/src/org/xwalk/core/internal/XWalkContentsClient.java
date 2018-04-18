@@ -86,11 +86,18 @@ abstract class XWalkContentsClient extends ContentViewClient {
         @Override
         public void didStartNavigation(String url, boolean isInMainFrame, boolean isSameDocument,
                 boolean isErrorPage) {
-            if (isInMainFrame) {
-                onNavigationStart(url);
-            }
+            onNavigationStart(url, isInMainFrame, isSameDocument, isErrorPage);
         }
 
+        @Override
+        public void didStartLoading(String url) {
+            onDidStartLoading(url);
+        };
+        
+        @Override
+        public void didFirstVisuallyNonEmptyPaint() {
+            onDidFirstVisuallyNonEmptyPaint();
+        }
         /*
          * @Override public void didNavigateAnyFrame(String url, String baseUrl, boolean isReload) {
          * doUpdateVisitedHistory(url, isReload); }
@@ -222,8 +229,11 @@ abstract class XWalkContentsClient extends ContentViewClient {
 
     public abstract void onNavigationStateChanged(int flags);
 
-    public abstract void onNavigationStart(final String url);
-
+    public abstract void onNavigationStart(final String url, boolean isInMainFrame,
+            boolean isSameDocument,
+            boolean isErrorPage);
+    public abstract void onDidStartLoading(String url);
+    public abstract void onDidFirstVisuallyNonEmptyPaint();
     public abstract void onPageStarted(String url);
 
     public abstract void onPageFinished(String url);
