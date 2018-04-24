@@ -431,6 +431,7 @@ source_set("xwalk_runtime") {
     deps += [
       "//xwalk/third_party/tenta/meta_fs",
       "//xwalk/third_party/tenta/chromium_cache",
+      "//xwalk/third_party/tenta/crosswalk-extensions",
     ]
   }
                              
