@@ -43,6 +43,10 @@
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
 #include "xwalk/runtime/browser/xwalk_browser_main_parts_android.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+#if defined(TENTA_CHROMIUM_BUILD)
+#include "meta_logging.h"
+#include "tenta_cookie_store.h"
+#endif
 
 using base::FilePath;
 using base::android::ConvertJavaStringToUTF8;
@@ -61,11 +65,26 @@ namespace xwalk {
 
 namespace {
 
+class TentaCookieDelegate : public net::CookieMonsterDelegate {
+ public:
+  TentaCookieDelegate() {
+  }
+  virtual ~TentaCookieDelegate() {
+  }
+
+  void OnCookieChanged(const net::CanonicalCookie& cookie,
+  bool removed,
+                       net::CookieStore::ChangeCause cause) override {
+    TENTA_LOG_COOKIE(INFO) << __func__ << " removed=" << removed << " cause=" << (int)cause << " cookie=" << cookie.DebugString();
+  }
+};
+
 // Are cookies allowed for file:// URLs by default?
 const bool kDefaultFileSchemeAllowed = false;
 const char kPreKitkatDataDirectory[] = "app_database";
 const char kKitkatDataDirectory[] = "app_webview";
 
+#if !defined(TENTA_CHROMIUM_BUILD)
 void ImportKitkatDataIfNecessary(const base::FilePath& old_data_dir,
                                  const base::FilePath& profile) {
   if (!base::DirectoryExists(old_data_dir))
@@ -122,6 +141,7 @@ void GetUserDataDir(FilePath* user_data_dir) {
     NOTREACHED() << "Failed to get app data directory for Android WebView";
   }
 }
+#endif
 
 class CookieByteArray {
  public:
@@ -284,7 +304,11 @@ base::SingleThreadTaskRunner* CookieManager::GetCookieStoreTaskRunner() {
 
 net::CookieStore* CookieManager::GetCookieStore() {
   DCHECK(cookie_store_task_runner_->RunsTasksOnCurrentThread());
-
+#if defined(TENTA_CHROMIUM_BUILD)
+  if (!cookie_store_) {
+    cookie_store_ = std::unique_ptr<net::CookieStore>(new tenta::TentaCookieStore());
+  }
+#else
   if (!cookie_store_) {
     FilePath user_data_dir;
     GetUserDataDir(&user_data_dir);
@@ -304,7 +328,7 @@ net::CookieStore* CookieManager::GetCookieStore() {
 #endif
     content::CookieStoreConfig cookie_config(
         cookie_store_path, content::CookieStoreConfig::RESTORED_SESSION_COOKIES,
-        nullptr, nullptr);
+        nullptr, new TentaCookieDelegate());
     cookie_config.client_task_runner = cookie_store_task_runner_;
     cookie_config.background_task_runner = cookie_store_backend_thread_
         .task_runner();
@@ -330,6 +354,7 @@ net::CookieStore* CookieManager::GetCookieStore() {
 
     cookie_store_ = content::CreateCookieStore(cookie_config);
   }
+#endif
 
   return cookie_store_.get();
 }
@@ -344,6 +369,8 @@ bool CookieManager::AcceptCookie() {
 
 void CookieManager::SetCookie(const GURL& host,
                               const std::string& cookie_value) {
+  TENTA_LOG_COOKIE(INFO) << __func__ << " host=" << host << " cookie=" << cookie_value;
+
   ExecCookieTask(
       base::Bind(&CookieManager::SetCookieAsyncHelper, base::Unretained(this),
                  host, cookie_value),
@@ -365,6 +392,7 @@ void CookieManager::SetCookieAsyncHelper(const GURL& host,
 void CookieManager::SetCookieCompleted(bool success) {
 // The CookieManager API does not return a value for SetCookie,
 // so we don't need to propagate the |success| value back to the caller.
+  TENTA_LOG_COOKIE(INFO) << __func__ << " success=" << success;
 }
 
 std::string CookieManager::GetCookie(const GURL& host) {
@@ -646,9 +674,7 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb,
 }
 
 void CookieManager::RestoreCookieCallback(bool success) {
-#if TENTA_LOG_COOKIE_ENABLE == 1
-  LOG(INFO) << "!!! " << __func__ << " success=" << success;
-#endif
+  TENTA_LOG_COOKIE(INFO) << "!!! " << __func__ << " success=" << (success == true ? "true" : "false");
 }
 
 bool CookieManager::HasCookies() {
