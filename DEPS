@@ -25,6 +25,7 @@ deps = {
     'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:mikandi/android-database-sqlitecrypt.git@origin/master',
     'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:mikandi/file-metadata-sqlite.git@origin/master',
     'src/xwalk/third_party/tenta/chromium_cache' : 'git@bitbucket.org:mikandi/chromium-cache-metafs.git@origin/master',
+    'src/xwalk/third_party/tenta/crosswalk-extensions' : 'git@bitbucket.org:mikandi/crosswalk-extensions.git',
 }
 
 hooks = [
