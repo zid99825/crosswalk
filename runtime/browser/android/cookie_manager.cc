@@ -45,7 +45,7 @@
 #include "xwalk/runtime/common/xwalk_switches.h"
 #if defined(TENTA_CHROMIUM_BUILD)
 #include "meta_logging.h"
-#include "tenta_cookie_store.h"
+#include <xwalk/third_party/tenta/crosswalk_extensions/tenta_cookie_store.h>
 #endif
 
 using base::FilePath;
@@ -72,9 +72,7 @@ class TentaCookieDelegate : public net::CookieMonsterDelegate {
   virtual ~TentaCookieDelegate() {
   }
 
-  void OnCookieChanged(const net::CanonicalCookie& cookie,
-  bool removed,
-                       net::CookieStore::ChangeCause cause) override {
+  void OnCookieChanged(const net::CanonicalCookie& cookie, bool removed, net::CookieStore::ChangeCause cause) override {
     TENTA_LOG_COOKIE(INFO) << __func__ << " removed=" << removed << " cause=" << (int)cause << " cookie=" << cookie.DebugString();
   }
 };

@@ -52,7 +52,7 @@
 #include "xwalk/runtime/common/xwalk_content_client.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 #ifdef TENTA_CHROMIUM_BUILD
-#include "xwalk/runtime/browser/android/net/host_resolver_tenta.h"
+#include "host_resolver_tenta.h"
 #include "xwalk/third_party/tenta/chromium_cache/chromium_cache_factory.h"
 #endif
 
@@ -220,7 +220,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     std::unique_ptr<net::HostResolver> backup =
     net::HostResolver::CreateDefaultResolver(NULL);
 
-    tenta::HostResolverTenta * hrt = new tenta::HostResolverTenta(
+    tenta::ext::HostResolverTenta * hrt = new tenta::ext::HostResolverTenta(
         std::move(backup));
     hrt->use_backup(false);
 

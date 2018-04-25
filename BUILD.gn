@@ -332,13 +332,6 @@ source_set("xwalk_runtime") {
     "//android_webview/browser/renderer_host/auto_login_parser.h",
   ]
 
-  if ( tenta_chromium_build ) {
-    sources += [
-      "runtime/browser/android/net/host_resolver_tenta.cc",
-      "runtime/browser/android/net/host_resolver_tenta.h",
-    ]
-  }
-
   if (!is_android) {
     sources += [
       "runtime/browser/devtools/xwalk_devtools_frontend.cc",
@@ -431,7 +424,7 @@ source_set("xwalk_runtime") {
     deps += [
       "//xwalk/third_party/tenta/meta_fs",
       "//xwalk/third_party/tenta/chromium_cache",
-      "//xwalk/third_party/tenta/crosswalk-extensions",
+      "//xwalk/third_party/tenta/crosswalk_extensions",
     ]
   }
                              

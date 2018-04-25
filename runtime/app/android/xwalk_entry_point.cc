@@ -9,18 +9,24 @@
 #include "content/public/app/content_main_delegate.h"
 #include "xwalk/runtime/app/android/xwalk_jni_registrar.h"
 #include "xwalk/runtime/app/android/xwalk_main_delegate_android.h"
+#include "base/android/library_loader/library_loader_hooks.h"
+
+#ifdef TENTA_CHROMIUM_BUILD
 #include "xwalk/third_party/tenta/meta_fs/jni/register_jni.h"
 #include "xwalk/third_party/tenta/chromium_cache/register_jni.h"
-#include "base/android/library_loader/library_loader_hooks.h"
+#include "xwalk/third_party/tenta/crosswalk_extensions/register_jni.h"
+#endif
 
 namespace xwalk {
 namespace {
 
 bool RegisterJNI(JNIEnv* env) {
   bool retVal =xwalk::RegisterJni(env);
+#ifdef TENTA_CHROMIUM_BUILD
   retVal = retVal && tenta::fs::RegisterJni(env);
   retVal = retVal && tenta::fs::cache::RegisterJni(env);
-
+  retVal = retVal && tenta::ext::RegisterJni(env);
+#endif
   return retVal;
 }
 } // namespace
