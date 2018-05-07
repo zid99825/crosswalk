@@ -87,6 +87,7 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
       const CookieChangedCallback& callback) override;
   bool IsEphemeral() override;
 
+  void TriggerCookieFetch() override;
  private:
   // Used by CreateWrappedCallback below. Takes an arugment of Type and posts
   // a task to |task_runner| to invoke |callback| with that argument. If

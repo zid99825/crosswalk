@@ -190,6 +190,9 @@ void SetForceKeepSessionStateOnCookieThread() {
   GetCookieStore()->SetForceKeepSessionState();
 }
 
+void TriggerCookieFetchOnCookieThread() {
+  GetCookieStore()->TriggerCookieFetch();
+}
 }  // namespace
 
 XWalkCookieStoreWrapper::XWalkCookieStoreWrapper()
@@ -340,6 +343,11 @@ XWalkCookieStoreWrapper::AddCallbackForCookie(
 
 bool XWalkCookieStoreWrapper::IsEphemeral() {
   return GetCookieStore()->IsEphemeral();
+}
+
+void XWalkCookieStoreWrapper::TriggerCookieFetch() {
+  PostTaskToCookieStoreTaskRunner(
+      base::Bind(&TriggerCookieFetchOnCookieThread));
 }
 
 base::Closure XWalkCookieStoreWrapper::CreateWrappedClosureCallback(
