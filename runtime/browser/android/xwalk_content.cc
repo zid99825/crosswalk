@@ -61,6 +61,7 @@
 #include "xwalk/third_party/tenta/meta_fs/jni/java_byte_array.h"
 #if defined(TENTA_CHROMIUM_BUILD)
 #include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
+#include "xwalk/third_party/tenta/crosswalk_extensions/tenta_history_store.h"
 #endif
 
 using base::android::AttachCurrentThread;
@@ -71,6 +72,10 @@ using content::BrowserThread;
 using content::WebContents;
 using navigation_interception::InterceptNavigationDelegate;
 using xwalk::application_manifest_keys::kDisplay;
+
+#ifdef TENTA_CHROMIUM_BUILD
+using tenta::ext::TentaHistoryStore;
+#endif
 
 namespace keys = xwalk::application_manifest_keys;
 namespace metafs = ::tenta::fs;
@@ -240,6 +245,10 @@ void XWalkContent::SetSaveFormData(bool enabled) {
 
 XWalkContent::~XWalkContent() {
   XWalkContentLifecycleNotifier::OnXWalkViewDestroyed();
+#ifdef TENTA_CHROMIUM_BUILD
+  TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
+  h_store->SetController(reinterpret_cast<intptr_t>(this), nullptr);
+#endif
 }
 
 void XWalkContent::SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content, jobject web_contents_delegate,
@@ -269,6 +278,10 @@ void XWalkContent::SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
   web_contents_->SetDelegate(web_contents_delegate_.get());
 
   render_view_host_ext_.reset(new XWalkRenderViewHostExt(web_contents_.get()));
+#ifdef TENTA_CHROMIUM_BUILD
+  TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
+  h_store->SetController(reinterpret_cast<intptr_t>(this), &(web_contents_->GetController()));
+#endif
 }
 
 base::android::ScopedJavaLocalRef<jobject> XWalkContent::GetWebContents(JNIEnv* env, jobject obj) {
@@ -779,397 +792,15 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
 }
 
 /**
- *
+ * TODO(iotto) : Deprecated remove!
  */
 jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& oldKey,
                                 const JavaParamRef<jstring>& newKey) {
-  using namespace ::tenta::fs;
-  using namespace ::base::android;
-
-  MetaFsManager * mng = MetaFsManager::GetInstance();
-  if (mng == nullptr) {
-    return ERR_NULL_POINTER;
-  }
-
-  std::string oldKeyStr;
-
-  ConvertJavaStringToUTF8(env, oldKey, &oldKeyStr);
-
-  scoped_refptr<MetaDb> db;
-  AutoCloseMetaDb dbClose(db);
-  int result;
-
-  result = mng->OpenDb(cHistoryDb, oldKeyStr, cHistoryBlockSize, db);
-  if (result != FS_OK) {
-    return mng->error();
-  }
-
-  if (db.get() == nullptr) {
-    // TODO log error
-    return ERR_INVALID_POINTER;
-  }
-
-  std::string newKeyStr;
-
-  ConvertJavaStringToUTF8(env, newKey, &newKeyStr);
-
-  result = db->ReKey(newKeyStr);
-
-  return result;
+  return -1;
 }
 
 /************ End MetaFS ****************/
-///**
-// *
-// */
-//jboolean XWalkContent::PushStateWitkKey(JNIEnv* env, jobject obj,
-//                                        const JavaParamRef<jbyteArray>& state,
-//                                        jstring id, jstring key) {
-//  jbyte* _bytes = nullptr;
-//
-//  if (state.obj() != nullptr) {
-//    jsize len = env->GetArrayLength(state.obj());  // array length
-//
-//    if (len > 0) {
-//      _bytes = env->GetByteArrayElements(state.obj(), nullptr);
-//
-//      // do the dooda
-//
-//      bool result;
-//      result = SaveArrayToDb(reinterpret_cast<const char*>(_bytes), len, env,
-//                             id,
-//                             key);
-//
-//      env->ReleaseByteArrayElements(state.obj(), _bytes, JNI_ABORT);
-//      return result;
-//
-//    } else {
-//      LOG(WARNING) << "PushStateWitkKey zero length";
-//    }
-//
-//  } else {
-//    LOG(WARNING) << "PushStateWitkKey NULL array";
-//  }
-//
-//  return false;
-//}
-//
-///**
-// * Save byte array as id's content to DB
-// */
-//bool XWalkContent::SaveArrayToDb(const char * data, int data_len, JNIEnv* env,
-//                                 jstring id,
-//                                 jstring key) {
-////  std::string strId;  // virtual filename
-////  std::string strKey;  // db encryption key
-////
-////  base::android::ConvertJavaStringToUTF8(env, id, &strId);
-////  base::android::ConvertJavaStringToUTF8(env, key, &strKey);
-////
-////  if (data == nullptr || data_len == 0 || strId.empty() || strKey.empty()) {
-////    LOG(WARNING) << "SaveArrayToDb Invalid data len/id/key " << data_len << "/"
-////                    << strId << "/" << strKey;
-////    return false;
-////  }
-////
-////  std::string data_path;
-////  if (!GetHistoryDbPath(data_path))
-////                        {
-////    return false;
-////  }
-////
-////  using namespace ::tenta::fs;
-////
-////  bool bResult;
-////  DbFsManager * mng = DbFsManager::GetInstance();
-////
-////  LOG(INFO) << " got instance";
-////
-////  std::weak_ptr < DbFile > file;
-////  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, strKey,
-////                                                "73523-019-0000012-53523");
-////  // TODO lic move safe place 73523-019-0000012-53523
-////
-////  if (fs.get() == nullptr) {
-////    LOG(ERROR) << "FileSystem not created!";
-////    return false;
-////  }
-////
-////  bResult = fs->FileOpen(strId, file,
-////                         (DbFileSystem::IO_CREATE_IF_NOT_EXISTS
-////                             | DbFileSystem::IO_TRUNCATE_IF_EXISTS));
-////
-////  if (!bResult) {
-////    LOG(ERROR) << "FileOpen failed " << fs->error();
-////    return false;
-////  }
-////
-////  std::shared_ptr<DbFile> sfile = file.lock();
-////
-////  if (file.expired()) {
-////    LOG(ERROR) << "FileSystem gone!";
-////    return false;
-////  }
-////
-////  bResult = sfile->Append(data, data_len);
-////
-////  if (!bResult) {
-////    LOG(ERROR) << "Error on write " << sfile->error();
-////    return false;
-////  }
-////
-////  return sfile->Close();
-//  return false;
-//}
-//
-///**
-// *
-// */
-//jboolean XWalkContent::NukeStateWithKey(JNIEnv* env, jobject obj, jstring id,
-//                                        jstring key) {
-//
-////  std::string strId;  // virtual filename
-////  std::string strKey;  // db encryption key
-////
-////  base::android::ConvertJavaStringToUTF8(env, id, &strId);
-////  base::android::ConvertJavaStringToUTF8(env, key, &strKey);
-////
-////  if (strId.empty() || strKey.empty()) {
-////    LOG(WARNING) << "NukeStateWithKey Invalid data id/key " << strId << "/"
-////                    << strKey;
-////    return false;
-////  }
-////
-////  std::string data_path;
-////  if (!GetHistoryDbPath(data_path))
-////                        {
-////    return false;
-////  }
-////
-////  using namespace ::tenta::fs;
-////
-////  bool bResult;
-////  DbFsManager * mng = DbFsManager::GetInstance();
-////
-////  std::weak_ptr < DbFile > file;
-////  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, strKey,
-////                                                "73523-019-0000012-53523");
-////  // TODO lic move safe place 73523-019-0000012-53523
-////
-////  if (fs.get() == nullptr) {
-////    LOG(ERROR) << "FileSystem not created!";
-////    return false;
-////  }
-////
-////  bResult = fs->FileDelete(strId);
-////  if (!bResult) {
-////    LOG(ERROR) << "NukeStateWithKey delete result " << fs->error();
-////    return false;
-////  }
-////
-////  return true;
-//  return false;
-//}
-//
-///**
-// *
-// * @param env
-// * @param obj
-// * @param oldKey
-// * @param newKey
-// * @return
-// */
-//jboolean XWalkContent::RekeyStateWithKey(JNIEnv* env, jobject obj,
-//                                         jstring oldKey,
-//                                         jstring newKey) {
-////  std::string oldKeyStr;  // virtual filename
-////  std::string newKeyStr;  // db encryption key
-////
-////  base::android::ConvertJavaStringToUTF8(env, oldKey, &oldKeyStr);
-////  base::android::ConvertJavaStringToUTF8(env, newKey, &newKeyStr);
-////
-////  if (/*oldKeyStr.empty() || */newKeyStr.empty()) {  // old key can be null/empty if db just created
-////#if TENTA_LOG_ENABLE == 1
-////    LOG(WARNING) << "RekeyStateWithKey Invalid data old/new key " << oldKeyStr
-////                    << "/"
-////                    << newKeyStr;
-////#endif
-////    return false;
-////  }
-////
-////  std::string data_path;
-////  if (!GetHistoryDbPath(data_path))
-////                        {
-////    return false;
-////  }
-////
-////  using namespace ::tenta::fs;
-////
-////  bool bResult;
-////  DbFsManager * mng = DbFsManager::GetInstance();
-////
-////  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, oldKeyStr,
-////                                                "73523-019-0000012-53523");
-////  // TODO lic move safe place 73523-019-0000012-53523
-////
-////  if (fs.get() == nullptr) {
-////    LOG(ERROR) << "FileSystem not created!";
-////    return false;
-////  }
-////
-////  bResult = fs->Rekey(newKeyStr);
-////
-////  if (!bResult) {
-////#if TENTA_LOG_ENABLE == 1
-////    LOG(ERROR) << "Rekey failed " << fs->error();
-////#endif
-////    return false;
-////  }
-////
-////  return true;
-//  return false;
-//}
-//
-///**
-// *
-// */
-//jboolean XWalkContent::SaveStateWithKey(JNIEnv* env, jobject obj, jstring id,
-//                                        jstring key) {
-////  // TODO make non blocking?!
-////  if (!web_contents_->GetController().GetEntryCount()) {
-////    return true;  // nothing to save
-////  }
-////
-////  // time to read the pickle
-////  base::Pickle pickle;
-////  if (!WriteToPickle(*web_contents_, &pickle)) {
-////    LOG(ERROR) << "SaveStateWithKey pickle";
-////    return false;  // error occured
-////  }
-////
-////  return SaveArrayToDb(pickle.payload(), pickle.payload_size(), env, id, key);
-//  return false;
-//}
-//
-///**
-// *
-// */
-//jboolean XWalkContent::RestoreStateWithKey(JNIEnv* env, jobject obj, jstring id,
-//                                           jstring key) {
-////  std::string strId;  // virtual filename
-////  std::string strKey;  // db encryption key
-////
-////  base::android::ConvertJavaStringToUTF8(env, id, &strId);
-////  base::android::ConvertJavaStringToUTF8(env, key, &strKey);
-////
-////  if (strKey.empty() || strId.empty()) {
-////    LOG(ERROR) << "Invalid key ";
-////    return false;
-////  }
-////
-////  std::string data_path;
-////  if (!GetHistoryDbPath(data_path))
-////                        {
-////    return false;
-////  }
-////
-////  using namespace ::tenta::fs;
-////
-////  bool bResult;
-////  DbFsManager * mng = DbFsManager::GetInstance();
-////
-////  std::weak_ptr < DbFile > file;
-////  std::shared_ptr<DbFileSystem> fs = mng->NewFs(data_path, strKey,
-////                                                "73523-019-0000012-53523");
-////  // TODO lic move safe place 73523-019-0000012-53523
-////
-////  if (fs.get() == nullptr) {
-////    LOG(ERROR) << "FileSystem not created!";
-////    return false;
-////  }
-////
-////  bResult = fs->FileOpen(strId, file, (DbFileSystem::IO_OPEN_EXISTING));
-////
-////  if (!bResult) {
-////    LOG(ERROR) << "FileOpen failed " << fs->error();
-////    return false;
-////  }
-////
-////  std::shared_ptr<DbFile> sfile = file.lock();
-////
-////  if (file.expired()) {
-////    LOG(ERROR) << "FileSystem gone!";
-////    return false;
-////  }
-////
-////  int dataLength = 0;
-////  dataLength = sfile->get_length();
-////
-////  if (dataLength <= 0) {
-////    LOG(WARNING) << "Won't restore zero length";
-////    return false;
-////  }
-////
-////  if (bResult) {
-////    // time to read and save to pickle
-////
-////    char buff[cBlkSize];
-////    base::Pickle pickle;
-////
-////    int inOutLen;
-////    int offset = 0;
-////
-////    while (dataLength) {
-////      inOutLen = cBlkSize;
-////      bResult = sfile->Read(buff, &inOutLen, offset);
-////
-////      if (!bResult) {
-////        LOG(ERROR) << "Restore read error " << sfile->error();
-////        return false;
-////      }
-////
-////      pickle.WriteBytes(buff, inOutLen);
-////      offset += inOutLen;
-////      dataLength -= inOutLen;
-////
-////    }  // while
-////
-////    if (bResult) {  // all ok
-////      base::PickleIterator iterator(pickle);
-////      if (!RestoreFromPickle(&iterator, web_contents_.get())) {
-////        LOG(ERROR) << "Restore pickle error "
-////                      << pickle.size() << " pl: " << pickle.payload_size();
-////        return false;
-////      }
-////    }
-////  }
-////
-////  return sfile->Close();
-//  return false;
-//}
-//
-///**
-// * Fill |out| with app path + history.db
-// * @param out storage for file+path storage
-// * @return true if success; false otherwise
-// */
-//bool XWalkContent::GetHistoryDbPath(std::string& out) {
-//  // get application path
-//  base::FilePath data_path;
-//  bool path_ok = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &data_path);
-//
-//  if (!path_ok) {
-//#if TENTA_LOG_ENABLE == 1
-//    LOG(ERROR) << "Get app data failed";
-//#endif
-//    return false;
-//  }
-//
-//  data_path = data_path.Append("history.db");
-//  out.assign(data_path.value());
-//
-//  return true;
-//}
+
 static jlong Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   std::unique_ptr<WebContents> web_contents(
       content::WebContents::Create(content::WebContents::CreateParams(XWalkRunner::GetInstance()->browser_context())));
