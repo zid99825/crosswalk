@@ -323,7 +323,7 @@ bool XWalkContentsClientBridge::RewriteUrlIfNeeded(const std::string& url,
                                  ui::PageTransition transition_type,
                                  std::string* new_url) {
 #if TENTA_LOG_NET_ENABLE == 1
-  LOG(INFO) << "XWalkContentsClientBridge::RewriteUrlIfNeeded " << url;
+  LOG(INFO) << "XWalkContentsClientBridge::RewriteUrlIfNeeded " << url << " transition_type=" << transition_type;
 #endif
 
   JNIEnv* env = AttachCurrentThread();

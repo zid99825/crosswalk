@@ -473,6 +473,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public void onReceivedError(int errorCode, String description, String failingUrl) {
+//    	org.chromium.base.Log.d("iotto", "error=%d, description=%s" , errorCode, description);
         if (mLoadingUrl != null && mLoadingUrl.equals(failingUrl)) {
             mLoadStatus = LoadStatusInternal.FAILED;
         }
