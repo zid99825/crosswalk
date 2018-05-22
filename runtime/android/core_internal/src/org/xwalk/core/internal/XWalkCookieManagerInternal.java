@@ -196,6 +196,10 @@ public class XWalkCookieManagerInternal {
       nativePageLoadStarted(url);
   }
   
+  @XWalkAPI
+  public void reset() {
+	  nativeReset();
+  }
   private native void nativeSetAcceptCookie(boolean accept);
 
   private native boolean nativeAcceptCookie();
@@ -227,4 +231,5 @@ public class XWalkCookieManagerInternal {
   private native void nativeSetZone(final String zone);
   private native int nativeNukeDomain(final String domain);
   private native void nativePageLoadStarted(final String url);
+  private native void nativeReset();
 }

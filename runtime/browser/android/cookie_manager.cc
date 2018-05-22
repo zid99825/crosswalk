@@ -215,6 +215,8 @@ class CookieManager {
   int NukeDomain(const std::string& domain);
   void PageLoadStarted(const std::string& loadingUrl);
 
+  void Reset();
+
  private:
   friend struct base::LazyInstanceTraitsBase<CookieManager>;
 
@@ -745,6 +747,16 @@ void CookieManager::PageLoadStarted(const std::string& loadingUrl) {
 #endif
 }
 
+void CookieManager::Reset() {
+#ifdef TENTA_CHROMIUM_BUILD
+  GetCookieStore();
+  _tenta_store->ZoneSwitching(true);
+  ExecCookieTask(base::Bind(&CookieManager::RemoveAllCookieAsyncHelper, base::Unretained(this)),
+  true /*wait 'till finish*/);
+  _tenta_store->Reset();
+#endif
+}
+
 static void SetAcceptCookie(JNIEnv* env, const JavaParamRef<jobject>& obj, jboolean accept) {
   CookieManager::GetInstance()->SetAcceptCookie(accept);
 }
@@ -826,6 +838,10 @@ static void PageLoadStarted(JNIEnv* env, const JavaParamRef<jobject>& obj, const
   std::string url_str(ConvertJavaStringToUTF8(env, url));
 
   CookieManager::GetInstance()->PageLoadStarted(url_str);
+}
+
+static void Reset(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  CookieManager::GetInstance()->Reset();
 }
 
 // The following two methods are used to avoid a circular project dependency.
