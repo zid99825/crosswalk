@@ -438,6 +438,16 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         }        
     }
     
+	@Override
+	public void onDidFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage, boolean hasCommitted,
+			boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition, int errorCode,
+			String errorDescription, int httpStatusCode) {
+		if (mXWalkUIClient != null) {
+			mXWalkUIClient.onDidFinishNavigation(url, isInMainFrame, isErrorPage, hasCommitted, isSameDocument,
+					isFragmentNavigation, pageTransition, errorCode, errorDescription, httpStatusCode);
+		}
+	}
+    
     @Override
     public void onPageStarted(String url) {
         if (mXWalkUIClient != null) {

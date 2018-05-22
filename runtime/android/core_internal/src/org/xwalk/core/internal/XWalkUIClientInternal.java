@@ -398,6 +398,13 @@ public class XWalkUIClientInternal {
         
     }
     
+    @XWalkAPI
+    public void onDidFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage,
+			boolean hasCommitted, boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition,
+			int errorCode, String errorDescription, int httpStatusCode) {
+    	
+    }
+    
     /**
      * Notify the host application that a page has started loading. This method is called once for
      * each main frame load so a page with iframes or framesets will call onPageLoadStarted one time

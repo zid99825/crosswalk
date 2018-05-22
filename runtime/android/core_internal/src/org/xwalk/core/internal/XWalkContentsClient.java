@@ -112,17 +112,19 @@ abstract class XWalkContentsClient extends ContentViewClient {
                 stopSwipeRefreshHandler();
             }
         }
-        @Override
-        public void didFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage, boolean hasCommitted,
-        		boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition, int errorCode,
-        		String errorDescription, int httpStatusCode) {
-//        	org.chromium.base.Log.d("iotto", "errorCode=%d, isInMainFrame=%b, isErrorPage=%b, hasCommitted=%b, isSameDocument=%b, "
-//        			+ "isFragmentNavigation=%b", errorCode, isInMainFrame, isErrorPage, hasCommitted, isSameDocument, isFragmentNavigation);
-        	if (errorCode != 0) {
-                didFailLoad(isInMainFrame, errorCode, errorDescription, url);
-            }
 
-        	// TODO(iotto) : Implement the following!!
+		@Override
+		public void didFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage, boolean hasCommitted,
+				boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition, int errorCode,
+				String errorDescription, int httpStatusCode) {
+			if (errorCode != 0) {
+				didFailLoad(isInMainFrame, errorCode, errorDescription, url);
+			}
+
+			onDidFinishNavigation(url, isInMainFrame, isErrorPage, hasCommitted, isSameDocument, isFragmentNavigation,
+					pageTransition, errorCode, errorDescription, httpStatusCode);
+
+	     	// TODO(iotto) : Implement the following!!
 //            if (!hasCommitted) return;
 //
 //            mCommittedNavigation = true;
@@ -278,6 +280,11 @@ abstract class XWalkContentsClient extends ContentViewClient {
             boolean isErrorPage);
     public abstract void onDidStartLoading(String url);
     public abstract void onDidFirstVisuallyNonEmptyPaint();
+
+	public abstract void onDidFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage,
+			boolean hasCommitted, boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition,
+			int errorCode, String errorDescription, int httpStatusCode);
+    
     public abstract void onPageStarted(String url);
 
     public abstract void onPageFinished(String url);
