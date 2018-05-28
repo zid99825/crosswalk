@@ -97,6 +97,11 @@ public class XWalkNavigationHistoryInternal implements Cloneable, Serializable {
         return mXWalkView.canGoForward();
     }
 
+    @XWalkAPI
+    public boolean removeHistoryEntryAt(int index) {
+    	return mXWalkView.removeHistoryEntryAt(index);
+    }
+    
     /**
      * The direction for web page navigation.
      * @since 1.0

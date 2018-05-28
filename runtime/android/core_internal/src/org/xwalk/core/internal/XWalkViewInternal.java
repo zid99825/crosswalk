@@ -1511,6 +1511,13 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         mContent.clearHistory();
     }
 
+    boolean removeHistoryEntryAt(int index) {
+        if (mContent == null)
+            return false;
+        checkThreadSafety();
+        return mContent.removeHistoryEntryAt(index);
+    }
+    
     void destroy() {
         if (mContent == null)
             return;

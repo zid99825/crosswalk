@@ -578,6 +578,10 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mNavigationController.clearHistory();
     }
 
+	public boolean removeHistoryEntryAt(int index) {
+		return (mNativeContent == 0) ? false : mNavigationController.removeEntryAtIndex(index);
+	}
+    
     public boolean canGoBack() {
         return (mNativeContent == 0) ? false : mNavigationController.canGoBack();
     }
