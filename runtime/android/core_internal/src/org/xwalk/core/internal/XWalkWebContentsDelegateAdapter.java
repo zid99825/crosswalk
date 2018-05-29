@@ -35,6 +35,7 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
 
     @Override
     public void loadingStateChanged(boolean toDifferentDocument) {
+    	// TODO fix this; doesn't get called
         if (mXWalkContentsClient != null) {
             mXWalkContentsClient.onTitleChanged(mXwalkContent.getTitle(), false);
         }
@@ -42,6 +43,7 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
     
     @Override
     public void navigationStateChanged(int flags) {
+    	
         if (mXWalkContentsClient != null) {
             // TODO (iotto): continue implementation if needed
             mXWalkContentsClient.onNavigationStateChanged(flags);
