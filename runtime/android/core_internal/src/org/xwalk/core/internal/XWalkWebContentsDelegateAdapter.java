@@ -44,12 +44,11 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
     @Override
     public void navigationStateChanged(int flags) {
     	
-        if (mXWalkContentsClient != null) {
+        if (mXWalkContentsClient != null && (flags & InvalidateTypes.URL) != 0) {
             // TODO (iotto): continue implementation if needed
-            mXWalkContentsClient.onNavigationStateChanged(flags);
-        }
-        if ((flags & InvalidateTypes.URL) != 0 ) {
-            
+          String url = mXwalkContent.getLastCommittedUrl();
+          url = TextUtils.isEmpty(url) ? ContentUrlConstants.ABOUT_BLANK_DISPLAY_URL : url;
+            mXWalkContentsClient.onNavigationStateChanged(flags, url);
         }
 //        if ((flags & InvalidateTypes.URL) != 0
 //                && mAwContents.isPopupWindow()

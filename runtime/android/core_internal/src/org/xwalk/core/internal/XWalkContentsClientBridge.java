@@ -407,8 +407,10 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @Override
-    public void onNavigationStateChanged(int flags) {
-        // TODO continue
+    public void onNavigationStateChanged(int flags, final String url) {
+    	if (mXWalkUIClient != null) {
+    		mXWalkUIClient.onNavigationStateChanged(flags, url);
+    	}
     }
 
     @Override

@@ -273,7 +273,7 @@ abstract class XWalkContentsClient extends ContentViewClient {
 
     protected abstract void onRequestFocus();
 
-    public abstract void onNavigationStateChanged(int flags);
+    public abstract void onNavigationStateChanged(int flags, final String url);
 
     public abstract void onNavigationStart(final String url, boolean isInMainFrame,
             boolean isSameDocument,

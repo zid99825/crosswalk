@@ -17,6 +17,8 @@
 #include "content/public/browser/native_web_keyboard_event.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
+#include "content/public/browser/render_view_host.h"
+#include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/web_contents.h"
 #include "chrome/browser/media/webrtc/media_capture_devices_dispatcher.h"
 #include "content/public/common/file_chooser_file_info.h"
@@ -228,6 +230,7 @@ void XWalkWebContentsDelegate::EnterFullscreenModeForTab(content::WebContents* w
   if (obj.is_null())
     return;
   Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj.obj(), true);
+  web_contents->GetRenderViewHost()->GetWidget()->WasResized();
 }
 
 void XWalkWebContentsDelegate::ExitFullscreenModeForTab(content::WebContents* web_contents) {
@@ -236,6 +239,7 @@ void XWalkWebContentsDelegate::ExitFullscreenModeForTab(content::WebContents* we
   if (obj.is_null())
     return;
   Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj.obj(), false);
+  web_contents->GetRenderViewHost()->GetWidget()->WasResized();
 }
 
 bool XWalkWebContentsDelegate::IsFullscreenForTabOrPending(const content::WebContents* web_contents) const {
@@ -276,6 +280,14 @@ void XWalkWebContentsDelegate::FindReply(WebContents* web_contents, int request_
  */
 void XWalkWebContentsDelegate::NavigationStateChanged(content::WebContents* source,
                                                       content::InvalidateTypes changed_flags) {
+  JNIEnv* env = AttachCurrentThread();
+
+  ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
+  if (java_delegate.obj()) {
+    Java_XWalkWebContentsDelegate_navigationStateChanged(env, java_delegate, changed_flags);
+  } else {
+    TENTA_LOG_CACHE(ERROR) << __func__ << " null_java_delegate";
+  }
 #if defined(TENTA_CHROMIUM_BUILD)
   TENTA_LOG_CACHE(INFO) << __func__ << " changed_flags=" << changed_flags << " url=" << source->GetLastCommittedURL();
   ::tenta::fs::cache::MetaCacheBackend* backend = ::tenta::fs::cache::MetaCacheBackend::GetInstance();

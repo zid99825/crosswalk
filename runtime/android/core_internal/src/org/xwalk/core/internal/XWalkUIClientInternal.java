@@ -389,6 +389,11 @@ public class XWalkUIClientInternal {
     }
 
     @XWalkAPI
+    public void onNavigationStateChanged(int flags, final String url) {
+    	
+    }
+    
+    @XWalkAPI
     public void onDidStartLoading(XWalkViewInternal view, String url) {
 
     }
