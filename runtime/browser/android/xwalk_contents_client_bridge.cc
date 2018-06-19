@@ -81,15 +81,14 @@ std::map<int, std::unique_ptr<content::DesktopNotificationDelegate>>
 }  // namespace
 
 
-XWalkContentsClientBridge::XWalkContentsClientBridge(
-    JNIEnv* env, jobject obj,
-    content::WebContents* web_contents)
+XWalkContentsClientBridge::XWalkContentsClientBridge(JNIEnv* env, jobject obj, content::WebContents* web_contents)
     : java_ref_(env, obj) {
   DCHECK(obj);
-  Java_XWalkContentsClientBridge_setNativeContentsClientBridge(
-      env, obj, reinterpret_cast<intptr_t>(this));
+  Java_XWalkContentsClientBridge_setNativeContentsClientBridge(env, obj, reinterpret_cast<intptr_t>(this));
   icon_helper_.reset(new XWalkIconHelper(web_contents));
-  icon_helper_->SetListener(this);
+  if (icon_helper_) {
+    icon_helper_->SetListener(this);
+  }
 }
 
 XWalkContentsClientBridge::~XWalkContentsClientBridge() {
@@ -476,12 +475,12 @@ void XWalkContentsClientBridge::OnFilesNotSelected(
       files, static_cast<content::FileChooserParams::Mode>(mode));
 }
 
-void XWalkContentsClientBridge::DownloadIcon(JNIEnv* env,
-                                             jobject obj,
-                                             jstring url) {
+void XWalkContentsClientBridge::DownloadIcon(JNIEnv* env, jobject obj, jstring url) {
   // TODO(iotto) : refactor this, move icon_helper to contents
   std::string url_str = base::android::ConvertJavaStringToUTF8(env, url);
-  icon_helper_->DownloadIcon(GURL(url_str));
+  if (icon_helper_) {
+    icon_helper_->DownloadIcon(GURL(url_str));
+  }
 }
 
 void XWalkContentsClientBridge::OnIconAvailable(const GURL& icon_url) {
