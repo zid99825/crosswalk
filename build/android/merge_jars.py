@@ -47,6 +47,30 @@ JAR_ENTRY_WHITELIST = (
 # namespaces we do not allow -- they are either not necessary or users must
 # embed them on their own together with Crosswalk.
 KNOWN_SKIPPED_JARS = (
+  'Desugar-runtime.jar',
+  'support-annotations-25.0.1.jar',
+  'support-annotations-27.0.0.jar',
+  'jsr_305_javalib.jar',
+  'android_arch_lifecycle_runtime_java.jar',
+  'android_support_multidex_java.jar',
+  'android_support_compat_java-internal_impl-25.0.1.jar',
+  'android_support_core_utils_java-internal_impl-25.0.1.jar',
+  'android_support_core_ui_java-internal_impl-25.0.1.jar',
+  'android_support_fragment_java-internal_impl-25.0.1.jar',
+  'android_support_media_compat_java-internal_impl-25.0.1.jar',
+  'android_support_compat_java.jar',
+  'android_support_core_ui_java.jar',
+  'android_support_media_compat_java.jar',
+  'android_support_vector_drawable_java.jar',
+  'android_support_core_utils_java.jar',
+  'android_support_fragment_java.jar',
+  'android_support_v7_appcompat_java_internal.jar',
+  'google_play_services_basement_java.jar',
+  'google_play_services_tasks_java.jar',
+  'google_play_services_base_java.jar',
+  'google_play_services_vision_java.jar',
+  'google_play_services_location_java.jar',
+  
   # android.support.multidex is used by BaseChromiumApplication via
   # ChromiumMultiDexInstaller, but not in release mode. We have not needed it
   # so far (as of Crosswalk 21).
@@ -66,10 +90,6 @@ KNOWN_SKIPPED_JARS = (
   # XWALK-6597.
   'cardboard.jar',
   'protobuf_nano_javalib.jar',
-  'support-annotations-25.0.1.jar',
-  'support-annotations-27.0.0.jar',
-  'android_arch_lifecycle_runtime_java.jar',
-  
 )
 
 
@@ -78,6 +98,9 @@ def IsMergeableJar(jar_path):
   Returns True if a certain JAR does not have any classes outside the
   allowed namespaces.
   """
+  if any(fnmatch.fnmatchcase(os.path.basename(jar_path), f) for f in KNOWN_SKIPPED_JARS):
+    return False
+  
   with zipfile.ZipFile(jar_path) as zip_file:
     for entry_name in zip_file.namelist():
       if entry_name.endswith('/'):  # Directories are irrelevant.
