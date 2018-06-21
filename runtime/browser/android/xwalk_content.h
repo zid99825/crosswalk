@@ -26,6 +26,13 @@ class BrowserContext;
 class WebContents;
 }
 
+namespace tenta {
+namespace fs {
+class MetaDb;
+class MetaFile;
+} // namespace fs
+} // namespace tenta
+
 namespace xwalk {
 namespace tenta {
 class FsDelegateSqlite;

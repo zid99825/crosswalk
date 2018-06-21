@@ -46,7 +46,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     private static final String TAG = XWalkContentsClientBridge.class.getName();
     private static final int NEW_XWALKVIEW_CREATED = 100;
-    private static final int NEW_ICON_DOWNLOAD     = 101;
+    private static final int NEW_ICON_DOWNLOAD = 101;
 
     private XWalkViewInternal mXWalkView;
     private XWalkUIClientInternal mXWalkUIClient;
@@ -68,7 +68,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     // actually changed. Blink also only sends updates when the document title have changed,
     // so behaviours are consistent.
     private String mTitle = "";
-    
+
     /** State recording variables */
     // For fullscreen state.
     private boolean mIsFullscreen = false;
@@ -85,6 +85,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     private class InterceptNavigationDelegateImpl implements InterceptNavigationDelegate {
         private XWalkContentsClient mContentsClient;
+
         public InterceptNavigationDelegateImpl(XWalkContentsClient client) {
             mContentsClient = client;
         }
@@ -92,7 +93,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         public boolean shouldIgnoreNavigation(NavigationParams navigationParams) {
             final String url = navigationParams.url;
             boolean ignoreNavigation = mNavigationHandler != null &&
-                     mNavigationHandler.handleNavigation(navigationParams);
+                    mNavigationHandler.handleNavigation(navigationParams);
 
             if (!ignoreNavigation) {
                 // Check whether the fallback url is existed for scheme: intent://.
@@ -118,15 +119,18 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         mUiThreadHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                switch(msg.what) {
+                switch (msg.what) {
                     case NEW_XWALKVIEW_CREATED:
                         XWalkViewInternal newXWalkView = (XWalkViewInternal) msg.obj;
                         if (newXWalkView == mXWalkView) {
-                            throw new IllegalArgumentException("Parent XWalkView cannot host it's own popup window");
+                            throw new IllegalArgumentException(
+                                    "Parent XWalkView cannot host it's own popup window");
                         }
 
-                        if (newXWalkView != null && newXWalkView.getNavigationHistory().size() != 0) {
-                            throw new IllegalArgumentException("New WebView for popup window must not have been previously navigated.");
+                        if (newXWalkView != null
+                                && newXWalkView.getNavigationHistory().size() != 0) {
+                            throw new IllegalArgumentException(
+                                    "New WebView for popup window must not have been previously navigated.");
                         }
 
                         mXWalkView.completeWindowCreation(newXWalkView);
@@ -162,10 +166,10 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         mXWalkResourceClient = new XWalkResourceClientInternal(mXWalkView);
     }
 
-
     public void setXWalkWebChromeClient(XWalkWebChromeClient client) {
         // If it's null, use Crosswalk implementation.
-        if (client == null) return;
+        if (client == null)
+            return;
         mXWalkWebChromeClient = client;
     }
 
@@ -186,9 +190,11 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     public void setNotificationService(XWalkNotificationService service) {
-        if (mNotificationService != null) mNotificationService.shutdown();
+        if (mNotificationService != null)
+            mNotificationService.shutdown();
         mNotificationService = service;
-        if (mNotificationService != null) mNotificationService.setBridge(this);
+        if (mNotificationService != null)
+            mNotificationService.setBridge(this);
     }
 
     public boolean onNewIntent(Intent intent) {
@@ -208,18 +214,18 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         return false;
     }
 
-    // TODO (iotto) connect to ContentViewCore 
+    // TODO (iotto) connect to ContentViewCore
     // public boolean dispatchKeyEvent(KeyEvent event) {
-    //@Override
+    // @Override
     public boolean shouldOverrideKeyEvent(KeyEvent event) {
         boolean overridden = false;
         if (mXWalkUIClient != null && mXWalkView != null) {
             overridden = mXWalkUIClient.shouldOverrideKeyEvent(mXWalkView, event);
         }
         // TODO(iotto) see where it went the super.shouldOverrideKeyEvent
-//        if (!overridden) {
-//            return super.shouldOverrideKeyEvent(event);
-//        }
+        // if (!overridden) {
+        // return super.shouldOverrideKeyEvent(event);
+        // }
         return overridden;
     }
 
@@ -253,20 +259,22 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     @Override
     public XWalkWebResourceResponseInternal shouldInterceptRequest(
             WebResourceRequestInner request) {
-        //For compatibility with the old shouldInterceptLoadRequest.
-        WebResourceResponse response =
-             mXWalkResourceClient.shouldInterceptLoadRequest(mXWalkView, request.url);
+        // For compatibility with the old shouldInterceptLoadRequest.
+        WebResourceResponse response = mXWalkResourceClient.shouldInterceptLoadRequest(mXWalkView,
+                request.url);
         if (response == null) {
-          XWalkWebResourceResponseInternal xwalkResponse =
-                  mXWalkResourceClient.shouldInterceptLoadRequest(mXWalkView,
-                          new XWalkWebResourceRequestHandlerInternal(request));
-            if (xwalkResponse == null) return null;
+            XWalkWebResourceResponseInternal xwalkResponse = mXWalkResourceClient
+                    .shouldInterceptLoadRequest(mXWalkView,
+                            new XWalkWebResourceRequestHandlerInternal(request));
+            if (xwalkResponse == null)
+                return null;
 
             // XWalkWebResourceResponse should support null headers.
             Map<String, String> responseHeaders = xwalkResponse.getResponseHeaders();
-            if (responseHeaders == null) responseHeaders = new HashMap<String, String>();
+            if (responseHeaders == null)
+                responseHeaders = new HashMap<String, String>();
 
-            //To Investigate: return xwalkResponse directly will fail, don't know why yet.
+            // To Investigate: return xwalkResponse directly will fail, don't know why yet.
             return new XWalkWebResourceResponseInternal(
                     xwalkResponse.getMimeType(),
                     xwalkResponse.getEncoding(),
@@ -284,12 +292,12 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public void onDidChangeThemeColor(int color) {
-        mXWalkUIClient.onDidChangeThemeColor(mXWalkView,color);
+        mXWalkUIClient.onDidChangeThemeColor(mXWalkView, color);
     }
 
     @Override
     public void onDocumentLoadedInFrame(long frameId) {
-         mXWalkResourceClient.onDocumentLoadedInFrame(mXWalkView,frameId);
+        mXWalkResourceClient.onDocumentLoadedInFrame(mXWalkView, frameId);
     }
 
     @Override
@@ -311,9 +319,9 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-        if (mXWalkClient == null || mXWalkView == null) return false;
-        XWalkUIClientInternal.ConsoleMessageType consoleMessageType =
-            XWalkUIClientInternal.ConsoleMessageType.DEBUG;
+        if (mXWalkClient == null || mXWalkView == null)
+            return false;
+        XWalkUIClientInternal.ConsoleMessageType consoleMessageType = XWalkUIClientInternal.ConsoleMessageType.DEBUG;
         ConsoleMessage.MessageLevel messageLevel = consoleMessage.messageLevel();
         switch (messageLevel) {
             case TIP:
@@ -390,7 +398,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     @Override
     public void onFindResultReceived(int activeMatchOrdinal, int numberOfMatches,
             boolean isDoneCounting) {
-        if (mFindListener == null) return;
+        if (mFindListener == null)
+            return;
         mFindListener.onFindResultReceived(activeMatchOrdinal, numberOfMatches, isDoneCounting);
     }
 
@@ -399,18 +408,48 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @Override
-    public void onNavigationStateChanged(int flags) {
-        // TODO continue
+    public void onNavigationStateChanged(int flags, final String url) {
+    	if (mXWalkUIClient != null) {
+    		mXWalkUIClient.onNavigationStateChanged(flags, url);
+    	}
     }
 
     @Override
-    public void onNavigationStart(String url) {
+    public void onNavigationStart(String url, boolean isInMainFrame, boolean isSameDocument,
+            boolean isErrorPage) {
         if (mXWalkUIClient != null) {
             mLoadingUrl = url;
             mLoadStatus = LoadStatusInternal.FINISHED;
-            mXWalkUIClient.onNavigationStarted(mXWalkView, url);
+            mXWalkUIClient.onNavigationStarted(mXWalkView, url, isInMainFrame, isSameDocument,
+                    isErrorPage);
         }
     }
+
+    @Override
+    public void onDidStartLoading(String url) {
+        if (mXWalkUIClient != null) {
+            mLoadingUrl = url;
+            mLoadStatus = LoadStatusInternal.FINISHED;
+            mXWalkUIClient.onDidStartLoading(mXWalkView, url);
+        }
+    }
+
+    @Override
+    public void onDidFirstVisuallyNonEmptyPaint() {
+        if (mXWalkUIClient != null) {
+            mXWalkUIClient.onDidFirstVisuallyNonEmptyPaint();
+        }        
+    }
+    
+	@Override
+	public void onDidFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage, boolean hasCommitted,
+			boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition, int errorCode,
+			String errorDescription, int httpStatusCode) {
+		if (mXWalkUIClient != null) {
+			mXWalkUIClient.onDidFinishNavigation(url, isInMainFrame, isErrorPage, hasCommitted, isSameDocument,
+					isFragmentNavigation, pageTransition, errorCode, errorDescription, httpStatusCode);
+		}
+	}
     
     @Override
     public void onPageStarted(String url) {
@@ -423,7 +462,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public void onPageFinished(String url) {
-        if (mPageLoadListener != null) mPageLoadListener.onPageFinished(url);
+        if (mPageLoadListener != null)
+            mPageLoadListener.onPageFinished(url);
         if (mXWalkUIClient != null) {
             if (mLoadStatus == LoadStatusInternal.CANCELLED && mLoadingUrl != null) {
                 mXWalkUIClient.onPageLoadStopped(mXWalkView, mLoadingUrl, mLoadStatus);
@@ -446,6 +486,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public void onReceivedError(int errorCode, String description, String failingUrl) {
+//    	org.chromium.base.Log.d("iotto", "error=%d, description=%s" , errorCode, description);
         if (mLoadingUrl != null && mLoadingUrl.equals(failingUrl)) {
             mLoadStatus = LoadStatusInternal.FAILED;
         }
@@ -473,10 +514,10 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public void onDownloadStart(String url,
-                                String userAgent,
-                                String contentDisposition,
-                                String mimeType,
-                                long contentLength) {
+            String userAgent,
+            String contentDisposition,
+            String mimeType,
+            long contentLength) {
         if (mDownloadListener != null) {
             mDownloadListener.onDownloadStart(
                     url, userAgent, contentDisposition, mimeType, contentLength);
@@ -485,10 +526,10 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public boolean onCreateWindow(boolean isDialog, boolean isUserGesture) {
-        if (isDialog) return false;
+        if (isDialog)
+            return false;
 
-        XWalkUIClientInternal.InitiateByInternal initiator =
-                XWalkUIClientInternal.InitiateByInternal.BY_JAVASCRIPT;
+        XWalkUIClientInternal.InitiateByInternal initiator = XWalkUIClientInternal.InitiateByInternal.BY_JAVASCRIPT;
         if (isUserGesture) {
             initiator = XWalkUIClientInternal.InitiateByInternal.BY_USER_GESTURE;
         }
@@ -547,10 +588,11 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public void onTitleChanged(String title, boolean forceNotification) {
-        if (!forceNotification && TextUtils.equals(mTitle, title)) return;
+        if (!forceNotification && TextUtils.equals(mTitle, title))
+            return;
         mTitle = title;
-//        mCallbackHelper.postOnReceivedTitle(mTitle);
-        
+        // mCallbackHelper.postOnReceivedTitle(mTitle);
+
         if (mXWalkUIClient != null) {
             mXWalkUIClient.onReceivedTitle(mXWalkView, title);
         }
@@ -579,8 +621,10 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         abstract class UriCallback implements ValueCallback<Uri> {
             boolean syncNullReceived = false;
             boolean syncCallFinished = false;
+
             protected String resolveFileName(Uri uri, ContentResolver contentResolver) {
-                if (contentResolver == null || uri == null) return "";
+                if (contentResolver == null || uri == null)
+                    return "";
                 Cursor cursor = null;
                 try {
                     cursor = contentResolver.query(uri, null, null, null, null);
@@ -588,20 +632,23 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
                     if (cursor != null && cursor.getCount() >= 1) {
                         cursor.moveToFirst();
                         int index = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME);
-                        if (index > -1) return cursor.getString(index);
+                        if (index > -1)
+                            return cursor.getString(index);
                     }
                 } catch (NullPointerException e) {
                     // Some android models don't handle the provider call correctly.
                     // see crbug.com/345393
                     return "";
                 } finally {
-                    if (cursor != null) cursor.close();
+                    if (cursor != null)
+                        cursor.close();
                 }
                 return "";
             }
         }
         UriCallback uploadFile = new UriCallback() {
             boolean completed = false;
+
             @Override
             public void onReceiveValue(Uri value) {
                 if (completed) {
@@ -629,7 +676,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
                         result = value.getPath();
                         displayName = value.getLastPathSegment();
                     }
-                    if (displayName == null || displayName.isEmpty()) displayName = result;
+                    if (displayName == null || displayName.isEmpty())
+                        displayName = result;
                     nativeOnFilesSelected(mNativeContentsClientBridge,
                             processId, renderId, modeFlags, result, displayName);
                 }
@@ -659,7 +707,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     public void provideClientCertificateResponse(int id, byte[][] certChain,
             PrivateKey privateKey) {
-        nativeProvideClientCertificateResponse(mNativeContentsClientBridge, id, certChain, privateKey);
+        nativeProvideClientCertificateResponse(mNativeContentsClientBridge, id, certChain,
+                privateKey);
     }
 
     public Bitmap getFavicon() {
@@ -761,19 +810,21 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @CalledByNative
     private void clientCertificatesCleared(Runnable callback) {
-        if (callback == null) return;
+        if (callback == null)
+            return;
         callback.run();
     }
 
     private void proceedSslError(boolean proceed, int id) {
-        if (mNativeContentsClientBridge == 0) return;
+        if (mNativeContentsClientBridge == 0)
+            return;
         nativeProceedSslError(mNativeContentsClientBridge, proceed, id);
     }
 
     @CalledByNative
     private void handleJsAlert(String url, String message, int id) {
-        XWalkJavascriptResultHandlerInternal result =
-                new XWalkJavascriptResultHandlerInternal(this, id);
+        XWalkJavascriptResultHandlerInternal result = new XWalkJavascriptResultHandlerInternal(this,
+                id);
         mXWalkUIClient.onJavascriptModalDialog(mXWalkView,
                 XWalkUIClientInternal.JavascriptMessageTypeInternal.JAVASCRIPT_ALERT,
                 url, message, "", result);
@@ -781,8 +832,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @CalledByNative
     private void handleJsConfirm(String url, String message, int id) {
-        XWalkJavascriptResultHandlerInternal result =
-                new XWalkJavascriptResultHandlerInternal(this, id);
+        XWalkJavascriptResultHandlerInternal result = new XWalkJavascriptResultHandlerInternal(this,
+                id);
         mXWalkUIClient.onJavascriptModalDialog(mXWalkView,
                 XWalkUIClientInternal.JavascriptMessageTypeInternal.JAVASCRIPT_CONFIRM,
                 url, message, "", result);
@@ -790,8 +841,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @CalledByNative
     private void handleJsPrompt(String url, String message, String defaultValue, int id) {
-        XWalkJavascriptResultHandlerInternal result =
-                new XWalkJavascriptResultHandlerInternal(this, id);
+        XWalkJavascriptResultHandlerInternal result = new XWalkJavascriptResultHandlerInternal(this,
+                id);
         mXWalkUIClient.onJavascriptModalDialog(mXWalkView,
                 XWalkUIClientInternal.JavascriptMessageTypeInternal.JAVASCRIPT_PROMPT,
                 url, message, defaultValue, result);
@@ -799,8 +850,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @CalledByNative
     private void handleJsBeforeUnload(String url, String message, int id) {
-        XWalkJavascriptResultHandlerInternal result =
-                new XWalkJavascriptResultHandlerInternal(this, id);
+        XWalkJavascriptResultHandlerInternal result = new XWalkJavascriptResultHandlerInternal(this,
+                id);
         mXWalkUIClient.onJavascriptModalDialog(mXWalkView,
                 XWalkUIClientInternal.JavascriptMessageTypeInternal.JAVASCRIPT_BEFOREUNLOAD,
                 url, message, "", result);
@@ -809,7 +860,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     @CalledByNative
     private boolean shouldOverrideUrlLoading(
             String url, boolean hasUserGesture, boolean isRedirect, boolean isMainFrame) {
-         return shouldOverrideUrlLoading(url);
+        return shouldOverrideUrlLoading(url);
     }
 
     @Override
@@ -819,7 +870,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         }
         return false;
     }
-    
+
     @CalledByNative
     private boolean rewriteUrlIfNeeded(RewriteUrlValueInternal rewriteValue) {
         return onRewriteUrlIfNeeded(rewriteValue);
@@ -839,27 +890,32 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 //    }
 
     void confirmJsResult(int id, String prompt) {
-        if (mNativeContentsClientBridge == 0) return;
+        if (mNativeContentsClientBridge == 0)
+            return;
         nativeConfirmJsResult(mNativeContentsClientBridge, id, prompt);
     }
 
     void cancelJsResult(int id) {
-        if (mNativeContentsClientBridge == 0) return;
+        if (mNativeContentsClientBridge == 0)
+            return;
         nativeCancelJsResult(mNativeContentsClientBridge, id);
     }
 
     public void notificationDisplayed(int id) {
-        if (mNativeContentsClientBridge == 0) return;
+        if (mNativeContentsClientBridge == 0)
+            return;
         nativeNotificationDisplayed(mNativeContentsClientBridge, id);
     }
 
     public void notificationClicked(int id) {
-        if (mNativeContentsClientBridge == 0) return;
+        if (mNativeContentsClientBridge == 0)
+            return;
         nativeNotificationClicked(mNativeContentsClientBridge, id);
     }
 
     public void notificationClosed(int id, boolean byUser) {
-        if (mNativeContentsClientBridge == 0) return;
+        if (mNativeContentsClientBridge == 0)
+            return;
         nativeNotificationClosed(mNativeContentsClientBridge, id, byUser);
     }
 
@@ -873,7 +929,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @CalledByNative
     public void onWebLayoutPageScaleFactorChanged(float pageScaleFactor) {
-        if (mPageScaleFactor == pageScaleFactor) return;
+        if (mPageScaleFactor == pageScaleFactor)
+            return;
 
         float oldPageScaleFactor = mPageScaleFactor;
         mPageScaleFactor = pageScaleFactor;
@@ -892,25 +949,36 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         mFavicon = icon;
     }
 
-    //--------------------------------------------------------------------------------------------
-    //  Native methods
-    //--------------------------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
+    // Native methods
+    // --------------------------------------------------------------------------------------------
     private native void nativeProceedSslError(long nativeXWalkContentsClientBridge,
             boolean proceed, int id);
 
     private native void nativeConfirmJsResult(long nativeXWalkContentsClientBridge, int id,
             String prompt);
+
     private native void nativeCancelJsResult(long nativeXWalkContentsClientBridge, int id);
+
     private native void nativeNotificationDisplayed(long nativeXWalkContentsClientBridge, int id);
+
     private native void nativeNotificationClicked(long nativeXWalkContentsClientBridge, int id);
-    private native void nativeNotificationClosed(long nativeXWalkContentsClientBridge, int id, boolean byUser);
+
+    private native void nativeNotificationClosed(long nativeXWalkContentsClientBridge, int id,
+            boolean byUser);
+
     private native void nativeOnFilesSelected(long nativeXWalkContentsClientBridge,
             int processId, int renderId, int mode_flags, String filepath, String displayName);
+
     private native void nativeOnFilesNotSelected(long nativeXWalkContentsClientBridge,
             int processId, int renderId, int mode_flags);
+
     private native void nativeDownloadIcon(long nativeXWalkContentsClientBridge, String url);
+
     private native void nativeProvideClientCertificateResponse(
-            long nativeXWalkContentsClientBridge, int id, byte[][] certChain, PrivateKey privateKey);
+            long nativeXWalkContentsClientBridge, int id, byte[][] certChain,
+            PrivateKey privateKey);
+
     private native void nativeClearClientCertPreferences(
             long nativeXWalkContentsClientBridge, Runnable callback);
 }

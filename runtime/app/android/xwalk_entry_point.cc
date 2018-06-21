@@ -10,6 +10,9 @@
 #include "content/public/app/content_main_delegate.h"
 #include "xwalk/runtime/app/android/xwalk_jni_registrar.h"
 #include "xwalk/runtime/app/android/xwalk_main_delegate_android.h"
+#include "base/android/library_loader/library_loader_hooks.h"
+
+#ifdef TENTA_CHROMIUM_BUILD
 #include "xwalk/third_party/tenta/meta_fs/jni/register_jni.h"
 #include "xwalk/third_party/tenta/chromium_cache/register_jni.h"
 #include "base/android/library_loader/library_loader_hooks.h"

@@ -5,29 +5,23 @@
 
 package org.xwalk.core.internal;
 
+import java.security.PrivateKey;
+import java.util.HashMap;
+
+import org.chromium.content.browser.ContentVideoViewEmbedder;
+import org.chromium.content.browser.ContentViewClient;
+import org.chromium.content_public.browser.WebContents;
+import org.chromium.content_public.browser.WebContentsObserver;
+import org.chromium.net.NetError;
+
 import android.content.pm.ActivityInfo;
-import android.graphics.Bitmap;
 import android.graphics.Picture;
-import android.graphics.Rect;
-import android.graphics.RectF;
 import android.net.http.SslError;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.ValueCallback;
-
-import java.security.PrivateKey;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.chromium.content_public.browser.WebContents;
-import org.chromium.content_public.browser.WebContentsObserver;
-import org.chromium.net.NetError;
-import org.chromium.content.browser.ContentVideoViewEmbedder;
 
 /**
  * Base-class that a XWalkViewContents embedder derives from to receive callbacks. This extends
@@ -68,6 +62,7 @@ abstract class XWalkContentsClient {
         @Override
         public void didFailLoad(boolean isMainFrame, int errorCode,
                 String description, String failingUrl) {
+//        	org.chromium.base.Log.d("iotto", "error_code=%d, error_str=%s", errorCode, description);
             if (errorCode == NetError.ERR_ABORTED || !isMainFrame) {
                 // This error code is generated for the following reasons:
                 // - XWalkViewInternal.stopLoading is called,
@@ -85,11 +80,18 @@ abstract class XWalkContentsClient {
         @Override
         public void didStartNavigation(String url, boolean isInMainFrame, boolean isSameDocument,
                 boolean isErrorPage) {
-            if (isInMainFrame) {
-                onNavigationStart(url);
-            }
+            onNavigationStart(url, isInMainFrame, isSameDocument, isErrorPage);
         }
 
+        @Override
+        public void didStartLoading(String url) {
+            onDidStartLoading(url);
+        };
+        
+        @Override
+        public void didFirstVisuallyNonEmptyPaint() {
+            onDidFirstVisuallyNonEmptyPaint();
+        }
         /*
          * @Override public void didNavigateAnyFrame(String url, String baseUrl, boolean isReload) {
          * doUpdateVisitedHistory(url, isReload); }
@@ -109,6 +111,58 @@ abstract class XWalkContentsClient {
             if (isMainFrame) {
                 stopSwipeRefreshHandler();
             }
+        }
+
+		@Override
+		public void didFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage, boolean hasCommitted,
+				boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition, int errorCode,
+				String errorDescription, int httpStatusCode) {
+			if (errorCode != 0) {
+				didFailLoad(isInMainFrame, errorCode, errorDescription, url);
+			}
+
+			onDidFinishNavigation(url, isInMainFrame, isErrorPage, hasCommitted, isSameDocument, isFragmentNavigation,
+					pageTransition, errorCode, errorDescription, httpStatusCode);
+
+	     	// TODO(iotto) : Implement the following!!
+//            if (!hasCommitted) return;
+//
+//            mCommittedNavigation = true;
+//
+//            AwContentsClient client = mAwContentsClient.get();
+//            if (hasCommitted && client != null) {
+//                boolean isReload = pageTransition != null
+//                        && ((pageTransition & PageTransition.CORE_MASK) == PageTransition.RELOAD);
+//                client.getCallbackHelper().postDoUpdateVisitedHistory(url, isReload);
+//            }
+//
+//            if (!isInMainFrame) return;
+//
+//            // Only invoke the onPageCommitVisible callback when navigating to a different document,
+//            // but not when navigating to a different fragment within the same document.
+//            if (!isSameDocument) {
+//                ThreadUtils.postOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        AwContents awContents = mAwContents.get();
+//                        if (awContents != null) {
+//                            awContents.insertVisualStateCallbackIfNotDestroyed(
+//                                    0, new VisualStateCallback() {
+//                                        @Override
+//                                        public void onComplete(long requestId) {
+//                                            AwContentsClient client = mAwContentsClient.get();
+//                                            if (client == null) return;
+//                                            client.onPageCommitVisible(url);
+//                                        }
+//                                    });
+//                        }
+//                    }
+//                });
+//            }
+//
+//            if (client != null && isFragmentNavigation) {
+//                client.getCallbackHelper().postOnPageFinished(url);
+//            }
         }
 
         @Override
@@ -219,10 +273,18 @@ abstract class XWalkContentsClient {
 
     protected abstract void onRequestFocus();
 
-    public abstract void onNavigationStateChanged(int flags);
+    public abstract void onNavigationStateChanged(int flags, final String url);
 
-    public abstract void onNavigationStart(final String url);
+    public abstract void onNavigationStart(final String url, boolean isInMainFrame,
+            boolean isSameDocument,
+            boolean isErrorPage);
+    public abstract void onDidStartLoading(String url);
+    public abstract void onDidFirstVisuallyNonEmptyPaint();
 
+	public abstract void onDidFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage,
+			boolean hasCommitted, boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition,
+			int errorCode, String errorDescription, int httpStatusCode);
+    
     public abstract void onPageStarted(String url);
 
     public abstract void onPageFinished(String url);

@@ -60,4 +60,8 @@ abstract class XWalkWebContentsDelegate extends WebContentsDelegateAndroid {
     public boolean isFullscreen() {
         return false;
     }
+    
+    @Override
+    @CalledByNative
+    public abstract void navigationStateChanged(int flags);
 }

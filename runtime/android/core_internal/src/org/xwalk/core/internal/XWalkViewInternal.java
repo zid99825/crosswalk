@@ -49,6 +49,7 @@ import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 
 import com.tenta.fs.ACancellableProgress;
+import com.tenta.fs.MetaErrors;
 
 import java.io.File;
 import java.io.IOException;
@@ -1022,14 +1023,12 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean saveHistory(final String id, final String encKey) {
-        if (mContent == null)
-            return false;
-
-        if (mContent.saveHistory(id, encKey) != null) {
-            return true;
+    public int saveHistory(final String id, final String encKey) {
+        if (mContent == null) {
+            return MetaErrors.ERR_INVALID_POINTER;
         }
-        return false;
+
+        return mContent.saveHistory(id, encKey);
     }
 
     /**
@@ -1040,15 +1039,12 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean restoreHistory(final String id, final String encKey) {
+    public int restoreHistory(final String id, final String encKey) {
         if (mContent == null) {
-            return false;
+            return MetaErrors.ERR_INVALID_POINTER;
         }
 
-        if (mContent.restoreHistory(id, encKey) != null) {
-            return true;
-        }
-        return false;
+        return mContent.restoreHistory(id, encKey);
     }
 
     /**
@@ -1059,7 +1055,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
     @XWalkAPI
     public int getMetaFsError() {
         if (mContent == null) {
-            return -6; // ERR_INVALID_POINTER
+            return MetaErrors.ERR_INVALID_POINTER;
         }
 
         return mContent.getMetaFsError();
@@ -1074,16 +1070,13 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean saveOldHistory(byte[] state, final String id,
+    public int saveOldHistory(byte[] state, final String id,
             final String encKey) {
         if (mContent == null) {
-            return false;
+            return MetaErrors.ERR_INVALID_POINTER;
         }
-        if (mContent.saveOldHistory(state, id, encKey) != null) {
-            return true;
-        }
-
-        return false;
+        
+        return mContent.saveOldHistory(state, id, encKey);
     }
 
     /**
@@ -1094,15 +1087,12 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @return true if success; false otherwise
      */
     @XWalkAPI
-    public boolean nukeHistory(final String id, final String encKey) {
+    public int nukeHistory(final String id, final String encKey) {
         if (mContent == null) {
-            return false;
+            return MetaErrors.ERR_INVALID_POINTER;
         }
-        if (mContent.nukeHistory(id, encKey) != null) {
-            return true;
-        }
-
-        return false;
+        
+        return mContent.nukeHistory(id, encKey);
     }
 
     /**
@@ -1518,6 +1508,13 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         mContent.clearHistory();
     }
 
+    boolean removeHistoryEntryAt(int index) {
+        if (mContent == null)
+            return false;
+        checkThreadSafety();
+        return mContent.removeHistoryEntryAt(index);
+    }
+    
     void destroy() {
         if (mContent == null)
             return;

@@ -35,32 +35,35 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
 
     @Override
     public void loadingStateChanged(boolean toDifferentDocument) {
+    	// TODO fix this; doesn't get called
         if (mXWalkContentsClient != null) {
             mXWalkContentsClient.onTitleChanged(mXwalkContent.getTitle(), false);
         }
     }
     
-    @Override
-    public void navigationStateChanged(int flags) {
-        if (mXWalkContentsClient != null) {
-            // TODO (iotto): continue implementation if needed
-            mXWalkContentsClient.onNavigationStateChanged(flags);
-        }
-        if ((flags & InvalidateTypes.URL) != 0 ) {
-            
-        }
-//        if ((flags & InvalidateTypes.URL) != 0
-//                && mAwContents.isPopupWindow()
-//                && mXwalkContent.hasAccessedInitialDocument()) {
-//            // Hint the client to show the last committed url, as it may be unsafe to show
-//            // the pending entry.
-//            String url = mXwalkContent.getLastCommittedUrl();
-//            url = TextUtils.isEmpty(url) ? ContentUrlConstants.ABOUT_BLANK_DISPLAY_URL : url;
-//            if (mXWalkContentsClient != null) {
-//                mXWalkContentsClient.getCallbackHelper().postSynthesizedPageLoadingForUrlBarUpdate(url);
-//            }
-//        }
-    }
+	@Override
+	public void navigationStateChanged(int flags) {
+
+		if (mXWalkContentsClient != null && (flags & InvalidateTypes.URL) != 0) {
+			// TODO (iotto): continue implementation if needed
+			String url = mXwalkContent.getLastCommittedUrl();
+			url = TextUtils.isEmpty(url) ? ContentUrlConstants.ABOUT_BLANK_DISPLAY_URL : url;
+			mXWalkContentsClient.onNavigationStateChanged(flags, url);
+		}
+		// if ((flags & InvalidateTypes.URL) != 0
+		// && mAwContents.isPopupWindow()
+		// && mXwalkContent.hasAccessedInitialDocument()) {
+		// // Hint the client to show the last committed url, as it may be unsafe to
+		// show
+		// // the pending entry.
+		// String url = mXwalkContent.getLastCommittedUrl();
+		// url = TextUtils.isEmpty(url) ? ContentUrlConstants.ABOUT_BLANK_DISPLAY_URL :
+		// url;
+		// if (mXWalkContentsClient != null) {
+		// mXWalkContentsClient.getCallbackHelper().postSynthesizedPageLoadingForUrlBarUpdate(url);
+		// }
+		// }
+	}
 
     @Override
     public void onLoadProgressChanged(int progress) {

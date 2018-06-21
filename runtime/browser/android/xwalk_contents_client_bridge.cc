@@ -135,15 +135,19 @@ XWalkContentsClientBridge* XWalkContentsClientBridge::FromID(int render_process_
 XWalkContentsClientBridge::XWalkContentsClientBridge(
     JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
     content::WebContents* web_contents)
-    : java_ref_(env, obj),
-      icon_helper_(new XWalkIconHelper(web_contents)) {
+    : java_ref_(env, obj) {
   DCHECK(obj);
-  Java_XWalkContentsClientBridge_setNativeContentsClientBridge(
-      env, obj, reinterpret_cast<intptr_t>(this));
-  icon_helper_->SetListener(this);
+  Java_XWalkContentsClientBridge_setNativeContentsClientBridge(env, obj, reinterpret_cast<intptr_t>(this));
+  icon_helper_.reset(new XWalkIconHelper(web_contents));
+  if (icon_helper_) {
+    icon_helper_->SetListener(this);
+  }
 }
 
 XWalkContentsClientBridge::~XWalkContentsClientBridge() {
+  if (icon_helper_.get())
+    icon_helper_->SetListener(nullptr);
+
   JNIEnv* env = AttachCurrentThread();
 
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
@@ -360,7 +364,7 @@ bool XWalkContentsClientBridge::RewriteUrlIfNeeded(const std::string& url,
                                  ui::PageTransition transition_type,
                                  std::string* new_url) {
 #if TENTA_LOG_NET_ENABLE == 1
-  LOG(INFO) << "XWalkContentsClientBridge::RewriteUrlIfNeeded " << url;
+  LOG(INFO) << "XWalkContentsClientBridge::RewriteUrlIfNeeded " << url << " transition_type=" << transition_type;
 #endif
 
   JNIEnv* env = AttachCurrentThread();
@@ -520,11 +524,12 @@ void XWalkContentsClientBridge::OnFilesNotSelected(
       files, static_cast<content::FileChooserParams::Mode>(mode));
 }
 
-void XWalkContentsClientBridge::DownloadIcon(JNIEnv* env,
-                                             jobject obj,
-                                             jstring url) {
+void XWalkContentsClientBridge::DownloadIcon(JNIEnv* env, jobject obj, jstring url) {
+  // TODO(iotto) : refactor this, move icon_helper to contents
   std::string url_str = base::android::ConvertJavaStringToUTF8(env, url);
-  icon_helper_->DownloadIcon(GURL(url_str));
+  if (icon_helper_) {
+    icon_helper_->DownloadIcon(GURL(url_str));
+  }
 }
 
 void XWalkContentsClientBridge::OnIconAvailable(const GURL& icon_url) {

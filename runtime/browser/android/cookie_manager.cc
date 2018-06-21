@@ -65,6 +65,18 @@ namespace xwalk {
 
 namespace {
 
+class TentaCookieDelegate : public net::CookieMonsterDelegate {
+ public:
+  TentaCookieDelegate() {
+  }
+  virtual ~TentaCookieDelegate() {
+  }
+
+  void OnCookieChanged(const net::CanonicalCookie& cookie, bool removed, net::CookieStore::ChangeCause cause) override {
+    TENTA_LOG_COOKIE(INFO) << __func__ << " removed=" << removed << " cause=" << (int)cause << " cookie=" << cookie.DebugString();
+  }
+};
+
 // Are cookies allowed for file:// URLs by default?
 const bool kDefaultFileSchemeAllowed = false;
 const char kPreKitkatDataDirectory[] = "app_database";
@@ -595,12 +607,9 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb, base::Waitab
         int same_site, prio;
         // url     std::string key(cookie_util::GetEffectiveDomain(url.scheme(), url.host()));
 
-        if (/*it.ReadString(&spec) && */it.ReadString(&name)
-            && it.ReadString(&value) && it.ReadString(&domain)
-            && it.ReadString(&path) && it.ReadInt64(&c_time)
-            && it.ReadInt64(&e_time) && it.ReadInt64(&l_time)
-            && it.ReadBool(&secure) && it.ReadBool(&http_only)
-            && it.ReadInt(&same_site) && it.ReadInt(&prio)) {
+        if (/*it.ReadString(&spec) && */it.ReadString(&name) && it.ReadString(&value) && it.ReadString(&domain)
+            && it.ReadString(&path) && it.ReadInt64(&c_time) && it.ReadInt64(&e_time) && it.ReadInt64(&l_time)
+            && it.ReadBool(&secure) && it.ReadBool(&http_only) && it.ReadInt(&same_site) && it.ReadInt(&prio)) {
 
           GURL url = net::cookie_util::CookieOriginToURL(domain, secure);
 
@@ -613,8 +622,8 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb, base::Waitab
                                       std::move(callback));
 
 #if TENTA_LOG_COOKIE_ENABLE == 1
-          LOG(INFO) << "Cookie restored name=" << name << " value=" << value
-                       << " domain=" << domain << " url=" << url.spec();
+          LOG(INFO) << "Cookie restored name=" << name << " value=" << value << " domain=" << domain << " url="
+                    << url.spec();
 #endif
 
         } else {
@@ -654,7 +663,7 @@ void CookieManager::HasCookiesAsyncHelper(bool* result, base::WaitableEvent* com
 }
 
 void CookieManager::HasCookiesCompleted(base::WaitableEvent* completion,
-                                        bool* result,
+bool* result,
                                         const CookieList& cookies) {
   *result = cookies.size() != 0;
   DCHECK(completion);
