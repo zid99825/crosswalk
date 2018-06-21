@@ -30,11 +30,9 @@ class XWalkPresentationServiceDelegateAndroid
 
  public:
   void StartPresentation(
-      int render_process_id,
-      int render_frame_id,
-      const std::vector<GURL>& presentation_urls,
-      const content::PresentationConnectionCallback& success_cb,
-      const content::PresentationConnectionErrorCallback& error_cb) override;
+      const content::PresentationRequest& request,
+      content::PresentationConnectionCallback success_cb,
+      content::PresentationConnectionErrorCallback error_cb) override;
 };
 
 }  // namespace xwalk

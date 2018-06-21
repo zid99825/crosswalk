@@ -32,7 +32,7 @@ std::unique_ptr<InputStream>
 XWalkWebResourceResponseImpl::GetInputStream(JNIEnv* env) const {
   ScopedJavaLocalRef<jobject> jstream =
       Java_XWalkWebResourceResponseInternal_getDataNative(
-         env, java_object_.obj());
+         env, java_object_);
   if (jstream.is_null())
     return std::unique_ptr<InputStream>();
   return base::WrapUnique(new InputStreamImpl(jstream));
@@ -42,7 +42,7 @@ bool XWalkWebResourceResponseImpl::GetMimeType(
     JNIEnv* env, std::string* mime_type) const {
   ScopedJavaLocalRef<jstring> jstring_mime_type =
       Java_XWalkWebResourceResponseInternal_getMimeTypeNative(
-         env, java_object_.obj());
+         env, java_object_);
   if (jstring_mime_type.is_null())
     return false;
   *mime_type = ConvertJavaStringToUTF8(jstring_mime_type);
@@ -53,7 +53,7 @@ bool XWalkWebResourceResponseImpl::GetCharset(
     JNIEnv* env, std::string* charset) const {
   ScopedJavaLocalRef<jstring> jstring_charset =
       Java_XWalkWebResourceResponseInternal_getEncodingNative(
-         env, java_object_.obj());
+         env, java_object_);
   if (jstring_charset.is_null())
     return false;
   *charset = ConvertJavaStringToUTF8(jstring_charset);
@@ -72,10 +72,10 @@ bool XWalkWebResourceResponseImpl::GetStatusInfo(
     std::string* reason_phrase) const {
   int status =
       Java_XWalkWebResourceResponseInternal_getStatusCodeNative(
-         env, java_object_.obj());
+         env, java_object_);
   ScopedJavaLocalRef<jstring> jstring_reason_phrase =
       Java_XWalkWebResourceResponseInternal_getReasonPhraseNative(
-         env, java_object_.obj());
+         env, java_object_);
   if (status < 100 || status >= 600 || jstring_reason_phrase.is_null())
     return false;
   *status_code = status;
@@ -88,10 +88,10 @@ bool XWalkWebResourceResponseImpl::GetResponseHeaders(
     net::HttpResponseHeaders* headers) const {
   ScopedJavaLocalRef<jobjectArray> jstringArray_headerNames =
       Java_XWalkWebResourceResponseInternal_getResponseHeaderNames(
-         env, java_object_.obj());
+         env, java_object_);
   ScopedJavaLocalRef<jobjectArray> jstringArray_headerValues =
       Java_XWalkWebResourceResponseInternal_getResponseHeaderValues(
-         env, java_object_.obj());
+         env, java_object_);
   if (jstringArray_headerNames.is_null() || jstringArray_headerValues.is_null())
     return false;
   std::vector<std::string> header_names;

@@ -8,7 +8,6 @@
 #include <memory>
 #include <string>
 
-#include "base/memory/scoped_vector.h"
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/common/main_function_params.h"
 #include "url/gurl.h"

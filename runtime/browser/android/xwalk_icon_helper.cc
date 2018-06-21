@@ -45,14 +45,14 @@ void XWalkIconHelper::DidUpdateFaviconURL(
       continue;
 
     switch (i->icon_type) {
-      case content::FaviconURL::FAVICON:
+      case content::FaviconURL::IconType::kFavicon:
         if (listener_) listener_->OnIconAvailable(i->icon_url);
         break;
-      case content::FaviconURL::TOUCH_ICON:
+      case content::FaviconURL::IconType::kTouchIcon:
         break;
-      case content::FaviconURL::TOUCH_PRECOMPOSED_ICON:
+      case content::FaviconURL::IconType::kTouchPrecomposedIcon:
         break;
-      case content::FaviconURL::INVALID_ICON:
+      case content::FaviconURL::IconType::kInvalid:
         break;
       default:
         NOTREACHED();

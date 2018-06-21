@@ -18,7 +18,7 @@ namespace sysapps {
 
 RawSocketExtension::RawSocketExtension() {
   set_name("xwalk.experimental.raw_socket");
-  set_javascript_api(ResourceBundle::GetSharedInstance().GetRawDataResource(
+  set_javascript_api(ui::ResourceBundle::GetSharedInstance().GetRawDataResource(
       IDR_XWALK_SYSAPPS_RAW_SOCKET_API).as_string());
 }
 

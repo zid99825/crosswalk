@@ -46,7 +46,7 @@ void XWalkContentsClientBridgeBase::Associate(
     WebContents* web_contents,
     XWalkContentsClientBridgeBase* handler) {
   web_contents->SetUserData(kXWalkContentsClientBridgeBase,
-                            new UserData(handler));
+                            base::MakeUnique<UserData>(handler));
 }
 
 // static

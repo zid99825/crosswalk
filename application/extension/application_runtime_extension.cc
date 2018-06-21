@@ -23,7 +23,7 @@ ApplicationRuntimeExtension::ApplicationRuntimeExtension(
     Application* application)
   : application_(application) {
   set_name("xwalk.app.runtime");
-  set_javascript_api(ResourceBundle::GetSharedInstance().GetRawDataResource(
+  set_javascript_api(ui::ResourceBundle::GetSharedInstance().GetRawDataResource(
       IDR_XWALK_APPLICATION_RUNTIME_API).as_string());
 }
 

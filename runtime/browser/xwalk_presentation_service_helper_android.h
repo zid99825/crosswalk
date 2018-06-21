@@ -13,13 +13,13 @@ namespace xwalk {
 class PresentationSessionAndroid : public PresentationSession {
  public:
   static void Create(const CreateParams& params, SessionCallback callback);
-  ~PresentationSessionAndroid() override;
   void Close() override;
 
  protected:
   PresentationSessionAndroid(const std::string& presentation_url,
                              const std::string& presentation_id,
                              const SystemString& display_id);
+  ~PresentationSessionAndroid() override;
 
   DISALLOW_COPY_AND_ASSIGN(PresentationSessionAndroid);
 };
@@ -42,7 +42,7 @@ class PresentationFrameAndroid : public PresentationFrame,
       const RenderFrameHostId& render_frame_host_id);
   ~PresentationFrameAndroid() override;
 
-  void OnPresentationClosed(int render_process_id, int render_frame_id);
+  void OnPresentationClosed(int render_process_id, int render_frame_id) override;
 };
 
 }  // namespace xwalk

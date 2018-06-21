@@ -171,6 +171,35 @@ public class XWalkCookieManagerInternal {
     nativeSetAcceptFileSchemeCookies(accept);
   }
 
+  @XWalkAPI
+  public void setDbKey(String dbKey) {
+      nativeSetDbKey(dbKey);
+  }
+  
+  @XWalkAPI
+  public int rekeyDb(final String oldKey, final String newKey) {
+      return nativeRekeyDb(oldKey, newKey);
+  }
+  
+  @XWalkAPI
+  public void setZone(final String zone) {
+      nativeSetZone(zone);
+  }
+  
+  @XWalkAPI
+  public int nukeDomain(final String domain) {
+      return nativeNukeDomain(domain);
+  }
+  
+  @XWalkAPI
+  public void pageLoadStarted(final String url) {
+      nativePageLoadStarted(url);
+  }
+  
+  @XWalkAPI
+  public void reset() {
+	  nativeReset();
+  }
   private native void nativeSetAcceptCookie(boolean accept);
 
   private native boolean nativeAcceptCookie();
@@ -196,4 +225,11 @@ public class XWalkCookieManagerInternal {
   private native byte[] nativeSaveCookies();
 
   private native boolean nativeRestoreCookies(byte[] data);
+  
+  private native void nativeSetDbKey(String dbKey);
+  private native int nativeRekeyDb(final String oldKey, final String newKey);
+  private native void nativeSetZone(final String zone);
+  private native int nativeNukeDomain(final String domain);
+  private native void nativePageLoadStarted(final String url);
+  private native void nativeReset();
 }

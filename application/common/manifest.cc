@@ -8,6 +8,7 @@
 
 #include "base/lazy_instance.h"
 #include "base/logging.h"
+#include "base/memory/ptr_util.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/string_split.h"
@@ -247,7 +248,7 @@ bool Manifest::ParseWGTI18nEachElement(base::Value* value,
     std::string locale_key(
         GetLocalizedKey(path + kPathConnectSymbol + iter.key(), xml_lang));
     if (!i18n_data_->Get(locale_key, NULL))
-      i18n_data_->Set(locale_key, iter.value().DeepCopy());
+      i18n_data_->Set(locale_key, base::MakeUnique<base::Value>(iter.value().Clone()));
 
     iter.Advance();
   }

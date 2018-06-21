@@ -9,7 +9,7 @@
 #include <string>
 
 #include "base/files/file_path.h"
-#include "base/memory/scoped_vector.h"
+//#include "base/memory/scoped_vector.h"
 #include "base/observer_list.h"
 #include "xwalk/application/browser/application.h"
 #include "xwalk/application/common/permission_policy_manager.h"
@@ -24,6 +24,10 @@ namespace application {
 // The application service manages launch and termination of the applications.
 class ApplicationService : public Application::Observer {
  public:
+//  using AppVector = std::vector<std::unique_ptr<Application>>;
+  // TODO (iotto): Needs refactoring to use uniqe_ptr
+  using AppVector = std::vector<Application*>;
+
   // Client code may use this class (and register with AddObserver below) to
   // keep track of applications life cycle.
   class Observer {
@@ -56,7 +60,7 @@ class ApplicationService : public Application::Observer {
   Application* GetApplicationByRenderHostID(int id) const;
   Application* GetApplicationByID(const std::string& app_id) const;
 
-  const ScopedVector<Application>& active_applications() const {
+  const AppVector& active_applications() const {
       return applications_; }
 
   void AddObserver(Observer* observer);
@@ -85,7 +89,7 @@ class ApplicationService : public Application::Observer {
   void OnApplicationTerminated(Application* app) override;
 
   XWalkBrowserContext* browser_context_;
-  ScopedVector<Application> applications_;
+  AppVector applications_;
   base::ObserverList<Observer> observers_;
 
   DISALLOW_COPY_AND_ASSIGN(ApplicationService);

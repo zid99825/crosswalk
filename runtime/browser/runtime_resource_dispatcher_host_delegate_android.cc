@@ -9,7 +9,6 @@
 #include <string>
 #include <utility>
 
-#include "base/memory/scoped_vector.h"
 //#include "components/auto_login_parser/auto_login_parser.h"
 #include "android_webview/browser/renderer_host/auto_login_parser.h"
 #include "components/navigation_interception/intercept_navigation_delegate.h"
@@ -238,14 +237,7 @@ void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
       bool must_download,
       bool is_new_request,
       std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
-/*    net::URLRequest* request,
-    content::ResourceContext* resource_context,
-    int child_id,
-    int route_id,
-    bool is_content_initiated,
-    bool must_download,
-    ScopedVector<content::ResourceThrottle>* throttles) {
-*/
+
   GURL url(request->url());
   std::string user_agent;
   std::string content_disposition;

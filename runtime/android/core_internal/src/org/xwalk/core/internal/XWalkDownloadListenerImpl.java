@@ -119,7 +119,7 @@ class XWalkDownloadListenerImpl extends XWalkDownloadListenerInternal {
             }
             try {
                 dstStream = new FileOutputStream(dst);
-                srcStream = AndroidProtocolHandler.open(mContext, url);
+                srcStream = AndroidProtocolHandler.open(url);
                 if (dstStream != null && srcStream != null) {
                     streamTransfer(srcStream, dstStream);
                 }

@@ -112,7 +112,9 @@ class XWalkViewDelegate {
                 builder.append(buffer, 0, length);
             }
 
-            return CommandLine.tokenizeQuotedAruments(
+            // TODO (iotto) : rewrite parsing logic
+            // tokenizeQuotedArguments not public anymore
+            return CommandLine.tokenizeQuotedArguments(
                     builder.toString().toCharArray());
         } catch (IOException e) {
             return null;
@@ -428,7 +430,13 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
     private static String getDeviceAbi() {
         if (sDeviceAbi == null) {
             try {
-                sDeviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase(Locale.getDefault());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    sDeviceAbi = Build.SUPPORTED_ABIS[0].toLowerCase(Locale.getDefault());
+                } else {
+                    sDeviceAbi = Build.CPU_ABI;
+                }
+
+                
             } catch (NoSuchFieldError e) {
                 try {
                     Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");

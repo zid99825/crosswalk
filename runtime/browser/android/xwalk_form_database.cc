@@ -24,17 +24,17 @@ XWalkFormDatabaseService* GetFormDatabaseService() {
 } // anonymous namespace
 
 // static
-jboolean HasFormData(JNIEnv*, const base::android::JavaParamRef<jclass>&) {
+jboolean JNI_XWalkFormDatabase_HasFormData(JNIEnv*, const base::android::JavaParamRef<jclass>&) {
   return GetFormDatabaseService()->HasFormData();
 }
 
 // static
-void ClearFormData(JNIEnv*, const base::android::JavaParamRef<jclass>&) {
+void JNI_XWalkFormDatabase_ClearFormData(JNIEnv*, const base::android::JavaParamRef<jclass>&) {
   GetFormDatabaseService()->ClearFormData();
 }
 
 bool RegisterXWalkFormDatabase(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+  return false;
 }
 
 } // namespace xwalk

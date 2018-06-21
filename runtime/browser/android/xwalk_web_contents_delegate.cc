@@ -54,7 +54,7 @@ void XWalkWebContentsDelegate::AddNewContents(
 
   if (java_delegate.obj()) {
     create_popup = Java_XWalkWebContentsDelegate_addNewContents(
-        env, java_delegate.obj(), is_dialog, user_gesture);
+        env, java_delegate, is_dialog, user_gesture);
   }
 
   if (create_popup) {
@@ -75,7 +75,7 @@ void XWalkWebContentsDelegate::CloseContents(content::WebContents* source) {
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
   if (java_delegate.obj()) {
-    Java_XWalkWebContentsDelegate_closeContents(env, java_delegate.obj());
+    Java_XWalkWebContentsDelegate_closeContents(env, java_delegate);
   }
 }
 
@@ -84,7 +84,7 @@ void XWalkWebContentsDelegate::ActivateContents(content::WebContents* source) {
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
   if (java_delegate.obj()) {
-    Java_XWalkWebContentsDelegate_activateContents(env, java_delegate.obj());
+    Java_XWalkWebContentsDelegate_activateContents(env, java_delegate);
   }
 }
 
@@ -94,7 +94,7 @@ void XWalkWebContentsDelegate::UpdatePreferredSize(
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
   if (java_delegate.obj()) {
-    Java_XWalkWebContentsDelegate_updatePreferredSize(env, java_delegate.obj(),
+    Java_XWalkWebContentsDelegate_updatePreferredSize(env, java_delegate,
                                                       pref_size.width(),
                                                       pref_size.height());
   }
@@ -118,13 +118,12 @@ void XWalkWebContentsDelegate::RunFileChooser(
   int mode = static_cast<int>(params.mode);
   Java_XWalkWebContentsDelegate_shouldOverrideRunFileChooser(
       env,
-      java_delegate.obj(),
+      java_delegate,
       render_frame_host->GetProcess()->GetID(),
       render_frame_host->GetRoutingID(),
       mode,
       ConvertUTF16ToJavaString(
-          env, base::JoinString(params.accept_types, base::ASCIIToUTF16(",")))
-          .obj(),
+          env, base::JoinString(params.accept_types, base::ASCIIToUTF16(","))),
       params.capture);
 }
 
@@ -171,7 +170,7 @@ void XWalkWebContentsDelegate::RendererUnresponsive(WebContents* source,
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_rendererUnresponsive(env, obj.obj());
+  Java_XWalkWebContentsDelegate_rendererUnresponsive(env, obj);
 }
 
 void XWalkWebContentsDelegate::RendererResponsive(WebContents* source) {
@@ -179,7 +178,7 @@ void XWalkWebContentsDelegate::RendererResponsive(WebContents* source) {
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_rendererResponsive(env, obj.obj());
+  Java_XWalkWebContentsDelegate_rendererResponsive(env, obj);
 }
 
 bool XWalkWebContentsDelegate::DidAddMessageToConsole(
@@ -216,21 +215,21 @@ bool XWalkWebContentsDelegate::DidAddMessageToConsole(
       NOTREACHED();
   }
   return Java_XWalkWebContentsDelegate_addMessageToConsole(
-      env, GetJavaDelegate(env).obj(), jlevel, jmessage.obj(), line_no,
-      jsource_id.obj());
+      env, GetJavaDelegate(env), jlevel, jmessage, line_no,
+      jsource_id);
 }
 
 void XWalkWebContentsDelegate::HandleKeyboardEvent(
     content::WebContents* source,
     const content::NativeWebKeyboardEvent& event) {
-  jobject key_event = event.os_event;
-  if (!key_event)
+  ScopedJavaGlobalRef<jobject> key_event = event.os_event;
+  if (!key_event.obj())
     return;
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_handleKeyboardEvent(env, obj.obj(), key_event);
+  Java_XWalkWebContentsDelegate_handleKeyboardEvent(env, obj, key_event);
 }
 
 void XWalkWebContentsDelegate::ShowRepostFormWarningDialog(
@@ -239,7 +238,7 @@ void XWalkWebContentsDelegate::ShowRepostFormWarningDialog(
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_showRepostFormWarningDialog(env, obj.obj());
+  Java_XWalkWebContentsDelegate_showRepostFormWarningDialog(env, obj);
 }
 
 void XWalkWebContentsDelegate::EnterFullscreenModeForTab(
@@ -248,7 +247,7 @@ void XWalkWebContentsDelegate::EnterFullscreenModeForTab(
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj.obj(), true);
+  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj, true);
 }
 
 void XWalkWebContentsDelegate::ExitFullscreenModeForTab(
@@ -257,7 +256,7 @@ void XWalkWebContentsDelegate::ExitFullscreenModeForTab(
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj.obj(), false);
+  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj, false);
 }
 
 bool XWalkWebContentsDelegate::IsFullscreenForTabOrPending(
@@ -266,16 +265,15 @@ bool XWalkWebContentsDelegate::IsFullscreenForTabOrPending(
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return false;
-  return Java_XWalkWebContentsDelegate_isFullscreen(env, obj.obj());
+  return Java_XWalkWebContentsDelegate_isFullscreen(env, obj);
 }
 
 bool XWalkWebContentsDelegate::ShouldCreateWebContents(
-    content::WebContents* web_contents, content::SiteInstance* source_site_instance,
-    int32_t route_id,
+    content::WebContents* web_contents, content::RenderFrameHost* opener,
+    content::SiteInstance* source_site_instance, int32_t route_id,
     int32_t main_frame_route_id, int32_t main_frame_widget_route_id,
     content::mojom::WindowContainerType window_container_type,
-    const GURL& opener_url,
-    const std::string& frame_name,
+    const GURL& opener_url, const std::string& frame_name,
     const GURL& target_url, const std::string& partition_id,
     content::SessionStorageNamespace* session_storage_namespace) {
   JNIEnv* env = AttachCurrentThread();
@@ -284,8 +282,8 @@ bool XWalkWebContentsDelegate::ShouldCreateWebContents(
     return true;
   ScopedJavaLocalRef<jstring> java_url = ConvertUTF8ToJavaString(
       env, target_url.spec());
-  return Java_XWalkWebContentsDelegate_shouldCreateWebContents(env, obj.obj(),
-                                                               java_url.obj());
+  return Java_XWalkWebContentsDelegate_shouldCreateWebContents(env, obj,
+                                                               java_url);
 }
 
 void XWalkWebContentsDelegate::FindReply(WebContents* web_contents,

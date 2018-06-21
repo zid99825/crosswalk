@@ -42,7 +42,6 @@ class XWalkContentSettings {
   std::unique_ptr<PrefService> pref_service_;
   scoped_refptr<user_prefs::PrefRegistrySyncable> pref_registry_;
   scoped_refptr<JsonPrefStore> pref_store_;
-  scoped_refptr<base::SequencedTaskRunner> sequenced_task_runner_;
   scoped_refptr<HostContentSettingsMap> host_content_settings_map_;
   friend struct base::DefaultSingletonTraits<XWalkContentSettings>;
 

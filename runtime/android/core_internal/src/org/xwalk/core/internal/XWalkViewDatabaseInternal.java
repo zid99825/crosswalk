@@ -10,7 +10,8 @@ package org.xwalk.core.internal;
  */
 @XWalkAPI(noInstance = true)
 public class XWalkViewDatabaseInternal {
-
+    private static final Object sync = new Object();
+    
     /**
      * Gets whether there is any saved data for web forms.
      *
@@ -19,8 +20,10 @@ public class XWalkViewDatabaseInternal {
      * @since 8.0
      */
     @XWalkAPI
-    public static synchronized boolean hasFormData() {
-        return XWalkFormDatabase.hasFormData();
+    public static boolean hasFormData() {
+        synchronized (sync) {
+            return XWalkFormDatabase.hasFormData();
+        }
     }
 
     /**
@@ -30,7 +33,9 @@ public class XWalkViewDatabaseInternal {
      * @since 8.0
      */
     @XWalkAPI(reservable = true)
-    public static synchronized void clearFormData() {
-        XWalkFormDatabase.clearFormData();
+    public static void clearFormData() {
+        synchronized (sync) {
+            XWalkFormDatabase.clearFormData();
+        }
     }
 }

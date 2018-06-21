@@ -67,6 +67,9 @@ KNOWN_SKIPPED_JARS = (
   'cardboard.jar',
   'protobuf_nano_javalib.jar',
   'support-annotations-25.0.1.jar',
+  'support-annotations-27.0.0.jar',
+  'android_arch_lifecycle_runtime_java.jar',
+  
 )
 
 

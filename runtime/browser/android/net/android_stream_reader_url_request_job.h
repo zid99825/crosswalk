@@ -96,7 +96,7 @@ class AndroidStreamReaderURLRequestJob : public net::URLRequestJob {
   void GetResponseInfo(net::HttpResponseInfo* info) override;
 
  protected:
-  virtual ~AndroidStreamReaderURLRequestJob();
+  ~AndroidStreamReaderURLRequestJob() override;
 
   // Gets the TaskRunner for the worker thread.
   // Overridden in unittests.
@@ -122,8 +122,8 @@ class AndroidStreamReaderURLRequestJob : public net::URLRequestJob {
   std::unique_ptr<Delegate> delegate_;
   std::string content_security_policy_;
   scoped_refptr<InputStreamReaderWrapper> input_stream_reader_wrapper_;
-  base::WeakPtrFactory<AndroidStreamReaderURLRequestJob> weak_factory_;
   base::ThreadChecker thread_checker_;
+  base::WeakPtrFactory<AndroidStreamReaderURLRequestJob> weak_factory_;
 
   DISALLOW_COPY_AND_ASSIGN(AndroidStreamReaderURLRequestJob);
 };

@@ -53,18 +53,14 @@ class XWalkPresentationServiceDelegate
   void Reset(int render_process_id, int render_frame_id) override;
 
   void SetDefaultPresentationUrls(
-      int render_process_id,
-      int render_frame_id,
-      const std::vector<GURL>& default_presentation_urls,
-      const content::PresentationConnectionCallback& callback) override;
+      const content::PresentationRequest& request,
+      content::DefaultPresentationConnectionCallback callback) override;
 
   void ReconnectPresentation(
-      int render_process_id,
-      int render_frame_id,
-      const std::vector<GURL>& presentation_urls,
+      const content::PresentationRequest& request,
       const std::string& presentation_id,
-      const content::PresentationConnectionCallback& success_cb,
-      const content::PresentationConnectionErrorCallback& error_cb) override;
+      content::PresentationConnectionCallback success_cb,
+      content::PresentationConnectionErrorCallback error_cb) override;
 
   void CloseConnection(int render_process_id,
                        int render_frame_id,
@@ -73,19 +69,6 @@ class XWalkPresentationServiceDelegate
   void Terminate(int render_process_id,
                  int render_frame_id,
                  const std::string& presentation_id) override;
-
-  void ListenForConnectionMessages(
-      int render_process_id,
-      int render_frame_id,
-      const content::PresentationInfo& session,
-      const content::PresentationConnectionMessageCallback& message_cb) override {}
-
-  void SendMessage(
-      int render_process_id,
-      int render_frame_id,
-      const content::PresentationInfo& session,
-      content::PresentationConnectionMessage message_request,
-      const SendMessageCallback& send_message_cb) override {}
 
   void ListenForConnectionStateChange(
       int render_process_id,
@@ -96,8 +79,8 @@ class XWalkPresentationServiceDelegate
 
   void OnSessionStarted(
       const RenderFrameHostId& id,
-      const content::PresentationConnectionCallback& success_cb,
-      const content::PresentationConnectionErrorCallback& error_cb,
+      content::PresentationConnectionCallback success_cb,
+      content::PresentationConnectionErrorCallback error_cb,
       scoped_refptr<PresentationSession> session,
       const std::string& error);
   // Connect |controller_connection| owned by the controlling frame to the
@@ -107,7 +90,7 @@ class XWalkPresentationServiceDelegate
   // ownership passed from controlling frame to the offscreen presentation.
   // |receiver_connection_request|: Mojo InterfaceRequest to be bind to receiver
   // page's presentation connection.
-  virtual void ConnectToPresentation(
+  void ConnectToPresentation(
       int render_process_id,
       int render_frame_id,
       const content::PresentationInfo& session,

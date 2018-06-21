@@ -138,9 +138,13 @@ int XWalkPermissionManager::RequestPermission(
     case content::PermissionType::DURABLE_STORAGE:
     case content::PermissionType::MIDI:
     case content::PermissionType::MIDI_SYSEX:
-    case content::PermissionType::PUSH_MESSAGING:
+    case content::PermissionType::SENSORS:
     case content::PermissionType::VIDEO_CAPTURE:
     case content::PermissionType::FLASH:
+    case content::PermissionType::ACCESSIBILITY_EVENTS:
+    case content::PermissionType::CLIPBOARD_READ:
+    case content::PermissionType::CLIPBOARD_WRITE:
+
       NOTIMPLEMENTED() << "RequestPermission is not implemented for "
                        << static_cast<int>(permission);
       callback.Run(PermissionStatus::DENIED);
@@ -189,9 +193,12 @@ void XWalkPermissionManager::CancelPermissionRequest(int request_id) {
     case content::PermissionType::MIDI:
     case content::PermissionType::MIDI_SYSEX:
     case content::PermissionType::NOTIFICATIONS:
-    case content::PermissionType::PUSH_MESSAGING:
+    case content::PermissionType::SENSORS:
     case content::PermissionType::VIDEO_CAPTURE:
     case content::PermissionType::FLASH:
+    case content::PermissionType::ACCESSIBILITY_EVENTS:
+    case content::PermissionType::CLIPBOARD_READ:
+    case content::PermissionType::CLIPBOARD_WRITE:
       NOTIMPLEMENTED() << "CancelPermission not implemented for "
                        << static_cast<int>(pending_request->permission);
       break;

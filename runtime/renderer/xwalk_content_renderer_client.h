@@ -53,7 +53,9 @@ class XWalkContentRendererClient
   bool WillSendRequest(blink::WebLocalFrame* frame,
                        ui::PageTransition transition_type,
                        const blink::WebURL& url,
+                       std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
                        GURL* new_url) override;
+
   void AddSupportedKeySystems(
       std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems)
       override;
@@ -87,6 +89,10 @@ class XWalkContentRendererClient
       const blink::WebURLError& error,
       std::string* error_html,
       base::string16* error_description) override;
+  void GetNavigationErrorStringsForHttpStatusError(content::RenderFrame* render_frame,
+                                                   const blink::WebURLRequest& failed_request,
+                                                   const GURL& unreachable_url, int http_status,
+                                                   std::string* error_html, base::string16* error_description) override;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkContentRendererClient);
 };

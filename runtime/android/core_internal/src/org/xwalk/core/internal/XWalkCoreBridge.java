@@ -30,7 +30,7 @@ class XWalkCoreBridge {
         Class<?> xwalkContent = getBridgeClass("XWalkContent");
         Class<?> javascriptInterface = getWrapperClass("JavascriptInterface");
         ReflectMethod method = new ReflectMethod(xwalkContent,
-                "setJavascriptInterfaceClass", javascriptInterface.getClass());
+                "setJavascriptInterfaceClass", javascriptInterface);
         method.invoke(javascriptInterface);
     }
 

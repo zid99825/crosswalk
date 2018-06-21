@@ -8,7 +8,7 @@
 #include "base/logging.h"
 #include "base/strings/stringprintf.h"
 #include "base/values.h"
-#include "content/public/child/v8_value_converter.h"
+#include "content/public/renderer/v8_value_converter.h"
 #include "third_party/WebKit/public/web/WebFrame.h"
 #include "xwalk/extensions/renderer/xwalk_module_system.h"
 #include "xwalk/extensions/renderer/xwalk_v8_utils.h"
@@ -30,7 +30,7 @@ XWalkExtensionModule::XWalkExtensionModule(XWalkExtensionClient* client,
                                            const std::string& extension_code)
     : extension_name_(extension_name),
       extension_code_(extension_code),
-      converter_(content::V8ValueConverter::create()),
+      converter_(content::V8ValueConverter::Create()),
       client_(client),
       module_system_(module_system),
       instance_id_(0) {

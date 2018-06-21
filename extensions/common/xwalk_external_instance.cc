@@ -43,12 +43,13 @@ void XWalkExternalInstance::HandleMessage(std::unique_ptr<base::Value> msg) {
   }
 
   std::string string_msg;
-  const base::Value* binary_msg = nullptr;
   if (callback && msg->GetAsString(&string_msg)) {
     callback(xw_instance_, string_msg.c_str());
-  } else if (binary_callback && msg->GetAsBinary(&binary_msg)) {
-    binary_callback(xw_instance_, binary_msg->GetBuffer(),
-                    binary_msg->GetSize());
+  } else if (binary_callback && msg->is_blob()) {
+    const base::Value::BlobStorage& binary_msg = msg->GetBlob();
+
+    binary_callback(xw_instance_, binary_msg.data(),
+                    binary_msg.size());
   } else {
     LOG(WARNING) << "Failed to retrieve the message's value.";
   }

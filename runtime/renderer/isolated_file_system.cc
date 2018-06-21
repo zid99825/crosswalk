@@ -7,14 +7,14 @@
 #include "xwalk/runtime/renderer/isolated_file_system.h"
 
 #include "base/logging.h"
-#include "content/public/child/v8_value_converter.h"
+#include "content/public/renderer/v8_value_converter.h"
 #include "content/public/renderer/render_view.h"
 #include "storage/common/fileapi/file_system_types.h"
 #include "storage/common/fileapi/file_system_util.h"
 #include "third_party/WebKit/public/platform/WebFileSystem.h"
 #include "third_party/WebKit/public/platform/WebFileSystemType.h"
 #include "third_party/WebKit/public/platform/WebString.h"
-#include "third_party/WebKit/public/web/WebDataSource.h"
+#include "third_party/WebKit/public/web/WebDocumentLoader.h"
 #include "third_party/WebKit/public/web/WebDOMFileSystem.h"
 #include "third_party/WebKit/public/web/WebFrame.h"
 #include "third_party/WebKit/public/web/WebLocalFrame.h"
@@ -46,10 +46,14 @@ void IsolatedFileSystem::GetIsolatedFileSystem(
       blink::WebLocalFrame::FrameForCurrentContext();
   CHECK(webframe);
   std::string file_system_id(*v8::String::Utf8Value(info[0]));
-  blink::WebDataSource* data_source = webframe->ProvisionalDataSource() ?
-      webframe->ProvisionalDataSource() : webframe->DataSource();
-  CHECK(data_source);
-  GURL context_url(data_source->GetRequest().Url());
+
+  blink::WebDocumentLoader * loader = webframe->GetProvisionalDocumentLoader() ?
+      webframe->GetProvisionalDocumentLoader() : webframe->GetDocumentLoader();
+
+//  blink::WebDataSource* data_source = webframe->ProvisionalDataSource() ?
+//      webframe->ProvisionalDataSource() : webframe->DataSource();
+  CHECK(loader);
+  GURL context_url(loader->GetRequest().Url());
 
   // In instrument test, context_url.GetOrigin() returns emtpy string.
   // That causes app crash. So assign "file:///" as default value to

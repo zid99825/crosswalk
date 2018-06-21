@@ -13,7 +13,8 @@ DisplayInfoManagerServiceAndroid::~DisplayInfoManagerServiceAndroid() {}
 
 void DisplayInfoManagerServiceAndroid::FindAllAvailableMonitors(
     std::vector<DisplayInfo>* info_list) {
-  if (auto presentation_api = XWalkPresentationHost::GetInstance()) {
+  XWalkPresentationHost* presentation_api = XWalkPresentationHost::GetInstance();
+  if (presentation_api) {
     auto vec = presentation_api->GetAndroidDisplayInfo();
     for (auto data : vec) {
       DisplayInfo info = {};
@@ -33,7 +34,8 @@ void DisplayInfoManagerServiceAndroid::DisplayChangeCallback(int) {
 }
 
 void DisplayInfoManagerServiceAndroid::ListenMonitorsUpdate() {
-  if (auto presentation_api = XWalkPresentationHost::GetInstance()) {
+  XWalkPresentationHost* presentation_api = XWalkPresentationHost::GetInstance();
+  if (presentation_api) {
     presentation_api->SetDisplayChangeCallback(DisplayChangeCallback);
   } else {
     LOG(ERROR) << "Failed to listen to Android Display change event";
@@ -41,7 +43,9 @@ void DisplayInfoManagerServiceAndroid::ListenMonitorsUpdate() {
 }
 
 void DisplayInfoManagerServiceAndroid::StopListenMonitorsUpdate() {
-  if (auto presentation_api = XWalkPresentationHost::GetInstance()) {
+  XWalkPresentationHost* presentation_api =
+      XWalkPresentationHost::GetInstance();
+  if (presentation_api) {
     presentation_api->SetDisplayChangeCallback(nullptr);
   } else {
   }
@@ -60,7 +64,9 @@ PresentationSessionAndroid::~PresentationSessionAndroid() {
 void PresentationSessionAndroid::Create(
     const PresentationSession::CreateParams& params,
     PresentationSession::SessionCallback callback) {
-  if (auto presentation_api = XWalkPresentationHost::GetInstance()) {
+  XWalkPresentationHost* presentation_api =
+      XWalkPresentationHost::GetInstance();
+  if (presentation_api) {
     int displayId = std::stoi(params.display_info.id);
     presentation_api->ShowPresentation(params.render_process_id,
                                        params.render_frame_id, displayId,
@@ -71,14 +77,16 @@ void PresentationSessionAndroid::Create(
         params.display_info.id));
     session->set_render_process_id(params.render_process_id);
     session->set_render_frame_id(params.render_frame_id);
-    callback.Run(session, "");
+    std::move(callback).Run(session, "");
   } else {
     LOG(ERROR) << "XWalkPresentationHost instance not found";
   }
 }
 
 void PresentationSessionAndroid::Close() {
-  if (auto presentation_api = XWalkPresentationHost::GetInstance()) {
+  XWalkPresentationHost* presentation_api =
+      XWalkPresentationHost::GetInstance();
+  if (presentation_api) {
     presentation_api->closePresentation(get_render_process_id(),
                                         get_render_frame_id());
   }
@@ -93,7 +101,9 @@ PresentationFrameAndroid::PresentationFrameAndroid(
 }
 
 PresentationFrameAndroid::~PresentationFrameAndroid() {
-  if (auto presentation_api = XWalkPresentationHost::GetInstance()) {
+  XWalkPresentationHost* presentation_api =
+      XWalkPresentationHost::GetInstance();
+  if (presentation_api) {
     presentation_api->RemoveSessionObserver(this);
   }
 }

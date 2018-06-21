@@ -190,9 +190,7 @@ void XWalkDevToolsManagerDelegate::StartHttpHandler(XWalkBrowserContext* browser
     CreateSocketFactory(GetInspectorPort()),
     frontend_url,
     browserContext->GetPath(),
-    base::FilePath(),
-    std::string(),
-    xwalk::GetUserAgent());
+    base::FilePath());
 }
 
 // static

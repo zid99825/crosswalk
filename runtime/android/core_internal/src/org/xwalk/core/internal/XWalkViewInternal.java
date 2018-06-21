@@ -324,7 +324,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         mContext = getContext();
 
         mXWalkHitTestResult = new XWalkHitTestResultInternal();
-        initXWalkContent(null);
+        initXWalkContent();
     }
 
     // A View is usually in edit mode when displayed within a developer tool, like Android Studio.
@@ -350,10 +350,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
             "                FrameLayout.LayoutParams.MATCH_PARENT));", "        removeViewAt(0);",
             "        new org.xwalk.core.extension.XWalkExternalExtensionManagerImpl(this);"
     }, postBridgeLines = {
-            "        String animatable = null;", "        try {",
-            "            animatable = (String) new ReflectField(wrapper, \"mAnimatable\").get();",
-            "        } catch (RuntimeException e) {", "        }",
-            "        initXWalkContent(animatable);"
+            "        initXWalkContent();"
     })
     public XWalkViewInternal(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -392,7 +389,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         mContext = getContext();
 
         mXWalkHitTestResult = new XWalkHitTestResultInternal();
-        initXWalkContent(null);
+        initXWalkContent();
     }
 
     // TODO(yongsheng): we should remove this since we have getContext()?
@@ -407,7 +404,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         mContent.supplyContentsForPopup(newXWalkView == null ? null : newXWalkView.mContent);
     }
 
-    protected void initXWalkContent(String animatable) {
+    protected void initXWalkContent() {
         XWalkViewDelegate.init(null, mContext);
 
         if (mContext instanceof Activity) {
@@ -421,7 +418,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         }
 
         mIsHidden = false;
-        mContent = new XWalkContent(mContext, animatable, this);
+        mContent = new XWalkContent(mContext, this);
 
         // If XWalkView was created in onXWalkReady(), and the activity which owns
         // XWalkView was destroyed, pauseTimers() will be invoked. Reentry the activity,

@@ -7,17 +7,20 @@
 
 #include "base/command_line.h"
 #include "base/strings/utf_string_conversions.h"
-#include "components/autofill/content/renderer/autofill_agent.h"
-#include "components/autofill/content/renderer/password_autofill_agent.h"
+#include "components/nacl/common/features.h"
 #include "components/visitedlink/renderer/visitedlink_slave.h"
 #include "content/public/renderer/render_frame.h"
 #include "content/public/renderer/render_frame_observer.h"
 #include "content/public/renderer/render_frame_observer_tracker.h"
 #include "content/public/renderer/render_thread.h"
 #include "content/public/renderer/render_view.h"
+#include "content/public/common/service_manager_connection.h"
+#include "content/public/common/simple_connection_filter.h"
+#include "content/public/common/url_loader_throttle.h"
 #include "grit/xwalk_application_resources.h"
 #include "grit/xwalk_sysapps_resources.h"
 #include "net/base/net_errors.h"
+#include "ppapi/features/features.h"
 #include "third_party/WebKit/public/platform/WebString.h"
 #include "third_party/WebKit/public/platform/WebURLError.h"
 #include "third_party/WebKit/public/platform/WebURLRequest.h"
@@ -31,7 +34,7 @@
 #include "xwalk/runtime/common/xwalk_localized_error.h"
 #include "xwalk/runtime/renderer/isolated_file_system.h"
 #include "xwalk/runtime/renderer/pepper/pepper_helper.h"
-#include "services/service_manager/public/cpp/interface_registry.h"
+#include "services/service_manager/public/cpp/binder_registry.h"
 
 #if defined(OS_ANDROID)
 #include "components/cdm/renderer/android_key_systems.h"
@@ -43,7 +46,7 @@
 #include "third_party/WebKit/public/web/WebLocalFrame.h"
 #endif
 
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
 #include "components/nacl/renderer/nacl_helper.h"
 #endif
 
@@ -52,6 +55,9 @@ using content::RenderThread;
 namespace xwalk {
 
 namespace {
+
+constexpr char kThrottledErrorDescription[] = "Request throttled. Visit http://dev.chromium.org/throttling for more "
+    "information.";
 
 xwalk::XWalkContentRendererClient* g_renderer_client;
 
@@ -108,11 +114,21 @@ XWalkContentRendererClient::~XWalkContentRendererClient() {
 
 void XWalkContentRendererClient::RenderThreadStarted() {
   content::RenderThread* thread = content::RenderThread::Get();
+
   xwalk_render_thread_observer_.reset(new XWalkRenderThreadObserver);
   thread->AddObserver(xwalk_render_thread_observer_.get());
+
+  auto registry = base::MakeUnique<service_manager::BinderRegistry>();
+
   visited_link_slave_.reset(new visitedlink::VisitedLinkSlave);
-  thread->GetInterfaceRegistry()->AddInterface(
-    visited_link_slave_->GetBindCallback());
+  registry->AddInterface(visited_link_slave_->GetBindCallback(),
+                           base::ThreadTaskRunnerHandle::Get());
+
+  content::ChildThread::Get()
+      ->GetServiceManagerConnection()
+      ->AddConnectionFilter(base::MakeUnique<content::SimpleConnectionFilter>(
+          std::move(registry)));
+
 
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
   if (!cmd_line->HasSwitch(switches::kXWalkDisableExtensions))
@@ -205,11 +221,11 @@ void XWalkContentRendererClient::RenderFrameCreated(
   new XWalkPermissionClient(render_frame);
 #endif
 
-#if defined(ENABLE_PLUGINS)
+#if BUILDFLAG(ENABLE_PLUGINS)
   new PepperHelper(render_frame);
 #endif
 
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
   new nacl::NaClHelper(render_frame);
 #endif
 
@@ -227,11 +243,12 @@ void XWalkContentRendererClient::RenderFrameCreated(
         parent_frame->GetRoutingID(), render_frame->GetRoutingID()));
   }
 #endif
-  // TODO(sgurun) do not create a password autofill agent (change
-  // autofill agent to store a weakptr).
-  autofill::PasswordAutofillAgent* password_autofill_agent =
-      new autofill::PasswordAutofillAgent(render_frame);
-  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr);
+  // TODO(iotto) : Fix autofill!
+//  // TODO(sgurun) do not create a password autofill agent (change
+//  // autofill agent to store a weakptr).
+//  autofill::PasswordAutofillAgent* password_autofill_agent =
+//      new autofill::PasswordAutofillAgent(render_frame);
+//  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr);
 }
 
 void XWalkContentRendererClient::RenderViewCreated(
@@ -279,6 +296,7 @@ bool XWalkContentRendererClient::WillSendRequest(
                        blink::WebLocalFrame* frame,
                        ui::PageTransition transition_type,
                        const blink::WebURL& url,
+                       std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
                        GURL* new_url) {
 #if TENTA_LOG_NET_ENABLE == 1
   LOG(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
@@ -350,21 +368,125 @@ bool XWalkContentRendererClient::WillSendRequest(
 #endif
 }
 
-void XWalkContentRendererClient::GetNavigationErrorStrings(
-    content::RenderFrame* render_frame,
-    const blink::WebURLRequest& failed_request,
-    const blink::WebURLError& error,
-    std::string* error_html,
-    base::string16* error_description) {
-  // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
+void XWalkContentRendererClient::GetNavigationErrorStrings(content::RenderFrame* render_frame,
+                                                           const blink::WebURLRequest& failed_request,
+                                                           const blink::WebURLError& error, std::string* error_html,
+                                                           base::string16* error_description) {
+  // TODO(iotto) : Implement
+  LOG(WARNING) << __func__ << " not_implemented";
+/*
+  GetNavigationErrorStringsInternal(
+      render_frame, failed_request,
+      error_page::Error::NetError(web_error.url(), web_error.reason(),
+                                  web_error.has_copy_in_cache()),
+      error_html, error_description);
+ */
 
-  if (error_description) {
-    if (error.localized_description.IsEmpty())
-      *error_description = base::ASCIIToUTF16(net::ErrorToString(error.reason));
-    else
-      *error_description = error.localized_description.Utf16();
+
+
+  std::string err;
+  if (error.reason() == net::ERR_TEMPORARILY_THROTTLED) {
+    err = kThrottledErrorDescription;
+  } else {
+    err = net::ErrorToString(error.reason());
   }
+  if (error_description) {
+    *error_description = base::ASCIIToUTF16(err);
+  }
+
+  if (!error_html)
+    return;
+
+  /*
+   * TODO(iotto) : Implement error pages in xwalk
+   // Create the error page based on the error reason.
+   GURL gurl(failed_request.Url());
+   std::string url_string = gurl.possibly_invalid_spec();
+   int reason_id = IDS_AW_WEBPAGE_CAN_NOT_BE_LOADED;
+
+   if (error.reason() == net::ERR_BLOCKED_BY_ADMINISTRATOR) {
+   // This creates a different error page giving considerably more
+   // detail, and possibly allowing the user to request access.
+   // Get the details this needs from the browser.
+   render_frame->GetRemoteInterfaces()->GetInterface(&web_restrictions_service_);
+   web_restrictions::mojom::ClientResultPtr result;
+   if (web_restrictions_service_->GetResult(url_string, &result)) {
+   std::string detailed_error_html = supervised_user_error_page::BuildHtmlFromWebRestrictionsResult(
+   result, RenderThread::Get()->GetLocale());
+   if (!detailed_error_html.empty()) {
+   *error_html = detailed_error_html;
+   supervised_user_error_page::GinWrapper::InstallWhenFrameReady(render_frame, url_string,
+   web_restrictions_service_);
+   return;
+   }
+   // If the error page isn't available (it is only available in
+   // Monochrome) but the user is a child then we want to give a simple
+   // custom message.
+   if (result->intParams["Is child account"])
+   reason_id = IDS_AW_WEBPAGE_PARENTAL_PERMISSION_NEEDED;
+   }
+   }
+
+   if (err.empty())
+   reason_id = IDS_AW_WEBPAGE_TEMPORARILY_DOWN;
+
+   std::string escaped_url = net::EscapeForHTML(url_string);
+   std::vector<std::string> replacements;
+   replacements.push_back(l10n_util::GetStringUTF8(IDS_AW_WEBPAGE_NOT_AVAILABLE));
+   replacements.push_back(l10n_util::GetStringFUTF8(reason_id, base::UTF8ToUTF16(escaped_url)));
+
+   // Having chosen the base reason, chose what extra information to add.
+   if (reason_id == IDS_AW_WEBPAGE_PARENTAL_PERMISSION_NEEDED) {
+   replacements.push_back("");
+   } else if (reason_id == IDS_AW_WEBPAGE_TEMPORARILY_DOWN) {
+   replacements.push_back(l10n_util::GetStringUTF8(IDS_AW_WEBPAGE_TEMPORARILY_DOWN_SUGGESTIONS));
+   } else {
+   replacements.push_back(err);
+   }
+   if (base::i18n::IsRTL())
+   replacements.push_back("direction: rtl;");
+   else
+   replacements.push_back("");
+   *error_html = base::ReplaceStringPlaceholders(
+   ui::ResourceBundle::GetSharedInstance().GetRawDataResource(IDR_AW_LOAD_ERROR_HTML), replacements, nullptr);
+   */
 }
+
+void XWalkContentRendererClient::GetNavigationErrorStringsForHttpStatusError(content::RenderFrame* render_frame,
+                                                                             const blink::WebURLRequest& failed_request,
+                                                                             const GURL& unreachable_url,
+                                                                             int http_status, std::string* error_html,
+                                                                             base::string16* error_description) {
+
+  // TODO(iotto) : Implement
+  LOG(WARNING) << __func__ << " not_implemented";
+  /*
+   GetNavigationErrorStringsInternal(
+   render_frame, failed_request,
+   error_page::Error::HttpError(unreachable_url, http_status), error_html,
+   error_description);
+   */
+}
+
+//void ChromeContentRendererClient::GetNavigationErrorStringsInternal(
+//    content::RenderFrame* render_frame,
+//    const WebURLRequest& failed_request,
+//    const error_page::Error& error,
+//    std::string* error_html,
+//    base::string16* error_description) {
+//  bool is_post = failed_request.HttpMethod().Ascii() == "POST";
+//  bool is_ignoring_cache =
+//      failed_request.GetCacheMode() == FetchCacheMode::kBypassCache;
+//  if (error_html) {
+//    NetErrorHelper::Get(render_frame)
+//        ->GetErrorHTML(error, is_post, is_ignoring_cache, error_html);
+//  }
+//
+//  if (error_description) {
+//    *error_description = error_page::LocalizedError::GetErrorDetails(
+//        error.domain(), error.reason(), is_post);
+//  }
+//}
 
 void XWalkContentRendererClient::AddSupportedKeySystems(
     std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) {

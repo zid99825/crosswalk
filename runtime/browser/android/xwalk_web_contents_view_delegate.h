@@ -23,7 +23,7 @@ class XWalkWebContentsViewDelegate : public content::WebContentsViewDelegate {
   content::WebDragDestDelegate* GetDragDestDelegate() override;
 
  private:
-  content::WebContents* web_contents_;
+//  content::WebContents* web_contents_;
   content::ContextMenuParams params_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsViewDelegate);

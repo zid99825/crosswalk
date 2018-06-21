@@ -244,10 +244,11 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         mXWalkResourceClient.onProgressChanged(mXWalkView, progress);
     }
 
-    @Override
-    public void onOverScrolled(int scrollX, int scrollY, boolean clampedX, boolean clampedY) {
-        mXWalkView.onOverScrolledDelegate(scrollX, scrollY, clampedX, clampedY);
-    }
+    // TODO(iotto) : Fix it!
+//    @Override
+//    public void onOverScrolled(int scrollX, int scrollY, boolean clampedX, boolean clampedY) {
+//        mXWalkView.onOverScrolledDelegate(scrollX, scrollY, clampedX, clampedY);
+//    }
 
     @Override
     public XWalkWebResourceResponseInternal shouldInterceptRequest(
@@ -824,17 +825,18 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         return onRewriteUrlIfNeeded(rewriteValue);
     }
     
-    @CalledByNative
-    private void showNotification(String title, String message, String replaceId,
-            Bitmap icon, int notificationId) {
-        mNotificationService.showNotification(
-                title, message, replaceId, icon, notificationId);
-    }
-
-    @CalledByNative
-    private void cancelNotification(int notificationId) {
-        mNotificationService.cancelNotification(notificationId);
-    }
+    // TODO(iotto) : Implement web notification
+//    @CalledByNative
+//    private void showNotification(String title, String message, String replaceId,
+//            Bitmap icon, int notificationId) {
+//        mNotificationService.showNotification(
+//                title, message, replaceId, icon, notificationId);
+//    }
+//
+//    @CalledByNative
+//    private void cancelNotification(int notificationId) {
+//        mNotificationService.cancelNotification(notificationId);
+//    }
 
     void confirmJsResult(int id, String prompt) {
         if (mNativeContentsClientBridge == 0) return;

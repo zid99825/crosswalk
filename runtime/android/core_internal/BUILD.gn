@@ -6,7 +6,7 @@ import("//build/config/android/rules.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/build/xwalk.gni")
 import("//xwalk/runtime/android/core_internal/chromium_java_deps.gni")
-
+import("//xwalk/build/tenta.gni")
 
 reflection_gen_dir = "$root_gen_dir/xwalk_core_reflection_layer/"
 
@@ -59,6 +59,13 @@ android_library("xwalk_core_internal_java") {
     "//xwalk/extensions/android:xwalk_core_extensions_java",
   ]
   deps += core_internal_java_chromium_deps
+  if (tenta_chromium_build) {
+    deps += [
+      "//xwalk/third_party/tenta/meta_fs/java:meta_fs_java",
+      "//xwalk/third_party/tenta/chromium_cache:chromium_cache_java",
+      "//xwalk/third_party/tenta/crosswalk_extensions/java:crosswalk_extensions_java",
+    ]
+  }
   srcjars = [ 
     "$reflection_gen_dir/bridge/bridge.srcjar",
   ]
@@ -72,7 +79,6 @@ android_library("xwalk_core_internal_java") {
     "src/org/xwalk/core/internal/SslUtil.java",
     "src/org/xwalk/core/internal/SwipeRefreshHandler.java",
     "src/org/xwalk/core/internal/DummyNativeTest.java",
-    "src/org/xwalk/core/internal/HostResolverTenta.java",
     "src/org/xwalk/core/internal/UrlUtilities.java",
     "src/org/xwalk/core/internal/XWalkActionModeCallback.java",
     "src/org/xwalk/core/internal/XWalkAPI.java",
@@ -208,7 +214,6 @@ generate_jni("xwalk_core_native_jni") {
     "src/org/xwalk/core/internal/XWalkWebContentsDelegate.java",
     "src/org/xwalk/core/internal/XWalkWebResourceResponseInternal.java",
     "src/org/xwalk/core/internal/DummyNativeTest.java",
-    "src/org/xwalk/core/internal/HostResolverTenta.java",
   ]
 }
 

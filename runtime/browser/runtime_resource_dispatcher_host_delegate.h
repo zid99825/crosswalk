@@ -6,7 +6,7 @@
 #define XWALK_RUNTIME_BROWSER_RUNTIME_RESOURCE_DISPATCHER_HOST_DELEGATE_H_
 
 #include "content/public/browser/resource_dispatcher_host_delegate.h"
-#include "base/memory/scoped_vector.h"
+//#include "base/memory/scoped_vector.h"
 
 namespace xwalk {
 

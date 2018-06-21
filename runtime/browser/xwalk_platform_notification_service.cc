@@ -5,7 +5,6 @@
 
 #include "xwalk/runtime/browser/xwalk_platform_notification_service.h"
 
-#include "content/public/browser/desktop_notification_delegate.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/render_widget_host_iterator.h"
@@ -89,9 +88,7 @@ void XWalkPlatformNotificationService::DisplayNotification(
     const std::string& notification_id,
     const GURL& origin,
     const content::PlatformNotificationData& notification_data,
-    const content::NotificationResources& notification_resources,
-    std::unique_ptr<content::DesktopNotificationDelegate> delegate,
-    base::Closure* cancel_callback) {
+    const content::NotificationResources& notification_resources) {
 #if defined(OS_ANDROID)
   std::unique_ptr<content::RenderWidgetHostIterator> widgets(
       content::RenderWidgetHost::GetRenderWidgetHosts());
@@ -105,10 +102,9 @@ void XWalkPlatformNotificationService::DisplayNotification(
         content::WebContents::FromRenderViewHost(rvh);
     if (!web_contents)
       continue;
-    XWalkContentsClientBridgeBase* bridge =
-        XWalkContentsClientBridgeBase::FromWebContents(web_contents);
-    bridge->ShowNotification(notification_data, notification_resources,
-                             std::move(delegate), cancel_callback);
+    XWalkContentsClientBridge* bridge =
+        XWalkContentsClientBridge::FromWebContents(web_contents);
+    bridge->ShowNotification(notification_data, notification_resources);
     return;
   }
 #elif defined(OS_LINUX) && defined(USE_LIBNOTIFY)
@@ -136,6 +132,11 @@ void XWalkPlatformNotificationService::DisplayNotification(
       cancel_callback);
 
 #endif
+}
+
+void XWalkPlatformNotificationService::CloseNotification(content::BrowserContext* browser_context, const std::string& notification_id) {
+  // TODO(iotto) : Implement
+  LOG(WARNING) << __func__ << " not_implemented";
 }
 
 void XWalkPlatformNotificationService::GetDisplayedNotifications(

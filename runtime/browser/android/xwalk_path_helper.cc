@@ -29,20 +29,19 @@ void XWalkPathHelper::SetDirectory(const std::string& virtualRoot,
       base::FilePath::FromUTF8Unsafe(path);
 }
 
-static void SetDirectory(JNIEnv* env,
-                         const JavaParamRef<jclass>& clazz,
-                         const JavaParamRef<jstring>& virtualRoot,
-                         const JavaParamRef<jstring>& path) {
+static void JNI_XWalkPathHelper_SetDirectory(JNIEnv* env, const JavaParamRef<jclass>& clazz,
+                                             const JavaParamRef<jstring>& virtualRoot,
+                                             const JavaParamRef<jstring>& path) {
   const char* strVirtualRoot = env->GetStringUTFChars(virtualRoot, NULL);
   const char* strPath = env->GetStringUTFChars(path, NULL);
-  XWalkPathHelper::SetDirectory(
-      std::string(strVirtualRoot), std::string(strPath));
+  XWalkPathHelper::SetDirectory(std::string(strVirtualRoot), std::string(strPath));
   env->ReleaseStringUTFChars(virtualRoot, strVirtualRoot);
   env->ReleaseStringUTFChars(path, strPath);
 }
 
 bool RegisterXWalkPathHelper(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace xwalk

@@ -325,10 +325,10 @@ base::DictionaryValue* LoadXMLNode(
 //      base::DictionaryValue* prev_value = dict->DeepCopy();
       std::unique_ptr<base::DictionaryValue> prev_value(dict);
 
-      base::ListValue* list = new base::ListValue();
+      std::unique_ptr<base::ListValue> list(new base::ListValue());
       list->Append(std::move(prev_value));
       list->Append(std::move(sub_value));
-      value->Set(sub_node_name, list);
+      value->Set(sub_node_name, std::move(list));
     }
   }
 
@@ -399,10 +399,10 @@ std::unique_ptr<Manifest> LoadManifest<Manifest::TYPE_WIDGET>(
     return std::unique_ptr<Manifest>();
   }
   root_node = xmlDocGetRootElement(doc);
-  base::DictionaryValue* dv = LoadXMLNode(root_node);
+  std::unique_ptr<base::DictionaryValue> dv(LoadXMLNode(root_node));
   std::unique_ptr<base::DictionaryValue> result(new base::DictionaryValue);
   if (dv)
-    result->Set(ToConstCharPointer(root_node->name), dv);
+    result->Set(ToConstCharPointer(root_node->name), std::move(dv));
 
   return base::WrapUnique(new Manifest(std::move(result),
                                       Manifest::TYPE_WIDGET));

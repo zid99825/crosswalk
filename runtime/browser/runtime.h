@@ -165,7 +165,7 @@ class Runtime : public content::WebContentsDelegate,
   // Overridden from content::WebContentsObserver.
   void DidUpdateFaviconURL(
       const std::vector<content::FaviconURL>& candidates) override;
-  void TitleWasSet(content::NavigationEntry* entry, bool explicit_set) override;
+  void TitleWasSet(content::NavigationEntry* entry) override;
   void DidFinishNavigation(content::NavigationHandle* navigation_handle) override;
 
   // Callback method for WebContents::DownloadImage.

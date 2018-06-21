@@ -8,6 +8,7 @@
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "components/nacl/common/features.h"
 #include "content/public/browser/browser_main_runner.h"
 #include "content/public/common/content_switches.h"
 #include "ui/base/material_design/material_design_controller.h"
@@ -22,7 +23,7 @@
 #include "xwalk/runtime/common/xwalk_resource_delegate.h"
 #include "xwalk/runtime/renderer/xwalk_content_renderer_client.h"
 
-#if !defined(DISABLE_NACL) && defined(OS_LINUX)
+#if BUILDFLAG(ENABLE_NACL) && defined(OS_LINUX)
 #include "components/nacl/common/nacl_paths.h"
 #include "components/nacl/zygote/nacl_fork_delegate_linux.h"
 #endif
@@ -59,7 +60,7 @@ bool XWalkMainDelegate::BasicStartupComplete(int* exit_code) {
   OverrideChildProcessPath();
 #endif
 
-#if !defined(DISABLE_NACL) && defined(OS_LINUX)
+#if BUILDFLAG(ENABLE_NACL) && defined(OS_LINUX)
   nacl::RegisterPathProvider();
 #endif
 
@@ -110,7 +111,7 @@ void XWalkMainDelegate::ProcessExiting(const std::string& process_type) {
 #if defined(OS_POSIX) && !defined(OS_ANDROID) && !defined(OS_MACOSX)
 void XWalkMainDelegate::ZygoteStarting(
     ScopedVector<content::ZygoteForkDelegate>* delegates) {
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
   nacl::AddNaClZygoteForkDelegates(delegates);
 #endif
 }

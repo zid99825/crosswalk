@@ -10,17 +10,6 @@
 #include "xwalk/runtime/browser/renderer_host/pepper/xwalk_browser_pepper_host_factory.h"
 #include "xwalk/runtime/common/xwalk_paths.h"
 
-namespace {
-
-// Calls OnKeepaliveOnUIThread on UI thread.
-void OnKeepalive(
-    const content::BrowserPpapiHost::OnKeepaliveInstanceData& instance_data,
-    const base::FilePath& profile_data_directory) {
-  DCHECK(!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
-}
-
-}  // namespace
-
 NaClBrowserDelegateImpl::NaClBrowserDelegateImpl() {
 }
 
@@ -83,7 +72,3 @@ bool NaClBrowserDelegateImpl::MapUrlToLocalFilePath(
   return false;
 }
 
-content::BrowserPpapiHost::OnKeepaliveCallback
-NaClBrowserDelegateImpl::GetOnKeepaliveCallback() {
-  return base::Bind(&OnKeepalive);
-}

@@ -21,7 +21,8 @@ import java.util.Map;
 @XWalkAPI(noInstance = true)
 public class XWalkPreferencesInternal {
     private static final String TAG = "XWalkPreferences";
-
+    private static final Object sync = new Object();
+    
     @XWalkAPI
     public static String getChromeVersion()
     {
@@ -201,17 +202,19 @@ public class XWalkPreferencesInternal {
      * @since 1.0
      */
     @XWalkAPI(reservable = true)
-    public static synchronized void setValue(String key, boolean enabled) throws RuntimeException {
-        checkKey(key);
-        // If the listener list is not empty, we consider the preference is
-        // loaded by Crosswalk and taken effect already.
-        if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
-            Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
-        }
-        if (sPrefMap.get(key).getBooleanValue() != enabled) {
-            PreferenceValue v = new PreferenceValue(enabled);
-            sPrefMap.put(key, v);
-            onKeyValueChanged(key, v);
+    public static void setValue(String key, boolean enabled) throws RuntimeException {
+        synchronized (sync) {
+            checkKey(key);
+            // If the listener list is not empty, we consider the preference is
+            // loaded by Crosswalk and taken effect already.
+            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
+                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
+            }
+            if (sPrefMap.get(key).getBooleanValue() != enabled) {
+                PreferenceValue v = new PreferenceValue(enabled);
+                sPrefMap.put(key, v);
+                onKeyValueChanged(key, v);
+            }
         }
     }
 
@@ -223,17 +226,19 @@ public class XWalkPreferencesInternal {
      * @since 3.0
      */
     @XWalkAPI(reservable = true)
-    public static synchronized void setValue(String key, int value) throws RuntimeException {
-        checkKey(key);
-        // If the listener list is not empty, we consider the preference is
-        // loaded by Crosswalk and taken effect already.
-        if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
-            Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
-        }
-        if (sPrefMap.get(key).getIntegerValue() != value) {
-            PreferenceValue v = new PreferenceValue(value);
-            sPrefMap.put(key, v);
-            onKeyValueChanged(key, v);
+    public static void setValue(String key, int value) throws RuntimeException {
+        synchronized (sync) {
+            checkKey(key);
+            // If the listener list is not empty, we consider the preference is
+            // loaded by Crosswalk and taken effect already.
+            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
+                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
+            }
+            if (sPrefMap.get(key).getIntegerValue() != value) {
+                PreferenceValue v = new PreferenceValue(value);
+                sPrefMap.put(key, v);
+                onKeyValueChanged(key, v);
+            }
         }
     }
 
@@ -245,17 +250,19 @@ public class XWalkPreferencesInternal {
      * @since 3.0
      */
     @XWalkAPI(reservable = true)
-    public static synchronized void setValue(String key, String value) throws RuntimeException {
-        checkKey(key);
-        // If the listener list is not empty, we consider the preference is
-        // loaded by Crosswalk and taken effect already.
-        if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
-            Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
-        }
-        if (value != null && !value.equals(sPrefMap.get(key).getStringValue())) {
-            PreferenceValue v = new PreferenceValue(value);
-            sPrefMap.put(key, v);
-            onKeyValueChanged(key, v);
+    public static void setValue(String key, String value) throws RuntimeException {
+        synchronized (sync) {
+            checkKey(key);
+            // If the listener list is not empty, we consider the preference is
+            // loaded by Crosswalk and taken effect already.
+            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
+                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
+            }
+            if (value != null && !value.equals(sPrefMap.get(key).getStringValue())) {
+                PreferenceValue v = new PreferenceValue(value);
+                sPrefMap.put(key, v);
+                onKeyValueChanged(key, v);
+            }
         }
     }
 
@@ -268,9 +275,11 @@ public class XWalkPreferencesInternal {
      * @deprecated
      */
     @XWalkAPI
-    public static synchronized boolean getValue(String key) throws RuntimeException {
-        checkKey(key);
-        return sPrefMap.get(key).getBooleanValue();
+    public static boolean getValue(String key) throws RuntimeException {
+        synchronized (sync) {
+            checkKey(key);
+            return sPrefMap.get(key).getBooleanValue();
+        }
     }
 
     /**
@@ -281,9 +290,11 @@ public class XWalkPreferencesInternal {
      * @since 3.0
      */
     @XWalkAPI
-    public static synchronized boolean getBooleanValue(String key) throws RuntimeException {
-        checkKey(key);
-        return sPrefMap.get(key).getBooleanValue();
+    public static boolean getBooleanValue(String key) throws RuntimeException {
+        synchronized (sync) {
+            checkKey(key);
+            return sPrefMap.get(key).getBooleanValue();
+        }
     }
 
     /**
@@ -294,9 +305,11 @@ public class XWalkPreferencesInternal {
      * @since 3.0
      */
     @XWalkAPI
-    public static synchronized int getIntegerValue(String key) throws RuntimeException {
-        checkKey(key);
-        return sPrefMap.get(key).getIntegerValue();
+    public static int getIntegerValue(String key) throws RuntimeException {
+        synchronized (sync) {
+            checkKey(key);
+            return sPrefMap.get(key).getIntegerValue();
+        }
     }
 
     /**
@@ -307,22 +320,28 @@ public class XWalkPreferencesInternal {
      * @since 3.0
      */
     @XWalkAPI
-    public static synchronized String getStringValue(String key) throws RuntimeException {
-        checkKey(key);
-        return sPrefMap.get(key).getStringValue();
-    }
-
-    static synchronized void load(KeyValueChangeListener listener) {
-        // Load current settings for initialization of a listener implementor.
-        for (Map.Entry<String, PreferenceValue> entry : sPrefMap.entrySet()) {
-            listener.onKeyValueChanged(entry.getKey(), entry.getValue());
+    public static String getStringValue(String key) throws RuntimeException {
+        synchronized (sync) {
+            checkKey(key);
+            return sPrefMap.get(key).getStringValue();
         }
-
-        registerListener(listener);
     }
 
-    static synchronized void unload(KeyValueChangeListener listener) {
-        unregisterListener(listener);
+    static void load(KeyValueChangeListener listener) {
+        synchronized (sync) {
+            // Load current settings for initialization of a listener implementor.
+            for (Map.Entry<String, PreferenceValue> entry : sPrefMap.entrySet()) {
+                listener.onKeyValueChanged(entry.getKey(), entry.getValue());
+            }
+
+            registerListener(listener);
+        }
+    }
+
+    static void unload(KeyValueChangeListener listener) {
+        synchronized (sync) {
+            unregisterListener(listener);
+        }
     }
 
     // Listen to value changes.
@@ -330,19 +349,23 @@ public class XWalkPreferencesInternal {
         public void onKeyValueChanged(String key, PreferenceValue value);
     }
 
-    private static synchronized void registerListener(KeyValueChangeListener listener) {
-        removeEnqueuedReference();
-        WeakReference<KeyValueChangeListener> weakListener =
-                new WeakReference<KeyValueChangeListener>(listener, sRefQueue);
-        sListeners.add(weakListener);
+    private static void registerListener(KeyValueChangeListener listener) {
+        synchronized (sync) {
+            removeEnqueuedReference();
+            WeakReference<KeyValueChangeListener> weakListener = new WeakReference<KeyValueChangeListener>(
+                    listener, sRefQueue);
+            sListeners.add(weakListener);
+        }
     }
 
-    private static synchronized void unregisterListener(KeyValueChangeListener listener) {
-        removeEnqueuedReference();
-        for (WeakReference<KeyValueChangeListener> weakListener : sListeners) {
-            if (weakListener.get() == listener) {
-                sListeners.remove(weakListener);
-                break;
+    private static void unregisterListener(KeyValueChangeListener listener) {
+        synchronized (sync) {
+            removeEnqueuedReference();
+            for (WeakReference<KeyValueChangeListener> weakListener : sListeners) {
+                if (weakListener.get() == listener) {
+                    sListeners.remove(weakListener);
+                    break;
+                }
             }
         }
     }

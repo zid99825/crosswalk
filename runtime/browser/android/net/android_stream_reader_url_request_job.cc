@@ -17,6 +17,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/task_runner.h"
+#include "base/task_scheduler/post_task.h"
 #include "base/threading/sequenced_worker_pool.h"
 #include "base/threading/thread.h"
 #include "content/public/browser/browser_thread.h"
@@ -175,9 +176,9 @@ void AndroidStreamReaderURLRequestJob::Start() {
 
   // This could be done in the InputStreamReader but would force more
   // complex synchronization in the delegate.
-  GetWorkerThreadRunner()->PostTask(
+  base::PostTask(
       FROM_HERE,
-      base::Bind(
+      base::BindOnce(
           &OpenInputStreamOnWorkerThread,
           base::MessageLoop::current()->task_runner(),
           // This is intentional - the job could be deleted while the callback
@@ -227,8 +228,7 @@ void AndroidStreamReaderURLRequestJob::OnInputStreamOpened(
   input_stream_reader_wrapper_ = new InputStreamReaderWrapper(
       std::move(input_stream), std::move(input_stream_reader));
 
-  PostTaskAndReplyWithResult(
-      GetWorkerThreadRunner(),
+  base::PostTaskAndReplyWithResult(
       FROM_HERE,
       base::Bind(&InputStreamReaderWrapper::Seek,
                  input_stream_reader_wrapper_,
@@ -254,7 +254,9 @@ void AndroidStreamReaderURLRequestJob::OnReaderReadCompleted(int result) {
 }
 
 base::TaskRunner* AndroidStreamReaderURLRequestJob::GetWorkerThreadRunner() {
-  return static_cast<base::TaskRunner*>(BrowserThread::GetBlockingPool());
+//  base::CreateSequencedTaskRunnerWithTraits({base::MayBlock(), base::TaskPriority::BACKGROUND});
+  return nullptr;
+//  return static_cast<base::TaskRunner*>(BrowserThread::GetBlockingPool());
 }
 
 int AndroidStreamReaderURLRequestJob::ReadRawData(net::IOBuffer* dest,
@@ -267,8 +269,7 @@ int AndroidStreamReaderURLRequestJob::ReadRawData(net::IOBuffer* dest,
     return 0;
   }
 
-  PostTaskAndReplyWithResult(
-      GetWorkerThreadRunner(), FROM_HERE,
+  base::PostTaskAndReplyWithResult(FROM_HERE,
       base::Bind(&InputStreamReaderWrapper::ReadRawData,
                  input_stream_reader_wrapper_, base::RetainedRef(dest),
                  dest_size),

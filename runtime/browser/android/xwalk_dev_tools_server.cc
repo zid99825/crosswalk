@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include "base/android/context_utils.h"
 #include "base/android/jni_string.h"
 #include "base/bind.h"
 #include "base/callback.h"
@@ -17,7 +16,7 @@
 #include "base/logging.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
-#include "blink_upstream_version.h"  // NOLINT
+//#include "blink_upstream_version.h"  // NOLINT
 #include "content/browser/devtools/devtools_http_handler.h"
 //#include "components/devtools_http_handler/devtools_http_handler_delegate.h"
 #include "content/public/browser/android/devtools_auth.h"
@@ -49,13 +48,10 @@ const char kFrontEndURL[] =
     "http://chrome-devtools-frontend.appspot.com/serve_rev/%s/inspector.html";
 const int kBackLog = 10;
 
-bool AuthorizeSocketAccessWithDebugPermission(
-     const net::UnixDomainServerSocket::Credentials& credentials) {
+bool AuthorizeSocketAccessWithDebugPermission(const net::UnixDomainServerSocket::Credentials& credentials) {
   JNIEnv* env = base::android::AttachCurrentThread();
-  return xwalk::Java_XWalkDevToolsServer_checkDebugPermission(
-      env, base::android::GetApplicationContext(),
-      credentials.process_id, credentials.user_id) ||
-      content::CanUserConnectToDevTools(credentials);
+  return xwalk::Java_XWalkDevToolsServer_checkDebugPermission(env, credentials.process_id, credentials.user_id)
+      || content::CanUserConnectToDevTools(credentials);
 }
 
 // Delegate implementation for the devtools http handler on android. A new
@@ -67,7 +63,7 @@ class XWalkAndroidDevToolsHttpHandlerDelegate
   }
 
   std::string GetDiscoveryPageHTML() override {
-    return ResourceBundle::GetSharedInstance().GetRawDataResource(
+    return ui::ResourceBundle::GetSharedInstance().GetRawDataResource(
         IDR_DEVTOOLS_FRONTEND_PAGE_HTML).as_string();
   }
 
@@ -114,8 +110,7 @@ class UnixDomainServerSocketFactory
 
   // Creates a named socket for reversed tethering implementation (used with
   // remote debugging, primarily for mobile).
-  virtual std::unique_ptr<net::ServerSocket> CreateForTethering(
-      std::string* out_name) override {
+  std::unique_ptr<net::ServerSocket> CreateForTethering(std::string* out_name) override {
     return std::unique_ptr<net::ServerSocket>();
   }
 
@@ -152,25 +147,42 @@ bool XWalkDevToolsServer::CanUserConnectToDevTools(
 
 void XWalkDevToolsServer::Start(bool allow_debug_permission,
                                 bool allow_socket_access) {
+
+  /*
+void AwDevToolsServer::Start() {
+  if (is_started_)
+    return;
+  is_started_ = true;
+
+  std::unique_ptr<content::DevToolsSocketFactory> factory(
+      new UnixDomainServerSocketFactory(
+          base::StringPrintf(kSocketNameFormat, getpid())));
+  DevToolsAgentHost::StartRemoteDebuggingServer(
+      std::move(factory),
+      base::StringPrintf(kFrontEndURL, content::GetWebKitRevision().c_str()),
+      base::FilePath(), base::FilePath());
+}
+   */
   allow_debug_permission_ = allow_debug_permission;
   allow_socket_access_ = allow_socket_access;
   if (devtools_http_handler_)
     return;
-
-  net::UnixDomainServerSocket::AuthCallback auth_callback =
-      base::Bind(&XWalkDevToolsServer::CanUserConnectToDevTools,
-                 base::Unretained(this));
-
-  std::unique_ptr<content::DevToolsSocketFactory>
-      factory(new UnixDomainServerSocketFactory(socket_name_, auth_callback));
-  devtools_http_handler_.reset(new content::DevToolsHttpHandler(
-      new XWalkAndroidDevToolsHttpHandlerDelegate(),
-      std::move(factory),
-      base::StringPrintf(kFrontEndURL, BLINK_UPSTREAM_REVISION),
-      base::FilePath(),
-      base::FilePath(),
-      std::string(),
-      xwalk::GetUserAgent()));
+//
+//  net::UnixDomainServerSocket::AuthCallback auth_callback =
+//      base::Bind(&XWalkDevToolsServer::CanUserConnectToDevTools,
+//                 base::Unretained(this));
+//
+//  std::unique_ptr<content::DevToolsSocketFactory>
+//      factory(new UnixDomainServerSocketFactory(socket_name_, auth_callback));
+//
+//  devtools_http_handler_.reset(new content::DevToolsHttpHandler(
+//      new XWalkAndroidDevToolsHttpHandlerDelegate(),
+//      std::move(factory),
+//      base::StringPrintf(kFrontEndURL, BLINK_UPSTREAM_REVISION),
+//      base::FilePath(),
+//      base::FilePath(),
+//      std::string(),
+//      xwalk::GetUserAgent()));
 }
 
 void XWalkDevToolsServer::Stop() {
@@ -184,40 +196,33 @@ bool XWalkDevToolsServer::IsStarted() const {
 }
 
 bool RegisterXWalkDevToolsServer(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
-static jlong InitRemoteDebugging(JNIEnv* env,
-                                const JavaParamRef<jobject>& obj,
-                                const JavaParamRef<jstring>& socketName) {
-  XWalkDevToolsServer* server = new XWalkDevToolsServer(
-      base::android::ConvertJavaStringToUTF8(env, socketName));
+static jlong JNI_XWalkDevToolsServer_InitRemoteDebugging(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                                                         const JavaParamRef<jstring>& socketName) {
+  XWalkDevToolsServer* server = new XWalkDevToolsServer(base::android::ConvertJavaStringToUTF8(env, socketName));
   return reinterpret_cast<intptr_t>(server);
 }
 
-static void DestroyRemoteDebugging(JNIEnv* env,
-                                   const JavaParamRef<jobject>& obj,
-                                   jlong server) {
+static void JNI_XWalkDevToolsServer_DestroyRemoteDebugging(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                                                           jlong server) {
   delete reinterpret_cast<XWalkDevToolsServer*>(server);
 }
 
-static jboolean IsRemoteDebuggingEnabled(JNIEnv* env,
-                                         const JavaParamRef<jobject>& obj,
-                                         jlong server) {
+static jboolean JNI_XWalkDevToolsServer_IsRemoteDebuggingEnabled(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                                                                 jlong server) {
   return reinterpret_cast<XWalkDevToolsServer*>(server)->IsStarted();
 }
 
-static void SetRemoteDebuggingEnabled(JNIEnv* env,
-                                      const JavaParamRef<jobject>& obj,
-                                      jlong server,
-                                      jboolean enabled,
-                                      jboolean allow_debug_permission,
-                                      jboolean allow_socket_access) {
-  XWalkDevToolsServer* devtools_server =
-      reinterpret_cast<XWalkDevToolsServer*>(server);
+static void JNI_XWalkDevToolsServer_SetRemoteDebuggingEnabled(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                                                              jlong server, jboolean enabled,
+                                                              jboolean allow_debug_permission,
+                                                              jboolean allow_socket_access) {
+  XWalkDevToolsServer* devtools_server = reinterpret_cast<XWalkDevToolsServer*>(server);
   if (enabled == JNI_TRUE) {
-    devtools_server->Start(allow_debug_permission == JNI_TRUE,
-                           allow_socket_access == JNI_TRUE);
+    devtools_server->Start(allow_debug_permission == JNI_TRUE, allow_socket_access == JNI_TRUE);
   } else {
     devtools_server->Stop();
   }

@@ -43,49 +43,48 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
   void SetCookieWithOptionsAsync(const GURL& url,
                                  const std::string& cookie_line,
                                  const net::CookieOptions& options,
-                                 const SetCookiesCallback& callback) override;
-  void SetCookieWithDetailsAsync(const GURL& url,
-                                 const std::string& name,
-                                 const std::string& value,
-                                 const std::string& domain,
-                                 const std::string& path,
-                                 base::Time creation_time,
-                                 base::Time expiration_time,
-                                 base::Time last_access_time,
-                                 bool secure,
-                                 bool http_only,
-                                 net::CookieSameSite same_site,
-                                 net::CookiePriority priority,
-                                 const SetCookiesCallback& callback) override;
+                                 SetCookiesCallback callback) override;
+
+  void SetCanonicalCookieAsync(std::unique_ptr<net::CanonicalCookie> cookie,
+                                         bool secure_source,
+                                         bool modify_http_only,
+                                         SetCookiesCallback callback) override;
+
   void GetCookiesWithOptionsAsync(const GURL& url,
                                   const net::CookieOptions& options,
-                                  const GetCookiesCallback& callback) override;
+                                  GetCookiesCallback callback) override;
   void GetCookieListWithOptionsAsync(
       const GURL& url,
       const net::CookieOptions& options,
-      const GetCookieListCallback& callback) override;
-  void GetAllCookiesAsync(const GetCookieListCallback& callback) override;
+      GetCookieListCallback callback) override;
+  void GetAllCookiesAsync(GetCookieListCallback callback) override;
   void DeleteCookieAsync(const GURL& url,
                          const std::string& cookie_name,
-                         const base::Closure& callback) override;
+                         base::OnceClosure callback) override;
   void DeleteCanonicalCookieAsync(const net::CanonicalCookie& cookie,
-                                  const DeleteCallback& callback) override;
+                                  DeleteCallback callback) override;
   void DeleteAllCreatedBetweenAsync(const base::Time& delete_begin,
                                     const base::Time& delete_end,
-                                    const DeleteCallback& callback) override;
+                                    DeleteCallback callback) override;
   void DeleteAllCreatedBetweenWithPredicateAsync(
       const base::Time& delete_begin,
       const base::Time& delete_end,
       const net::CookieStore::CookiePredicate& predicate,
-      const DeleteCallback& callback) override;
-  void DeleteSessionCookiesAsync(const DeleteCallback& callback) override;
-  void FlushStore(const base::Closure& callback) override;
+      DeleteCallback callback) override;
+  void DeleteSessionCookiesAsync(DeleteCallback callback) override;
+  void FlushStore(base::OnceClosure callback) override;
   void SetForceKeepSessionState() override;
   std::unique_ptr<CookieChangedSubscription> AddCallbackForCookie(
       const GURL& url,
       const std::string& name,
       const CookieChangedCallback& callback) override;
+
+  std::unique_ptr<CookieChangedSubscription> AddCallbackForAllChanges(
+        const CookieChangedCallback& callback) override;
+
   bool IsEphemeral() override;
+
+  void TriggerCookieFetch() override;
 
  private:
   // Used by CreateWrappedCallback below. Takes an arugment of Type and posts

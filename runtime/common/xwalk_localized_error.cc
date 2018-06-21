@@ -224,10 +224,9 @@ const LocalizedErrorMap* LookupErrorMap(const std::string& error_domain,
 const char LocalizedError::kHttpErrorDomain[] = "http";
 const char LocalizedError::kDnsProbeErrorDomain[] = "dnsprobe";
 
-base::string16 LocalizedError::GetErrorDetails(const blink::WebURLError& error,
+base::string16 LocalizedError::GetErrorDetails(const std::string& error_domain, const blink::WebURLError& error,
                                                bool is_post) {
-  const LocalizedErrorMap* error_map =
-      LookupErrorMap(error.domain.Utf8(), error.reason, is_post);
+  const LocalizedErrorMap* error_map = LookupErrorMap(error_domain, error.reason(), is_post);
   if (error_map)
     return l10n_util::GetStringUTF16(error_map->summary_resource_id);
   else

@@ -10,13 +10,12 @@
 #include "base/command_line.h"
 #include "base/path_service.h"
 #include "base/files/file.h"
+#include "components/nacl/common/features.h"
 #include "content/public/browser/browser_child_process_host.h"
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/browser/browser_ppapi_host.h"
 #include "content/public/browser/child_process_data.h"
 #include "content/public/browser/client_certificate_delegate.h"
-#include "device/geolocation/geolocation_delegate.h"
-#include "device/geolocation/geolocation_provider.h"
 #include "content/public/browser/presentation_service_delegate.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
@@ -27,14 +26,15 @@
 #include "content/public/common/content_descriptors.h"
 #include "content/public/common/main_function_params.h"
 #include "content/public/common/web_preferences.h"
+#include "device/geolocation/geolocation_provider.h"
 #include "gin/v8_initializer.h"
 #include "gin/public/isolate_holder.h"
 #include "net/ssl/ssl_info.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "ppapi/host/ppapi_host.h"
+#include "ppapi/features/features.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
 #include "xwalk/application/common/constants.h"
-#include "xwalk/runtime/browser/geolocation/xwalk_access_token_store.h"
 #include "xwalk/runtime/browser/media/media_capture_devices_dispatcher.h"
 #include "xwalk/runtime/browser/renderer_host/pepper/xwalk_browser_pepper_host_factory.h"
 #include "xwalk/runtime/browser/runtime_platform_util.h"
@@ -50,7 +50,7 @@
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/browser/devtools/xwalk_devtools_manager_delegate.h"
 
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
 #include "components/nacl/browser/nacl_browser.h"
 #include "components/nacl/browser/nacl_host_message_filter.h"
 #include "components/nacl/browser/nacl_process_host.h"
@@ -96,21 +96,21 @@ namespace {
 // The application-wide singleton of ContentBrowserClient impl.
 XWalkContentBrowserClient* g_browser_client = nullptr;
 
-// A provider of services for Geolocation.
-class XWalkGeolocationDelegate : public device::GeolocationDelegate {
- public:
-  explicit XWalkGeolocationDelegate(net::URLRequestContextGetter* request_context)
-      : request_context_(request_context) {}
-
-  scoped_refptr<device::AccessTokenStore> CreateAccessTokenStore() final {
-    return scoped_refptr<device::AccessTokenStore>( new XWalkAccessTokenStore(request_context_));
-  }
-
- private:
-  net::URLRequestContextGetter* request_context_;
-
-  DISALLOW_COPY_AND_ASSIGN(XWalkGeolocationDelegate);
-};
+//// A provider of services for Geolocation.
+//class XWalkGeolocationDelegate : public device::GeolocationDelegate {
+// public:
+//  explicit XWalkGeolocationDelegate(net::URLRequestContextGetter* request_context)
+//      : request_context_(request_context) {}
+//
+//  scoped_refptr<device::AccessTokenStore> CreateAccessTokenStore() final {
+//    return scoped_refptr<device::AccessTokenStore>( new XWalkAccessTokenStore(request_context_));
+//  }
+//
+// private:
+//  net::URLRequestContextGetter* request_context_;
+//
+//  DISALLOW_COPY_AND_ASSIGN(XWalkGeolocationDelegate);
+//};
 
 }  // namespace
 
@@ -213,11 +213,6 @@ content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
   main_parts_ = new XWalkBrowserMainParts(parameters);
 #endif
 
-  // TODO(iotto) see how and when this needs to be initialized
-/*  device::GeolocationProvider::SetGeolocationDelegate(
-      new XWalkGeolocationDelegate(
-      xwalk_runner_->browser_context()->url_request_getter()));
-*/
   return main_parts_;
 }
 
@@ -229,7 +224,7 @@ void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
       *base::CommandLine::ForCurrentProcess();
   const char* extra_switches[] = {
     switches::kXWalkDisableExtensionProcess,
-#if defined(ENABLE_PLUGINS)
+#if BUILDFLAG(ENABLE_PLUGINS)
     switches::kPpapiFlashPath,
     switches::kPpapiFlashVersion
 #endif
@@ -256,7 +251,7 @@ XWalkContentBrowserClient::GetWebContentsViewDelegate(
 
 void XWalkContentBrowserClient::RenderProcessWillLaunch(
     content::RenderProcessHost* host) {
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
   int id = host->GetID();
   net::URLRequestContextGetter* context =
       host->GetStoragePartition()->GetURLRequestContext();
@@ -271,8 +266,8 @@ void XWalkContentBrowserClient::RenderProcessWillLaunch(
   xwalk_runner_->OnRenderProcessWillLaunch(host);
   host->AddFilter(new XWalkRenderMessageFilter);
 #if defined(OS_ANDROID)
+  host->AddFilter(new cdm::CdmMessageFilterAndroid(true, false));
   host->AddFilter(new XWalkRenderMessageFilter(host->GetID()));
-  host->AddFilter(new cdm::CdmMessageFilterAndroid());
 #endif
 }
 
@@ -303,7 +298,7 @@ bool XWalkContentBrowserClient::AllowGetCookie(
 bool XWalkContentBrowserClient::AllowSetCookie(
     const GURL& url,
     const GURL& first_party,
-    const std::string& cookie_line,
+    const net::CanonicalCookie& cookie,
     content::ResourceContext* context,
     int render_process_id,
     int render_frame_id,
@@ -312,7 +307,7 @@ bool XWalkContentBrowserClient::AllowSetCookie(
   return XWalkCookieAccessPolicy::GetInstance()->AllowSetCookie(
       url,
       first_party,
-      cookie_line,
+      cookie,
       context,
       render_process_id,
       render_frame_id,
@@ -327,14 +322,15 @@ bool XWalkContentBrowserClient::AllowSetCookie(
 void XWalkContentBrowserClient::SelectClientCertificate(
     content::WebContents* web_contents,
     net::SSLCertRequestInfo* cert_request_info,
+    net::ClientCertIdentityList client_certs,
     std::unique_ptr<content::ClientCertificateDelegate> delegate) {
 #if defined(OS_ANDROID)
-  XWalkContentsClientBridgeBase* client =
-      XWalkContentsClientBridgeBase::FromWebContents(web_contents);
+  XWalkContentsClientBridge* client =
+      XWalkContentsClientBridge::FromWebContents(web_contents);
   if (client) {
     client->SelectClientCertificate(cert_request_info, std::move(delegate));
   } else {
-    delegate->ContinueWithCertificate(nullptr);
+    delegate->ContinueWithCertificate(nullptr, nullptr);
   }
 #endif
 }
@@ -345,15 +341,14 @@ void XWalkContentBrowserClient::AllowCertificateError(
     const net::SSLInfo& ssl_info,
     const GURL& request_url,
     content::ResourceType resource_type,
-    bool overridable,
     bool strict_enforcement,
     bool expired_previous_decision,
     const base::Callback<void(content::CertificateRequestResultType)>& callback) {
   // Currently only Android handles it.
   // TODO(yongsheng): applies it for other platforms?
 #if defined(OS_ANDROID)
-  XWalkContentsClientBridgeBase* client =
-      XWalkContentsClientBridgeBase::FromWebContents(web_contents);
+  XWalkContentsClientBridge* client =
+      XWalkContentsClientBridge::FromWebContents(web_contents);
 //  bool cancel_request = true;
   if (client)
     client->AllowCertificateError(cert_error,
@@ -378,7 +373,7 @@ XWalkContentBrowserClient::GetPlatformNotificationService() {
 
 void XWalkContentBrowserClient::DidCreatePpapiPlugin(
     content::BrowserPpapiHost* browser_host) {
-#if defined(ENABLE_PLUGINS)
+#if BUILDFLAG(ENABLE_PLUGINS)
   browser_host->GetPpapiHost()->AddHostFactoryFilter(
       std::unique_ptr<ppapi::host::HostFactory>(
           new XWalkBrowserPepperHostFactory(browser_host)));
@@ -388,7 +383,7 @@ void XWalkContentBrowserClient::DidCreatePpapiPlugin(
 content::BrowserPpapiHost*
     XWalkContentBrowserClient::GetExternalBrowserPpapiHost(
         int plugin_process_id) {
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
   content::BrowserChildProcessHostIterator iter(PROCESS_TYPE_NACL_LOADER);
   while (!iter.Done()) {
     nacl::NaClProcessHost* host = static_cast<nacl::NaClProcessHost*>(

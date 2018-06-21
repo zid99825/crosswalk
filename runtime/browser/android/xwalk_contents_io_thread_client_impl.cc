@@ -267,7 +267,7 @@ XWalkContentsIoThreadClientImpl::GetCacheMode() const {
   JNIEnv* env = AttachCurrentThread();
   return static_cast<XWalkContentsIoThreadClient::CacheMode>(
       Java_XWalkContentsIoThreadClient_getCacheMode(
-          env, java_object_.obj()));
+          env, java_object_));
 }
 
 std::unique_ptr<XWalkWebResourceResponse>
@@ -309,13 +309,13 @@ XWalkContentsIoThreadClientImpl::ShouldInterceptRequest(
   ScopedJavaLocalRef<jobject> ret =
       Java_XWalkContentsIoThreadClient_shouldInterceptRequest(
           env,
-          java_object_.obj(),
-          jstring_url.obj(),
+          java_object_,
+          jstring_url,
           is_main_frame,
           has_user_gesture,
-          jstring_method.obj(),
-          jstringArray_headers_names.obj(),
-          jstringArray_headers_values.obj());
+          jstring_method,
+          jstringArray_headers_names,
+          jstringArray_headers_values);
   if (ret.is_null())
     return std::unique_ptr<XWalkWebResourceResponse>();
   return std::unique_ptr<XWalkWebResourceResponse>(
@@ -329,7 +329,7 @@ bool XWalkContentsIoThreadClientImpl::ShouldBlockContentUrls() const {
 
   JNIEnv* env = AttachCurrentThread();
   return Java_XWalkContentsIoThreadClient_shouldBlockContentUrls(
-      env, java_object_.obj());
+      env, java_object_);
 }
 
 bool XWalkContentsIoThreadClientImpl::ShouldBlockFileUrls() const {
@@ -339,7 +339,7 @@ bool XWalkContentsIoThreadClientImpl::ShouldBlockFileUrls() const {
 
   JNIEnv* env = AttachCurrentThread();
   return Java_XWalkContentsIoThreadClient_shouldBlockFileUrls(
-      env, java_object_.obj());
+      env, java_object_);
 }
 
 bool XWalkContentsIoThreadClientImpl::ShouldBlockNetworkLoads() const {
@@ -349,7 +349,7 @@ bool XWalkContentsIoThreadClientImpl::ShouldBlockNetworkLoads() const {
 
   JNIEnv* env = AttachCurrentThread();
   return Java_XWalkContentsIoThreadClient_shouldBlockNetworkLoads(
-      env, java_object_.obj());
+      env, java_object_);
 }
 
 void XWalkContentsIoThreadClientImpl::NewDownload(
@@ -374,11 +374,11 @@ void XWalkContentsIoThreadClientImpl::NewDownload(
 
   Java_XWalkContentsIoThreadClient_onDownloadStart(
       env,
-      java_object_.obj(),
-      jstring_url.obj(),
-      jstring_user_agent.obj(),
-      jstring_content_disposition.obj(),
-      jstring_mime_type.obj(),
+      java_object_,
+      jstring_url,
+      jstring_user_agent,
+      jstring_content_disposition,
+      jstring_mime_type,
       content_length);
 }
 
@@ -399,7 +399,7 @@ void XWalkContentsIoThreadClientImpl::NewLoginRequest(
     jaccount = ConvertUTF8ToJavaString(env, account);
 
   Java_XWalkContentsIoThreadClient_newLoginRequest(
-      env, java_object_.obj(), jrealm.obj(), jaccount.obj(), jargs.obj());
+      env, java_object_, jrealm, jaccount, jargs);
 }
 
 void XWalkContentsIoThreadClientImpl::OnReceivedResponseHeaders(
@@ -440,19 +440,19 @@ void XWalkContentsIoThreadClientImpl::OnReceivedResponseHeaders(
 
   Java_XWalkContentsIoThreadClient_onReceivedResponseHeaders(
       env,
-      java_object_.obj(),
-      web_request.jstring_url.obj(),
+      java_object_,
+      web_request.jstring_url,
       web_request.is_main_frame,
       web_request.has_user_gesture,
-      web_request.jstring_method.obj(),
-      web_request.jstringArray_header_names.obj(),
-      web_request.jstringArray_header_values.obj(),
-      jstring_mime_type.obj(),
-      jstring_encoding.obj(),
+      web_request.jstring_method,
+      web_request.jstringArray_header_names,
+      web_request.jstringArray_header_values,
+      jstring_mime_type,
+      jstring_encoding,
       status_code,
-      jstring_reason.obj(),
-      jstringArray_response_header_names.obj(),
-      jstringArray_response_header_values.obj());
+      jstring_reason,
+      jstringArray_response_header_names,
+      jstringArray_response_header_values);
 }
 
 bool RegisterXWalkContentsIoThreadClientImpl(JNIEnv* env) {

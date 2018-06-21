@@ -263,7 +263,7 @@ GURL Application::GetAbsoluteURLFromKey(const std::string& key) const {
 }
 
 void Application::Terminate() {
-  std::vector<Runtime*> to_be_closed(runtimes_.get());
+  std::vector<Runtime*> to_be_closed(runtimes_);
   for (Runtime* runtime : to_be_closed)
     runtime->Close();
 }

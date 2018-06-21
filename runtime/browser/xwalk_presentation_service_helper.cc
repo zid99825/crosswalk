@@ -188,16 +188,25 @@ void PresentationFrame::OnPresentationSessionClosed(
 void PresentationFrame::OnDisplayInfoChanged(
     const std::vector<DisplayInfo>& info_list) {
   if (screen_listener_) {
-    if (auto presentation_session = this->session()) {
+    PresentationSession * presentation_session = this->session();
+    if (presentation_session != nullptr ) {
       // When system display is changed (e.g. rotated),
       // check if it the display owned by me is still available
       auto my_display_id = presentation_session->display_id();
       bool still_available =
           DisplayInfoManager::GetInstance()->IsStillAvailable(my_display_id);
-      screen_listener_->OnScreenAvailabilityChanged(still_available);
-    } else {
       screen_listener_->OnScreenAvailabilityChanged(
-          DisplayInfoManager::GetInstance()->FindAvailable() != nullptr);
+          still_available ?
+              blink::mojom::ScreenAvailability::AVAILABLE :
+              blink::mojom::ScreenAvailability::UNAVAILABLE);
+    } else {
+      bool available = DisplayInfoManager::GetInstance()->FindAvailable()
+          != nullptr;
+
+      screen_listener_->OnScreenAvailabilityChanged(
+          available ?
+              blink::mojom::ScreenAvailability::AVAILABLE :
+              blink::mojom::ScreenAvailability::UNAVAILABLE);
     }
   }
 
@@ -223,8 +232,13 @@ bool PresentationFrame::SetScreenAvailabilityListener(
 
   screen_listener_ = listener;
   if (screen_listener_) {
+    bool available = DisplayInfoManager::GetInstance()->FindAvailable()
+        != nullptr;
+
     screen_listener_->OnScreenAvailabilityChanged(
-        DisplayInfoManager::GetInstance()->FindAvailable() != nullptr);
+        available ?
+            blink::mojom::ScreenAvailability::AVAILABLE :
+            blink::mojom::ScreenAvailability::UNAVAILABLE);
   }
   return true;
 }

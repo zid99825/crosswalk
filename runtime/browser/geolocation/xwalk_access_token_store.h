@@ -5,7 +5,17 @@
 #ifndef XWALK_RUNTIME_BROWSER_GEOLOCATION_XWALK_ACCESS_TOKEN_STORE_H_
 #define XWALK_RUNTIME_BROWSER_GEOLOCATION_XWALK_ACCESS_TOKEN_STORE_H_
 
-#include "device/geolocation/access_token_store.h"
+//TODO(iotto) : replaced by
+/*
+  // Allows the embedder to provide a URLRequestContextGetter to use for network
+  // geolocation queries.
+  // * May be called from any thread. A URLRequestContextGetter is then provided
+  //   by invoking |callback| on the calling thread.
+  // * Default implementation provides nullptr URLRequestContextGetter.
+  virtual void GetGeolocationRequestContext(
+      base::OnceCallback<void(scoped_refptr<net::URLRequestContextGetter>)>
+          callback);
+ */
 
 class XWalkAccessTokenStore : public device::AccessTokenStore {
  public:

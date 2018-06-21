@@ -170,8 +170,8 @@ source_set("xwalk_runtime") {
     "runtime/browser/devtools/remote_debugging_server.h",
     "runtime/browser/devtools/xwalk_devtools_manager_delegate.cc",
     "runtime/browser/devtools/xwalk_devtools_manager_delegate.h",
-    "runtime/browser/geolocation/xwalk_access_token_store.cc",
-    "runtime/browser/geolocation/xwalk_access_token_store.h",
+#     "runtime/browser/geolocation/xwalk_access_token_store.cc",
+#     "runtime/browser/geolocation/xwalk_access_token_store.h",
     "runtime/browser/image_util.cc",
     "runtime/browser/image_util.h",
     "runtime/browser/media/media_capture_devices_dispatcher.cc",
@@ -334,13 +334,6 @@ source_set("xwalk_runtime") {
     "//android_webview/browser/renderer_host/auto_login_parser.h",
   ]
 
-  if ( tenta_chromium_build ) {
-    sources += [
-      "runtime/browser/android/net/host_resolver_tenta.cc",
-      "runtime/browser/android/net/host_resolver_tenta.h",
-    ]
-  }
-
   if (!is_android) {
     sources += [
       "runtime/browser/devtools/xwalk_devtools_frontend.cc",
@@ -377,7 +370,8 @@ source_set("xwalk_runtime") {
     "XWALK_VERSION=\"$xwalk_version\"",
   ]
   deps = [
-    ":generate_upstream_blink_version",
+#     ":generate_upstream_blink_version",
+    "//build/util:webkit_version",
     "//base",
     "//base:base_static",
     "//base:i18n",
@@ -388,6 +382,7 @@ source_set("xwalk_runtime") {
     "//components/autofill/core/browser",
     "//components/cdm/renderer",
 #    "//components/devtools_http_handler",
+    "//components/nacl/common:features",
     "//components/resources:components_resources",
     "//components/strings",
     "//components/url_formatter",
@@ -405,6 +400,7 @@ source_set("xwalk_runtime") {
     "//media",
     "//net",
     "//net:net_resources",
+    "//ppapi/features",
     "//skia",
     "//storage/browser",
     "//storage/common",
@@ -418,7 +414,7 @@ source_set("xwalk_runtime") {
     "//v8",
     "//xwalk/application:xwalk_application_lib",
     "//xwalk/application:xwalk_application_resources",
-    "//xwalk/experimental",
+#    "//xwalk/experimental",
     "//xwalk/extensions",
     "//xwalk/resources:xwalk_pak",
     "//xwalk/resources:xwalk_resources",
@@ -430,6 +426,7 @@ source_set("xwalk_runtime") {
 #    "//xwalk/third_party/tenta/file_blocks",
     "//xwalk/third_party/tenta/meta_fs",
     "//xwalk/third_party/tenta/chromium_cache",
+    "//xwalk/third_party/tenta/crosswalk_extensions",
   ]
 
     # TODO remove  

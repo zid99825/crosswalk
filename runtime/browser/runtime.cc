@@ -10,7 +10,6 @@
 #include "base/command_line.h"
 #include "base/message_loop/message_loop.h"
 #include "base/strings/utf_string_conversions.h"
-#include "base/threading/non_thread_safe.h"
 #include "components/app_modal/javascript_dialog_manager.h"
 #include "components/content_settings/core/common/content_settings.h"
 #include "components/content_settings/core/common/content_settings_types.h"
@@ -129,7 +128,8 @@ NativeAppWindow* Runtime::window() {
 }
 
 content::RenderProcessHost* Runtime::GetRenderProcessHost() {
-  return web_contents_->GetRenderProcessHost();
+  // TODO(iotto) : Test if it's ok!
+  return web_contents_->GetMainFrame()->GetProcess();
 }
 
 //////////////////////////////////////////////////////
@@ -314,7 +314,7 @@ void Runtime::DidUpdateFaviconURL(const std::vector<FaviconURL>& candidates) {
           &Runtime::DidDownloadFavicon, weak_ptr_factory_.GetWeakPtr()));
 }
 
-void Runtime::TitleWasSet(content::NavigationEntry* entry, bool explicit_set) {
+void Runtime::TitleWasSet(content::NavigationEntry* entry) {
   if (ui_delegate_)
     ui_delegate_->UpdateTitle(entry->GetTitle());
 }

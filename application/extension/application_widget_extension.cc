@@ -91,7 +91,7 @@ ApplicationWidgetExtension::ApplicationWidgetExtension(
   entries.push_back("window.Widget");
   set_entry_points(entries);
 
-  set_javascript_api(ResourceBundle::GetSharedInstance().GetRawDataResource(
+  set_javascript_api(ui::ResourceBundle::GetSharedInstance().GetRawDataResource(
       IDR_XWALK_APPLICATION_WIDGET_API).as_string());
 }
 

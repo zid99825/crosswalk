@@ -70,7 +70,7 @@ void RuntimeNetworkDelegate::OnBeforeRedirect(net::URLRequest* request,
                                               const GURL& new_location) {
 }
 
-void RuntimeNetworkDelegate::OnResponseStarted(net::URLRequest* request) {
+void RuntimeNetworkDelegate::OnResponseStarted(net::URLRequest* request, int net_error) {
 }
 
 void RuntimeNetworkDelegate::OnNetworkBytesReceived(net::URLRequest* request,
@@ -109,19 +109,20 @@ bool RuntimeNetworkDelegate::OnCanGetCookies(
 }
 
 bool RuntimeNetworkDelegate::OnCanSetCookie(const net::URLRequest& request,
-                                            const std::string& cookie_line,
+                                            const net::CanonicalCookie& cookie,
                                             net::CookieOptions* options) {
 #if defined(OS_ANDROID)
   return XWalkCookieAccessPolicy::GetInstance()->OnCanSetCookie(request,
-                                                                cookie_line,
+                                                                cookie,
                                                                 options);
 #else
   return true;
 #endif
 }
 
-bool RuntimeNetworkDelegate::OnCanAccessFile(const net::URLRequest& request,
-                                             const base::FilePath& path) const {
+bool RuntimeNetworkDelegate::OnCanAccessFile(
+    const net::URLRequest& request, const base::FilePath& original_path,
+    const base::FilePath& absolute_path) const {
   return true;
 }
 
