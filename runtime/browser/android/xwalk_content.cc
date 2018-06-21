@@ -268,7 +268,7 @@ void XWalkContent::SetJavaPeers(
   web_contents_delegate_.reset(new XWalkWebContentsDelegate(env, web_contents_delegate));
   contents_client_bridge_.reset(new XWalkContentsClientBridge(env, contents_client_bridge, web_contents_.get()));
 
-  web_contents_->SetUserData(kXWalkContentUserDataKey, new XWalkContentUserData(this));
+  web_contents_->SetUserData(kXWalkContentUserDataKey, base::MakeUnique<XWalkContentUserData>(this));
 
   XWalkContentsIoThreadClientImpl::RegisterPendingContents(web_contents_.get());
 
@@ -403,7 +403,8 @@ ScopedJavaLocalRef<jstring> XWalkContent::GetVersion(JNIEnv* env, jobject obj) {
   return base::android::ConvertUTF8ToJavaString(env, XWALK_VERSION);
 }
 
-static ScopedJavaLocalRef<jstring> GetChromeVersion(JNIEnv* env, const base::android::JavaParamRef<jclass>& jcaller) {
+static ScopedJavaLocalRef<jstring> JNI_XWalkContent_GetChromeVersion(
+    JNIEnv* env, const base::android::JavaParamRef<jclass>& jcaller) {
   LOG(INFO) << "GetChromeVersion=" << version_info::GetVersionNumber();
   return base::android::ConvertUTF8ToJavaString(env, version_info::GetVersionNumber());
 }

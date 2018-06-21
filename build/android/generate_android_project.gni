@@ -240,9 +240,16 @@ template("generate_android_project") {
     dex_path = _base_path + "__unused.dex.jar"
     emma_never_instrument = true
 #    chromium_code = true
+    jar_excluded_patterns = []
     if (defined(invoker.resource_excluded_patterns)) {
-      jar_excluded_patterns = invoker.resource_excluded_patterns
+      jar_excluded_patterns += invoker.resource_excluded_patterns
     }
+
+    if (defined(invoker.jar_excluded_patterns)) {
+      jar_excluded_patterns += invoker.jar_excluded_patterns
+    }
+                                   
+    print("java_library_impl", _java_target, " exclude_patterns", jar_excluded_patterns)
     jar_path = _resource_jar_path
     if (defined(invoker.java_files)) {
         java_files = invoker.java_files

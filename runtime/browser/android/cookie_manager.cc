@@ -65,18 +65,6 @@ namespace xwalk {
 
 namespace {
 
-class TentaCookieDelegate : public net::CookieMonsterDelegate {
- public:
-  TentaCookieDelegate() {
-  }
-  virtual ~TentaCookieDelegate() {
-  }
-
-  void OnCookieChanged(const net::CanonicalCookie& cookie, bool removed, net::CookieStore::ChangeCause cause) override {
-    TENTA_LOG_COOKIE(INFO) << __func__ << " removed=" << removed << " cause=" << (int)cause << " cookie=" << cookie.DebugString();
-  }
-};
-
 // Are cookies allowed for file:// URLs by default?
 const bool kDefaultFileSchemeAllowed = false;
 const char kPreKitkatDataDirectory[] = "app_database";
