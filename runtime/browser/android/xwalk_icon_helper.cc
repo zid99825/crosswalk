@@ -20,10 +20,12 @@ namespace xwalk {
 
 XWalkIconHelper::XWalkIconHelper(WebContents* web_contents)
     : content::WebContentsObserver(web_contents),
-      listener_(NULL) {
+      listener_(NULL),
+      _this_weak(this) {
 }
 
 XWalkIconHelper::~XWalkIconHelper() {
+  _this_weak.InvalidateWeakPtrs();
 }
 
 void XWalkIconHelper::SetListener(Listener* listener) {
@@ -33,7 +35,7 @@ void XWalkIconHelper::SetListener(Listener* listener) {
 void XWalkIconHelper::DownloadIcon(const GURL& icon_url) {
   web_contents()->DownloadImage(icon_url, true, 0, false,
       base::Bind(&XWalkIconHelper::DownloadFaviconCallback,
-                 base::Unretained(this)));
+                 _this_weak.GetWeakPtr()));
 }
 
 void XWalkIconHelper::DidUpdateFaviconURL(
