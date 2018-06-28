@@ -36,13 +36,15 @@ class XWalkMainDelegate : public content::ContentMainDelegate {
   content::ContentBrowserClient* CreateContentBrowserClient() override;
   content::ContentRendererClient* CreateContentRendererClient() override;
 
+ protected:
+  std::unique_ptr<XWalkResourceDelegate> resource_delegate_;
+
  private:
   void InitializeResourceBundle();
 
   std::unique_ptr<XWalkRunner> xwalk_runner_;
   std::unique_ptr<content::ContentRendererClient> renderer_client_;
   std::unique_ptr<content::ContentClient> content_client_;
-  std::unique_ptr<XWalkResourceDelegate> resource_delegate_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkMainDelegate);
 };

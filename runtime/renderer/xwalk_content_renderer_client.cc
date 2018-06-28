@@ -15,6 +15,7 @@
 #include "content/public/renderer/render_frame_observer_tracker.h"
 #include "content/public/renderer/render_thread.h"
 #include "content/public/renderer/render_view.h"
+#include "components/error_page/common/localized_error.h"
 #include "grit/xwalk_application_resources.h"
 #include "grit/xwalk_sysapps_resources.h"
 #include "net/base/net_errors.h"
@@ -45,6 +46,12 @@
 
 #if !defined(DISABLE_NACL)
 #include "components/nacl/renderer/nacl_helper.h"
+#endif
+
+#ifdef TENTA_CHROMIUM_BUILD
+#include "xwalk/third_party/tenta/crosswalk_extensions/resources/grit/tenta_error_pages_browser_resources.h"
+#include "ui/base/resource/resource_bundle.h"
+#include "third_party/zlib/google/compression_utils.h"
 #endif
 
 using content::RenderThread;
@@ -357,12 +364,44 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
     std::string* error_html,
     base::string16* error_description) {
   // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
+  bool is_post = failed_request.HttpMethod().Ascii() == "POST";
 
+  LOG(INFO) << "iotto " << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
+            << error_html << " error_description=" << error_description;
+
+//  if (error_description) {
+//    if (error.localized_description.IsEmpty())
+//      *error_description = base::ASCIIToUTF16(net::ErrorToString(error.reason));
+//    else
+//      *error_description = error.localized_description.Utf16();
+//  }
   if (error_description) {
-    if (error.localized_description.IsEmpty())
-      *error_description = base::ASCIIToUTF16(net::ErrorToString(error.reason));
-    else
-      *error_description = error.localized_description.Utf16();
+    *error_description = error_page::LocalizedError::GetErrorDetails(
+        error.domain.Utf8(), error.reason, is_post);
+  }
+  if (error_html) {
+    // TODO(iotto) : Move this to LocalizedError
+    int resource_id = IDR_TENTA_ERR_UNKNOWN;
+    if (error.domain.Utf8() == net::kErrorDomain) {
+      switch (error.reason) {
+        case net::ERR_NAME_NOT_RESOLVED:
+          resource_id = IDR_TENTA_ERR_NAME_NOT_RESOLVED_HTML;
+          break;
+        case net::ERR_INTERNET_DISCONNECTED:
+          resource_id = IDR_TENTA_ERR_INTERNET_DISCONNECTED_HTML;
+          break;
+      }
+      base::StringPiece raw_response = ui::ResourceBundle::GetSharedInstance().GetRawDataResource(resource_id);
+      compression::GzipUncompress(raw_response.as_string(), error_html);
+    }
+  }
+
+//  if (error_description) {
+//    *error_description = LocalizedError::GetErrorDetails(error, is_post);
+//  }
+
+  if ( error_description && !error_description->empty()) {
+    LOG(INFO) << "iotto " << __func__ << " error_description=" << *error_description;
   }
 }
 

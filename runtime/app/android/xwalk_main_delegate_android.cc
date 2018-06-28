@@ -7,10 +7,12 @@
 #include <memory>
 #include <string>
 
+#include "base/android/locale_utils.h"
 #include "base/command_line.h"
 #include "base/cpu.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "base/i18n/rtl.h"
 #include "base/logging.h"
 #include "base/base_paths_android.h"
 #include "base/path_service.h"
@@ -18,10 +20,12 @@
 #include "base/posix/global_descriptors.h"
 #include "content/public/browser/browser_main_runner.h"
 #include "ui/base/resource/resource_bundle.h"
+#include "ui/base/resource/resource_bundle_android.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/ui_base_switches.h"
 #include "xwalk/runtime/common/android/xwalk_globals_android.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
+#include "xwalk/runtime/common/xwalk_resource_delegate.h"
 
 namespace xwalk {
 
@@ -60,16 +64,43 @@ int XWalkMainDelegateAndroid::RunProcess(
 }
 
 void XWalkMainDelegateAndroid::InitResourceBundle() {
+  ui::SetLocalePaksStoredInApk(true);
+
   base::FilePath pak_file;
   base::FilePath pak_dir;
   bool got_path = PathService::Get(base::DIR_ANDROID_APP_DATA, &pak_dir);
   DCHECK(got_path);
   pak_dir = pak_dir.Append(FILE_PATH_LITERAL("paks"));
   pak_file = pak_dir.Append(FILE_PATH_LITERAL(kXWalkPakFilePath));
+
   ui::ResourceBundle::InitSharedInstanceWithPakPath(pak_file);
   pak_file = pak_dir.Append(FILE_PATH_LITERAL("xwalk_100_percent.pak"));
   ResourceBundle::GetSharedInstance().AddDataPackFromPath(
       pak_file, ui::SCALE_FACTOR_100P);
+
+
+/*****************************************/
+//
+//
+//  resource_delegate_.reset(new XWalkResourceDelegate());
+//  std::string locale = ui::ResourceBundle::InitSharedInstanceWithLocale(
+//        base::android::GetDefaultLocaleString(), resource_delegate_.get(),
+//        ui::ResourceBundle::DO_NOT_LOAD_COMMON_RESOURCES);
+//    if (locale.empty()) {
+//      LOG(WARNING) << "iotto " << __func__ << " Failed to load locale .pak from the apk. "
+//          "Bringing up WebView without any locale";
+//    }
+//    base::i18n::SetICUDefaultLocale(locale);
+//
+//    // Try to directly mmap the resources.pak from the apk. Fall back to load
+//    // from file, using PATH_SERVICE, otherwise.
+//    base::FilePath pak_file_path;
+//    PathService::Get(ui::DIR_RESOURCE_PAKS_ANDROID, &pak_file_path);
+//    LOG(INFO) << "iotto " << __func__ << " pak_file_path=" << pak_file_path.value();
+//    LOG(INFO) << "iotto " << __func__ << " pak_dir=" << pak_dir.value();
+//
+//    pak_file_path = pak_file_path.AppendASCII("resources.pak");
+//    ui::LoadMainAndroidPackFile("assets/resources.pak", pak_file_path);
 }
 
 }  // namespace xwalk

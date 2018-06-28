@@ -419,9 +419,7 @@ public class XWalkUIClientInternal {
      * @param view The XWalkViewInternal that is initiating the callback.
      * @param url The url to be loaded.
      * @since 2.1
-     * @deprecated use {@link #onNavigationStarted} to receive internal navigation events too
      */
-    @Deprecated
     @XWalkAPI
     public void onPageLoadStarted(XWalkViewInternal view, String url) {
     }
