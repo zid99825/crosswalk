@@ -366,8 +366,8 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
   // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
   bool is_post = failed_request.HttpMethod().Ascii() == "POST";
 
-  LOG(INFO) << "iotto " << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
-            << error_html << " error_description=" << error_description;
+//  LOG(INFO) << "iotto " << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
+//            << error_html << " error_description=" << error_description;
 
 //  if (error_description) {
 //    if (error.localized_description.IsEmpty())
@@ -400,9 +400,9 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
 //    *error_description = LocalizedError::GetErrorDetails(error, is_post);
 //  }
 
-  if ( error_description && !error_description->empty()) {
-    LOG(INFO) << "iotto " << __func__ << " error_description=" << *error_description;
-  }
+//  if ( error_description && !error_description->empty()) {
+//    LOG(INFO) << "iotto " << __func__ << " error_description=" << *error_description;
+//  }
 }
 
 void XWalkContentRendererClient::AddSupportedKeySystems(
