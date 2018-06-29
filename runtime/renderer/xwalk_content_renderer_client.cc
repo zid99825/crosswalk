@@ -379,22 +379,22 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
     *error_description = error_page::LocalizedError::GetErrorDetails(
         error.domain.Utf8(), error.reason, is_post);
   }
-  if (error_html) {
-    // TODO(iotto) : Move this to LocalizedError
-    int resource_id = IDR_TENTA_ERR_UNKNOWN;
-    if (error.domain.Utf8() == net::kErrorDomain) {
-      switch (error.reason) {
-        case net::ERR_NAME_NOT_RESOLVED:
-          resource_id = IDR_TENTA_ERR_NAME_NOT_RESOLVED_HTML;
-          break;
-        case net::ERR_INTERNET_DISCONNECTED:
-          resource_id = IDR_TENTA_ERR_INTERNET_DISCONNECTED_HTML;
-          break;
-      }
-      base::StringPiece raw_response = ui::ResourceBundle::GetSharedInstance().GetRawDataResource(resource_id);
-      compression::GzipUncompress(raw_response.as_string(), error_html);
-    }
-  }
+//  if (error_html) {
+//    // TODO(iotto) : Move this to LocalizedError
+//    int resource_id = IDR_TENTA_ERR_UNKNOWN;
+//    if (error.domain.Utf8() == net::kErrorDomain) {
+//      switch (error.reason) {
+//        case net::ERR_NAME_NOT_RESOLVED:
+//          resource_id = IDR_TENTA_ERR_NAME_NOT_RESOLVED_HTML;
+//          break;
+//        case net::ERR_INTERNET_DISCONNECTED:
+//          resource_id = IDR_TENTA_ERR_INTERNET_DISCONNECTED_HTML;
+//          break;
+//      }
+//      base::StringPiece raw_response = ui::ResourceBundle::GetSharedInstance().GetRawDataResource(resource_id);
+//      compression::GzipUncompress(raw_response.as_string(), error_html);
+//    }
+//  }
 
 //  if (error_description) {
 //    *error_description = LocalizedError::GetErrorDetails(error, is_post);

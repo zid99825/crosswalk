@@ -23,6 +23,7 @@
 
 using blink::WebURLError;
 
+namespace xwalk {
 namespace {
 
 struct LocalizedErrorMap {
@@ -233,3 +234,5 @@ base::string16 LocalizedError::GetErrorDetails(const blink::WebURLError& error,
   else
     return l10n_util::GetStringUTF16(IDS_ERRORPAGES_SUMMARY_NOT_AVAILABLE);
 }
+
+} // namesapce xwalk

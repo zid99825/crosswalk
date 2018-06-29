@@ -20,6 +20,7 @@ namespace blink {
 struct WebURLError;
 }
 
+namespace xwalk {
 class LocalizedError {
  public:
   // Returns a description of the encountered error.
@@ -33,4 +34,5 @@ class LocalizedError {
   DISALLOW_IMPLICIT_CONSTRUCTORS(LocalizedError);
 };
 
+} // namesapce xwalk
 #endif  // XWALK_RUNTIME_COMMON_XWALK_LOCALIZED_ERROR_H_
