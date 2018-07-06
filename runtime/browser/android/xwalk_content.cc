@@ -127,7 +127,8 @@ class AutoCloseMetaDb {
 /**
  *
  */
-class MetaReadToPickle : public metafs::ACancellableReadListener {
+class MetaReadToPickle :
+    public metafs::ACancellableReadListener {
  public:
   MetaReadToPickle(base::Pickle& pickle)
       : ACancellableReadListener(ScopedJavaGlobalRef<jobject>()),
@@ -154,7 +155,8 @@ class MetaReadToPickle : public metafs::ACancellableReadListener {
 /**
  *
  */
-class XWalkContentUserData : public base::SupportsUserData::Data {
+class XWalkContentUserData :
+    public base::SupportsUserData::Data {
  public:
   explicit XWalkContentUserData(XWalkContent* ptr)
       : content_(ptr) {
@@ -263,6 +265,10 @@ void XWalkContent::SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
   web_contents_->SetUserData(kXWalkContentUserDataKey, new XWalkContentUserData(this));
 
   XWalkContentsIoThreadClientImpl::RegisterPendingContents(web_contents_.get());
+
+  // Net Error handler on client side
+  ::tenta::ext::TentaNetErrorClient::CreateForWebContents(web_contents_.get());
+  ::tenta::ext::TentaNetErrorClient::FromWebContents(web_contents_.get())->SetListener(this);
 
   // XWalk does not use disambiguation popup for multiple targets.
   content::RendererPreferences* prefs = web_contents_->GetMutableRendererPrefs();
@@ -457,24 +463,24 @@ jboolean XWalkContent::SetManifest(JNIEnv* env, jobject obj, jstring path, jstri
     std::string image_border_default;
     ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderDefault, keys::kLaunchScreenImageBorderDefault,
                       &image_border_default);
-    if (image_border_default.empty()
-        && ManifestHasPath(manifest, keys::kXWalkLaunchScreenDefault, keys::kLaunchScreenDefault)) {
+    if (image_border_default.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenDefault,
+                                                        keys::kLaunchScreenDefault)) {
       image_border_default = empty;
     }
 
     std::string image_border_landscape;
     ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderLandscape, keys::kLaunchScreenImageBorderLandscape,
                       &image_border_landscape);
-    if (image_border_landscape.empty()
-        && ManifestHasPath(manifest, keys::kXWalkLaunchScreenLandscape, keys::kLaunchScreenLandscape)) {
+    if (image_border_landscape.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenLandscape,
+                                                          keys::kLaunchScreenLandscape)) {
       image_border_landscape = empty;
     }
 
     std::string image_border_portrait;
     ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderPortrait, keys::kLaunchScreenImageBorderPortrait,
                       &image_border_portrait);
-    if (image_border_portrait.empty()
-        && ManifestHasPath(manifest, keys::kXWalkLaunchScreenPortrait, keys::kLaunchScreenPortrait)) {
+    if (image_border_portrait.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenPortrait,
+                                                         keys::kLaunchScreenPortrait)) {
       image_border_portrait = empty;
     }
 
@@ -969,8 +975,7 @@ void XWalkContent::ClearMatches(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   GetFindHelper()->ClearMatches();
 }
 
-void XWalkContent::OnFindResultReceived(int active_ordinal, int match_count,
-bool finished) {
+void XWalkContent::OnFindResultReceived(int active_ordinal, int match_count, bool finished) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
@@ -980,4 +985,20 @@ bool finished) {
   Java_XWalkContent_onFindResultReceived(env, obj.obj(), active_ordinal, match_count, finished);
 }
 
+#ifdef TENTA_CHROMIUM_BUILD
+/**
+ *
+ */
+void XWalkContent::OnOpenDnsSettings() {
+  LOG(INFO) << "iotto " << __func__;
+
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  JNIEnv* env = AttachCurrentThread();
+  ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
+  if (obj.is_null())
+    return;
+
+  Java_XWalkContent_onOpenDnsSettings(env, obj.obj());
+}
+#endif
 }  // namespace xwalk

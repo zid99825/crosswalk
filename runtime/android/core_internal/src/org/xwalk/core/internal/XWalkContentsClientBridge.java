@@ -402,6 +402,16 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         mFindListener.onFindResultReceived(activeMatchOrdinal, numberOfMatches, isDoneCounting);
     }
 
+    /**
+     * For Tenta
+     */
+    @Override
+    public void onOpenDnsSettings() {
+        if (mXWalkUIClient != null) {
+            mXWalkUIClient.onOpenDnsSettings();
+        }
+    }
+    
     @Override
     public void onNewPicture(Picture picture) {
     }

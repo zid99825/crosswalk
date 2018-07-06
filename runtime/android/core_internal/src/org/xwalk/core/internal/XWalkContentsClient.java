@@ -334,6 +334,11 @@ abstract class XWalkContentsClient extends ContentViewClient {
             boolean isDoneCounting);
 
     /**
+     * For Tenta
+     */
+    public abstract void onOpenDnsSettings();
+    
+    /**
      * Called whenever there is a new content picture available.
      * 
      * @param picture New picture.

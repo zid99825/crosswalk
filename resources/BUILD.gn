@@ -22,6 +22,7 @@ repack("xwalk_pak") {
     "$root_gen_dir/net/net_resources.pak",
     "$root_gen_dir/ui/strings/app_locale_settings_en-US.pak",
     "$root_gen_dir/ui/strings/ui_strings_en-US.pak",
+    "$root_gen_dir/ui/resources/webui_resources.pak",
     "$root_gen_dir/xwalk/application/xwalk_application_resources.pak",
     "$root_gen_dir/xwalk/extensions/xwalk_extensions_resources.pak",
     "$root_gen_dir/xwalk/resources/xwalk_resources.pak",

@@ -1486,6 +1486,11 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
                 isDoneCounting);
     }
 
+    @CalledByNative
+    public void onOpenDnsSettings() {
+        mContentsClientBridge.onOpenDnsSettings();
+    }
+    
     private native long nativeInit();
 
     private static native void nativeDestroy(long nativeXWalkContent);

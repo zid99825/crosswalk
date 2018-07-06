@@ -684,4 +684,12 @@ public class XWalkUIClientInternal {
         mCustomXWalkView = null;
         mCustomViewCallback = null;
     }
+    
+    /**
+     * For Tenta
+     */
+    @XWalkAPI
+    public void onOpenDnsSettings () {
+        // TODO implement in Android client
+    }
 }

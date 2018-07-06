@@ -17,6 +17,10 @@
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
 
+#ifdef TENTA_CHROMIUM_BUILD
+#include "browser/neterror/tenta_net_error_client.h"
+#endif
+
 using base::android::JavaParamRef;
 using base::android::ScopedJavaLocalRef;
 using tenta::fs::MetaFile;
@@ -30,8 +34,8 @@ namespace tenta {
 namespace fs {
 class MetaDb;
 class MetaFile;
-} // namespace fs
-} // namespace tenta
+}  // namespace fs
+}  // namespace tenta
 
 namespace xwalk {
 namespace tenta {
@@ -41,7 +45,13 @@ class XWalkAutofillManager;
 class XWalkWebContentsDelegate;
 class XWalkContentsClientBridge;
 
-class XWalkContent : public FindHelper::Listener {
+class XWalkContent :
+    public FindHelper::Listener
+#ifdef TENTA_CHROMIUM_BUILD
+    ,
+    public ::tenta::ext::TentaNetErrorClient::Listener
+#endif
+{
  public:
   explicit XWalkContent(std::unique_ptr<content::WebContents> web_contents);
   ~XWalkContent();
@@ -49,55 +59,41 @@ class XWalkContent : public FindHelper::Listener {
   static XWalkContent* FromID(int render_process_id, int render_view_id);
   static XWalkContent* FromWebContents(content::WebContents* web_contents);
 
-  base::android::ScopedJavaLocalRef<jobject> GetWebContents(JNIEnv* env,
-                                                            jobject obj);
-  void SetPendingWebContentsForPopup(
-                                     std::unique_ptr<content::WebContents> pending);
+  base::android::ScopedJavaLocalRef<jobject> GetWebContents(JNIEnv* env, jobject obj);
+  void SetPendingWebContentsForPopup(std::unique_ptr<content::WebContents> pending);
   jlong ReleasePopupXWalkContent(JNIEnv* env, jobject obj);
-  void SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
-                    jobject web_contents_delegate,
-                    jobject contents_client_bridge, jobject io_thread_client,
-                    jobject intercept_navigation_delegate);
+  void SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content, jobject web_contents_delegate,
+                    jobject contents_client_bridge, jobject io_thread_client, jobject intercept_navigation_delegate);
   void ClearCache(JNIEnv* env, jobject obj, jboolean include_disk_files);
   void ClearCacheForSingleFile(JNIEnv* env, jobject obj, jstring url);
   ScopedJavaLocalRef<jstring> DevToolsAgentId(JNIEnv* env, jobject obj);
   void Destroy(JNIEnv* env, jobject obj);
   void UpdateLastHitTestData(JNIEnv* env, jobject obj);
-  void RequestNewHitTestDataAt(JNIEnv* env, jobject obj, jfloat x, jfloat y,
-                               jfloat touch_major);
+  void RequestNewHitTestDataAt(JNIEnv* env, jobject obj, jfloat x, jfloat y, jfloat touch_major);
   ScopedJavaLocalRef<jstring> GetVersion(JNIEnv* env, jobject obj);
   jint GetRoutingID(JNIEnv* env, jobject obj);
-  base::android::ScopedJavaLocalRef<jbyteArray> GetState(JNIEnv* env,
-                                                         jobject obj);
+  base::android::ScopedJavaLocalRef<jbyteArray> GetState(JNIEnv* env, jobject obj);
   jboolean SetState(JNIEnv* env, jobject obj, jbyteArray state);
 
   /******** Using Metafs **********/
   //TODO make this private
-  int OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id,
-                      const JavaParamRef<jstring>& key,
-                      scoped_refptr<::tenta::fs::MetaFile>& fileOut,
-                      scoped_refptr<::tenta::fs::MetaDb>& dbOut,
+  int OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id, const JavaParamRef<jstring>& key,
+                      scoped_refptr<::tenta::fs::MetaFile>& fileOut, scoped_refptr<::tenta::fs::MetaDb>& dbOut,
                       int mode);
 
-  jint SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
-                      const JavaParamRef<jbyteArray>& state,
-                      const JavaParamRef<jstring>& id,
-                      const JavaParamRef<jstring>& key);
+  jint SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jbyteArray>& state,
+                      const JavaParamRef<jstring>& id, const JavaParamRef<jstring>& key);
 
-  jint SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
-                   const JavaParamRef<jstring>& id,
+  jint SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& id,
                    const JavaParamRef<jstring>& key);
 
-  jint RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
-                      const JavaParamRef<jstring>& id,
+  jint RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& id,
                       const JavaParamRef<jstring>& key);
 
-  jint NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
-                   const JavaParamRef<jstring>& id,
+  jint NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& id,
                    const JavaParamRef<jstring>& key);
 
-  jint ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
-                    const JavaParamRef<jstring>& oldKey,
+  jint ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& oldKey,
                     const JavaParamRef<jstring>& newKey);
 
   /******** End Metafs **********/
@@ -130,40 +126,35 @@ class XWalkContent : public FindHelper::Listener {
   }
 
   void SetJsOnlineProperty(JNIEnv* env, jobject obj, jboolean network_up);
-  jboolean SetManifest(JNIEnv* env, jobject obj, jstring path,
-                       jstring manifest);
+  jboolean SetManifest(JNIEnv* env, jobject obj, jstring path, jstring manifest);
   void SetBackgroundColor(JNIEnv* env, jobject obj, jint color);
-  void SetOriginAccessWhitelist(JNIEnv* env, jobject obj, jstring url,
-                                jstring match_patterns);
+  void SetOriginAccessWhitelist(JNIEnv* env, jobject obj, jstring url, jstring match_patterns);
 
   // Geolocation API support
-  void ShowGeolocationPrompt(const GURL& origin,
-                             const base::Callback<void(bool)>& callback);  // NOLINT
+  void ShowGeolocationPrompt(const GURL& origin, const base::Callback<void(bool)>& callback);  // NOLINT
   void HideGeolocationPrompt(const GURL& origin);
-  void InvokeGeolocationCallback(JNIEnv* env, jobject obj, jboolean value,
-                                 jstring origin);
+  void InvokeGeolocationCallback(JNIEnv* env, jobject obj, jboolean value, jstring origin);
 
   void SetXWalkAutofillClient(jobject client);
   void SetSaveFormData(bool enabled);
 
-  base::android::ScopedJavaLocalRef<jbyteArray> GetCertificate(
-                                                               JNIEnv* env,
-                                                               const JavaParamRef<jobject>& obj);
+  base::android::ScopedJavaLocalRef<jbyteArray> GetCertificate(JNIEnv* env, const JavaParamRef<jobject>& obj);
 
-  base::android::ScopedJavaLocalRef<jobjectArray> GetCertificateChain(
-      JNIEnv* env,
-      const JavaParamRef<jobject>& obj);
+  base::android::ScopedJavaLocalRef<jobjectArray> GetCertificateChain(JNIEnv* env, const JavaParamRef<jobject>& obj);
 
   FindHelper* GetFindHelper();
-  void FindAllAsync(JNIEnv* env, const JavaParamRef<jobject>& obj,
-                    const JavaParamRef<jstring>& search_string);
-  void FindNext(JNIEnv* env, const JavaParamRef<jobject>& obj,
-                jboolean forward);
+  void FindAllAsync(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& search_string);
+  void FindNext(JNIEnv* env, const JavaParamRef<jobject>& obj, jboolean forward);
   void ClearMatches(JNIEnv* env, const JavaParamRef<jobject>& obj);
 
   // FindHelper::Listener implementation.
-  void OnFindResultReceived(int active_ordinal, int match_count, bool finished)
-      override;
+  void OnFindResultReceived(int active_ordinal, int match_count, bool finished) override;
+
+ private:
+#ifdef TENTA_CHROMIUM_BUILD
+  // TentaNetErrorClient::Listener
+  void OnOpenDnsSettings() override;
+#endif
 
  private:
   JavaObjectWeakGlobalRef java_ref_;
