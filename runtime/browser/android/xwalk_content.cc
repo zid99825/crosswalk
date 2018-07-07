@@ -989,7 +989,7 @@ void XWalkContent::OnFindResultReceived(int active_ordinal, int match_count, boo
 /**
  *
  */
-void XWalkContent::OnOpenDnsSettings() {
+void XWalkContent::OnOpenDnsSettings(const GURL& failedUrl) {
   LOG(INFO) << "iotto " << __func__;
 
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
@@ -998,7 +998,9 @@ void XWalkContent::OnOpenDnsSettings() {
   if (obj.is_null())
     return;
 
-  Java_XWalkContent_onOpenDnsSettings(env, obj.obj());
+  ScopedJavaLocalRef<jstring> j_failed_url(ConvertUTF8ToJavaString(env, failedUrl.spec()));
+
+  Java_XWalkContent_onOpenDnsSettings(env, obj.obj(), j_failed_url);
 }
 #endif
 }  // namespace xwalk

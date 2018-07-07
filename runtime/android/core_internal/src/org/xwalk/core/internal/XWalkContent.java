@@ -1487,8 +1487,8 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     }
 
     @CalledByNative
-    public void onOpenDnsSettings() {
-        mContentsClientBridge.onOpenDnsSettings();
+    public void onOpenDnsSettings(final String failedUrl) {
+        mContentsClientBridge.onOpenDnsSettings(failedUrl);
     }
     
     private native long nativeInit();

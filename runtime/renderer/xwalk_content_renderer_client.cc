@@ -436,6 +436,7 @@ bool XWalkContentRendererClient::ShouldReportDetailedMessageForSource(const base
 
 bool XWalkContentRendererClient::HasErrorPage(int http_status_code, std::string* error_domain) {
   // TODO(iotto) : Replace with tenta implementation
+  // or maybe return true and load a default error page for unhandled errors
   LOG(INFO) << "iotto " << __func__ << " httpStatusCode=" << http_status_code;
   // Use an internal error page, if we have one for the status code.
   if (!error_page::LocalizedError::HasStrings(

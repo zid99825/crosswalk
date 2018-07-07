@@ -406,9 +406,9 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
      * For Tenta
      */
     @Override
-    public void onOpenDnsSettings() {
+    public void onOpenDnsSettings(final String failedUrl) {
         if (mXWalkUIClient != null) {
-            mXWalkUIClient.onOpenDnsSettings();
+            mXWalkUIClient.onOpenDnsSettings(failedUrl);
         }
     }
     
