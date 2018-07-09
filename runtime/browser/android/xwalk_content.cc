@@ -76,10 +76,10 @@ using xwalk::application_manifest_keys::kDisplay;
 
 #ifdef TENTA_CHROMIUM_BUILD
 using tenta::ext::TentaHistoryStore;
+namespace metafs = ::tenta::fs;
 #endif
 
 namespace keys = xwalk::application_manifest_keys;
-namespace metafs = ::tenta::fs;
 
 namespace xwalk {
 
@@ -546,13 +546,10 @@ jboolean XWalkContent::SetState(JNIEnv* env, jobject obj, jbyteArray state) {
 /**
  *
  */
+#ifdef TENTA_CHROMIUM_BUILD
 int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id, const JavaParamRef<jstring>& key,
                                   scoped_refptr<::tenta::fs::MetaFile>& fileOut,
                                   scoped_refptr<::tenta::fs::MetaDb>& dbOut, int mode) {
-#ifndef TENTA_CHROMIUM_BUILD
-  LOG(WARNING) << __func__ << " Not implemented!";
-  return -1;
-#else // TENTA_CHROMIUM_BUILD
   using namespace metafs;
   using namespace ::base::android;
 
@@ -609,8 +606,8 @@ int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id, 
   }
 
   return FS_OK;
-#endif // TENTA_CHROMIUM_BUILD
 }
+#endif // TENTA_CHROMIUM_BUILD
 
 /**
  *

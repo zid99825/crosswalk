@@ -15,27 +15,28 @@
 #include "third_party/WebKit/public/platform/modules/permissions/permission_status.mojom.h"
 #include "xwalk/runtime/browser/android/find_helper.h"
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
-#include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
 
 #ifdef TENTA_CHROMIUM_BUILD
 #include "browser/neterror/tenta_net_error_client.h"
-#endif
-
-using base::android::JavaParamRef;
-using base::android::ScopedJavaLocalRef;
+#include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
 using tenta::fs::MetaFile;
-
-namespace content {
-class BrowserContext;
-class WebContents;
-}
 
 namespace tenta {
 namespace fs {
 class MetaDb;
 class MetaFile;
 }  // namespace fs
-}  // namespace tenta
+} 
+
+#endif
+
+using base::android::JavaParamRef;
+using base::android::ScopedJavaLocalRef;
+
+namespace content {
+class BrowserContext;
+class WebContents;
+}
 
 namespace xwalk {
 namespace tenta {
@@ -77,9 +78,11 @@ class XWalkContent :
 
   /******** Using Metafs **********/
   //TODO make this private
+#ifdef TENTA_CHROMIUM_BUILD
   int OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id, const JavaParamRef<jstring>& key,
                       scoped_refptr<::tenta::fs::MetaFile>& fileOut, scoped_refptr<::tenta::fs::MetaDb>& dbOut,
                       int mode);
+#endif
 
   jint SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jbyteArray>& state,
                       const JavaParamRef<jstring>& id, const JavaParamRef<jstring>& key);
