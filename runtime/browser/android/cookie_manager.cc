@@ -43,8 +43,9 @@
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
 #include "xwalk/runtime/browser/xwalk_browser_main_parts_android.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
-#if defined(TENTA_CHROMIUM_BUILD)
+
 #include "meta_logging.h"
+#if defined(TENTA_CHROMIUM_BUILD)
 #include "tenta_cookie_store.h"
 #endif
 

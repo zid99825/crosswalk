@@ -154,6 +154,8 @@ class XWalkContent :
 #ifdef TENTA_CHROMIUM_BUILD
   // TentaNetErrorClient::Listener
   void OnOpenDnsSettings(const GURL& failedUrl) override;
+#else
+  void OnOpenDnsSettings(const GURL& failedUrl);
 #endif
 
  private:
