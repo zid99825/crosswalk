@@ -7,3 +7,6 @@
 [submodule "third_party/tenta/chromium_cache"]
 	path = third_party/tenta/chromium_cache
 	url = git@bitbucket.org:mikandi/chromium-cache-metafs.git
+[submodule "third_party/tenta/crosswalk_extensions"] 
+	path = third_party/tenta/crosswalk-extensions 
+	url = git@bitbucket.org:mikandi/crosswalk-extensions.git 
