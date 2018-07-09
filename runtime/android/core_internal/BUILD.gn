@@ -66,6 +66,10 @@ android_library("xwalk_core_internal_java") {
       "//xwalk/third_party/tenta/chromium_cache:chromium_cache_java",
       "//xwalk/third_party/tenta/crosswalk_extensions/java:crosswalk_extensions_java",
     ]
+  } else {
+    deps += [
+      "//xwalk/runtime/android/empty_tenta:tenta_empty_java",
+    ]
   }
   srcjars = [ 
     "$reflection_gen_dir/bridge/bridge.srcjar",

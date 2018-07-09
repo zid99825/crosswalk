@@ -28,9 +28,9 @@
 #include "xwalk/runtime/browser/runtime_file_select_helper.h"
 #include "xwalk/runtime/browser/runtime_javascript_dialog_manager.h"
 
+#include "meta_logging.h"
 #if defined(TENTA_CHROMIUM_BUILD)
 #include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
-#include "xwalk/third_party/tenta/meta_fs/meta_logging.h"
 #endif
 
 using base::android::AttachCurrentThread;

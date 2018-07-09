@@ -427,6 +427,10 @@ source_set("xwalk_runtime") {
       "//xwalk/third_party/tenta/chromium_cache",
       "//xwalk/third_party/tenta/crosswalk_extensions",
     ]
+  } else {
+    deps += [
+      "//xwalk/runtime/android/empty_tenta",
+    ]
   }
                              
   if (is_android) {

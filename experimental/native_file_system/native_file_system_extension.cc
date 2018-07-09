@@ -12,7 +12,7 @@
 #include "base/values.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/child_process_security_policy.h"
-#include "xwalk/grit/xwalk_resources.h"
+#include "xwalk/resources/grit/xwalk_resources.h"
 #include "storage/browser/fileapi/file_system_url.h"
 #include "storage/browser/fileapi/isolated_context.h"
 #include "ui/base/resource/resource_bundle.h"

@@ -51,6 +51,8 @@
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "jni/XWalkContent_jni.h"
+
+#if defined(TENTA_CHROMIUM_BUILD)
 #include "xwalk/third_party/tenta/meta_fs/meta_errors.h"
 #include "xwalk/third_party/tenta/meta_fs/meta_db.h"
 #include "xwalk/third_party/tenta/meta_fs/meta_file.h"
@@ -59,7 +61,6 @@
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_file_system.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/java_byte_array.h"
-#if defined(TENTA_CHROMIUM_BUILD)
 #include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
 #include "xwalk/third_party/tenta/crosswalk_extensions/tenta_history_store.h"
 #endif
@@ -75,21 +76,23 @@ using xwalk::application_manifest_keys::kDisplay;
 
 #ifdef TENTA_CHROMIUM_BUILD
 using tenta::ext::TentaHistoryStore;
+namespace metafs = ::tenta::fs;
 #endif
 
 namespace keys = xwalk::application_manifest_keys;
-namespace metafs = ::tenta::fs;
 
 namespace xwalk {
 
 namespace {
 const int cBlkSize = 4 * 1024;
 
+const void* kXWalkContentUserDataKey = &kXWalkContentUserDataKey;
+
+#ifdef TENTA_CHROMIUM_BUILD
 // database name for history
 static const std::string cHistoryDb = "c22b0c42-90d5-4a1e-9565-79cbab3b22dd";
 static const int cHistoryBlockSize = ::tenta::fs::MetaDb::BLOCK_64K;
 
-const void* kXWalkContentUserDataKey = &kXWalkContentUserDataKey;
 
 // TODO make a template AutoCallClose
 /**
@@ -152,6 +155,7 @@ class MetaReadToPickle :
   base::Pickle& _pickle_to_fill;
 };
 
+#endif // TENTA_CHROMIUM_BUILD
 /**
  *
  */
@@ -266,9 +270,11 @@ void XWalkContent::SetJavaPeers(JNIEnv* env, jobject obj, jobject xwalk_content,
 
   XWalkContentsIoThreadClientImpl::RegisterPendingContents(web_contents_.get());
 
+#ifdef TENTA_CHROMIUM_BUILD
   // Net Error handler on client side
   ::tenta::ext::TentaNetErrorClient::CreateForWebContents(web_contents_.get());
   ::tenta::ext::TentaNetErrorClient::FromWebContents(web_contents_.get())->SetListener(this);
+#endif // TENTA_CHROMIUM_BUILD
 
   // XWalk does not use disambiguation popup for multiple targets.
   content::RendererPreferences* prefs = web_contents_->GetMutableRendererPrefs();
@@ -535,14 +541,15 @@ jboolean XWalkContent::SetState(JNIEnv* env, jobject obj, jbyteArray state) {
   return RestoreFromPickle(&iterator, web_contents_.get());
 }
 
+
 /************** History in MetaFs *********************/
 /**
  *
  */
+#ifdef TENTA_CHROMIUM_BUILD
 int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id, const JavaParamRef<jstring>& key,
                                   scoped_refptr<::tenta::fs::MetaFile>& fileOut,
                                   scoped_refptr<::tenta::fs::MetaDb>& dbOut, int mode) {
-
   using namespace metafs;
   using namespace ::base::android;
 
@@ -600,6 +607,7 @@ int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id, 
 
   return FS_OK;
 }
+#endif // TENTA_CHROMIUM_BUILD
 
 /**
  *
@@ -607,6 +615,11 @@ int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id, 
 jint XWalkContent::SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& jcaller,
                                   const JavaParamRef<jbyteArray>& state, const JavaParamRef<jstring>& id,
                                   const JavaParamRef<jstring>& key) {
+#ifndef TENTA_CHROMIUM_BUILD
+  LOG(WARNING) << __func__ << " Not implemented!";
+  return -1;
+#else // TENTA_CHROMIUM_BUILD
+
   using namespace metafs;
 
   scoped_refptr<MetaDb> db;
@@ -647,6 +660,7 @@ jint XWalkContent::SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& jcal
   LOG(INFO) << __func__ << "_OK length=" << iolen;
 #endif
   return iolen;
+#endif // TENTA_CHROMIUM_BUILD
 }
 
 /**
@@ -654,6 +668,10 @@ jint XWalkContent::SaveOldHistory(JNIEnv* env, const JavaParamRef<jobject>& jcal
  */
 jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& id,
                                const JavaParamRef<jstring>& key) {
+#ifndef TENTA_CHROMIUM_BUILD
+  LOG(WARNING) << __func__ << " Not implemented!";
+  return -1;
+#else // TENTA_CHROMIUM_BUILD
 
   using namespace metafs;
   using namespace ::base::android;
@@ -696,6 +714,7 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
   LOG(ERROR) << __func__ << "_OK length=" << iolen;
 #endif
   return iolen;
+#endif // TENTA_CHROMIUM_BUILD
 }
 
 /**
@@ -703,6 +722,11 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
  */
 jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& id,
                                   const JavaParamRef<jstring>& key) {
+#ifndef TENTA_CHROMIUM_BUILD
+  LOG(WARNING) << __func__ << " Not implemented!";
+  return -1;
+#else // TENTA_CHROMIUM_BUILD
+
   using namespace metafs;
   using namespace ::base::android;
 
@@ -763,6 +787,7 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
 #endif
 
   return pickle.payload_size();
+#endif // TENTA_CHROMIUM_BUILD
 }
 
 /**
@@ -770,6 +795,11 @@ jint XWalkContent::RestoreHistory(JNIEnv* env, const JavaParamRef<jobject>& obj,
  */
 jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& id,
                                const JavaParamRef<jstring>& key) {
+#ifndef TENTA_CHROMIUM_BUILD
+  LOG(WARNING) << __func__ << " Not implemented!";
+  return -1;
+#else // TENTA_CHROMIUM_BUILD
+
   using namespace metafs;
 
   scoped_refptr<MetaDb> db;
@@ -795,6 +825,7 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
 #endif
 
   return FS_OK;
+#endif // TENTA_CHROMIUM_BUILD
 }
 
 /**
@@ -806,7 +837,6 @@ jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, c
 }
 
 /************ End MetaFS ****************/
-
 static jlong Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   std::unique_ptr<WebContents> web_contents(
       content::WebContents::Create(content::WebContents::CreateParams(XWalkRunner::GetInstance()->browser_context())));
@@ -985,7 +1015,6 @@ void XWalkContent::OnFindResultReceived(int active_ordinal, int match_count, boo
   Java_XWalkContent_onFindResultReceived(env, obj.obj(), active_ordinal, match_count, finished);
 }
 
-#ifdef TENTA_CHROMIUM_BUILD
 /**
  *
  */
@@ -1002,5 +1031,5 @@ void XWalkContent::OnOpenDnsSettings(const GURL& failedUrl) {
 
   Java_XWalkContent_onOpenDnsSettings(env, obj.obj(), j_failed_url);
 }
-#endif
+
 }  // namespace xwalk
