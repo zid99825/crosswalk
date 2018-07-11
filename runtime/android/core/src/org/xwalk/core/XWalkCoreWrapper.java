@@ -29,7 +29,7 @@ import junit.framework.Assert;
 class XWalkCoreWrapper {
     private static final String WRAPPER_PACKAGE = "org.xwalk.core";
     private static final String BRIDGE_PACKAGE = "org.xwalk.core.internal";
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkCoreWrapper";
     private static final String XWALK_CORE_CLASSES_DEX = "classes.dex";
 
     private static XWalkCoreWrapper sProvisionalInstance;
@@ -85,6 +85,7 @@ class XWalkCoreWrapper {
     public static void handlePreInit(String tag) {
         if (sInstance != null) return;
 
+        Log.d(TAG, "Pre init xwalk core in " + tag);
         if (sReservedActions.containsKey(tag)) {
             sReservedActions.remove(tag);
         } else {
@@ -96,16 +97,19 @@ class XWalkCoreWrapper {
 
     public static void reserveReflectObject(Object object) {
         String tag = sReservedActivities.getLast();
+        Log.d(TAG, "Reserve object " + object.getClass() + " to " + tag);
         sReservedActions.get(tag).add(new ReservedAction(object));
     }
 
     public static void reserveReflectClass(Class<?> clazz) {
         String tag = sReservedActivities.getLast();
+        Log.d(TAG, "Reserve class " + clazz.toString() + " to " + tag);
         sReservedActions.get(tag).add(new ReservedAction(clazz));
     }
 
     public static void reserveReflectMethod(ReflectMethod method) {
         String tag = sReservedActivities.getLast();
+        Log.d(TAG, "Reserve method " + method.toString() + " to " + tag);
         sReservedActions.get(tag).add(new ReservedAction(method));
     }
 
@@ -113,6 +117,7 @@ class XWalkCoreWrapper {
      * This method must be invoked on the UI thread.
      */
     public static void handlePostInit(String tag) {
+        Log.d(TAG, "Post init xwalk core in " + tag);
         if (!sReservedActions.containsKey(tag)) {
             return;
         }
@@ -120,10 +125,13 @@ class XWalkCoreWrapper {
         LinkedList<ReservedAction> reservedActions = sReservedActions.get(tag);
         for (ReservedAction action : reservedActions) {
             if (action.mObject != null) {
+                Log.d(TAG, "Init reserved object: " + action.mObject.getClass().getCanonicalName());
                 new ReflectMethod(action.mObject, "reflectionInit").invoke();
             } else if (action.mClass != null) {
+                Log.d(TAG, "Init reserved class: " + action.mClass.toString());
                 new ReflectMethod(action.mClass, "reflectionInit").invoke();
             } else {
+                Log.d(TAG, "Call reserved method: " + action.mMethod.toString());
                 Object[] args = action.mArguments;
                 if (args != null) {
                     for (int i = 0; i < args.length; ++i) {

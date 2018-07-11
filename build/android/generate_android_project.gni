@@ -11,6 +11,8 @@ import("//build/config/android/rules.gni")
 #   binary_files [optional]
 #     List of additional binary data (icudtl.dat, for example) that will be
 #     added to res/raw.
+#   asset_sources [optional]
+#
 #   build_config [required]
 #     Path to a .build_config file with resource and native libraries
 #     information (generally, a build_config with the "android_apk" type).
@@ -68,6 +70,11 @@ template("generate_xwalk_core_library") {
     if (defined(invoker.binary_files) && invoker.binary_files != []) {
       binary_files = rebase_path(invoker.binary_files, root_build_dir)
       args += [ "--binary-files=$binary_files" ]
+    }
+    if (defined(invoker.asset_sources)) {
+      _rebased_asset_sources =
+          rebase_path(invoker.asset_sources, root_build_dir)
+      args += [ "--asset-sources=$_rebased_asset_sources" ]
     }
     if (defined(invoker.has_native_libraries) && invoker.has_native_libraries) {
       args += [ "--native-libraries=@FileArg(${_rebased_build_config}:native:libraries)" ]
@@ -392,6 +399,7 @@ template("generate_android_project") {
     forward_variables_from(invoker,
                            [
                              "binary_files",
+                             "asset_sources",
                              "js_bindings",
                              "template_dir",
                            ])
@@ -432,6 +440,8 @@ template("generate_android_project") {
       rebase_path(depfile, root_build_dir),
       "--res-dir",
       rebase_path("$root_out_dir/$_target_name/res", root_build_dir),
+      "--assets-dir",
+      rebase_path("$root_out_dir/$_target_name/assets", root_build_dir),
       "--r-txt",
       rebase_path(_r_file_path, root_build_dir),
     ]

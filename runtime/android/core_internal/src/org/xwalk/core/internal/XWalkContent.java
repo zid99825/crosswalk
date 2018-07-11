@@ -148,9 +148,14 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mIoThreadClient = new XWalkIoThreadClientImpl();
 
         // Initialize mWindow which is needed by content.
-        mWindow = WindowAndroid.activityFromContext(context) != null
-                ? new ActivityWindowAndroid(context)
-                : new WindowAndroid(context);
+        if ( WindowAndroid.activityFromContext(context) != null ) {
+            final boolean listenToActivityState = true;
+            mWindow = new ActivityWindowAndroid(context, listenToActivityState);
+            org.chromium.base.Log.d("iotto", "ActivityWindowAndroid created");
+        } else {
+            mWindow = new WindowAndroid(context);
+            org.chromium.base.Log.d("iotto", "WindowAndroid created");
+        }
 
         SharedPreferences sharedPreferences = new InMemorySharedPreferences();
         mGeolocationPermissions = new XWalkGeolocationPermissions(sharedPreferences);
@@ -202,12 +207,16 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         assert mNativeContent == 0 && mXWalkCleanupReference == null && mContentViewCore == null;
 
         mContentViewRenderView = new ContentViewRenderView(mViewContext) {
+            @Override
             protected void onReadyToRender() {
                 // Anything depending on the underlying Surface readiness should
                 // be placed here.
             }
         };
         mContentViewRenderView.onNativeLibraryLoaded(mWindow);
+        
+        mWindow.setAnimationPlaceholderView(mContentViewRenderView.getSurfaceView());
+        
         mLaunchScreenManager = new XWalkLaunchScreenManager(mViewContext, mXWalkView);
         mContentViewRenderView.registerFirstRenderedFrameListener(mLaunchScreenManager);
         mXWalkView.addView(mContentViewRenderView,
@@ -250,6 +259,8 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
                         FrameLayout.LayoutParams.MATCH_PARENT));
 //        mContentViewCore.setContentViewClient(mContentsClientBridge);
         mContentViewRenderView.setCurrentContentViewCore(mContentViewCore);
+        mContentViewCore.onShow();
+        
         // For addJavascriptInterface
         mContentsClientBridge.installWebContentsObserver(mWebContents);
         // For swipe-to-refresh
@@ -327,7 +338,9 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private void doLoadUrl(LoadUrlParams params) {
         params.setOverrideUserAgent(UserAgentOverrideOption.TRUE);
         mNavigationController.loadUrl(params);
-        mContentView.requestFocus();
+        mContentViewCore.getContainerView().clearFocus();
+        mContentViewCore.getContainerView().requestFocus();
+//        mContentView.requestFocus();
         mIsLoaded = true;
     }
 
@@ -1499,6 +1512,10 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
                 isDoneCounting);
     }
 
+    @CalledByNative
+    public void setOverlayMode(boolean useOverlayMode) {
+        mContentViewRenderView.setOverlayVideoMode(useOverlayMode);
+    }
     private native long nativeInit();
 
     private static native void nativeDestroy(long nativeXWalkContent);

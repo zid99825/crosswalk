@@ -72,9 +72,9 @@ android_library("xwalk_core_java") {
                                         # New versions of BuildConfig.java and NativeLibraries.java
 #     # (with the actual correct values) will be created when creating an apk.
   jar_excluded_patterns = [
-      "*/BuildConfig.class",
-      "*/NativeLibraries.class",
-      "*/NativeLibraries##*.class",
+#       "*/BuildConfig.class",
+#       "*/NativeLibraries.class",
+#       "*/NativeLibraries##*.class",
       "*/R.class",
       "*/R\$*.class",
       "*/Manifest.class",
@@ -102,7 +102,8 @@ generate_android_project("xwalk_core_library") {
       "//xwalk/runtime/android/core_internal_empty/AndroidManifest.xml"
   deps = [
     ":xwalk_core_java",
-    ":xwalk_build_config_gen",
+#     ":xwalk_build_config_gen",
+#     ":xwalk_native_libraries_gen",
     "//base:base_java",
     "//third_party/icu:icudata",
     "//xwalk/resources:xwalk_pak",
@@ -125,19 +126,26 @@ generate_android_project("xwalk_core_library") {
   # org.xwalk.core.R.
   # TODO(rakuco): Check if we should fix the manifest instead.
   resource_excluded_patterns = [
-    "*/R.class",
-    "*/R\$*.class",
-    "*/Manifest.class",
-    "*/Manifest\$*.class",
+    "*/org/xwalk/core/R.class",
+    "*/org/xwalk/core/R\$*.class",
+    "*/org/xwalk/core/Manifest.class",
+    "*/org/xwalk/core/Manifest\$*.class",
+    "*/android/support/*/R.class",
+    "*/android/support/*/R\$*.class",
+    "*/android/support/*/Manifest.class",
+    "*/android/support/*/Manifest\$*.class",
+    "*/com/google/android/*/R.class",
+    "*/com/google/android/*/R\$*.class",
+    "*/android/arch/*/R.class",
+    "*/android/arch/*/R\$*.class",
   ]
-                                                    # New versions of BuildConfig.java and NativeLibraries.java
-#   # (with the actual correct values) will be created when creating an apk.
-#   jar_excluded_patterns = [
-#     "*/BuildConfig.class",
-#     "*/NativeLibraries.class",
-#     "*/NativeLibraries##*.class",
+#   resource_excluded_patterns = [
+#     "*/R.class",
+#     "*/R\$*.class",
+#     "*/Manifest.class",
+#     "*/Manifest\$*.class",
 #   ]
-                                              
+  
   shared_libraries = [
     "//xwalk/runtime/app/android:libxwalkcore",
   ]
@@ -148,12 +156,21 @@ generate_android_project("xwalk_core_library") {
   }
 
   if (v8_use_external_startup_data) {
-    binary_files += [
+    asset_sources = [
       "$root_out_dir/natives_blob.bin",
       "$root_out_dir/snapshot_blob.bin",
     ]
     deps += [ "//v8" ]
   }
+  
+#   # New versions of BuildConfig.java and NativeLibraries.java
+#   # (with the actual correct values) will be created when creating an apk.
+#   jar_excluded_patterns = [
+#     "*/BuildConfig.class",
+#     "*/NativeLibraries.class",
+#     "*/NativeLibraries##*.class",
+#   ]
+
 }
 
 java_cpp_template("xwalk_build_config_gen") {
@@ -214,12 +231,10 @@ generate_android_project("xwalk_shared_library") {
   # org.xwalk.core.R.
   # TODO(rakuco): Check if we should fix the manifest instead.
   resource_excluded_patterns = [
-#     "*/org/xwalk/core/library/empty/R.class",
-#     "*/org/xwalk/core/library/empty/R##*.class",
-    "*/org/xwalk/core/R.class",
-    "*/org/xwalk/core/R\$*.class",
-    "*/org/xwalk/core/Manifest.class",
-    "*/org/xwalk/core/Manifest\$*.class",
+    "*/R.class",
+    "*/R\$*.class",
+    "*/Manifest.class",
+    "*/Manifest\$*.class",
   ]
                                                     # (with the actual correct values) will be created when creating an apk.
 #   jar_excluded_patterns = [

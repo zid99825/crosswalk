@@ -394,6 +394,10 @@ void Runtime::LoadProgressChanged(content::WebContents* source,
     ui_delegate_->SetLoadProgress(progress);
 }
 
+void Runtime::SetOverlayMode(bool useOverlayMode) {
+  LOG(INFO) << "iotto " << __func__ << " useOverlayMode=" << useOverlayMode;
+}
+
 bool Runtime::AddDownloadItem(content::DownloadItem* download_item,
     const content::DownloadTargetCallback& callback,
     const base::FilePath& suggested_path) {

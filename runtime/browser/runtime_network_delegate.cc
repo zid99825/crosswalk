@@ -68,6 +68,7 @@ int RuntimeNetworkDelegate::OnHeadersReceived(
 
 void RuntimeNetworkDelegate::OnBeforeRedirect(net::URLRequest* request,
                                               const GURL& new_location) {
+  LOG(INFO) << "iotto " << __func__ << " url=" << new_location.spec();
 }
 
 void RuntimeNetworkDelegate::OnResponseStarted(net::URLRequest* request, int net_error) {

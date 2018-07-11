@@ -119,6 +119,7 @@ void AddPepperFlashFromCommandline(
 namespace xwalk {
 
 std::string GetProduct() {
+  // TODO(iotto) : Check out and use version_info::GetProductNameAndVersionForUserAgent();
   return "Chrome/" CHROME_VERSION;
 }
 

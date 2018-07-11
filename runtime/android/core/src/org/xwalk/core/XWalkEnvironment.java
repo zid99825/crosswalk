@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
 import java.util.Locale;
 
 class XWalkEnvironment {
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkEnvironment";
 
     private static final String META_XWALK_ENABLE_DOWNLOAD_MODE = "xwalk_enable_download_mode";
     private static final String META_XWALK_DOWNLOAD_MODE = "xwalk_download_mode";
@@ -45,6 +45,7 @@ class XWalkEnvironment {
     private static Boolean sIsXWalkVerify;
 
     public static void init(Context context) {
+        Log.d(TAG, "init " + context);
         sApplicationContext = context.getApplicationContext();
     }
 

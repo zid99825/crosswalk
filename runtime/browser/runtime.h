@@ -161,6 +161,7 @@ class Runtime : public content::WebContentsDelegate,
                                   content::MediaStreamType type) override;
   void LoadProgressChanged(content::WebContents* source,
                            double progress) override;
+  void SetOverlayMode(bool useOverlayMode) override;
 
   // Overridden from content::WebContentsObserver.
   void DidUpdateFaviconURL(

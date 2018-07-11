@@ -8,6 +8,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.RejectedExecutionException;
 
+import android.util.Log;
+
 class ReflectMethod {
     private Object mInstance;
     private Class<?> mClass;
@@ -37,6 +39,7 @@ class ReflectMethod {
         if (mClass == null) return false;
 
         try {
+//            org.chromium.base.Log.d("iotto", "object=%s, method=%s", mClass.getCanonicalName(), mName);
             mMethod = mClass.getMethod(mName, mParameterTypes);
         } catch (NoSuchMethodException e) {
             for (Class<?> parent = mClass; parent != null; parent = parent.getSuperclass()) {
@@ -45,6 +48,7 @@ class ReflectMethod {
                     mMethod.setAccessible(true);
                     break;
                 } catch (NoSuchMethodException e2) {
+//                    Log.e("iotto", "missing method: " + name, e2);
                 }
             }
         }
@@ -72,6 +76,7 @@ class ReflectMethod {
         return mMethod == null;
     }
 
+    @Override
     public String toString() {
         if (mMethod != null) return mMethod.toString();
 

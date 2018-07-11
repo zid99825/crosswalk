@@ -149,6 +149,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
 
 }
     public static void init(Context libContext, Context appContext) {
+        org.chromium.base.Log.d("iotto", "starting");
         if (!loadXWalkLibrary(libContext, null)) {
             throw new RuntimeException("Failed to load native library");
         }
@@ -185,8 +186,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         // Use MixedContext to initialize the ResourceExtractor, as the pak file
         // is in the library apk if in shared apk mode.
 //        ResourceExtractor.get();
-//        ResourceExtractor resourceExtractor = ResourceExtractor.get();
-//        resourceExtractor.startExtractingResources();
+        ResourceExtractor.get().startExtractingResources();
 
 //        resourceExtractor.waitForCompletion();
 
@@ -206,9 +206,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         XWalkPresentationHost.createInstanceOnce(context);
         // ContextUtils.initApplicationContextForNative();
 
-        ResourceExtractor resourceExtractor = ResourceExtractor.get();
-
-        resourceExtractor.waitForCompletion();
+        ResourceExtractor.get().waitForCompletion();
         XWalkInternalResources.resetIds(context.getApplicationContext());
         sInitialized = true;
     }

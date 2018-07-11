@@ -13,6 +13,7 @@
 #include "base/files/scoped_file.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/common/main_function_params.h"
+#include "services/service_manager/public/cpp/binder_registry.h"
 #include "xwalk/runtime/browser/runtime_resource_dispatcher_host_delegate.h"
 
 namespace content {
@@ -63,7 +64,10 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   void RenderProcessWillLaunch(
       content::RenderProcessHost* host) override;
   content::MediaObserver* GetMediaObserver() override;
-
+  void BindInterfaceRequestFromFrame(
+        content::RenderFrameHost* render_frame_host,
+        const std::string& interface_name,
+        mojo::ScopedMessagePipeHandle interface_pipe) override;
   bool AllowGetCookie(const GURL& url,
                       const GURL& first_party,
                       const net::CookieList& cookie_list,
@@ -187,6 +191,8 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
 
   //**************** private ************
  private:
+  virtual void ExposeInterfacesToFrame(service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>* registry);
+
   XWalkRunner* xwalk_runner_;
   std::unique_ptr<content::ClientCertificateDelegate> delegate_;
 #if defined(OS_POSIX) && !defined(OS_MACOSX)
@@ -198,6 +204,8 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
 
   std::unique_ptr<RuntimeResourceDispatcherHostDelegate>
       resource_dispatcher_host_delegate_;
+
+  std::unique_ptr<service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>> frame_interfaces_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkContentBrowserClient);
 };

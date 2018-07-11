@@ -150,6 +150,7 @@ void XWalkMainDelegate::InitializeResourceBundle() {
 }
 
 content::ContentBrowserClient* XWalkMainDelegate::CreateContentBrowserClient() {
+  LOG(INFO) << "iotto " << __func__;
   // This will only be called from the Browser Process, so it is a convenient
   // location to initialize the XWalkRunner, which is our main entry point in
   // Browser Process.
@@ -159,6 +160,7 @@ content::ContentBrowserClient* XWalkMainDelegate::CreateContentBrowserClient() {
 
 content::ContentRendererClient*
     XWalkMainDelegate::CreateContentRendererClient() {
+  LOG(INFO) << "iotto " << __func__;
   renderer_client_.reset(new XWalkContentRendererClient());
   return renderer_client_.get();
 }

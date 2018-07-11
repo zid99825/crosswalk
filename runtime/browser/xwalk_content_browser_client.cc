@@ -6,8 +6,10 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "base/command_line.h"
+#include "base/memory/ptr_util.h"
 #include "base/path_service.h"
 #include "base/files/file.h"
 #include "components/nacl/common/features.h"
@@ -512,6 +514,29 @@ XWalkContentBrowserClient::CreateThrottlesForNavigation(
   }
   return throttles;
 }
-#endif
+#endif // OS_ANDROID
+
+/**
+ *
+ */
+void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
+    content::RenderFrameHost* render_frame_host,
+    const std::string& interface_name,
+    mojo::ScopedMessagePipeHandle interface_pipe) {
+  if (!frame_interfaces_) {
+    frame_interfaces_ = std::make_unique<
+    service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();
+    ExposeInterfacesToFrame(frame_interfaces_.get());
+  }
+
+  frame_interfaces_->TryBindInterface(interface_name, &interface_pipe,
+      render_frame_host);
+}
+
+void XWalkContentBrowserClient::ExposeInterfacesToFrame(
+    service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>*
+    registry) {
+
+}
 
 }  // namespace xwalk

@@ -69,6 +69,7 @@ KNOWN_SKIPPED_JARS = (
   'google_play_services_tasks_java.jar',
   'google_play_services_base_java.jar',
   'google_play_services_vision_java.jar',
+  'google_play_services_vision_common_java.jar',
   'google_play_services_location_java.jar',
   
   # android.support.multidex is used by BaseChromiumApplication via

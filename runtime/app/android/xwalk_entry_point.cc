@@ -8,6 +8,7 @@
 #include "content/public/app/content_jni_onload.h"
 #include "content/public/app/content_main.h"
 #include "content/public/app/content_main_delegate.h"
+#include "content/public/browser/android/compositor.h"
 #include "xwalk/runtime/app/android/xwalk_jni_registrar.h"
 #include "xwalk/runtime/app/android/xwalk_main_delegate_android.h"
 #include "base/android/library_loader/library_loader_hooks.h"
@@ -47,6 +48,7 @@ bool OnJNIOnLoadInit() {
 
   //TODO(iotto)
 //  base::android::SetVersionNumber(PRODUCT_VERSION);
+  content::Compositor::Initialize();
   content::SetContentMainDelegate(new xwalk::XWalkMainDelegateAndroid());
 
   // Initialize url lib here while we are still single-threaded, in case we use
@@ -60,25 +62,18 @@ bool OnJNIOnLoadInit() {
 
 // This is called by the VM when the shared library is first loaded.
 JNI_EXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
-//  base::android::SetJniRegistrationType(base::android::NO_JNI_REGISTRATION);
   base::android::InitVM(vm);
 
   JNIEnv* env = base::android::AttachCurrentThread();
-//
-//  if ( !xwalk::OnJNIOnLoadRegisterJNI(env) ) {
-//    return -1;
-//  }
 
   LOG(INFO) << __func__ << " !!!!!!!!! ";
-  if (!base::android::IsSelectiveJniRegistrationEnabled(env)) {
-    if (!RegisterNonMainDexNatives(env)) {
-      LOG(INFO) << __func__ << " RegisterNonMainDexNatives ";
-      return -1;
-    }
-  }
-
   if (!RegisterMainDexNatives(env)) {
     LOG(INFO) << __func__ << " RegisterMainDexNatives ";
+    return -1;
+  }
+
+  if (!RegisterNonMainDexNatives(env)) {
+    LOG(INFO) << __func__ << " RegisterNonMainDexNatives ";
     return -1;
   }
 

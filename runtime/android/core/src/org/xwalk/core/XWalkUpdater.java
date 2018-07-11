@@ -283,7 +283,7 @@ public class XWalkUpdater {
     private static final String ANDROID_MARKET_DETAILS = "market://details?id=";
     private static final String GOOGLE_PLAY_PACKAGE = "com.android.vending";
 
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkUpdater";
 
     private XWalkUpdateListener mUpdateListener;
     private XWalkBackgroundUpdateListener mBackgroundUpdateListener;

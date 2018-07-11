@@ -113,6 +113,7 @@ XWalkContentRendererClient::~XWalkContentRendererClient() {
 }
 
 void XWalkContentRendererClient::RenderThreadStarted() {
+  LOG(INFO) << "iotto " << __func__;
   content::RenderThread* thread = content::RenderThread::Get();
 
   xwalk_render_thread_observer_.reset(new XWalkRenderThreadObserver);
@@ -215,6 +216,7 @@ bool XWalkContentRendererClient::HandleNavigation(
 
 void XWalkContentRendererClient::RenderFrameCreated(
     content::RenderFrame* render_frame) {
+  LOG(INFO) << "iotto " << __func__;
   new XWalkFrameHelper(render_frame, extension_controller_.get());
   new XWalkRenderFrameExt(render_frame);
 #if defined(OS_ANDROID)
