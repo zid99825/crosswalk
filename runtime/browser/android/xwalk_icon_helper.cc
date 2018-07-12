@@ -48,7 +48,12 @@ void XWalkIconHelper::DidUpdateFaviconURL(
 
     switch (i->icon_type) {
       case content::FaviconURL::FAVICON:
-        if (listener_) listener_->OnIconAvailable(i->icon_url);
+//        if (listener_) listener_->OnIconAvailable(i->icon_url);
+        // TODO(iotto) : Ask Clinet if favicons should be downloaded
+        web_contents()->DownloadImage(i->icon_url, true,  // Is a favicon
+                                      0,  // No maximum size
+                                      false,  // Normal cache policy
+                                      base::Bind(&XWalkIconHelper::DownloadFaviconCallback, _this_weak.GetWeakPtr()));
         break;
       case content::FaviconURL::TOUCH_ICON:
         break;
