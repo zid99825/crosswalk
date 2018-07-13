@@ -14,6 +14,7 @@
 #include "content/public/renderer/render_frame_observer_tracker.h"
 #include "content/public/renderer/render_thread.h"
 #include "content/public/renderer/render_view.h"
+#include "components/error_page/common/localized_error.h"
 #include "content/public/common/service_manager_connection.h"
 #include "content/public/common/simple_connection_filter.h"
 #include "content/public/common/url_loader_throttle.h"
@@ -48,6 +49,12 @@
 
 #if BUILDFLAG(ENABLE_NACL)
 #include "components/nacl/renderer/nacl_helper.h"
+#endif
+
+#ifdef TENTA_CHROMIUM_BUILD
+#include "xwalk/third_party/tenta/crosswalk_extensions/resources/grit/tenta_error_pages_browser_resources.h"
+#include "ui/base/resource/resource_bundle.h"
+#include "third_party/zlib/google/compression_utils.h"
 #endif
 
 using content::RenderThread;
@@ -370,88 +377,52 @@ bool XWalkContentRendererClient::WillSendRequest(
 #endif
 }
 
-void XWalkContentRendererClient::GetNavigationErrorStrings(content::RenderFrame* render_frame,
-                                                           const blink::WebURLRequest& failed_request,
-                                                           const blink::WebURLError& error, std::string* error_html,
-                                                           base::string16* error_description) {
-  // TODO(iotto) : Implement
-  LOG(WARNING) << __func__ << " not_implemented";
-/*
-  GetNavigationErrorStringsInternal(
-      render_frame, failed_request,
-      error_page::Error::NetError(web_error.url(), web_error.reason(),
-                                  web_error.has_copy_in_cache()),
-      error_html, error_description);
- */
+void XWalkContentRendererClient::GetNavigationErrorStrings(
+    content::RenderFrame* render_frame,
+    const blink::WebURLRequest& failed_request,
+    const blink::WebURLError& error,
+    std::string* error_html,
+    base::string16* error_description) {
+  // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
+  bool is_post = failed_request.HttpMethod().Ascii() == "POST";
 
+//  LOG(INFO) << "iotto " << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
+//            << error_html << " error_description=" << error_description;
 
-
-  std::string err;
-  if (error.reason() == net::ERR_TEMPORARILY_THROTTLED) {
-    err = kThrottledErrorDescription;
-  } else {
-    err = net::ErrorToString(error.reason());
-  }
+//  if (error_description) {
+//    if (error.localized_description.IsEmpty())
+//      *error_description = base::ASCIIToUTF16(net::ErrorToString(error.reason));
+//    else
+//      *error_description = error.localized_description.Utf16();
+//  }
   if (error_description) {
-    *error_description = base::ASCIIToUTF16(err);
+    *error_description = error_page::LocalizedError::GetErrorDetails(
+        error.domain.Utf8(), error.reason, is_post);
   }
+//  if (error_html) {
+//    // TODO(iotto) : Move this to LocalizedError
+//    int resource_id = IDR_TENTA_ERR_UNKNOWN;
+//    if (error.domain.Utf8() == net::kErrorDomain) {
+//      switch (error.reason) {
+//        case net::ERR_NAME_NOT_RESOLVED:
+//          resource_id = IDR_TENTA_ERR_NAME_NOT_RESOLVED_HTML;
+//          break;
+//        case net::ERR_INTERNET_DISCONNECTED:
+//          resource_id = IDR_TENTA_ERR_INTERNET_DISCONNECTED_HTML;
+//          break;
+//      }
+//      base::StringPiece raw_response = ui::ResourceBundle::GetSharedInstance().GetRawDataResource(resource_id);
+//      compression::GzipUncompress(raw_response.as_string(), error_html);
+//    }
+//  }
 
-  if (!error_html)
-    return;
+//  if (error_description) {
+//    *error_description = LocalizedError::GetErrorDetails(error, is_post);
+//  }
 
-  /*
-   * TODO(iotto) : Implement error pages in xwalk
-   // Create the error page based on the error reason.
-   GURL gurl(failed_request.Url());
-   std::string url_string = gurl.possibly_invalid_spec();
-   int reason_id = IDS_AW_WEBPAGE_CAN_NOT_BE_LOADED;
-
-   if (error.reason() == net::ERR_BLOCKED_BY_ADMINISTRATOR) {
-   // This creates a different error page giving considerably more
-   // detail, and possibly allowing the user to request access.
-   // Get the details this needs from the browser.
-   render_frame->GetRemoteInterfaces()->GetInterface(&web_restrictions_service_);
-   web_restrictions::mojom::ClientResultPtr result;
-   if (web_restrictions_service_->GetResult(url_string, &result)) {
-   std::string detailed_error_html = supervised_user_error_page::BuildHtmlFromWebRestrictionsResult(
-   result, RenderThread::Get()->GetLocale());
-   if (!detailed_error_html.empty()) {
-   *error_html = detailed_error_html;
-   supervised_user_error_page::GinWrapper::InstallWhenFrameReady(render_frame, url_string,
-   web_restrictions_service_);
-   return;
-   }
-   // If the error page isn't available (it is only available in
-   // Monochrome) but the user is a child then we want to give a simple
-   // custom message.
-   if (result->intParams["Is child account"])
-   reason_id = IDS_AW_WEBPAGE_PARENTAL_PERMISSION_NEEDED;
-   }
-   }
-
-   if (err.empty())
-   reason_id = IDS_AW_WEBPAGE_TEMPORARILY_DOWN;
-
-   std::string escaped_url = net::EscapeForHTML(url_string);
-   std::vector<std::string> replacements;
-   replacements.push_back(l10n_util::GetStringUTF8(IDS_AW_WEBPAGE_NOT_AVAILABLE));
-   replacements.push_back(l10n_util::GetStringFUTF8(reason_id, base::UTF8ToUTF16(escaped_url)));
-
-   // Having chosen the base reason, chose what extra information to add.
-   if (reason_id == IDS_AW_WEBPAGE_PARENTAL_PERMISSION_NEEDED) {
-   replacements.push_back("");
-   } else if (reason_id == IDS_AW_WEBPAGE_TEMPORARILY_DOWN) {
-   replacements.push_back(l10n_util::GetStringUTF8(IDS_AW_WEBPAGE_TEMPORARILY_DOWN_SUGGESTIONS));
-   } else {
-   replacements.push_back(err);
-   }
-   if (base::i18n::IsRTL())
-   replacements.push_back("direction: rtl;");
-   else
-   replacements.push_back("");
-   *error_html = base::ReplaceStringPlaceholders(
-   ui::ResourceBundle::GetSharedInstance().GetRawDataResource(IDR_AW_LOAD_ERROR_HTML), replacements, nullptr);
-   */
+//  if ( error_description && !error_description->empty()) {
+//    LOG(INFO) << "iotto " << __func__ << " error_description=" << *error_description;
+//  }
 }
 
 void XWalkContentRendererClient::GetNavigationErrorStringsForHttpStatusError(content::RenderFrame* render_frame,

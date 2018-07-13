@@ -382,7 +382,7 @@ source_set("xwalk_runtime") {
     "//components/autofill/core/browser",
     "//components/cdm/renderer",
 #    "//components/devtools_http_handler",
-    "//components/nacl/common:features",
+    "//components/error_page/common",
     "//components/resources:components_resources",
     "//components/strings",
     "//components/url_formatter",

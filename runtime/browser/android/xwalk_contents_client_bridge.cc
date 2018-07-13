@@ -139,13 +139,13 @@ XWalkContentsClientBridge::XWalkContentsClientBridge(
   DCHECK(obj);
   Java_XWalkContentsClientBridge_setNativeContentsClientBridge(env, obj, reinterpret_cast<intptr_t>(this));
   icon_helper_.reset(new XWalkIconHelper(web_contents));
-  if (icon_helper_) {
+  if (icon_helper_.get() != nullptr) {
     icon_helper_->SetListener(this);
   }
 }
 
 XWalkContentsClientBridge::~XWalkContentsClientBridge() {
-  if (icon_helper_.get())
+  if (icon_helper_.get() != nullptr)
     icon_helper_->SetListener(nullptr);
 
   JNIEnv* env = AttachCurrentThread();
@@ -527,7 +527,7 @@ void XWalkContentsClientBridge::OnFilesNotSelected(
 void XWalkContentsClientBridge::DownloadIcon(JNIEnv* env, jobject obj, jstring url) {
   // TODO(iotto) : refactor this, move icon_helper to contents
   std::string url_str = base::android::ConvertJavaStringToUTF8(env, url);
-  if (icon_helper_) {
+  if (icon_helper_.get() != nullptr) {
     icon_helper_->DownloadIcon(GURL(url_str));
   }
 }
