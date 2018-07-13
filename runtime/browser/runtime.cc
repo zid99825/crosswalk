@@ -55,6 +55,7 @@ namespace xwalk {
 // static
 Runtime* Runtime::Create(XWalkBrowserContext* browser_context,
                          scoped_refptr<content::SiteInstance> site) {
+  LOG(INFO) << "iotto " << __func__;
   WebContents::CreateParams params(browser_context, site);
   params.routing_id = MSG_ROUTING_NONE;
   WebContents* web_contents = WebContents::Create(params);
@@ -70,6 +71,7 @@ Runtime::Runtime(content::WebContents* web_contents)
       ui_delegate_(nullptr),
       observer_(nullptr),
       weak_ptr_factory_(this) {
+  LOG(INFO) << "iotto " << __func__;
   web_contents_->SetDelegate(this);
 #if !defined(OS_ANDROID)
   if (XWalkBrowserContext::GetDefault()->save_form_data())

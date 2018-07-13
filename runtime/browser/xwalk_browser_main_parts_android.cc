@@ -127,6 +127,7 @@ void GetUserDataDir(base::FilePath* user_data_dir) {
 XWalkBrowserMainPartsAndroid::XWalkBrowserMainPartsAndroid(
     const content::MainFunctionParams& parameters)
     : XWalkBrowserMainParts(parameters) {
+  LOG(INFO) << "iotto " << __func__;
 }
 
 XWalkBrowserMainPartsAndroid::~XWalkBrowserMainPartsAndroid() {

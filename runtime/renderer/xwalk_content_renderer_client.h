@@ -50,7 +50,9 @@ class XWalkContentRendererClient :
   bool IsLinkVisited(unsigned long long link_hash) override;
 
   bool WillSendRequest(blink::WebLocalFrame* frame, ui::PageTransition transition_type, const blink::WebURL& url,
+                       std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
                        GURL* new_url) override;
+
   void AddSupportedKeySystems(std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) override;
 
   bool ShouldReportDetailedMessageForSource(const base::string16& source) const override;
@@ -59,7 +61,7 @@ class XWalkContentRendererClient :
   // status code. If so |error_domain| should be set to according to WebURLError
   // and the embedder's GetNavigationErrorHtml will be called afterwards to get
   // the error html.
-  bool HasErrorPage(int http_status_code, std::string* error_domain) override;
+  bool HasErrorPage(int http_status_code) override;
 
 #if defined(OS_ANDROID)
   bool HandleNavigation(content::RenderFrame* render_frame, bool is_content_initiated,

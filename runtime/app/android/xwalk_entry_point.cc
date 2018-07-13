@@ -41,7 +41,7 @@ namespace {
 //}
 
 bool OnJNIOnLoadInit() {
-  LOG(INFO) << __func__ << " !!!!!!!!! ";
+  LOG(INFO) << "iotto " << __func__;
   if (!content::android::OnJNIOnLoadInit()) {
     return false;
   }
@@ -66,14 +66,14 @@ JNI_EXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 
   JNIEnv* env = base::android::AttachCurrentThread();
 
-  LOG(INFO) << __func__ << " !!!!!!!!! ";
+  LOG(INFO) << "iotto " << __func__;
   if (!RegisterMainDexNatives(env)) {
-    LOG(INFO) << __func__ << " RegisterMainDexNatives ";
+    LOG(INFO) << "iotto " << __func__ << " RegisterMainDexNatives ";
     return -1;
   }
 
   if (!RegisterNonMainDexNatives(env)) {
-    LOG(INFO) << __func__ << " RegisterNonMainDexNatives ";
+    LOG(INFO) << "iotto " << __func__ << " RegisterNonMainDexNatives ";
     return -1;
   }
 

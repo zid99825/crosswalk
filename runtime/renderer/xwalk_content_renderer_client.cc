@@ -14,6 +14,7 @@
 #include "content/public/renderer/render_frame_observer_tracker.h"
 #include "content/public/renderer/render_thread.h"
 #include "content/public/renderer/render_view.h"
+#include "components/error_page/common/error.h"
 #include "components/error_page/common/localized_error.h"
 #include "content/public/common/service_manager_connection.h"
 #include "content/public/common/simple_connection_filter.h"
@@ -27,6 +28,7 @@
 #include "third_party/WebKit/public/platform/WebURLRequest.h"
 #include "third_party/WebKit/public/web/WebDocument.h"
 #include "third_party/WebKit/public/web/WebSecurityPolicy.h"
+#include "third_party/WebKit/public/platform/modules/fetch/fetch_api_request.mojom-shared.h"
 #include "xwalk/application/common/constants.h"
 #include "xwalk/application/renderer/application_native_module.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
@@ -172,7 +174,7 @@ bool XWalkContentRendererClient::HandleNavigation(
     blink::WebNavigationPolicy default_policy,
     bool is_redirect) {
 #if TENTA_LOG_ENABLE == 1
-  LOG(INFO) << "!!! " << __func__ << " is_content_initiated=" << is_content_initiated
+  LOG(INFO) << "iotto " << __func__ << " is_content_initiated=" << is_content_initiated
       << " render_view_was_created_by_renderer=" << render_view_was_created_by_renderer
       << " is_redirect=" << is_redirect
       << " type=" << type
@@ -387,7 +389,7 @@ bool XWalkContentRendererClient::WillSendRequest(
 void XWalkContentRendererClient::GetNavigationErrorStrings(
     content::RenderFrame* render_frame,
     const blink::WebURLRequest& failed_request,
-    const blink::WebURLError& error,
+    const blink::WebURLError& web_error,
     std::string* error_html,
     base::string16* error_description) {
   // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
@@ -396,18 +398,15 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
   LOG(INFO) << "iotto " << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
             << error_html << " error_description=" << error_description;
 
-//  if (error_description) {
-//    if (error.localized_description.IsEmpty())
-//      *error_description = base::ASCIIToUTF16(net::ErrorToString(error.reason));
-//    else
-//      *error_description = error.localized_description.Utf16();
-//  }
+  error_page::Error error = error_page::Error::NetError(web_error.url(), web_error.reason(),
+                                    web_error.has_copy_in_cache());
+
   if (error_description) {
     *error_description = error_page::LocalizedError::GetErrorDetails(
-        error.domain.Utf8(), error.reason, is_post);
+        error.domain(), error.reason(), is_post);
   }
 #ifdef TENTA_CHROMIUM_BUILD
-  bool is_ignoring_cache = failed_request.GetCachePolicy() == blink::WebCachePolicy::kBypassingCache;
+  bool is_ignoring_cache = failed_request.GetCacheMode() == blink::mojom::FetchCacheMode::kBypassCache;
 
   if (error_html) {
     ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(error, is_post, is_ignoring_cache, error_html);
@@ -487,18 +486,14 @@ bool XWalkContentRendererClient::ShouldReportDetailedMessageForSource(const base
   return false;
 }
 
-bool XWalkContentRendererClient::HasErrorPage(int http_status_code, std::string* error_domain) {
+bool XWalkContentRendererClient::HasErrorPage(int http_status_code) {
   // TODO(iotto) : Replace with tenta implementation
   // or maybe return true and load a default error page for unhandled errors
   LOG(INFO) << "iotto " << __func__ << " httpStatusCode=" << http_status_code;
   // Use an internal error page, if we have one for the status code.
-  if (!error_page::LocalizedError::HasStrings(
-          error_page::LocalizedError::kHttpErrorDomain, http_status_code)) {
-    return false;
-  }
 
-  *error_domain = error_page::LocalizedError::kHttpErrorDomain;
-  return true;
+  return error_page::LocalizedError::HasStrings(
+      error_page::Error::kHttpErrorDomain, http_status_code);
 }
 
 }  // namespace xwalk

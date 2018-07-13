@@ -38,16 +38,16 @@ class XWalkContentsClientBridgeBase {
  public:
   typedef base::Callback<void(net::X509Certificate*)> SelectCertificateCallback;
   // Adds the handler to the UserData registry.
-  static void Associate(content::WebContents* web_contents,
-                        XWalkContentsClientBridgeBase* handler);
-  static XWalkContentsClientBridgeBase* FromWebContents(
-      content::WebContents* web_contents);
-  static XWalkContentsClientBridgeBase* FromRenderViewID(int render_process_id,
-                                            int render_view_id);
-  static XWalkContentsClientBridgeBase* FromRenderFrameID(int render_process_id,
-                                            int render_frame_id);
-  static XWalkContentsClientBridgeBase* FromRenderFrameHost(
-      content::RenderFrameHost* render_frame_host);
+//  static void Associate(content::WebContents* web_contents,
+//                        XWalkContentsClientBridgeBase* handler);
+//  static XWalkContentsClientBridgeBase* FromWebContents(
+//      content::WebContents* web_contents);
+//  static XWalkContentsClientBridgeBase* FromRenderViewID(int render_process_id,
+//                                            int render_view_id);
+//  static XWalkContentsClientBridgeBase* FromRenderFrameID(int render_process_id,
+//                                            int render_frame_id);
+//  static XWalkContentsClientBridgeBase* FromRenderFrameHost(
+//      content::RenderFrameHost* render_frame_host);
 
   virtual ~XWalkContentsClientBridgeBase();
 

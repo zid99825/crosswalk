@@ -1517,6 +1517,12 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mContentsClientBridge.onOpenDnsSettings(failedUrl);
     }
     
+    // TODO(iotto) : Fix this and ivoce from native
+//    @CalledByNative
+//    public void setOverlayMode(boolean useOverlayMode) {
+//        mContentViewRenderView.setOverlayVideoMode(useOverlayMode);
+//    }
+    
     private native long nativeInit();
 
     private static native void nativeDestroy(long nativeXWalkContent);

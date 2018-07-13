@@ -106,7 +106,7 @@ bool InputStreamImpl::Read(net::IOBuffer* dest, int length, int* bytes_read) {
     return true;
 
 #ifndef NDEBUG
-  int32_t buffer_length = env->GetArrayLength(buffer);
+  int32_t buffer_length = env->GetArrayLength(buffer_.obj());
   DCHECK_GE(read_size, byte_count);
   DCHECK_GE(buffer_length, byte_count);
 #endif  // NDEBUG

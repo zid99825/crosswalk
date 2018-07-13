@@ -47,7 +47,7 @@ void XWalkIconHelper::DidUpdateFaviconURL(
       continue;
 
     switch (i->icon_type) {
-      case content::FaviconURL::FAVICON:
+      case content::FaviconURL::IconType::kFavicon:
 //        if (listener_) listener_->OnIconAvailable(i->icon_url);
         // TODO(iotto) : Ask Clinet if favicons should be downloaded
         web_contents()->DownloadImage(i->icon_url, true,  // Is a favicon

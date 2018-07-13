@@ -45,7 +45,6 @@
 #include "xwalk/runtime/browser/android/xwalk_autofill_client_android.h"
 #include "xwalk/runtime/browser/android/xwalk_content_lifecycle_notifier.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
-#include "xwalk/runtime/browser/android/xwalk_contents_client_bridge_base.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client_impl.h"
 #include "xwalk/runtime/browser/android/xwalk_web_contents_delegate.h"
 #include "xwalk/runtime/browser/runtime_resource_dispatcher_host_delegate_android.h"
@@ -863,6 +862,7 @@ jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, c
 
 /************ End MetaFS ****************/
 static jlong JNI_XWalkContent_Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  LOG(INFO) << "iotto " << __func__;
   std::unique_ptr<WebContents> web_contents(
       content::WebContents::Create(content::WebContents::CreateParams(XWalkRunner::GetInstance()->browser_context())));
   return reinterpret_cast<intptr_t>(new XWalkContent(std::move(web_contents)));
@@ -1056,7 +1056,7 @@ void XWalkContent::OnOpenDnsSettings(const GURL& failedUrl) {
 
   ScopedJavaLocalRef<jstring> j_failed_url(ConvertUTF8ToJavaString(env, failedUrl.spec()));
 
-  Java_XWalkContent_onOpenDnsSettings(env, obj.obj(), j_failed_url);
+  Java_XWalkContent_onOpenDnsSettings(env, obj, j_failed_url);
 }
 
 }  // namespace xwalk

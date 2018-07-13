@@ -16,9 +16,11 @@
 #include "base/callback.h"
 #include "base/containers/id_map.h"
 #include "base/supports_user_data.h"
+#include "content/public/browser/certificate_request_result_type.h"
+#include "content/public/browser/client_certificate_delegate.h"
 #include "content/public/browser/javascript_dialog_manager.h"
 #include "content/public/browser/resource_request_info.h"
-#include "xwalk/runtime/browser/android/xwalk_contents_client_bridge_base.h"
+#include "net/ssl/ssl_cert_request_info.h"
 #include "xwalk/runtime/browser/android/xwalk_icon_helper.h"
 
 namespace gfx {
@@ -30,6 +32,9 @@ class X509Certificate;
 }
 
 namespace content {
+struct NotificationResources;
+struct PlatformNotificationData;
+class RenderFrameHost;
 class WebContents;
 }
 
@@ -53,6 +58,9 @@ class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
   static XWalkContentsClientBridge* FromWebContentsGetter(
       const content::ResourceRequestInfo::WebContentsGetter& web_contents_getter);
   static XWalkContentsClientBridge* FromID(int render_process_id, int render_frame_id);
+  static XWalkContentsClientBridge* FromRenderViewID(int render_process_id, int render_view_id);
+  static XWalkContentsClientBridge* FromRenderFrameID(int render_process_id, int render_frame_id);
+  static XWalkContentsClientBridge* FromRenderFrameHost(content::RenderFrameHost* render_frame_host);
 
   XWalkContentsClientBridge(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
                             content::WebContents* web_contents);

@@ -80,6 +80,7 @@ void RuntimeNetworkDelegate::OnNetworkBytesReceived(net::URLRequest* request,
 
 void RuntimeNetworkDelegate::OnCompleted(net::URLRequest* request,
                                          bool started) {
+  LOG(INFO) << "iotto " << __func__;
 }
 
 void RuntimeNetworkDelegate::OnURLRequestDestroyed(net::URLRequest* request) {

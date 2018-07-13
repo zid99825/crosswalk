@@ -41,6 +41,8 @@ XWalkRunner* g_xwalk_runner = NULL;
 
 XWalkRunner::XWalkRunner()
     : app_component_(nullptr) {
+  LOG(INFO) << "iotto " << __func__;
+
   VLOG(1) << "Creating XWalkRunner object.";
   DCHECK(!g_xwalk_runner);
   g_xwalk_runner = this;
@@ -204,6 +206,7 @@ void XWalkRunner::DisableRemoteDebugging() {
 
 // static
 std::unique_ptr<XWalkRunner> XWalkRunner::Create() {
+  LOG(INFO) << "iotto " << __func__;
 #if defined (OS_WIN)
   return std::unique_ptr<XWalkRunner>(new XWalkRunnerWin);
 #else

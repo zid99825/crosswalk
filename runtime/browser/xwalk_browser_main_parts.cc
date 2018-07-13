@@ -95,6 +95,7 @@ XWalkBrowserMainParts::XWalkBrowserMainParts(
       parameters_(parameters),
       run_default_message_loop_(true),
       devtools_http_handler_(nullptr) {
+  LOG(INFO) << "iotto " << __func__;
 #if defined(OS_LINUX)
   // FIXME: We disable the setuid sandbox on Linux because we don't ship
   // the setuid binary. It is important to remember that the seccomp-bpf

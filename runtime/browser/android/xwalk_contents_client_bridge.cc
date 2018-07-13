@@ -60,8 +60,10 @@ class UserData : public base::SupportsUserData::Data {
  public:
   static XWalkContentsClientBridge* GetContents(
       content::WebContents* web_contents) {
-    if (!web_contents)
+    if (!web_contents) {
+      LOG(ERROR) << "iotto " << __func__ << " null_webcontents";
       return NULL;
+    }
     UserData* data = static_cast<UserData*>(
         web_contents->GetUserData(kXWalkContentsClientBridge));
     return data ? data->contents_ : NULL;
@@ -119,6 +121,34 @@ XWalkContentsClientBridge* XWalkContentsClientBridge::FromID(int render_process_
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   content::RenderFrameHost* rfh = content::RenderFrameHost::FromID(render_process_id, render_frame_id);
   content::WebContents* web_contents = content::WebContents::FromRenderFrameHost(rfh);
+  return UserData::GetContents(web_contents);
+}
+
+// static
+XWalkContentsClientBridge* XWalkContentsClientBridge::FromRenderViewID(int render_process_id, int render_view_id) {
+  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+  content::RenderViewHost* rvh = content::RenderViewHost::FromID(render_process_id, render_view_id);
+  if (!rvh)
+    return NULL;
+  content::WebContents* web_contents = content::WebContents::FromRenderViewHost(rvh);
+  return UserData::GetContents(web_contents);
+}
+
+// static
+XWalkContentsClientBridge* XWalkContentsClientBridge::FromRenderFrameID(int render_process_id, int render_frame_id) {
+  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+  content::RenderFrameHost* rfh = content::RenderFrameHost::FromID(render_process_id, render_frame_id);
+  if (!rfh)
+    return NULL;
+  content::WebContents* web_contents = content::WebContents::FromRenderFrameHost(rfh);
+  return UserData::GetContents(web_contents);
+}
+
+// static
+XWalkContentsClientBridge*
+XWalkContentsClientBridge::FromRenderFrameHost(content::RenderFrameHost* render_frame_host) {
+  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+  content::WebContents* web_contents = content::WebContents::FromRenderFrameHost(render_frame_host);
   return UserData::GetContents(web_contents);
 }
 
