@@ -48,7 +48,6 @@ import android.view.View;
 import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 
-import com.tenta.fs.ACancellableProgress;
 import com.tenta.fs.MetaErrors;
 
 import java.io.File;

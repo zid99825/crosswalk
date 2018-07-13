@@ -32,9 +32,9 @@ class XWalkRenderThreadObserver;
 
 // When implementing a derived class, make sure to update
 // `in_process_browser_test.cc` and `xwalk_main_delegate.cc`.
-class XWalkContentRendererClient
-    : public content::ContentRendererClient,
-      public extensions::XWalkExtensionRendererController::Delegate {
+class XWalkContentRendererClient :
+    public content::ContentRendererClient,
+    public extensions::XWalkExtensionRendererController::Delegate {
  public:
   static XWalkContentRendererClient* Get();
 
@@ -46,28 +46,26 @@ class XWalkContentRendererClient
   void RenderFrameCreated(content::RenderFrame* render_frame) override;
   void RenderViewCreated(content::RenderView* render_view) override;
   bool IsExternalPepperPlugin(const std::string& module_name) override;
-  unsigned long long VisitedLinkHash(const char* canonical_url,
-                                     size_t length) override;
+  unsigned long long VisitedLinkHash(const char* canonical_url, size_t length) override;
   bool IsLinkVisited(unsigned long long link_hash) override;
 
-  bool WillSendRequest(blink::WebLocalFrame* frame,
-                       ui::PageTransition transition_type,
-                       const blink::WebURL& url,
-                       std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
+  bool WillSendRequest(blink::WebLocalFrame* frame, ui::PageTransition transition_type, const blink::WebURL& url,
                        GURL* new_url) override;
+  void AddSupportedKeySystems(std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) override;
 
-  void AddSupportedKeySystems(
-      std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems)
-      override;
+  bool ShouldReportDetailedMessageForSource(const base::string16& source) const override;
+
+  // Returns true if the embedder has an error page to show for the given http
+  // status code. If so |error_domain| should be set to according to WebURLError
+  // and the embedder's GetNavigationErrorHtml will be called afterwards to get
+  // the error html.
+  bool HasErrorPage(int http_status_code, std::string* error_domain) override;
+
 #if defined(OS_ANDROID)
-  bool HandleNavigation(content::RenderFrame* render_frame,
-                        bool is_content_initiated,
-                        bool render_view_was_created_by_renderer,
-                        blink::WebFrame* frame,
-                        const blink::WebURLRequest& request,
-                        blink::WebNavigationType type,
-                        blink::WebNavigationPolicy default_policy,
-                        bool is_redirect) override;
+  bool HandleNavigation(content::RenderFrame* render_frame, bool is_content_initiated,
+                        bool render_view_was_created_by_renderer, blink::WebFrame* frame,
+                        const blink::WebURLRequest& request, blink::WebNavigationType type,
+                        blink::WebNavigationPolicy default_policy, bool is_redirect) override;
 #endif
 
  protected:
@@ -75,26 +73,22 @@ class XWalkContentRendererClient
 
  private:
   // XWalkExtensionRendererController::Delegate implementation.
-  void DidCreateModuleSystem(
-      extensions::XWalkModuleSystem* module_system) override;
+  void DidCreateModuleSystem(extensions::XWalkModuleSystem* module_system) override;
 
-  std::unique_ptr<extensions::XWalkExtensionRendererController>
-      extension_controller_;
+  std::unique_ptr<extensions::XWalkExtensionRendererController> extension_controller_;
 
   std::unique_ptr<visitedlink::VisitedLinkSlave> visited_link_slave_;
 
-  void GetNavigationErrorStrings(
-      content::RenderFrame* render_frame,
-      const blink::WebURLRequest& failed_request,
-      const blink::WebURLError& error,
-      std::string* error_html,
-      base::string16* error_description) override;
+  void GetNavigationErrorStrings(content::RenderFrame* render_frame, const blink::WebURLRequest& failed_request,
+                                 const blink::WebURLError& error, std::string* error_html,
+                                 base::string16* error_description) override;
   void GetNavigationErrorStringsForHttpStatusError(content::RenderFrame* render_frame,
                                                    const blink::WebURLRequest& failed_request,
                                                    const GURL& unreachable_url, int http_status,
                                                    std::string* error_html, base::string16* error_description) override;
 
-  DISALLOW_COPY_AND_ASSIGN(XWalkContentRendererClient);
+  DISALLOW_COPY_AND_ASSIGN(XWalkContentRendererClient)
+  ;
 };
 
 }  // namespace xwalk

@@ -37,5 +37,6 @@
   
   "xwalk/third_party/tenta/crosswalk_extensions/resources/error-pages-browser_resources.grd" : {
     "includes": [33000],
+    "messages": [33010],
   },
 }

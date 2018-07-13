@@ -654,6 +654,15 @@ public class XWalkUIClientInternal {
     }
 
     /**
+     * For Tenta
+     * 
+     * @param failedUrl Loading url that failed DNS
+     */
+    @XWalkAPI
+    public void onOpenDnsSettings(final String failedUrl) {
+    }
+
+    /**
      * Notify the host application that the current page would like to hide its custom view.
      * 
      * @since 7.0
@@ -684,4 +693,5 @@ public class XWalkUIClientInternal {
         mCustomXWalkView = null;
         mCustomViewCallback = null;
     }
+    
 }

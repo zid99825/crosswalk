@@ -52,7 +52,11 @@
 #endif
 
 #ifdef TENTA_CHROMIUM_BUILD
+// gen
 #include "xwalk/third_party/tenta/crosswalk_extensions/resources/grit/tenta_error_pages_browser_resources.h"
+//tenta
+#include "renderer/neterror/tenta_net_error_helper.h"
+//chromium
 #include "ui/base/resource/resource_bundle.h"
 #include "third_party/zlib/google/compression_utils.h"
 #endif
@@ -258,6 +262,9 @@ void XWalkContentRendererClient::RenderFrameCreated(
 //  autofill::PasswordAutofillAgent* password_autofill_agent =
 //      new autofill::PasswordAutofillAgent(render_frame);
 //  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr);
+#ifdef TENTA_CHROMIUM_BUILD
+  new ::tenta::ext::TentaNetErrorHelper(render_frame);
+#endif
 }
 
 void XWalkContentRendererClient::RenderViewCreated(
@@ -386,8 +393,8 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
   // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
   bool is_post = failed_request.HttpMethod().Ascii() == "POST";
 
-//  LOG(INFO) << "iotto " << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
-//            << error_html << " error_description=" << error_description;
+  LOG(INFO) << "iotto " << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
+            << error_html << " error_description=" << error_description;
 
 //  if (error_description) {
 //    if (error.localized_description.IsEmpty())
@@ -399,6 +406,13 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
     *error_description = error_page::LocalizedError::GetErrorDetails(
         error.domain.Utf8(), error.reason, is_post);
   }
+#ifdef TENTA_CHROMIUM_BUILD
+  bool is_ignoring_cache = failed_request.GetCachePolicy() == blink::WebCachePolicy::kBypassingCache;
+
+  if (error_html) {
+    ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(error, is_post, is_ignoring_cache, error_html);
+  }
+#endif
 //  if (error_html) {
 //    // TODO(iotto) : Move this to LocalizedError
 //    int resource_id = IDR_TENTA_ERR_UNKNOWN;
@@ -466,6 +480,25 @@ void XWalkContentRendererClient::AddSupportedKeySystems(
 #if defined(OS_ANDROID)
   cdm::AddAndroidWidevine(key_systems);
 #endif  // defined(OS_ANDROID)
+}
+
+bool XWalkContentRendererClient::ShouldReportDetailedMessageForSource(const base::string16& source) const {
+  LOG(INFO) << "iotto " << __func__ << " src=" << source;
+  return false;
+}
+
+bool XWalkContentRendererClient::HasErrorPage(int http_status_code, std::string* error_domain) {
+  // TODO(iotto) : Replace with tenta implementation
+  // or maybe return true and load a default error page for unhandled errors
+  LOG(INFO) << "iotto " << __func__ << " httpStatusCode=" << http_status_code;
+  // Use an internal error page, if we have one for the status code.
+  if (!error_page::LocalizedError::HasStrings(
+          error_page::LocalizedError::kHttpErrorDomain, http_status_code)) {
+    return false;
+  }
+
+  *error_domain = error_page::LocalizedError::kHttpErrorDomain;
+  return true;
 }
 
 }  // namespace xwalk

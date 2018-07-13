@@ -55,6 +55,8 @@
 #ifdef TENTA_CHROMIUM_BUILD
 #include "host_resolver_tenta.h"
 #include "xwalk/third_party/tenta/chromium_cache/chromium_cache_factory.h"
+
+namespace tenta_cache = tenta::fs::cache;
 #endif
 
 #if defined(OS_ANDROID)
@@ -68,8 +70,6 @@
 #endif
 
 using content::BrowserThread;
-
-namespace tenta_cache = tenta::fs::cache;
 
 namespace xwalk {
 

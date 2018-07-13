@@ -333,6 +333,11 @@ abstract class XWalkContentsClient {
             boolean isDoneCounting);
 
     /**
+     * For Tenta
+     */
+    public abstract void onOpenDnsSettings(final String failedUrl);
+    
+    /**
      * Called whenever there is a new content picture available.
      * 
      * @param picture New picture.
