@@ -411,11 +411,12 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
             ApplicationStatusManager.informActivityStarted((Activity) mContext);
         }
 
-        if (!CommandLine.getInstance().hasSwitch("disable-xwalk-extensions")) {
-            BuiltinXWalkExtensions.load(mContext);
-        } else {
+        // TODO(iotto) : Fix or drop extensions
+//        if (!CommandLine.getInstance().hasSwitch("disable-xwalk-extensions")) {
+//            BuiltinXWalkExtensions.load(mContext);
+//        } else {
             XWalkPreferencesInternal.setValue(XWalkPreferencesInternal.ENABLE_EXTENSIONS, false);
-        }
+//        }
 
         mIsHidden = false;
         mContent = new XWalkContent(mContext, this);

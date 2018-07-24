@@ -85,6 +85,11 @@ class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
 
   bool RewriteUrlIfNeeded(const std::string& url, ui::PageTransition transition_type, std::string* new_url);
 
+  void NewDownload(const GURL& url, const std::string& user_agent, const std::string& content_disposition,
+                   const std::string& mime_type, int64_t content_length);
+
+  void NewLoginRequest(const std::string& realm, const std::string& account, const std::string& args);
+
   // Methods called from Java.
   void ProceedSslError(JNIEnv* env, jobject obj, jboolean proceed, jint id);
   void ConfirmJsResult(JNIEnv*, jobject, int id, jstring prompt);

@@ -197,6 +197,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     auto cookie_store = content::CreateCookieStore(cookie_config);
     storage_->set_cookie_store(std::move(cookie_store));
 #endif
+    //TODO(iotto) : Implement safe ChannelIDStore
     storage_->set_channel_id_service(
         base::WrapUnique(
             new net::ChannelIDService(new net::DefaultChannelIDStore(NULL))));
@@ -225,8 +226,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     std::unique_ptr<net::HttpCache::DefaultBackend> main_backend(
         new net::HttpCache::DefaultBackend(
             net::DISK_CACHE, net::CACHE_BACKEND_DEFAULT, cache_path,
-            GetDiskCacheSize(),
-            BrowserThread::GetTaskRunnerForThread(BrowserThread::CACHE)));
+            GetDiskCacheSize()));
 
     std::unique_ptr<net::MappedHostResolver> host_resolver(
         new net::MappedHostResolver(

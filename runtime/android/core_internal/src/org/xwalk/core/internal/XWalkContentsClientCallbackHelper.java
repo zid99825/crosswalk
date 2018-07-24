@@ -19,41 +19,6 @@ import org.chromium.content.browser.ContentViewCore;
  */
 class XWalkContentsClientCallbackHelper {
 
-    // TODO(boliu): Consider removing DownloadInfo and LoginRequestInfo by using native
-    // MessageLoop to post directly to XWalkContent.
-
-    private static class DownloadInfo {
-        final String mUrl;
-        final String mUserAgent;
-        final String mContentDisposition;
-        final String mMimeType;
-        final long mContentLength;
-
-        DownloadInfo(String url,
-                     String userAgent,
-                     String contentDisposition,
-                     String mimeType,
-                     long contentLength) {
-            mUrl = url;
-            mUserAgent = userAgent;
-            mContentDisposition = contentDisposition;
-            mMimeType = mimeType;
-            mContentLength = contentLength;
-        }
-    }
-
-    private static class LoginRequestInfo {
-        final String mRealm;
-        final String mAccount;
-        final String mArgs;
-
-        LoginRequestInfo(String realm, String account, String args) {
-          mRealm = realm;
-          mAccount = account;
-          mArgs = args;
-        }
-    }
-
     private static class OnReceivedErrorInfo {
         final int mErrorCode;
         final String mDescription;
@@ -80,8 +45,6 @@ class XWalkContentsClientCallbackHelper {
 
     private final static int MSG_ON_LOAD_RESOURCE = 1;
     private final static int MSG_ON_PAGE_STARTED = 2;
-    private final static int MSG_ON_DOWNLOAD_START = 3;
-    private final static int MSG_ON_RECEIVED_LOGIN_REQUEST = 4;
     private final static int MSG_ON_RECEIVED_ERROR = 5;
     private final static int MSG_ON_RESOURCE_LOAD_STARTED = 6;
     private final static int MSG_ON_PAGE_FINISHED = 7;
@@ -102,17 +65,6 @@ class XWalkContentsClientCallbackHelper {
                 case MSG_ON_PAGE_STARTED: {
                     final String url = (String) msg.obj;
                     mContentsClient.onPageStarted(url);
-                    break;
-                }
-                case MSG_ON_DOWNLOAD_START: {
-                    DownloadInfo info = (DownloadInfo) msg.obj;
-                    mContentsClient.onDownloadStart(info.mUrl, info.mUserAgent,
-                            info.mContentDisposition, info.mMimeType, info.mContentLength);
-                    break;
-                }
-                case MSG_ON_RECEIVED_LOGIN_REQUEST: {
-                    LoginRequestInfo info = (LoginRequestInfo) msg.obj;
-                    mContentsClient.onReceivedLoginRequest(info.mRealm, info.mAccount, info.mArgs);
                     break;
                 }
                 case MSG_ON_RECEIVED_ERROR: {
@@ -165,18 +117,6 @@ class XWalkContentsClientCallbackHelper {
     
     public void postOnPageStarted(String url) {
         mHandler.sendMessage(mHandler.obtainMessage(MSG_ON_PAGE_STARTED, url));
-    }
-
-    public void postOnDownloadStart(String url, String userAgent, String contentDisposition,
-            String mimeType, long contentLength) {
-        DownloadInfo info = new DownloadInfo(url, userAgent, contentDisposition, mimeType,
-                contentLength);
-        mHandler.sendMessage(mHandler.obtainMessage(MSG_ON_DOWNLOAD_START, info));
-    }
-
-    public void postOnReceivedLoginRequest(String realm, String account, String args) {
-        LoginRequestInfo info = new LoginRequestInfo(realm, account, args);
-        mHandler.sendMessage(mHandler.obtainMessage(MSG_ON_RECEIVED_LOGIN_REQUEST, info));
     }
 
     public void postOnReceivedError(int errorCode, String description, String failingUrl) {

@@ -360,8 +360,9 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         }
     }
 
-    @Override
+    @CalledByNative
     public void onReceivedLoginRequest(String realm, String account, String args) {
+        org.chromium.base.Log.w(TAG, "onReceivedLoginRequest not_implemented realm=%s, account=%s", realm, account);
     }
 
     @Override
@@ -522,12 +523,9 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         dontResend.sendToTarget();
     }
 
-    @Override
-    public void onDownloadStart(String url,
-            String userAgent,
-            String contentDisposition,
-            String mimeType,
-            long contentLength) {
+    @CalledByNative
+    public void onDownloadStart(String url, String userAgent, String contentDisposition,
+            String mimeType, long contentLength) {
         if (mDownloadListener != null) {
             mDownloadListener.onDownloadStart(
                     url, userAgent, contentDisposition, mimeType, contentLength);

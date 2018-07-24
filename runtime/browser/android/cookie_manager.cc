@@ -237,6 +237,11 @@ class CookieManager {
 #ifdef TENTA_CHROMIUM_BUILD
   void TriggerCookieFetchAsyncHelper(base::WaitableEvent* completion);
   void NukeDomainAsyncHelper(const std::string& domain, base::WaitableEvent* completion);
+  void SetDbKeyAsyncHelper(const std::string& dbKey, base::WaitableEvent* completion);
+  void RekeyDbAsyncHelper(const std::string& oldKey, const std::string& newKey, int* resultHolder, base::WaitableEvent* completion);
+  void SetZoneAsyncHelper(const std::string& zone, base::WaitableEvent* completion);
+  void SetZoneDoneDelete(const std::string& zone, uint32_t num_deleted);
+  void PageLoadStartedAsyncHelper(const std::string& loadingUrl, base::WaitableEvent* completion);
 #endif
 
 // This protects the following two bools, as they're used on multiple threads.
@@ -276,9 +281,14 @@ CookieManager::CookieManager()
       cookie_store_created_(false),
       cookie_store_client_thread_("CookieMonsterClient"),
       cookie_store_backend_thread_("CookieMonsterBackend") {
-  cookie_store_client_thread_.Start();
+  // make MessageLoopForIO type!
+  base::Thread::Options op(base::MessageLoop::Type::TYPE_IO, 0 /*default stack size*/);
+  cookie_store_client_thread_.StartWithOptions(op);
+//  cookie_store_task_runner_ = cookie_store_client_thread_.task_runner();
+  cookie_store_task_runner_ = BrowserThread::GetTaskRunnerForThread(BrowserThread::IO);
+
   cookie_store_backend_thread_.Start();
-  cookie_store_task_runner_ = cookie_store_client_thread_.task_runner();
+  LOG(INFO) << "iotto " << __func__ << " thread_id=" << cookie_store_client_thread_.GetThreadId();
 }
 
 CookieManager::~CookieManager() {
@@ -325,7 +335,9 @@ net::CookieStore* CookieManager::GetCookieStore() {
 #endif
     content::CookieStoreConfig cookie_config(cookie_store_path, content::CookieStoreConfig::RESTORED_SESSION_COOKIES,
                                              nullptr);
+    // TODO(iotto) : If not set will be posted to BrowerThread::IO
     cookie_config.client_task_runner = cookie_store_task_runner_;
+
     cookie_config.background_task_runner = cookie_store_backend_thread_.task_runner();
 
     {
@@ -674,23 +686,55 @@ void CookieManager::SetAcceptFileSchemeCookies(bool accept) {
 
 void CookieManager::SetDbKey(const std::string& dbKey) {
 #ifdef TENTA_CHROMIUM_BUILD
-  GetCookieStore();
-  _tenta_store->SetDbKey(dbKey);
+  ExecCookieTask(base::Bind(&CookieManager::SetDbKeyAsyncHelper, base::Unretained(this), dbKey), false);
 #endif
 }
 
+#ifdef TENTA_CHROMIUM_BUILD
+void CookieManager::SetDbKeyAsyncHelper(const std::string& dbKey, base::WaitableEvent* completion) {
+  GetCookieStore();
+  _tenta_store->SetDbKey(dbKey);
+}
+#endif // TENTA_CHROMIUM_BUILD
+
 int CookieManager::RekeyDb(const std::string& oldKey, const std::string& newKey) {
 #ifdef TENTA_CHROMIUM_BUILD
-  GetCookieStore();
-  return _tenta_store->RekeyDb(oldKey, newKey);
+  int result = 0;
+
+  std::string cookie_value;
+  ExecCookieTask(base::Bind(&CookieManager::RekeyDbAsyncHelper, base::Unretained(this), oldKey, newKey, &result), true);
+
+  return result;
+
 #else
   return -1;
 #endif
 }
 
+#ifdef TENTA_CHROMIUM_BUILD
+void CookieManager::RekeyDbAsyncHelper(const std::string& oldKey, const std::string& newKey, int* resultHolder,
+                                       base::WaitableEvent* completion) {
+
+  GetCookieStore();
+  *resultHolder = _tenta_store->RekeyDb(oldKey, newKey);
+  if (completion != nullptr) {
+    completion->Signal();
+  }
+}
+#endif
+
 void CookieManager::SetZone(const std::string& zone) {
 #ifdef TENTA_CHROMIUM_BUILD
   TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone;
+  ExecCookieTask(base::Bind(&CookieManager::SetZoneAsyncHelper, base::Unretained(this), zone),
+      false /*wait 'till finish*/);
+#endif
+}
+
+#ifdef TENTA_CHROMIUM_BUILD
+void CookieManager::SetZoneAsyncHelper(const std::string& zone, base::WaitableEvent* completion) {
+  TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone;
+
   GetCookieStore();
   if (_tenta_store->zone().empty()) {  // nothing is loaded so safe to just set the zone
     _tenta_store->ZoneSwitching(true);  // zone switch started
@@ -699,24 +743,37 @@ void CookieManager::SetZone(const std::string& zone) {
   } else if (_tenta_store->zone().compare(zone) != 0) {
     _tenta_store->ZoneSwitching(true);  // zone switch started
     _tenta_store->ZoneChanged(zone);
-    ExecCookieTask(base::Bind(&CookieManager::RemoveAllCookieAsyncHelper, base::Unretained(this)),
-    true /*wait 'till finish*/);
+
+    GetCookieStore()->DeleteAllAsync(
+        base::BindOnce(&CookieManager::SetZoneDoneDelete, base::Unretained(this), zone));
+//    RemoveAllCookieAsyncHelper(nullptr);
+//    ExecCookieTask(base::Bind(&CookieManager::RemoveAllCookieAsyncHelper, base::Unretained(this)),
+//                   true /*wait 'till finish*/);
     // TODO(iotto): do we need to postTask, since we're setting just a flag
     // then we might need synchronization
-    ExecCookieTask(base::Bind(&CookieManager::TriggerCookieFetchAsyncHelper, base::Unretained(this)),
-    false);
-    _tenta_store->ZoneSwitching(false);  // done switching zone
+//    GetCookieStore()->TriggerCookieFetch();
+//    TriggerCookieFetchAsyncHelper(nullptr);
+//    ExecCookieTask(base::Bind(&CookieManager::TriggerCookieFetchAsyncHelper, base::Unretained(this)), false);
+//    _tenta_store->ZoneSwitching(false);  // done switching zone
 
   }
-#endif
 }
 
-#ifdef TENTA_CHROMIUM_BUILD
+void CookieManager::SetZoneDoneDelete(const std::string& zone, uint32_t num_deleted) {
+  TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone << " num_deleted=" << num_deleted;
+
+  GetCookieStore()->TriggerCookieFetch();
+  _tenta_store->ZoneSwitching(false);  // done switching zone
+}
+
+/**
+ *
+ */
 void CookieManager::TriggerCookieFetchAsyncHelper(base::WaitableEvent* completion) {
   TENTA_LOG_COOKIE(INFO) << __func__;
   GetCookieStore()->TriggerCookieFetch();
 }
-#endif
+#endif // TENTA_CHROMIUM_BUILD
 
 int CookieManager::NukeDomain(const std::string& domain) {
 #ifdef TENTA_CHROMIUM_BUILD
@@ -740,12 +797,24 @@ void CookieManager::NukeDomainAsyncHelper(const std::string& domain, base::Waita
 
 void CookieManager::PageLoadStarted(const std::string& loadingUrl) {
 #ifdef TENTA_CHROMIUM_BUILD
-  GetCookieStore();
-  _tenta_store->PageLoadStarted(loadingUrl);
+  TENTA_LOG_COOKIE(INFO) << __func__ << " url=" << loadingUrl;
+  ExecCookieTask(base::Bind(&CookieManager::PageLoadStartedAsyncHelper, base::Unretained(this), loadingUrl),
+  false /*wait 'till finish*/);
+
 #endif
 }
 
+#ifdef TENTA_CHROMIUM_BUILD
+void CookieManager::PageLoadStartedAsyncHelper(const std::string& loadingUrl, base::WaitableEvent* completion) {
+  TENTA_LOG_COOKIE(INFO) << __func__ << " url=" << loadingUrl;
+
+  GetCookieStore();
+  _tenta_store->PageLoadStarted(loadingUrl);
+}
+#endif // TENTA_CHROMIUM_BUILD
+
 void CookieManager::Reset() {
+  // TODO(iotto) : Move this too to cookie thread
 #ifdef TENTA_CHROMIUM_BUILD
   GetCookieStore();
   _tenta_store->ZoneSwitching(true);

@@ -38,6 +38,7 @@
 #include "xwalk/runtime/renderer/isolated_file_system.h"
 #include "xwalk/runtime/renderer/pepper/pepper_helper.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
+#include "meta_logging.h"
 
 #if defined(OS_ANDROID)
 #include "components/cdm/renderer/android_key_systems.h"
@@ -126,7 +127,6 @@ XWalkContentRendererClient::~XWalkContentRendererClient() {
 }
 
 void XWalkContentRendererClient::RenderThreadStarted() {
-  LOG(INFO) << "iotto " << __func__;
   content::RenderThread* thread = content::RenderThread::Get();
 
   xwalk_render_thread_observer_.reset(new XWalkRenderThreadObserver);
@@ -144,23 +144,11 @@ void XWalkContentRendererClient::RenderThreadStarted() {
           std::move(registry)));
 
 
-  base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
-  if (!cmd_line->HasSwitch(switches::kXWalkDisableExtensions))
-    extension_controller_.reset(
-        new extensions::XWalkExtensionRendererController(this));
-/*
-  // TODO moved to runtime/common/xwalk_content_client.cc
-   * @note see chromium commit 0901535a93c8bdf5d9a67edc8085beb2786888b3
-  blink::WebString application_scheme(
-      blink::WebString::fromASCII(application::kApplicationScheme));
-  blink::WebSecurityPolicy::registerURLSchemeAsSecure(application_scheme);
-  blink::WebSecurityPolicy::registerURLSchemeAsCORSEnabled(application_scheme);
-#if defined(OS_ANDROID)
-  blink::WebString content_scheme(
-      blink::WebString::fromASCII(xwalk::kContentScheme));
-  blink::WebSecurityPolicy::registerURLSchemeAsLocal(content_scheme);
-#endif
-*/
+  // TODO(iotto) : Fix extensions!
+//  base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
+//  if (!cmd_line->HasSwitch(switches::kXWalkDisableExtensions))
+//    extension_controller_.reset(
+//        new extensions::XWalkExtensionRendererController(this));
 }
 
 #if defined(OS_ANDROID)
@@ -173,14 +161,10 @@ bool XWalkContentRendererClient::HandleNavigation(
     blink::WebNavigationType type,
     blink::WebNavigationPolicy default_policy,
     bool is_redirect) {
-#if TENTA_LOG_ENABLE == 1
-  LOG(INFO) << "iotto " << __func__ << " is_content_initiated=" << is_content_initiated
-      << " render_view_was_created_by_renderer=" << render_view_was_created_by_renderer
-      << " is_redirect=" << is_redirect
-      << " type=" << type
-      << " is_main_frame=" << !frame->Parent()
-      << " url=" << request.Url();
-#endif
+  TENTA_LOG_NET(INFO) << __func__ << " is_content_initiated=" << is_content_initiated
+                      << " render_view_was_created_by_renderer=" << render_view_was_created_by_renderer
+                      << " is_redirect=" << is_redirect << " type=" << type << " is_main_frame=" << !frame->Parent()
+                      << " url=" << request.Url();
   // Only GETs can be overridden.
   if (!request.HttpMethod().Equals("GET"))
     return false;
@@ -229,7 +213,6 @@ bool XWalkContentRendererClient::HandleNavigation(
 
 void XWalkContentRendererClient::RenderFrameCreated(
     content::RenderFrame* render_frame) {
-  LOG(INFO) << "iotto " << __func__;
   new XWalkFrameHelper(render_frame, extension_controller_.get());
   new XWalkRenderFrameExt(render_frame);
 #if defined(OS_ANDROID)
@@ -316,11 +299,9 @@ bool XWalkContentRendererClient::WillSendRequest(
                        const blink::WebURL& url,
                        std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
                        GURL* new_url) {
-#if TENTA_LOG_NET_ENABLE == 1
-  LOG(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
+  TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
                << frame->GetDocument().Url().GetString().Utf8() << " url="
                << url.GetString().Utf8();
-#endif
 #if defined(OS_ANDROID)
   content::RenderView* render_view =
       content::RenderView::FromWebView(frame->View());
@@ -347,9 +328,7 @@ bool XWalkContentRendererClient::WillSendRequest(
 
   if ( did_overwrite ) {
     *new_url = GURL(new_url_str);
-#if TENTA_LOG_NET_ENABLE == 1
-    LOG(INFO) << "XWalkContentRendererClient::WillSendRequest did_overwrite";
-#endif
+    TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest did_overwrite";
   }
   return did_overwrite;
 #else
@@ -395,7 +374,7 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
   // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
   bool is_post = failed_request.HttpMethod().Ascii() == "POST";
 
-  LOG(INFO) << "iotto " << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
+  TENTA_LOG_NET(INFO) << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
             << error_html << " error_description=" << error_description;
 
   error_page::Error error = error_page::Error::NetError(web_error.url(), web_error.reason(),
@@ -412,30 +391,6 @@ void XWalkContentRendererClient::GetNavigationErrorStrings(
     ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(error, is_post, is_ignoring_cache, error_html);
   }
 #endif
-//  if (error_html) {
-//    // TODO(iotto) : Move this to LocalizedError
-//    int resource_id = IDR_TENTA_ERR_UNKNOWN;
-//    if (error.domain.Utf8() == net::kErrorDomain) {
-//      switch (error.reason) {
-//        case net::ERR_NAME_NOT_RESOLVED:
-//          resource_id = IDR_TENTA_ERR_NAME_NOT_RESOLVED_HTML;
-//          break;
-//        case net::ERR_INTERNET_DISCONNECTED:
-//          resource_id = IDR_TENTA_ERR_INTERNET_DISCONNECTED_HTML;
-//          break;
-//      }
-//      base::StringPiece raw_response = ui::ResourceBundle::GetSharedInstance().GetRawDataResource(resource_id);
-//      compression::GzipUncompress(raw_response.as_string(), error_html);
-//    }
-//  }
-
-//  if (error_description) {
-//    *error_description = LocalizedError::GetErrorDetails(error, is_post);
-//  }
-
-//  if ( error_description && !error_description->empty()) {
-//    LOG(INFO) << "iotto " << __func__ << " error_description=" << *error_description;
-//  }
 }
 
 void XWalkContentRendererClient::GetNavigationErrorStringsForHttpStatusError(content::RenderFrame* render_frame,
@@ -445,34 +400,8 @@ void XWalkContentRendererClient::GetNavigationErrorStringsForHttpStatusError(con
                                                                              base::string16* error_description) {
 
   // TODO(iotto) : Implement
-  LOG(WARNING) << __func__ << " not_implemented";
-  /*
-   GetNavigationErrorStringsInternal(
-   render_frame, failed_request,
-   error_page::Error::HttpError(unreachable_url, http_status), error_html,
-   error_description);
-   */
+  TENTA_LOG_NET(WARNING) << __func__ << " not_implemented";
 }
-
-//void ChromeContentRendererClient::GetNavigationErrorStringsInternal(
-//    content::RenderFrame* render_frame,
-//    const WebURLRequest& failed_request,
-//    const error_page::Error& error,
-//    std::string* error_html,
-//    base::string16* error_description) {
-//  bool is_post = failed_request.HttpMethod().Ascii() == "POST";
-//  bool is_ignoring_cache =
-//      failed_request.GetCacheMode() == FetchCacheMode::kBypassCache;
-//  if (error_html) {
-//    NetErrorHelper::Get(render_frame)
-//        ->GetErrorHTML(error, is_post, is_ignoring_cache, error_html);
-//  }
-//
-//  if (error_description) {
-//    *error_description = error_page::LocalizedError::GetErrorDetails(
-//        error.domain(), error.reason(), is_post);
-//  }
-//}
 
 void XWalkContentRendererClient::AddSupportedKeySystems(
     std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) {
@@ -482,14 +411,14 @@ void XWalkContentRendererClient::AddSupportedKeySystems(
 }
 
 bool XWalkContentRendererClient::ShouldReportDetailedMessageForSource(const base::string16& source) const {
-  LOG(INFO) << "iotto " << __func__ << " src=" << source;
+  TENTA_LOG_NET(INFO) << __func__ << " src=" << source;
   return false;
 }
 
 bool XWalkContentRendererClient::HasErrorPage(int http_status_code) {
   // TODO(iotto) : Replace with tenta implementation
   // or maybe return true and load a default error page for unhandled errors
-  LOG(INFO) << "iotto " << __func__ << " httpStatusCode=" << http_status_code;
+  TENTA_LOG_NET(INFO) << __func__ << " httpStatusCode=" << http_status_code;
   // Use an internal error page, if we have one for the status code.
 
   return error_page::LocalizedError::HasStrings(

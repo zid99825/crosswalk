@@ -23,6 +23,7 @@
 #include "net/http/http_response_headers.h"
 #include "net/url_request/url_request.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
+#include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
 #include "xwalk/runtime/browser/android/xwalk_login_delegate.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
@@ -32,24 +33,42 @@ using content::BrowserThread;
 using navigation_interception::InterceptNavigationDelegate;
 using xwalk::XWalkContentsIoThreadClient;
 
+namespace xwalk {
+
 namespace {
-void SetCacheControlFlag(
-    net::URLRequest* request, int flag) {
-  const int all_cache_control_flags = 
-      net::LOAD_VALIDATE_CACHE |
-      net::LOAD_BYPASS_CACHE |
-      net::LOAD_SKIP_CACHE_VALIDATION |
-      net::LOAD_ONLY_FROM_CACHE|
-      net::LOAD_DISABLE_CACHE;
+
+void SetCacheControlFlag(net::URLRequest* request, int flag) {
+  const int all_cache_control_flags = net::LOAD_VALIDATE_CACHE | net::LOAD_BYPASS_CACHE
+                                      | net::LOAD_SKIP_CACHE_VALIDATION | net::LOAD_ONLY_FROM_CACHE
+                                      | net::LOAD_DISABLE_CACHE;
   DCHECK((flag & all_cache_control_flags) == flag);
   int load_flags = request->load_flags();
   load_flags &= ~all_cache_control_flags;
   load_flags |= flag;
   request->SetLoadFlags(load_flags);
 }
-}  // namespace
 
-namespace xwalk {
+// Called when ResourceDispathcerHost detects a download request.
+// The download is already cancelled when this is called, since
+// relevant for DownloadListener is already extracted.
+void DownloadStartingOnUIThread(const content::ResourceRequestInfo::WebContentsGetter& web_contents_getter,
+                                const GURL& url, const std::string& user_agent, const std::string& content_disposition,
+                                const std::string& mime_type, int64_t content_length) {
+  XWalkContentsClientBridge* client = XWalkContentsClientBridge::FromWebContentsGetter(web_contents_getter);
+  if (!client)
+    return;
+  client->NewDownload(url, user_agent, content_disposition, mime_type, content_length);
+}
+
+void NewLoginRequestOnUIThread(const content::ResourceRequestInfo::WebContentsGetter& web_contents_getter,
+                               const std::string& realm, const std::string& account, const std::string& args) {
+  XWalkContentsClientBridge* client = XWalkContentsClientBridge::FromWebContentsGetter(web_contents_getter);
+  if (!client)
+    return;
+  client->NewLoginRequest(realm, account, args);
+}
+
+} // namespace
 
 // Calls through the IoThreadClient to check the embedders settings to determine
 // if the request should be cancelled. There may not always be an IoThreadClient
@@ -78,6 +97,8 @@ class IoThreadClientThrottle : public content::ResourceThrottle {
   int render_frame_id() const { return render_frame_id_; }
 
  private:
+  std::unique_ptr<XWalkContentsIoThreadClient> GetIoThreadClient() const;
+
   int render_process_id_;
   int render_frame_id_;
   net::URLRequest* request_;
@@ -95,6 +116,23 @@ IoThreadClientThrottle::~IoThreadClientThrottle() {
   static_cast<RuntimeResourceDispatcherHostDelegateAndroid*>(
       XWalkContentBrowserClient::Get()->resource_dispatcher_host_delegate())->
       RemovePendingThrottleOnIoThread(this);
+}
+
+std::unique_ptr<XWalkContentsIoThreadClient>
+IoThreadClientThrottle::GetIoThreadClient() const {
+  // TODO(iotto) : Implement! see android_webview/browser/aw_contents_io_thread_client.cc
+//  if (content::ResourceRequestInfo::OriginatedFromServiceWorker(request_))
+//    return XWalkContentsIoThreadClient::GetServiceWorkerIoThreadClient();
+
+  if (render_process_id_ == -1 || render_frame_id_ == -1) {
+    const content::ResourceRequestInfo* resourceRequestInfo = content::ResourceRequestInfo::ForRequest(request_);
+    if (resourceRequestInfo == nullptr) {
+      return nullptr;
+    }
+    return XWalkContentsIoThreadClient::FromID(resourceRequestInfo->GetFrameTreeNodeId());
+  }
+
+  return XWalkContentsIoThreadClient::FromID(render_process_id_, render_frame_id_);
 }
 
 void IoThreadClientThrottle::WillStartRequest(bool* defer) {
@@ -124,8 +162,7 @@ bool IoThreadClientThrottle::MaybeDeferRequest(bool* defer) {
 
   // Defer all requests of a pop up that is still not associated with Java
   // client so that the client will get a chance to override requests.
-  std::unique_ptr<XWalkContentsIoThreadClient> io_client =
-      XWalkContentsIoThreadClient::FromID(render_process_id_, render_frame_id_);
+  std::unique_ptr<XWalkContentsIoThreadClient> io_client = GetIoThreadClient();
   if (io_client && io_client->PendingAssociation()) {
     *defer = true;
     RuntimeResourceDispatcherHostDelegateAndroid::AddPendingThrottle(
@@ -152,9 +189,9 @@ bool IoThreadClientThrottle::MaybeBlockRequest() {
 }
 
 bool IoThreadClientThrottle::ShouldBlockRequest() {
-  std::unique_ptr<XWalkContentsIoThreadClient> io_client =
-      XWalkContentsIoThreadClient::FromID(render_process_id_, render_frame_id_);
-  DCHECK(io_client.get());
+  std::unique_ptr<XWalkContentsIoThreadClient> io_client = GetIoThreadClient();
+  if (!io_client)
+    return false;
 
   // Part of implementation of WebSettings.allowContentAccess.
   if (request_->url().SchemeIs(xwalk::kContentScheme) &&
@@ -163,13 +200,11 @@ bool IoThreadClientThrottle::ShouldBlockRequest() {
   }
 
   // Part of implementation of WebSettings.allowFileAccess.
-  if (request_->url().SchemeIsFile() &&
-      io_client->ShouldBlockFileUrls()) {
+  if (request_->url().SchemeIsFile() && io_client->ShouldBlockFileUrls()) {
     const GURL& url = request_->url();
     if (!url.has_path() ||
-        // Application's assets and resources are always available.
-        (url.path().find(xwalk::kAndroidResourcePath) != 0 &&
-         url.path().find(xwalk::kAndroidAssetPath) != 0)) {
+    // Application's assets and resources are always available.
+    (url.path().find(xwalk::kAndroidResourcePath) != 0 && url.path().find(xwalk::kAndroidAssetPath) != 0)) {
       return true;
     }
   }
@@ -178,19 +213,18 @@ bool IoThreadClientThrottle::ShouldBlockRequest() {
     if (request_->url().SchemeIs(url::kFtpScheme)) {
       return true;
     }
-    SetCacheControlFlag(request_, net::LOAD_ONLY_FROM_CACHE);
+    SetCacheControlFlag(request_, net::LOAD_ONLY_FROM_CACHE | net::LOAD_SKIP_CACHE_VALIDATION);
   } else {
-    XWalkContentsIoThreadClient::CacheMode cache_mode =
-        io_client->GetCacheMode();
+    XWalkContentsIoThreadClient::CacheMode cache_mode = io_client->GetCacheMode();
     switch (cache_mode) {
       case XWalkContentsIoThreadClient::LOAD_CACHE_ELSE_NETWORK:
-        SetCacheControlFlag(request_, net::LOAD_VALIDATE_CACHE);
+        SetCacheControlFlag(request_, net::LOAD_SKIP_CACHE_VALIDATION);
         break;
       case XWalkContentsIoThreadClient::LOAD_NO_CACHE:
         SetCacheControlFlag(request_, net::LOAD_BYPASS_CACHE);
         break;
       case XWalkContentsIoThreadClient::LOAD_CACHE_ONLY:
-        SetCacheControlFlag(request_, net::LOAD_ONLY_FROM_CACHE);
+        SetCacheControlFlag(request_, net::LOAD_ONLY_FROM_CACHE | net::LOAD_SKIP_CACHE_VALIDATION);
         break;
       default:
         break;
@@ -216,18 +250,43 @@ void RuntimeResourceDispatcherHostDelegateAndroid::RequestBeginning(
   const content::ResourceRequestInfo* request_info =
       content::ResourceRequestInfo::ForRequest(request);
 
-  // If io_client is NULL, then the browser side objects have already been
-  // destroyed, so do not do anything to the request. Conversely if the
-  // request relates to a not-yet-created popup window, then the client will
-  // be non-NULL but PopupPendingAssociation() will be set.
-  std::unique_ptr<XWalkContentsIoThreadClient> io_client =
-      XWalkContentsIoThreadClient::FromID(
-          request_info->GetChildID(), request_info->GetRenderFrameID());
-  if (!io_client)
-    return;
+//  // If io_client is NULL, then the browser side objects have already been
+//  // destroyed, so do not do anything to the request. Conversely if the
+//  // request relates to a not-yet-created popup window, then the client will
+//  // be non-NULL but PopupPendingAssociation() will be set.
+//  std::unique_ptr<XWalkContentsIoThreadClient> io_client =
+//      XWalkContentsIoThreadClient::FromID(
+//          request_info->GetChildID(), request_info->GetRenderFrameID());
+//  if (!io_client)
+//    return;
 
   throttles->push_back(base::WrapUnique<IoThreadClientThrottle>(new IoThreadClientThrottle(
       request_info->GetChildID(), request_info->GetRenderFrameID(), request)));
+
+  bool is_main_frame = resource_type == content::RESOURCE_TYPE_MAIN_FRAME;
+  if (!is_main_frame)
+    InterceptNavigationDelegate::UpdateUserGestureCarryoverInfo(request);
+
+  // TODO(iotto) : Add do not track header here!
+//  if (!request->is_pending()) {
+//    net::HttpRequestHeaders headers;
+//    headers.CopyFrom(request->extra_request_headers());
+//    bool is_off_the_record = io_data->IsOffTheRecord();
+//    bool is_signed_in =
+//        !is_off_the_record &&
+//        !io_data->google_services_account_id()->GetValue().empty();
+//    variations::AppendVariationHeaders(
+//        request->url(), is_off_the_record, is_signed_in,
+//        !is_off_the_record && io_data->GetMetricsEnabledStateOnIOThread(),
+//        &headers);
+//    request->SetExtraRequestHeaders(headers);
+//  }
+
+  // TODO(iotto) : Implement
+//  throttles->push_back(
+//      base::MakeUnique<web_restrictions::WebRestrictionsResourceThrottle>(
+//          AwBrowserContext::GetDefault()->GetWebRestrictionProvider(),
+//          request->url(), is_main_frame));
 }
 
 void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
@@ -260,19 +319,11 @@ void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
   const content::ResourceRequestInfo* request_info =
       content::ResourceRequestInfo::ForRequest(request);
 
-  std::unique_ptr<XWalkContentsIoThreadClient> io_client =
-      XWalkContentsIoThreadClient::FromID(
-          request_info->GetChildID(), request_info->GetRenderFrameID());
-
-  // POST request cannot be repeated in general, so prevent client from
-  // retrying the same request, even if it is with a GET.
-  if ("GET" == request->method() && io_client) {
-    io_client->NewDownload(url,
-                           user_agent,
-                           content_disposition,
-                           mime_type,
-                           content_length);
-  }
+  BrowserThread::PostTask(
+      BrowserThread::UI, FROM_HERE,
+      base::Bind(&DownloadStartingOnUIThread,
+                 request_info->GetWebContentsGetterForRequest(), url,
+                 user_agent, content_disposition, mime_type, content_length));
 }
 
 content::ResourceDispatcherHostLoginDelegate*
@@ -292,32 +343,27 @@ bool RuntimeResourceDispatcherHostDelegateAndroid::HandleExternalProtocol(
   return false;
 }
 
-void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(
-    net::URLRequest* request,
-    content::ResourceContext* resource_context,
-    content::ResourceResponse* response) {
+void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(net::URLRequest* request,
+                                                                     content::ResourceContext* resource_context,
+                                                                     content::ResourceResponse* response) {
 //    IPC::Sender* sender) {
-  const content::ResourceRequestInfo* request_info =
-      content::ResourceRequestInfo::ForRequest(request);
+  const content::ResourceRequestInfo* request_info = content::ResourceRequestInfo::ForRequest(request);
   if (!request_info) {
-    DLOG(FATAL) << "Started request without associated info: " <<
-        request->url();
+    DLOG(FATAL) << "Started request without associated info: " << request->url();
     return;
   }
 
+  // TODO(iotto) : May be removed in the future
   if (request_info->GetResourceType() == content::RESOURCE_TYPE_MAIN_FRAME) {
     // Check for x-auto-login header.
     android_webview::HeaderData header_data;
 //    auto_login_parser::HeaderData header_data;
-    if (android_webview::ParserHeaderInResponse(
-            request, android_webview::RealmRestriction::ALLOW_ANY_REALM, &header_data)) {
-      std::unique_ptr<XWalkContentsIoThreadClient> io_client =
-          XWalkContentsIoThreadClient::FromID(request_info->GetChildID(),
-                                              request_info->GetRenderFrameID());
-      if (io_client) {
-        io_client->NewLoginRequest(
-            header_data.realm, header_data.account, header_data.args);
-      }
+    if (android_webview::ParserHeaderInResponse(request, android_webview::RealmRestriction::ALLOW_ANY_REALM,
+                                                &header_data)) {
+      BrowserThread::PostTask(BrowserThread::UI, FROM_HERE,
+      base::Bind(&NewLoginRequestOnUIThread,
+          request_info->GetWebContentsGetterForRequest(),
+          header_data.realm, header_data.account, header_data.args));
     }
   }
 }

@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Locale;
 
 import android.app.Activity;
+import android.app.Application;
 import android.app.Service;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -32,6 +33,7 @@ import android.os.Build;
 import android.util.Log;
 import android.util.SparseArray;
 
+import org.chromium.base.ApplicationStatus;
 import org.chromium.base.ApplicationStatusManager;
 import org.chromium.base.BaseChromiumApplication;
 import org.chromium.base.CommandLine;
@@ -162,6 +164,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
 
         ContextUtils.initApplicationContext(context);
         PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
+        ApplicationStatus.initialize((Application) context.getApplicationContext());
 
         // Initialize chromium resources. Assign them the correct ids in xwalk core.
 //        XWalkInternalResources.resetIds(context);

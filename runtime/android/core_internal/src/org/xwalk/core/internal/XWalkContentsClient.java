@@ -243,12 +243,7 @@ abstract class XWalkContentsClient {
     public abstract void onReceivedResponseHeaders(WebResourceRequestInner request,
             XWalkWebResourceResponseInternal response);
 
-    public abstract void onReceivedLoginRequest(String realm, String account, String args);
-
     public abstract void onFormResubmission(Message dontResend, Message resend);
-
-    public abstract void onDownloadStart(String url, String userAgent, String contentDisposition,
-            String mimeType, long contentLength);
 
     public abstract void onGeolocationPermissionsShowPrompt(String origin,
             XWalkGeolocationPermissions.Callback callback);

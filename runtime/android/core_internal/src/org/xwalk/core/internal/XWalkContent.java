@@ -35,6 +35,7 @@ import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
 import org.chromium.content.browser.ContentViewCore;
+import org.chromium.content.browser.ContentViewCoreImpl;
 import org.chromium.content.browser.ContentViewRenderView;
 import org.chromium.content.browser.ContentViewStatics;
 import org.chromium.content_public.browser.ContentBitmapCallback;
@@ -66,7 +67,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private static String TAG = "XWalkContent";
     private static Class<? extends Annotation> javascriptInterfaceClass = null;
 
-    private ContentViewCore mContentViewCore;
+    private ContentViewCoreImpl mContentViewCore;
     private Context mViewContext;
     private XWalkContentView mContentView;
     private ContentViewRenderView mContentViewRenderView;
@@ -206,13 +207,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
 
         assert mNativeContent == 0 && mXWalkCleanupReference == null && mContentViewCore == null;
 
-        mContentViewRenderView = new ContentViewRenderView(mViewContext) {
-            @Override
-            protected void onReadyToRender() {
-                // Anything depending on the underlying Surface readiness should
-                // be placed here.
-            }
-        };
+        mContentViewRenderView = new ContentViewRenderView(mViewContext);
         mContentViewRenderView.onNativeLibraryLoaded(mWindow);
         
         mWindow.setAnimationPlaceholderView(mContentViewRenderView.getSurfaceView());
@@ -234,7 +229,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mWebContents = nativeGetWebContents(mNativeContent);
 
         // Initialize ContentView.
-        mContentViewCore = ContentViewCore.create(mViewContext, getChromeVersion());
+        mContentViewCore = (ContentViewCoreImpl) ContentViewCore.create(mViewContext, getChromeVersion());
                 //new ContentViewCore(mViewContext, "Crosswalk");
         mContentView = XWalkContentView.createContentView(mViewContext, mContentViewCore,
                 mXWalkView);
@@ -257,6 +252,8 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mXWalkView.addView(mContentView,
                 new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT));
+        mContentView.requestFocus();
+        
 //        mContentViewCore.setContentViewClient(mContentsClientBridge);
         mContentViewRenderView.setCurrentContentViewCore(mContentViewCore);
         mContentViewCore.onShow();
@@ -1201,21 +1198,6 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         @Override
         public boolean shouldBlockNetworkLoads() {
             return mSettings.getBlockNetworkLoads();
-        }
-
-        @Override
-        public void onDownloadStart(String url, String userAgent, String contentDisposition,
-                String mimeType,
-                long contentLength) {
-            mContentsClientBridge.getCallbackHelper().postOnDownloadStart(url, userAgent,
-                    contentDisposition, mimeType,
-                    contentLength);
-        }
-
-        @Override
-        public void newLoginRequest(String realm, String account, String args) {
-            mContentsClientBridge.getCallbackHelper().postOnReceivedLoginRequest(realm, account,
-                    args);
         }
 
         @Override

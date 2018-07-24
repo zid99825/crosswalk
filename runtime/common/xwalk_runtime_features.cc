@@ -152,7 +152,6 @@ void XWalkRuntimeFeatures::DumpFeaturesFlags() {
 }
 
 bool XWalkRuntimeFeatures::isFeatureEnabled(const char* name) const {
-  LOG(INFO) << "iotto " << __func__ << " name=" << name;
   CHECK(initialized_);
   auto it = runtime_features_.find(name);
   if (it == runtime_features_.end())

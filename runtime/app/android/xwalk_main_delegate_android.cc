@@ -77,30 +77,6 @@ void XWalkMainDelegateAndroid::InitResourceBundle() {
   pak_file = pak_dir.Append(FILE_PATH_LITERAL("xwalk_100_percent.pak"));
   ui::ResourceBundle::GetSharedInstance().AddDataPackFromPath(
       pak_file, ui::SCALE_FACTOR_100P);
-
-
-/*****************************************/
-//
-//
-//  resource_delegate_.reset(new XWalkResourceDelegate());
-//  std::string locale = ui::ResourceBundle::InitSharedInstanceWithLocale(
-//        base::android::GetDefaultLocaleString(), resource_delegate_.get(),
-//        ui::ResourceBundle::DO_NOT_LOAD_COMMON_RESOURCES);
-//    if (locale.empty()) {
-//      LOG(WARNING) << "iotto " << __func__ << " Failed to load locale .pak from the apk. "
-//          "Bringing up WebView without any locale";
-//    }
-//    base::i18n::SetICUDefaultLocale(locale);
-//
-//    // Try to directly mmap the resources.pak from the apk. Fall back to load
-//    // from file, using PATH_SERVICE, otherwise.
-//    base::FilePath pak_file_path;
-//    PathService::Get(ui::DIR_RESOURCE_PAKS_ANDROID, &pak_file_path);
-//    LOG(INFO) << "iotto " << __func__ << " pak_file_path=" << pak_file_path.value();
-//    LOG(INFO) << "iotto " << __func__ << " pak_dir=" << pak_dir.value();
-//
-//    pak_file_path = pak_file_path.AppendASCII("resources.pak");
-//    ui::LoadMainAndroidPackFile("assets/resources.pak", pak_file_path);
 }
 
 }  // namespace xwalk

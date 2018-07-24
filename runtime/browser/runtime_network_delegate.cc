@@ -9,6 +9,7 @@
 #include "net/base/net_errors.h"
 #include "net/base/static_cookie_policy.h"
 #include "net/url_request/url_request.h"
+#include "meta_logging.h"
 
 #if defined(OS_ANDROID)
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
@@ -68,7 +69,7 @@ int RuntimeNetworkDelegate::OnHeadersReceived(
 
 void RuntimeNetworkDelegate::OnBeforeRedirect(net::URLRequest* request,
                                               const GURL& new_location) {
-  LOG(INFO) << "iotto " << __func__ << " url=" << new_location.spec();
+  TENTA_LOG_NET(INFO) << __func__ << " url=" << new_location.spec();
 }
 
 void RuntimeNetworkDelegate::OnResponseStarted(net::URLRequest* request, int net_error) {
@@ -80,7 +81,6 @@ void RuntimeNetworkDelegate::OnNetworkBytesReceived(net::URLRequest* request,
 
 void RuntimeNetworkDelegate::OnCompleted(net::URLRequest* request,
                                          bool started) {
-  LOG(INFO) << "iotto " << __func__;
 }
 
 void RuntimeNetworkDelegate::OnURLRequestDestroyed(net::URLRequest* request) {

@@ -862,7 +862,6 @@ jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, c
 
 /************ End MetaFS ****************/
 static jlong JNI_XWalkContent_Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
-  LOG(INFO) << "iotto " << __func__;
   std::unique_ptr<WebContents> web_contents(
       content::WebContents::Create(content::WebContents::CreateParams(XWalkRunner::GetInstance()->browser_context())));
   return reinterpret_cast<intptr_t>(new XWalkContent(std::move(web_contents)));
@@ -1046,8 +1045,6 @@ void XWalkContent::OnFindResultReceived(int active_ordinal, int match_count, boo
  *
  */
 void XWalkContent::OnOpenDnsSettings(const GURL& failedUrl) {
-  LOG(INFO) << "iotto " << __func__;
-
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);

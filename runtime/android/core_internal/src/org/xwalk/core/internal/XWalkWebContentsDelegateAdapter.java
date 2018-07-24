@@ -4,13 +4,18 @@
 
 package org.xwalk.core.internal;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.webkit.ConsoleMessage;
+
+import org.chromium.base.ContextUtils;
+import org.chromium.content.browser.ActivityContentVideoViewEmbedder;
 import org.chromium.content.browser.ContentVideoView;
+import org.chromium.content.browser.ContentVideoViewEmbedder;
 import org.chromium.content_public.browser.InvalidateTypes;
 import org.chromium.content_public.common.ContentUrlConstants;
 
@@ -25,6 +30,22 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
         mXwalkContent = content;
     }
 
+//    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
+//        +        return new ActivityContentVideoViewEmbedder((Activity) getContext()) {
+//        +            @Override
+//        +            public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
+//        +                super.enterFullscreenVideo(view, isVideoLoaded);
+//        +                mContentViewRenderView.setOverlayVideoMode(true);
+//        +            }
+//        +
+//        +            @Override
+//        +            public void exitFullscreenVideo() {
+//        +                super.exitFullscreenVideo();
+//        +                mContentViewRenderView.setOverlayVideoMode(false);
+//        +            }
+//        +        };
+//        +    }
+    
     @Override
     public boolean shouldCreateWebContents(String contentUrl) {
         if (mXWalkContentsClient != null) {

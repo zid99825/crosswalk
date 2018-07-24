@@ -127,7 +127,6 @@ void GetUserDataDir(base::FilePath* user_data_dir) {
 XWalkBrowserMainPartsAndroid::XWalkBrowserMainPartsAndroid(
     const content::MainFunctionParams& parameters)
     : XWalkBrowserMainParts(parameters) {
-  LOG(INFO) << "iotto " << __func__;
 }
 
 XWalkBrowserMainPartsAndroid::~XWalkBrowserMainPartsAndroid() {
@@ -220,7 +219,7 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
 void XWalkBrowserMainPartsAndroid::PostMainMessageLoopRun() {
   XWalkBrowserMainParts::PostMainMessageLoopRun();
 
-  base::MessageLoopForUI::current()->Start();
+//  base::MessageLoopForUI::current()->Start();
 }
 
 void XWalkBrowserMainPartsAndroid::CreateInternalExtensionsForExtensionThread(

@@ -49,7 +49,6 @@ void InitLogging(const std::string& process_type) {
 
 XWalkMainDelegate::XWalkMainDelegate()
     : content_client_(new XWalkContentClient) {
-  LOG(INFO) << "iotto " << __func__;
 }
 
 XWalkMainDelegate::~XWalkMainDelegate() {}
@@ -95,9 +94,7 @@ void XWalkMainDelegate::SandboxInitialized(const std::string& process_type) {
 
 int XWalkMainDelegate::RunProcess(const std::string& process_type,
     const content::MainFunctionParams& main_function_params) {
-  LOG(INFO) << "iotto " << __func__ << " process_type=" << process_type;
   if (process_type.empty()) {
-    LOG(INFO) << "iotto " << __func__ << " BrowserMainRunner";
     browser_runner_.reset(content::BrowserMainRunner::Create());
     int exit_code = browser_runner_->Initialize(main_function_params);
     DCHECK_LT(exit_code, 0);
@@ -108,7 +105,6 @@ int XWalkMainDelegate::RunProcess(const std::string& process_type,
   }
 
   if (process_type == switches::kXWalkExtensionProcess) {
-    LOG(INFO) << "iotto " << __func__ << " XWalkExtensionProcessMain";
     return XWalkExtensionProcessMain(main_function_params);
   }
   // Tell content to use default process main entries by returning -1.
@@ -166,7 +162,6 @@ void XWalkMainDelegate::InitializeResourceBundle() {
 }
 
 content::ContentBrowserClient* XWalkMainDelegate::CreateContentBrowserClient() {
-  LOG(INFO) << "iotto " << __func__;
   // This will only be called from the Browser Process, so it is a convenient
   // location to initialize the XWalkRunner, which is our main entry point in
   // Browser Process.
@@ -176,7 +171,6 @@ content::ContentBrowserClient* XWalkMainDelegate::CreateContentBrowserClient() {
 
 content::ContentRendererClient*
     XWalkMainDelegate::CreateContentRendererClient() {
-  LOG(INFO) << "iotto " << __func__;
   renderer_client_.reset(new XWalkContentRendererClient());
   return renderer_client_.get();
 }
