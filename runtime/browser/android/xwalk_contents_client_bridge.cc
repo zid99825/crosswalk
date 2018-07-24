@@ -35,6 +35,7 @@
 //#include "net/ssl/openssl_client_key_store.h"
 #include "net/ssl/ssl_platform_key_android.h"
 #include "net/ssl/ssl_private_key.h"
+#include "meta_logging.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertJavaStringToUTF16;
@@ -61,7 +62,7 @@ class UserData : public base::SupportsUserData::Data {
   static XWalkContentsClientBridge* GetContents(
       content::WebContents* web_contents) {
     if (!web_contents) {
-      LOG(ERROR) << "iotto " << __func__ << " null_webcontents";
+      TENTA_LOG_NET(ERROR) << __func__ << " null_webcontents";
       return NULL;
     }
     UserData* data = static_cast<UserData*>(

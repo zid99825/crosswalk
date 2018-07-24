@@ -152,10 +152,8 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         if ( WindowAndroid.activityFromContext(context) != null ) {
             final boolean listenToActivityState = true;
             mWindow = new ActivityWindowAndroid(context, listenToActivityState);
-            org.chromium.base.Log.d("iotto", "ActivityWindowAndroid created");
         } else {
             mWindow = new WindowAndroid(context);
-            org.chromium.base.Log.d("iotto", "WindowAndroid created");
         }
 
         SharedPreferences sharedPreferences = new InMemorySharedPreferences();

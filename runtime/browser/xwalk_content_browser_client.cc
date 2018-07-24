@@ -128,8 +128,6 @@ XWalkContentBrowserClient::XWalkContentBrowserClient(XWalkRunner* xwalk_runner)
       v8_snapshot_fd_(-1),
 #endif  // OS_POSIX && !OS_MACOSX
       main_parts_(nullptr) {
-  LOG(INFO) << "iotto " << __func__;
-
   DCHECK(!g_browser_client);
   g_browser_client = this;
 }
@@ -140,7 +138,7 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
 }
 
 /**
- * iotto
+ *
  */
 void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
                                    content::WebPreferences* prefs) {

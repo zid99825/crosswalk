@@ -288,7 +288,7 @@ CookieManager::CookieManager()
   cookie_store_task_runner_ = BrowserThread::GetTaskRunnerForThread(BrowserThread::IO);
 
   cookie_store_backend_thread_.Start();
-  LOG(INFO) << "iotto " << __func__ << " thread_id=" << cookie_store_client_thread_.GetThreadId();
+  TENTA_LOG_COOKIE(INFO) << __func__ << " thread_id=" << cookie_store_client_thread_.GetThreadId();
 }
 
 CookieManager::~CookieManager() {
@@ -815,6 +815,7 @@ void CookieManager::PageLoadStartedAsyncHelper(const std::string& loadingUrl, ba
 
 void CookieManager::Reset() {
   // TODO(iotto) : Move this too to cookie thread
+  LOG(WARNING) << __func__ << " move_to_cookie_thread";
 #ifdef TENTA_CHROMIUM_BUILD
   GetCookieStore();
   _tenta_store->ZoneSwitching(true);

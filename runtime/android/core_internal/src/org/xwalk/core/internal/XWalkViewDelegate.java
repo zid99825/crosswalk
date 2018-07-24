@@ -151,7 +151,6 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
 
 }
     public static void init(Context libContext, Context appContext) {
-        org.chromium.base.Log.d("iotto", "starting");
         if (!loadXWalkLibrary(libContext, null)) {
             throw new RuntimeException("Failed to load native library");
         }

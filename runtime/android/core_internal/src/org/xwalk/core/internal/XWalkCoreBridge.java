@@ -52,7 +52,7 @@ class XWalkCoreBridge {
         try {
             return mWrapperLoader.loadClass(WRAPPER_PACKAGE + "." + name);
         } catch (ClassNotFoundException e) {
-            Log.e("iotto", "getWrapperClass failed: " + name, e);
+//            Log.e("iotto", "getWrapperClass failed: " + name, e);
         }
         return null;
     }

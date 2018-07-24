@@ -18,7 +18,6 @@
 #include "meta_logging.h"
 
 namespace xwalk {
-namespace {
 
 bool OnJNIOnLoadInit() {
   if (!content::android::OnJNIOnLoadInit()) {
