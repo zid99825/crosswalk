@@ -9,6 +9,7 @@
 //#include "content/public/browser/android/content_view_core.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/context_menu_params.h"
+#include "ui/gfx/color_space.h"
 
 namespace xwalk {
 
@@ -28,16 +29,16 @@ content::WebDragDestDelegate* AwWebContentsViewDelegate::GetDragDestDelegate() {
   NOTREACHED();
   return NULL;
 }
+*/
 
-void AwWebContentsViewDelegate::OverrideDisplayColorSpace(
-    gfx::ColorSpace* color_space) {
+void XWalkWebContentsViewDelegate::OverrideDisplayColorSpace(gfx::ColorSpace* color_space) {
   // TODO(ccameron): WebViews that are embedded in WCG windows will want to
   // override the display color space to gfx::ColorSpace::CreateExtendedSRGB().
   // This situation is not yet detected.
   // https://crbug.com/735658
   *color_space = gfx::ColorSpace::CreateSRGB();
 }
- */
+
 void XWalkWebContentsViewDelegate::ShowContextMenu(
     content::RenderFrameHost* render_frame_host,
     const content::ContextMenuParams& params) {

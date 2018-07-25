@@ -23,7 +23,8 @@ namespace xwalk {
 XWalkRenderViewHostExt::XWalkRenderViewHostExt(content::WebContents* contents)
     : content::WebContentsObserver(contents),
       has_new_hit_test_data_(false),
-      is_render_view_created_(false) {
+      is_render_view_created_(false),
+      background_color_(SK_ColorWHITE){
 }
 
 XWalkRenderViewHostExt::~XWalkRenderViewHostExt() {}
@@ -106,9 +107,7 @@ void XWalkRenderViewHostExt::SetInitialPageScale(double page_scale_factor) {
 
 void XWalkRenderViewHostExt::RenderViewCreated(content::RenderViewHost* render_view_host) {
   web_contents()->GetMainFrame()->Send(
-      new XWalkViewMsg_SetBackgroundColor(web_contents()->GetMainFrame()->GetRoutingID(), SkColorSetRGB(0xff, 0,0)));
-//  web_contents()->GetMainFrame()->Send(
-//      new XWalkViewMsg_SetBackgroundColor(web_contents()->GetMainFrame()->GetRoutingID(), background_color_));
+      new XWalkViewMsg_SetBackgroundColor(web_contents()->GetMainFrame()->GetRoutingID(), background_color_));
 
   if (!pending_base_url_.empty()) {
     web_contents()->GetRenderViewHost()->Send(new XWalkViewMsg_SetOriginAccessWhitelist(
@@ -163,7 +162,6 @@ bool XWalkRenderViewHostExt::OnMessageReceived(
 
 void XWalkRenderViewHostExt::OnDocumentHasImagesResponse(
     content::RenderFrameHost* render_frame_host, int msg_id, bool has_images) {
-  LOG(INFO) << __func__ << " msg_id=" << msg_id;
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   std::map<int, DocumentHasImagesResult>::iterator pending_req =
       pending_document_has_images_requests_.find(msg_id);
