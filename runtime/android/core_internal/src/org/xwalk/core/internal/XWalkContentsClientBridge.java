@@ -33,6 +33,7 @@ import org.chromium.content.browser.ContentVideoViewEmbedder;
 import org.xwalk.core.internal.XWalkUIClientInternal.LoadStatusInternal;
 
 import com.tenta.xwalk.refactor.CustomViewCallback;
+import com.tenta.xwalk.refactor.RewriteUrlValue;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
 import com.tenta.xwalk.refactor.XWalkFindListener;
 
@@ -876,7 +877,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @Override
-    public boolean onRewriteUrlIfNeeded(RewriteUrlValueInternal toRewrite) {
+    public boolean onRewriteUrlIfNeeded(RewriteUrlValue toRewrite) {
         if (mXWalkResourceClient != null && mXWalkView != null) {
             return mXWalkResourceClient.onRewriteUrlIfNeeded(mXWalkView, toRewrite);
         }
@@ -884,7 +885,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @CalledByNative
-    private boolean rewriteUrlIfNeeded(RewriteUrlValueInternal rewriteValue) {
+    private boolean rewriteUrlIfNeeded(RewriteUrlValue rewriteValue) {
         return onRewriteUrlIfNeeded(rewriteValue);
     }
     

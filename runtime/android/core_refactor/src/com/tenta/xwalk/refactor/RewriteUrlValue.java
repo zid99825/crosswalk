@@ -1,7 +1,6 @@
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
-@XWalkAPI(createInternally = true)
-public class RewriteUrlValueInternal {
+public class RewriteUrlValue {
     private String url;
     private int transitionType;
     
@@ -10,22 +9,18 @@ public class RewriteUrlValueInternal {
         this.transitionType = trType;
     }
     
-    @XWalkAPI
     public String getUrl() {
         return url;
     }
     
-    @XWalkAPI
     public void setUrl(String url) {
         this.url = url;
     }
     
-    @XWalkAPI
     public int getTransitionType() {
         return transitionType;
     }
     
-    @XWalkAPI
     public void setTransitionType(int transitionType) {
         this.transitionType = transitionType;
     }

@@ -24,6 +24,8 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Map;
 
+import com.tenta.xwalk.refactor.RewriteUrlValue;
+
 
 /**
  * This class notifies the embedder resource events/callbacks.
@@ -266,7 +268,7 @@ public class XWalkResourceClientInternal {
      * @return true if url was rewritten 
      */
     @XWalkAPI
-    public boolean onRewriteUrlIfNeeded(XWalkViewInternal view, RewriteUrlValueInternal rewriteValue) {
+    public boolean onRewriteUrlIfNeeded(XWalkViewInternal view, RewriteUrlValue rewriteValue) {
         return false;
     }
 

@@ -33,7 +33,7 @@ CLASSES_TO_PROCESS = [
     'ClientCertRequestInternal',
 #     'CustomViewCallbackHandlerInternal',
 #     'CustomViewCallbackInternal',
-    "RewriteUrlValueInternal",
+#     "RewriteUrlValueInternal",
 #     'XWalkCookieManagerInternal',
 #     'XWalkDownloadListenerInternal',
     'XWalkExtensionInternal',

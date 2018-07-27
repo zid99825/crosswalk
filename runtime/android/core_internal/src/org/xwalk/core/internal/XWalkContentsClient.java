@@ -14,6 +14,7 @@ import org.chromium.content_public.browser.WebContentsObserver;
 import org.chromium.net.NetError;
 
 import com.tenta.xwalk.refactor.CustomViewCallback;
+import com.tenta.xwalk.refactor.RewriteUrlValue;
 
 import android.content.pm.ActivityInfo;
 import android.graphics.Picture;
@@ -229,7 +230,7 @@ abstract class XWalkContentsClient {
 
     public abstract boolean shouldOverrideUrlLoading(String url);
 
-    public abstract boolean onRewriteUrlIfNeeded(RewriteUrlValueInternal toRewrite);
+    public abstract boolean onRewriteUrlIfNeeded(RewriteUrlValue toRewrite);
 
     public abstract void onUnhandledKeyEvent(KeyEvent event);
 
