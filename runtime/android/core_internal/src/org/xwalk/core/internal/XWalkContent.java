@@ -31,6 +31,7 @@ import android.widget.FrameLayout;
 import com.tenta.fs.MetaErrors;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
 import com.tenta.xwalk.refactor.XWalkFindListener;
+import com.tenta.xwalk.refactor.XWalkGetBitmapCallback;
 import com.tenta.xwalk.refactor.AndroidProtocolHandler;
 
 import org.chromium.base.ThreadUtils;
@@ -88,7 +89,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private boolean mIsLoaded = false;
     private boolean mAnimated = false;
     private XWalkAutofillClientAndroid mXWalkAutofillClient;
-    private XWalkGetBitmapCallbackInternal mXWalkGetBitmapCallbackInternal;
+    private XWalkGetBitmapCallback mXWalkGetBitmapCallback;
     private ContentBitmapCallback mGetBitmapCallback;
     private final HitTestData mPossiblyStaleHitTestData = new HitTestData();
     // Controls overscroll pull-to-refresh behavior.
@@ -174,27 +175,27 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mGetBitmapCallback = new ContentBitmapCallback() {
             @Override
             public void onFinishGetBitmap(Bitmap bitmap, int response) {
-                if (mXWalkGetBitmapCallbackInternal == null)
+                if (mXWalkGetBitmapCallback == null)
                     return;
-                mXWalkGetBitmapCallbackInternal.onFinishGetBitmap(bitmap, response);
+                mXWalkGetBitmapCallback.onFinishGetBitmap(bitmap, response);
             }
         };
     }
 
-    public void captureBitmapAsync(XWalkGetBitmapCallbackInternal callback) {
+    public void captureBitmapAsync(XWalkGetBitmapCallback callback) {
         if (mNativeContent == 0)
             return;
-        mXWalkGetBitmapCallbackInternal = callback;
+        mXWalkGetBitmapCallback = callback;
         mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
         // mWebContents.getContentBitmapAsync(Bitmap.Config.ARGB_8888, 1.0f, new Rect(),
         // mGetBitmapCallback);
     }
 
     public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
-            XWalkGetBitmapCallbackInternal callback) {
+            XWalkGetBitmapCallback callback) {
         if (mNativeContent == 0)
             return;
-        mXWalkGetBitmapCallbackInternal = callback;
+        mXWalkGetBitmapCallback = callback;
         mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
         // mWebContents.getContentBitmapAsync(config, scale, srcRect,
         // mGetBitmapCallback);

@@ -24,7 +24,7 @@ internal_java_files = [
   "src/org/xwalk/core/internal/XWalkExtensionInternal.java",
   "src/org/xwalk/core/internal/XWalkExternalExtensionManagerInternal.java",
 #   "src/org/xwalk/core/internal/XWalkFindListenerInternal.java",
-  "src/org/xwalk/core/internal/XWalkGetBitmapCallbackInternal.java",
+#   "src/org/xwalk/core/internal/XWalkGetBitmapCallbackInternal.java",
   "src/org/xwalk/core/internal/XWalkHitTestResultInternal.java",
   "src/org/xwalk/core/internal/XWalkHttpAuthHandlerInternal.java",
   "src/org/xwalk/core/internal/XWalkHttpAuthInternal.java",

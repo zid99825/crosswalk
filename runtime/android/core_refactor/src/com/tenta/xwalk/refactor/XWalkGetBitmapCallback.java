@@ -2,21 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
 import android.graphics.Bitmap;
 
 /**
  * A callback for content readback into a bitmap.
  */
-@XWalkAPI(createExternally = true)
-public abstract class XWalkGetBitmapCallbackInternal {
+public abstract class XWalkGetBitmapCallback {
     /**
      * Constructor for capture bitmap callback.
      * @since 6.0
      */
-    @XWalkAPI
-    public XWalkGetBitmapCallbackInternal() {}
+    public XWalkGetBitmapCallback() {}
 
     /**
      * Called when the content readback finishes.
@@ -25,6 +23,5 @@ public abstract class XWalkGetBitmapCallbackInternal {
      * @param response 0 for success, others failure.
      * @since 6.0
      */
-    @XWalkAPI
     public abstract void onFinishGetBitmap(Bitmap bitmap, int response);
 }

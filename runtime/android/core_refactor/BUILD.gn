@@ -15,6 +15,7 @@ android_library("xwalk_refactor_java") {
     "src/com/tenta/xwalk/refactor/XWalkDownloadListenerImpl.java",
     "src/com/tenta/xwalk/refactor/XWalkDownloadListener.java",
     "src/com/tenta/xwalk/refactor/XWalkFindListener.java",
+    "src/com/tenta/xwalk/refactor/XWalkGetBitmapCallback.java",
   ]
   
   deps = [

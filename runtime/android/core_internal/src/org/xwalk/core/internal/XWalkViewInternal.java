@@ -51,6 +51,7 @@ import android.widget.FrameLayout;
 import com.tenta.fs.MetaErrors;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
 import com.tenta.xwalk.refactor.XWalkFindListener;
+import com.tenta.xwalk.refactor.XWalkGetBitmapCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -1274,7 +1275,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @since 6.0
      */
     @XWalkAPI
-    public void captureBitmapAsync(XWalkGetBitmapCallbackInternal callback) {
+    public void captureBitmapAsync(XWalkGetBitmapCallback callback) {
         if (mContent == null)
             return;
         checkThreadSafety();
@@ -1290,7 +1291,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      */
     @XWalkAPI
     public void captureBitmapWithParams(float scale, Rect srcRect,
-            XWalkGetBitmapCallbackInternal callback) {
+            XWalkGetBitmapCallback callback) {
         if (mContent == null)
             return;
         checkThreadSafety();
@@ -1299,7 +1300,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
 
     @XWalkAPI
     public void captureBitmapWithParamsRGB565(float scale, Rect srcRect,
-            XWalkGetBitmapCallbackInternal callback) {
+            XWalkGetBitmapCallback callback) {
         if (mContent == null)
             return;
         checkThreadSafety();
