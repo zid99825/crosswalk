@@ -36,6 +36,7 @@ import com.tenta.xwalk.refactor.CustomViewCallback;
 import com.tenta.xwalk.refactor.RewriteUrlValue;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
 import com.tenta.xwalk.refactor.XWalkFindListener;
+import com.tenta.xwalk.refactor.XWalkHttpAuthHandler;
 
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -352,7 +353,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @CalledByNative
     public void onReceivedHttpAuthRequest(
-            XWalkHttpAuthHandlerInternal handler, String host, String realm) {
+            XWalkHttpAuthHandler handler, String host, String realm) {
         if (mXWalkResourceClient != null) {
             mXWalkResourceClient.onReceivedHttpAuthRequest(mXWalkView, handler, host, realm);
         }

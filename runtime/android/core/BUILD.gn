@@ -285,7 +285,7 @@ action("xwalk_core_library_documentation") {
     "org/xwalk/core/XWalkExternalExtensionManager.java",
 #     "org/xwalk/core/XWalkFindListener.java",
 #     "org/xwalk/core/XWalkGetBitmapCallback.java",
-    "org/xwalk/core/XWalkHttpAuthHandler.java",
+#     "org/xwalk/core/XWalkHttpAuthHandler.java",
     "org/xwalk/core/XWalkJavascriptResult.java",
     "org/xwalk/core/XWalkNativeExtensionLoader.java",
     "org/xwalk/core/XWalkNavigationHistory.java",

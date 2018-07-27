@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
@@ -12,13 +12,11 @@ import org.chromium.base.annotations.JNINamespace;
  * @hide
  */
 @JNINamespace("xwalk")
-@XWalkAPI(impl = XWalkHttpAuthInternal.class, createInternally = true)
-public class XWalkHttpAuthHandlerInternal implements XWalkHttpAuthInternal {
+public class XWalkHttpAuthHandler implements XWalkHttpAuth {
 
     private long mNativeXWalkHttpAuthHandler;
     private final boolean mFirstAttempt;
 
-    @XWalkAPI
     public void proceed(String username, String password) {
         if (mNativeXWalkHttpAuthHandler != 0) {
             nativeProceed(mNativeXWalkHttpAuthHandler, username, password);
@@ -26,7 +24,6 @@ public class XWalkHttpAuthHandlerInternal implements XWalkHttpAuthInternal {
         }
     }
 
-    @XWalkAPI
     public void cancel() {
         if (mNativeXWalkHttpAuthHandler != 0) {
             nativeCancel(mNativeXWalkHttpAuthHandler);
@@ -34,24 +31,23 @@ public class XWalkHttpAuthHandlerInternal implements XWalkHttpAuthInternal {
         }
     }
 
-    @XWalkAPI
     public boolean isFirstAttempt() {
          return mFirstAttempt;
     }
 
     @CalledByNative
-    public static XWalkHttpAuthHandlerInternal create(long nativeXWalkAuthHandler, boolean firstAttempt) {
-        return new XWalkHttpAuthHandlerInternal(nativeXWalkAuthHandler, firstAttempt);
+    public static XWalkHttpAuthHandler create(long nativeXWalkAuthHandler, boolean firstAttempt) {
+        return new XWalkHttpAuthHandler(nativeXWalkAuthHandler, firstAttempt);
     }
 
-    public XWalkHttpAuthHandlerInternal(long nativeXWalkHttpAuthHandler, boolean firstAttempt) {
+    public XWalkHttpAuthHandler(long nativeXWalkHttpAuthHandler, boolean firstAttempt) {
         mNativeXWalkHttpAuthHandler = nativeXWalkHttpAuthHandler;
         mFirstAttempt = firstAttempt;
     }
 
     // Never use this constructor.
     // It is only used in XWalkHttpAuthHandlerBridge.
-    XWalkHttpAuthHandlerInternal() {
+    XWalkHttpAuthHandler() {
         mNativeXWalkHttpAuthHandler = 0;
         mFirstAttempt = false;
     }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
 /**
  * This interface is used when XWalkResourceClientInternal offers a http auth
@@ -12,14 +12,10 @@ package org.xwalk.core.internal;
  * it must either callback with proceed() or cancel() to allow processing to
  * continue.
  */
-@XWalkAPI(instance = XWalkHttpAuthHandlerInternal.class)
-public interface XWalkHttpAuthInternal {
-    @XWalkAPI
+public interface XWalkHttpAuth {
     public void proceed(String username, String password);
 
-    @XWalkAPI
     public void cancel();
 
-    @XWalkAPI
     public boolean isFirstAttempt();
 }

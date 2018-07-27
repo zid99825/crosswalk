@@ -15,6 +15,7 @@ import org.chromium.net.NetError;
 
 import com.tenta.xwalk.refactor.CustomViewCallback;
 import com.tenta.xwalk.refactor.RewriteUrlValue;
+import com.tenta.xwalk.refactor.XWalkHttpAuthHandler;
 
 import android.content.pm.ActivityInfo;
 import android.graphics.Picture;
@@ -236,7 +237,7 @@ abstract class XWalkContentsClient {
 
     public abstract boolean onConsoleMessage(ConsoleMessage consoleMessage);
 
-    public abstract void onReceivedHttpAuthRequest(XWalkHttpAuthHandlerInternal handler,
+    public abstract void onReceivedHttpAuthRequest(XWalkHttpAuthHandler handler,
             String host, String realm);
 
     public abstract void onReceivedSslError(ValueCallback<Boolean> callback, SslError error);

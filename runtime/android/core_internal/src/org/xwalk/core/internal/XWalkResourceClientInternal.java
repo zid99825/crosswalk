@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import com.tenta.xwalk.refactor.RewriteUrlValue;
+import com.tenta.xwalk.refactor.XWalkHttpAuthHandler;
 
 
 /**
@@ -383,10 +384,10 @@ public class XWalkResourceClientInternal {
      */
     @XWalkAPI
     public void onReceivedHttpAuthRequest(XWalkViewInternal view,
-            XWalkHttpAuthHandlerInternal handler, String host, String realm) {
+            XWalkHttpAuthHandler handler, String host, String realm) {
         if (view == null) return;
 
-        final XWalkHttpAuthHandlerInternal haHandler = handler;
+        final XWalkHttpAuthHandler haHandler = handler;
         Context context = view.getContext();
         LinearLayout layout = new LinearLayout(context);
         final EditText userNameEditText = new EditText(context);
