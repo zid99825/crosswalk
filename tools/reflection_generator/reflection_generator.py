@@ -38,7 +38,7 @@ CLASSES_TO_PROCESS = [
 #     'XWalkDownloadListenerInternal',
     'XWalkExtensionInternal',
     'XWalkExternalExtensionManagerInternal',
-    'XWalkFindListenerInternal',
+#     'XWalkFindListenerInternal',
     'XWalkGetBitmapCallbackInternal',
     'XWalkHttpAuthHandlerInternal',
     'XWalkHttpAuthInternal',

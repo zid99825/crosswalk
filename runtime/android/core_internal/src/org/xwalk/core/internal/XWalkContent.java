@@ -30,6 +30,7 @@ import android.widget.FrameLayout;
 
 import com.tenta.fs.MetaErrors;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
+import com.tenta.xwalk.refactor.XWalkFindListener;
 import com.tenta.xwalk.refactor.AndroidProtocolHandler;
 
 import org.chromium.base.ThreadUtils;
@@ -1457,7 +1458,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         return mWindow.hasPermission(permission);
     }
 
-    public void setFindListener(XWalkFindListenerInternal listener) {
+    public void setFindListener(XWalkFindListener listener) {
         if (mNativeContent == 0)
             return;
         mContentsClientBridge.setFindListener(listener);

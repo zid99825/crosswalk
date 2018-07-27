@@ -33,6 +33,7 @@ import org.chromium.content.browser.ContentVideoViewEmbedder;
 import org.xwalk.core.internal.XWalkUIClientInternal.LoadStatusInternal;
 
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
+import com.tenta.xwalk.refactor.XWalkFindListener;
 
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -57,7 +58,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     private XWalkWebChromeClient mXWalkWebChromeClient;
     private Bitmap mFavicon;
     private XWalkDownloadListener mDownloadListener;
-    private XWalkFindListenerInternal mFindListener;
+    private XWalkFindListener mFindListener;
     private InterceptNavigationDelegate mInterceptNavigationDelegate;
     private PageLoadListener mPageLoadListener;
     private XWalkNavigationHandler mNavigationHandler;
@@ -933,7 +934,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         mDownloadListener = listener;
     }
 
-    void setFindListener(XWalkFindListenerInternal listener) {
+    void setFindListener(XWalkFindListener listener) {
         mFindListener = listener;
     }
 

@@ -50,6 +50,7 @@ import android.widget.FrameLayout;
 
 import com.tenta.fs.MetaErrors;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
+import com.tenta.xwalk.refactor.XWalkFindListener;
 
 import java.io.File;
 import java.io.IOException;
@@ -2036,7 +2037,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @since 7.0
      */
     @XWalkAPI(reservable = true)
-    public void setFindListener(XWalkFindListenerInternal listener) {
+    public void setFindListener(XWalkFindListener listener) {
         if (mContent == null)
             return;
         checkThreadSafety();

@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
 /**
   * Interface to listen for find results.
 */
-@XWalkAPI(createExternally = true)
-public abstract class XWalkFindListenerInternal {
+public abstract class XWalkFindListener {
     /**
      * Notifies the listener about progress made by a find operation.
      *
@@ -20,7 +19,6 @@ public abstract class XWalkFindListenerInternal {
      *                       isDoneCounting is true.
      * @since 7.0
      */
-    @XWalkAPI
     public abstract void onFindResultReceived(int activeMatchOrdinal, int numberOfMatches,
             boolean isDoneCounting);
 }
