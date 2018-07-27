@@ -53,7 +53,7 @@ CLASSES_TO_PROCESS = [
     'XWalkUIClientInternal',
 #     'XWalkHitTestResultInternal',
     'XWalkViewInternal',
-    'XWalkViewDatabaseInternal',
+#     'XWalkViewDatabaseInternal',
     'XWalkWebResourceRequestHandlerInternal',
     'XWalkWebResourceRequestInternal',
     'XWalkWebResourceResponseInternal',
