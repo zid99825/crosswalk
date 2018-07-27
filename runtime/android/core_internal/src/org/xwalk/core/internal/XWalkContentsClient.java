@@ -13,6 +13,8 @@ import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.WebContentsObserver;
 import org.chromium.net.NetError;
 
+import com.tenta.xwalk.refactor.CustomViewCallback;
+
 import android.content.pm.ActivityInfo;
 import android.graphics.Picture;
 import android.net.http.SslError;
@@ -303,11 +305,11 @@ abstract class XWalkContentsClient {
     // TODO (michaelbai): Remove this method once the same method remove from
     // XWalkContentsClientAdapter.
     public abstract void onShowCustomView(View view,
-            int requestedOrientation, CustomViewCallbackInternal callback);
+            int requestedOrientation, CustomViewCallback callback);
 
     // TODO (michaelbai): This method should be abstract, having empty body here
     // makes the merge to the Android easy.
-    public void onShowCustomView(View view, CustomViewCallbackInternal callback) {
+    public void onShowCustomView(View view, CustomViewCallback callback) {
         onShowCustomView(view, ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, callback);
     }
 

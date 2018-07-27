@@ -32,6 +32,7 @@ import org.chromium.components.navigation_interception.NavigationParams;
 import org.chromium.content.browser.ContentVideoViewEmbedder;
 import org.xwalk.core.internal.XWalkUIClientInternal.LoadStatusInternal;
 
+import com.tenta.xwalk.refactor.CustomViewCallback;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
 import com.tenta.xwalk.refactor.XWalkFindListener;
 
@@ -567,7 +568,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @Override
-    public void onShowCustomView(View view, CustomViewCallbackInternal callback) {
+    public void onShowCustomView(View view, CustomViewCallback callback) {
         if (mXWalkUIClient != null) {
             mXWalkUIClient.onShowCustomView(view, callback);
         }
@@ -575,7 +576,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public void onShowCustomView(View view, int requestedOrientation,
-            CustomViewCallbackInternal callback) {
+            CustomViewCallback callback) {
         if (mXWalkUIClient != null) {
             mXWalkUIClient.onShowCustomView(view, requestedOrientation, callback);
         }

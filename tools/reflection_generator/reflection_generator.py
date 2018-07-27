@@ -31,8 +31,8 @@ from util import build_utils
 CLASSES_TO_PROCESS = [
     'ClientCertRequestHandlerInternal',
     'ClientCertRequestInternal',
-    'CustomViewCallbackHandlerInternal',
-    'CustomViewCallbackInternal',
+#     'CustomViewCallbackHandlerInternal',
+#     'CustomViewCallbackInternal',
     "RewriteUrlValueInternal",
 #     'XWalkCookieManagerInternal',
 #     'XWalkDownloadListenerInternal',

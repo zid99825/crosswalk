@@ -14,6 +14,8 @@ import org.chromium.content.browser.ContentVideoView;
 import org.chromium.content.browser.ContentVideoViewEmbedder;
 import org.chromium.content.common.ContentSwitches;
 
+import com.tenta.xwalk.refactor.CustomViewCallbackHandler;
+
 class XWalkContentVideoViewClient implements ContentVideoViewEmbedder {
     private XWalkContentsClient mContentsClient;
     private XWalkViewInternal mView;
@@ -26,7 +28,7 @@ class XWalkContentVideoViewClient implements ContentVideoViewEmbedder {
     @Override
     public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
         mView.setOverlayVideoMode(true);
-        mContentsClient.onShowCustomView(view, new CustomViewCallbackHandlerInternal());
+        mContentsClient.onShowCustomView(view, new CustomViewCallbackHandler());
         //TODO(iotto) add progress bar if video not loaded
     }
 

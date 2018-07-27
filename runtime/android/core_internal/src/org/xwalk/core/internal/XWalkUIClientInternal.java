@@ -26,6 +26,8 @@ import android.widget.FrameLayout;
 
 import org.chromium.base.ApiCompatibilityUtils;
 
+import com.tenta.xwalk.refactor.CustomViewCallback;
+
 /**
  * This class notifies the embedder UI events/callbacks.
  */
@@ -43,7 +45,7 @@ public class XWalkUIClientInternal {
     private View mCustomXWalkView;
     private final int INVALID_ORIENTATION = -2;
     private int mPreOrientation = INVALID_ORIENTATION;
-    private CustomViewCallbackInternal mCustomViewCallback;
+    private CustomViewCallback mCustomViewCallback;
     private XWalkContentsClient mContentsClient;
 
     /**
@@ -581,7 +583,7 @@ public class XWalkUIClientInternal {
         mContentsClient = client;
     }
 
-    private Activity addContentView(View view, CustomViewCallbackInternal callback) {
+    private Activity addContentView(View view, CustomViewCallback callback) {
         Activity activity = null;
         try {
             Context context = mXWalkView.getContext();
@@ -622,7 +624,7 @@ public class XWalkUIClientInternal {
      */
     @XWalkAPI
     public void onShowCustomView(View view,
-            CustomViewCallbackInternal callback) {
+            CustomViewCallback callback) {
         addContentView(view, callback);
     }
 
@@ -638,7 +640,7 @@ public class XWalkUIClientInternal {
      */
     @XWalkAPI
     public void onShowCustomView(View view,
-            int requestedOrientation, CustomViewCallbackInternal callback) {
+            int requestedOrientation, CustomViewCallback callback) {
         Activity activity = addContentView(view, callback);
         if (activity == null)
             return;

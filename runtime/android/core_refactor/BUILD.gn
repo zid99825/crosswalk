@@ -11,6 +11,8 @@ import("//xwalk/build/tenta.gni")
 android_library("xwalk_refactor_java") {
   java_files = [
     "src/com/tenta/xwalk/refactor/AndroidProtocolHandler.java",
+    "src/com/tenta/xwalk/refactor/CustomViewCallback.java",
+    "src/com/tenta/xwalk/refactor/CustomViewCallbackHandler.java",
     "src/com/tenta/xwalk/refactor/XWalkCookieManager.java",
     "src/com/tenta/xwalk/refactor/XWalkDownloadListenerImpl.java",
     "src/com/tenta/xwalk/refactor/XWalkDownloadListener.java",
