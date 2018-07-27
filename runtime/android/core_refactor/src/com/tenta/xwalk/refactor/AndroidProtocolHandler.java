@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -26,8 +26,9 @@ import org.chromium.base.annotations.JNINamespace;
  * Implements the Java side of Android URL protocol jobs.
  * See android_protocol_handler.cc.
  */
+// TODO(iotto) : may remove public when migration completes
 @JNINamespace("xwalk")
-class AndroidProtocolHandler {
+public class AndroidProtocolHandler {
     private static final String TAG = "AndroidProtocolHandler";
 
     // Supported URL schemes. This needs to be kept in sync with
@@ -104,7 +105,7 @@ class AndroidProtocolHandler {
         }
     }
 
-    static String getUrlContent(Context context, String url) throws IOException {
+    public static String getUrlContent(Context context, String url) throws IOException {
         InputStream stream = open(url);
         if (stream == null) {
             throw new RuntimeException("Failed to open the url: " + url);

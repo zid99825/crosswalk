@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -19,16 +19,15 @@ import org.chromium.base.annotations.JNINamespace;
  * @hide
  */
 @JNINamespace("xwalk")
-@XWalkAPI(createExternally = true)
-public class XWalkCookieManagerInternal {
+public class XWalkCookieManager {
   private static final String TAG = "XWalkCookieManager";
 
-  @XWalkAPI
+  
   public byte[] saveCookies() {
     return nativeSaveCookies();
   }
 
-  @XWalkAPI
+  
   public boolean restoreCookies(byte[] cookies) {
     return nativeRestoreCookies(cookies);
   }
@@ -39,7 +38,7 @@ public class XWalkCookieManagerInternal {
    * @param accept TRUE if accept cookie
    * @since 5.0
    */
-  @XWalkAPI
+  
   public void setAcceptCookie(boolean accept) {
     nativeSetAcceptCookie(accept);
   }
@@ -50,7 +49,7 @@ public class XWalkCookieManagerInternal {
    * @return TRUE if accept cookie
    * @since 5.0
    */
-  @XWalkAPI
+  
   public boolean acceptCookie() {
     return nativeAcceptCookie();
   }
@@ -64,7 +63,7 @@ public class XWalkCookieManagerInternal {
    * @param value The value for set-cookie: in http response header
    * @since 5.0
    */
-  @XWalkAPI
+  
   public void setCookie(final String url, final String value) {
     try {
       nativeSetCookie(new URL(url).toString(), value);
@@ -80,7 +79,7 @@ public class XWalkCookieManagerInternal {
    * @return The cookies in the format of NAME=VALUE [; NAME=VALUE]
    * @since 5.0
    */
-  @XWalkAPI
+  
   public String getCookie(final String url) {
     try {
       String cookie = nativeGetCookie(new URL(url).toString());
@@ -97,7 +96,7 @@ public class XWalkCookieManagerInternal {
    * 
    * @since 5.0
    */
-  @XWalkAPI
+  
   public void removeSessionCookie() {
     nativeRemoveSessionCookie();
   }
@@ -107,7 +106,7 @@ public class XWalkCookieManagerInternal {
    * 
    * @since 5.0
    */
-  @XWalkAPI
+  
   public void removeAllCookie() {
     nativeRemoveAllCookie();
   }
@@ -118,7 +117,7 @@ public class XWalkCookieManagerInternal {
    * @return true if there are stored cookies
    * @since 5.0
    */
-  @XWalkAPI
+  
   public boolean hasCookies() {
     return nativeHasCookies();
   }
@@ -128,7 +127,7 @@ public class XWalkCookieManagerInternal {
    * 
    * @since 5.0
    */
-  @XWalkAPI
+  
   public void removeExpiredCookie() {
     nativeRemoveExpiredCookie();
   }
@@ -138,7 +137,7 @@ public class XWalkCookieManagerInternal {
    * 
    * @since 5.0
    */
-  @XWalkAPI
+  
   public void flushCookieStore() {
     nativeFlushCookieStore();
   }
@@ -149,7 +148,7 @@ public class XWalkCookieManagerInternal {
    * @return true if cookies are accepted for file scheme URLs
    * @since 5.0
    */
-  @XWalkAPI
+  
   public boolean allowFileSchemeCookies() {
     return nativeAllowFileSchemeCookies();
   }
@@ -166,37 +165,37 @@ public class XWalkCookieManagerInternal {
    * @param accept Whether accept cookies for file scheme URLs
    * @since 5.0
    */
-  @XWalkAPI
+  
   public void setAcceptFileSchemeCookies(boolean accept) {
     nativeSetAcceptFileSchemeCookies(accept);
   }
 
-  @XWalkAPI
+  
   public void setDbKey(String dbKey) {
       nativeSetDbKey(dbKey);
   }
   
-  @XWalkAPI
+  
   public int rekeyDb(final String oldKey, final String newKey) {
       return nativeRekeyDb(oldKey, newKey);
   }
   
-  @XWalkAPI
+  
   public void setZone(final String zone) {
       nativeSetZone(zone);
   }
   
-  @XWalkAPI
+  
   public int nukeDomain(final String domain) {
       return nativeNukeDomain(domain);
   }
   
-  @XWalkAPI
+  
   public void pageLoadStarted(final String url) {
       nativePageLoadStarted(url);
   }
   
-  @XWalkAPI
+  
   public void reset() {
 	  nativeReset();
   }

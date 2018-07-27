@@ -24,6 +24,7 @@ android_library("xwalk_core_java") {
     "//base:base_java",
     ":xwalk_core_java_resources",
     "//xwalk/runtime/android/core_internal:xwalk_core_reflection_layer_gen",
+    "//xwalk/runtime/android/core_refactor:xwalk_refactor_java",
     "//xwalk/third_party/lzma_sdk:lzma_sdk_java",
   ]
   if (tenta_chromium_build) {
@@ -113,6 +114,7 @@ generate_android_project("xwalk_core_library") {
     "//xwalk/resources:xwalk_pak",
     "//xwalk/resources:xwalk_resources_100_percent_pak",
     "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
+#     "//xwalk/runtime/android/core_refactor:xwalk_refactor_java",
   ]
   binary_files = [
     "$root_out_dir/xwalk.pak",
@@ -278,8 +280,8 @@ action("xwalk_core_library_documentation") {
   _stamp_file = "$target_gen_dir/$target_name.stamp"
   _wrapper_java_files = [
     "org/xwalk/core/ClientCertRequest.java",
-    "org/xwalk/core/XWalkCookieManager.java",
-    "org/xwalk/core/XWalkDownloadListener.java",
+#     "org/xwalk/core/XWalkCookieManager.java",
+#     "org/xwalk/core/XWalkDownloadListener.java",
     "org/xwalk/core/XWalkExternalExtensionManager.java",
     "org/xwalk/core/XWalkFindListener.java",
     "org/xwalk/core/XWalkGetBitmapCallback.java",

@@ -29,6 +29,8 @@ import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 
 import com.tenta.fs.MetaErrors;
+import com.tenta.xwalk.refactor.XWalkDownloadListener;
+import com.tenta.xwalk.refactor.AndroidProtocolHandler;
 
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.CalledByNative;
@@ -527,7 +529,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         mContentsClientBridge.setXWalkClient(client);
     }
 
-    public void setDownloadListener(XWalkDownloadListenerInternal listener) {
+    public void setDownloadListener(XWalkDownloadListener listener) {
         if (mNativeContent == 0)
             return;
         mContentsClientBridge.setDownloadListener(listener);

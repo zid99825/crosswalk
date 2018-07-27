@@ -32,6 +32,8 @@ import org.chromium.components.navigation_interception.NavigationParams;
 import org.chromium.content.browser.ContentVideoViewEmbedder;
 import org.xwalk.core.internal.XWalkUIClientInternal.LoadStatusInternal;
 
+import com.tenta.xwalk.refactor.XWalkDownloadListener;
+
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.util.HashMap;
@@ -54,7 +56,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     private XWalkClient mXWalkClient;
     private XWalkWebChromeClient mXWalkWebChromeClient;
     private Bitmap mFavicon;
-    private XWalkDownloadListenerInternal mDownloadListener;
+    private XWalkDownloadListener mDownloadListener;
     private XWalkFindListenerInternal mFindListener;
     private InterceptNavigationDelegate mInterceptNavigationDelegate;
     private PageLoadListener mPageLoadListener;
@@ -927,7 +929,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         nativeNotificationClosed(mNativeContentsClientBridge, id, byUser);
     }
 
-    void setDownloadListener(XWalkDownloadListenerInternal listener) {
+    void setDownloadListener(XWalkDownloadListener listener) {
         mDownloadListener = listener;
     }
 

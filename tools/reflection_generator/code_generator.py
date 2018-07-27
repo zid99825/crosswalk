@@ -31,6 +31,7 @@ class CodeGenerator(object):
   def GenerateImportRules(self):
     imports = ''
     for imported in self._java_data.imports:
+      print('import %s.' % imported)
       import_string = 'import ' + imported + ";\n"
       imports += import_string
     # Add the reflection helper import.

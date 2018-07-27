@@ -446,6 +446,7 @@ source_set("xwalk_runtime") {
       "//components/cdm/browser",
       "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
       "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",
+      "//xwalk/runtime/android/core_refactor:xwalk_refactor_native_jni",
     ]
   } else {
     deps += [

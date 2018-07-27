@@ -11,6 +11,8 @@ import android.net.Uri;
 
 import org.chromium.media.MediaPlayerBridge;
 
+import com.tenta.xwalk.refactor.AndroidProtocolHandler;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;

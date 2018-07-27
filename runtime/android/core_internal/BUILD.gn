@@ -19,8 +19,8 @@ internal_java_files = [
   "src/org/xwalk/core/internal/CustomViewCallbackHandlerInternal.java",
   "src/org/xwalk/core/internal/CustomViewCallbackInternal.java",
   "src/org/xwalk/core/internal/RewriteUrlValueInternal.java",
-  "src/org/xwalk/core/internal/XWalkCookieManagerInternal.java",
-  "src/org/xwalk/core/internal/XWalkDownloadListenerInternal.java",
+#   "src/org/xwalk/core/internal/XWalkCookieManagerInternal.java",
+#   "src/org/xwalk/core/internal/XWalkDownloadListenerInternal.java",
   "src/org/xwalk/core/internal/XWalkExtensionInternal.java",
   "src/org/xwalk/core/internal/XWalkExternalExtensionManagerInternal.java",
   "src/org/xwalk/core/internal/XWalkFindListenerInternal.java",
@@ -57,6 +57,7 @@ android_library("xwalk_core_internal_java") {
     ":xwalk_core_internal_java_resources",
     ":xwalk_core_reflection_layer_gen",
     "//xwalk/extensions/android:xwalk_core_extensions_java",
+    "//xwalk/runtime/android/core_refactor:xwalk_refactor_java",
   ]
   deps += core_internal_java_chromium_deps
   if (tenta_chromium_build) {
@@ -74,7 +75,7 @@ android_library("xwalk_core_internal_java") {
     "$reflection_gen_dir/bridge/bridge.srcjar",
   ]
   java_files = [
-    "src/org/xwalk/core/internal/AndroidProtocolHandler.java",
+#     "src/org/xwalk/core/internal/AndroidProtocolHandler.java",
     "src/org/xwalk/core/internal/ClientCertLookupTable.java",
     "src/org/xwalk/core/internal/ErrorCodeConversionHelper.java",
     "src/org/xwalk/core/internal/InMemorySharedPreferences.java",
@@ -99,7 +100,7 @@ android_library("xwalk_core_internal_java") {
     "src/org/xwalk/core/internal/XWalkContentsIoThreadClient.java",
     "src/org/xwalk/core/internal/XWalkCoreBridge.java",
     "src/org/xwalk/core/internal/XWalkDevToolsServer.java",
-    "src/org/xwalk/core/internal/XWalkDownloadListenerImpl.java",
+#     "src/org/xwalk/core/internal/XWalkDownloadListenerImpl.java",
     "src/org/xwalk/core/internal/XWalkFormDatabase.java",
     "src/org/xwalk/core/internal/XWalkGeolocationPermissions.java",
     "src/org/xwalk/core/internal/XWalkInternalResources.java",
@@ -201,13 +202,13 @@ action("xwalk_core_reflection_layer_gen") {
 generate_jni("xwalk_core_native_jni") {
   jni_package = "xwalk"
   sources = [
-    "src/org/xwalk/core/internal/AndroidProtocolHandler.java",
+#     "src/org/xwalk/core/internal/AndroidProtocolHandler.java",
     "src/org/xwalk/core/internal/XWalkAutofillClientAndroid.java",
     "src/org/xwalk/core/internal/XWalkContent.java",
     "src/org/xwalk/core/internal/XWalkContentLifecycleNotifier.java",
     "src/org/xwalk/core/internal/XWalkContentsClientBridge.java",
     "src/org/xwalk/core/internal/XWalkContentsIoThreadClient.java",
-    "src/org/xwalk/core/internal/XWalkCookieManagerInternal.java",
+#     "src/org/xwalk/core/internal/XWalkCookieManagerInternal.java",
     "src/org/xwalk/core/internal/XWalkDevToolsServer.java",
     "src/org/xwalk/core/internal/XWalkFormDatabase.java",
     "src/org/xwalk/core/internal/XWalkHttpAuthHandlerInternal.java",

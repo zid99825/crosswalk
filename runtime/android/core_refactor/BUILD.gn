@@ -1,0 +1,47 @@
+# Copyright (c) 2016 Intel Corporation. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/android/rules.gni")
+import("//xwalk/build/version.gni")
+import("//xwalk/build/xwalk.gni")
+import("//xwalk/runtime/android/core_internal/chromium_java_deps.gni")
+import("//xwalk/build/tenta.gni")
+
+android_library("xwalk_refactor_java") {
+  java_files = [
+    "src/com/tenta/xwalk/refactor/XWalkCookieManager.java",
+    "src/com/tenta/xwalk/refactor/AndroidProtocolHandler.java",
+    "src/com/tenta/xwalk/refactor/XWalkDownloadListenerImpl.java",
+    "src/com/tenta/xwalk/refactor/XWalkDownloadListener.java",
+  ]
+  
+  deps = [
+    ":xwalk_refactor_java_resources",
+    "//base:base_java",
+  ]
+}
+
+generate_jni("xwalk_refactor_native_jni") {
+  jni_package = "xwalk"
+  sources = [
+    "src/com/tenta/xwalk/refactor/XWalkCookieManager.java",
+    "src/com/tenta/xwalk/refactor/AndroidProtocolHandler.java",
+  ]
+}
+
+
+java_strings_grd("xwalk_refactor_strings_grd") {
+  grd_file = "strings/android_xwalk_strings.grd"
+  outputs = [
+    "values/android_xwalk_refactor_strings.xml",
+  ]
+}
+
+android_resources("xwalk_refactor_java_resources") {
+  resource_dirs = [ "res" ]
+  custom_package = "com.tenta.xwalk.refactor"
+  deps = [
+    ":xwalk_refactor_strings_grd",
+  ]
+}

@@ -49,6 +49,7 @@ import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 
 import com.tenta.fs.MetaErrors;
+import com.tenta.xwalk.refactor.XWalkDownloadListener;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +61,6 @@ import java.util.Map;
 import org.chromium.base.ApplicationStatusManager;
 import org.chromium.base.CommandLine;
 import org.chromium.content.browser.ContentViewCore;
-
 import org.xwalk.core.internal.extension.BuiltinXWalkExtensions;
 
 /**
@@ -437,7 +437,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         setUIClient(new XWalkUIClientInternal(this));
         setResourceClient(new XWalkResourceClientInternal(this));
 
-        setDownloadListener(new XWalkDownloadListenerImpl(mContext));
+        setDownloadListener(new com.tenta.xwalk.refactor.XWalkDownloadListenerImpl(mContext));
         setNavigationHandler(new XWalkNavigationHandlerImpl(mContext));
         setNotificationService(new XWalkNotificationServiceImpl(mContext, this));
 
@@ -1662,7 +1662,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @since 5.0
      */
     @XWalkAPI(reservable = true)
-    public void setDownloadListener(XWalkDownloadListenerInternal listener) {
+    public void setDownloadListener(XWalkDownloadListener listener) {
         if (mContent == null)
             return;
         checkThreadSafety();

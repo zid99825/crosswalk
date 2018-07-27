@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
 import android.app.DownloadManager;
 import android.app.DownloadManager.Request;
@@ -22,19 +22,14 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.xwalk.core.internal.AndroidProtocolHandler;
-import org.xwalk.core.internal.R;
-import org.xwalk.core.internal.XWalkCookieManagerInternal;
-import org.xwalk.core.internal.XWalkDownloadListenerInternal;
-
-class XWalkDownloadListenerImpl extends XWalkDownloadListenerInternal {
+public class XWalkDownloadListenerImpl extends XWalkDownloadListener {
     private Context mContext;
-    private XWalkCookieManagerInternal mCookieManager;
+    private XWalkCookieManager mCookieManager;
 
     public XWalkDownloadListenerImpl(Context context) {
         super(context);
         mContext = context;
-        mCookieManager = new XWalkCookieManagerInternal();
+        mCookieManager = new XWalkCookieManager();
     }
 
     @Override

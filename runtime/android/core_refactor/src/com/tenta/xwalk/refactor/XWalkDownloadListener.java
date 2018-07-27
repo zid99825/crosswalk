@@ -2,20 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
 import android.content.Context;
 
-@XWalkAPI(createExternally = true)
-public abstract class XWalkDownloadListenerInternal {
+
+public abstract class XWalkDownloadListener {
 
     /**
      * Constructor for download listener.
      * @param context  a Context object.
      * @since 5.0
      */
-    @XWalkAPI
-    public XWalkDownloadListenerInternal(Context context) {}
+    
+    public XWalkDownloadListener(Context context) {}
 
     /**
      * Notify the host application that a file should be downloaded.
@@ -26,7 +26,7 @@ public abstract class XWalkDownloadListenerInternal {
      * @param contentLength The file size reported by the server
      * @since 5.0
      */
-    @XWalkAPI
+    
     public abstract void onDownloadStart(String url, String userAgent,
             String contentDisposition, String mimetype, long contentLength);
 }
