@@ -52,6 +52,8 @@ import com.tenta.fs.MetaErrors;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
 import com.tenta.xwalk.refactor.XWalkFindListener;
 import com.tenta.xwalk.refactor.XWalkGetBitmapCallback;
+import com.tenta.xwalk.refactor.XWalkHitTestResult;
+import com.tenta.xwalk.refactor.XWalkSettings;
 
 import java.io.File;
 import java.io.IOException;
@@ -254,7 +256,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
 
     private XWalkContent mContent;
     private Context mContext;
-    private final XWalkHitTestResultInternal mXWalkHitTestResult;
+    private final XWalkHitTestResult mXWalkHitTestResult;
     private boolean mIsHidden;
     private XWalkExternalExtensionManagerInternal mExternalExtensionManager;
 
@@ -325,7 +327,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         checkThreadSafety();
         mContext = getContext();
 
-        mXWalkHitTestResult = new XWalkHitTestResultInternal();
+        mXWalkHitTestResult = new XWalkHitTestResult();
         initXWalkContent();
     }
 
@@ -360,7 +362,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         checkThreadSafety();
         mContext = getContext();
 
-        mXWalkHitTestResult = new XWalkHitTestResultInternal();
+        mXWalkHitTestResult = new XWalkHitTestResult();
     }
 
     /**
@@ -390,7 +392,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         checkThreadSafety();
         mContext = getContext();
 
-        mXWalkHitTestResult = new XWalkHitTestResultInternal();
+        mXWalkHitTestResult = new XWalkHitTestResult();
         initXWalkContent();
     }
 
@@ -677,7 +679,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @since 7.0
      */
     @XWalkAPI
-    public XWalkHitTestResultInternal getHitTestResult() {
+    public XWalkHitTestResult getHitTestResult() {
         if (mContent == null)
             return null;
         checkThreadSafety();
@@ -1231,7 +1233,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      */
     @XWalkAPI
     public void setUserAgentString(String userAgent) {
-        XWalkSettingsInternal settings = getSettings();
+        XWalkSettings settings = getSettings();
         if (settings == null)
             return;
         checkThreadSafety();
@@ -1246,7 +1248,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      */
     @XWalkAPI
     public String getUserAgentString() {
-        XWalkSettingsInternal settings = getSettings();
+        XWalkSettings settings = getSettings();
         if (settings == null)
             return null;
         checkThreadSafety();
@@ -1261,7 +1263,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      */
     @XWalkAPI
     public void setAcceptLanguages(final String acceptLanguages) {
-        XWalkSettingsInternal settings = getSettings();
+        XWalkSettings settings = getSettings();
         if (settings == null)
             return;
         checkThreadSafety();
@@ -1314,7 +1316,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
      * @since 6.0
      */
     @XWalkAPI
-    public XWalkSettingsInternal getSettings() {
+    public XWalkSettings getSettings() {
         if (mContent == null)
             return null;
         checkThreadSafety();
@@ -1458,7 +1460,7 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
     @XWalkAPI
     public void setInitialScale(int scaleInPercent) {
         checkThreadSafety();
-        XWalkSettingsInternal settings = getSettings();
+        XWalkSettings settings = getSettings();
         if (settings == null)
             return;
         settings.setInitialPageScale(scaleInPercent);

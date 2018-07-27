@@ -292,7 +292,7 @@ action("xwalk_core_library_documentation") {
     "org/xwalk/core/XWalkNavigationItem.java",
     "org/xwalk/core/XWalkPreferences.java",
     "org/xwalk/core/XWalkResourceClient.java",
-    "org/xwalk/core/XWalkSettings.java",
+#     "org/xwalk/core/XWalkSettings.java",
     "org/xwalk/core/XWalkUIClient.java",
     "org/xwalk/core/XWalkView.java",
     "org/xwalk/core/XWalkViewDatabase.java",

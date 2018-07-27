@@ -16,19 +16,23 @@ android_library("xwalk_refactor_java") {
     "src/com/tenta/xwalk/refactor/XWalkDownloadListener.java",
     "src/com/tenta/xwalk/refactor/XWalkFindListener.java",
     "src/com/tenta/xwalk/refactor/XWalkGetBitmapCallback.java",
+    "src/com/tenta/xwalk/refactor/XWalkHitTestResult.java",
+    "src/com/tenta/xwalk/refactor/XWalkSettings.java",
   ]
   
   deps = [
     ":xwalk_refactor_java_resources",
     "//base:base_java",
+    "//content/public/android:content_java",
   ]
 }
 
 generate_jni("xwalk_refactor_native_jni") {
   jni_package = "xwalk"
   sources = [
-    "src/com/tenta/xwalk/refactor/XWalkCookieManager.java",
     "src/com/tenta/xwalk/refactor/AndroidProtocolHandler.java",
+    "src/com/tenta/xwalk/refactor/XWalkCookieManager.java",
+    "src/com/tenta/xwalk/refactor/XWalkSettings.java",
   ]
 }
 

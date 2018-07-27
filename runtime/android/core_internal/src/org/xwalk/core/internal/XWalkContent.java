@@ -32,6 +32,7 @@ import com.tenta.fs.MetaErrors;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
 import com.tenta.xwalk.refactor.XWalkFindListener;
 import com.tenta.xwalk.refactor.XWalkGetBitmapCallback;
+import com.tenta.xwalk.refactor.XWalkSettings;
 import com.tenta.xwalk.refactor.AndroidProtocolHandler;
 
 import org.chromium.base.ThreadUtils;
@@ -81,7 +82,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
     private XWalkContentsClientBridge mContentsClientBridge;
     private XWalkContentsIoThreadClient mIoThreadClient;
     private XWalkWebContentsDelegateAdapter mXWalkContentsDelegateAdapter;
-    private XWalkSettingsInternal mSettings;
+    private XWalkSettings mSettings;
     private XWalkGeolocationPermissions mGeolocationPermissions;
     private XWalkLaunchScreenManager mLaunchScreenManager;
     private NavigationController mNavigationController;
@@ -273,7 +274,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         // won't be changed from false to true at the same time in the
         // constructor of
         // XWalkSettings class.
-        mSettings = new XWalkSettingsInternal(mViewContext, mWebContents, false);
+        mSettings = new XWalkSettings(mViewContext, mWebContents, false);
         // Enable AllowFileAccessFromFileURLs, so that files under file:// path
         // could be
         // loaded by XMLHttpRequest.
@@ -294,7 +295,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
             language = "en";
         mSettings.setAcceptLanguages(language);
 
-        XWalkSettingsInternal.ZoomSupportChangeListener zoomListener = new XWalkSettingsInternal.ZoomSupportChangeListener() {
+        XWalkSettings.ZoomSupportChangeListener zoomListener = new XWalkSettings.ZoomSupportChangeListener() {
             @Override
             public void onGestureZoomSupportChanged(boolean supportsDoubleTapZoom,
                     boolean supportsMultiTouchZoom) {
@@ -740,7 +741,7 @@ class XWalkContent implements XWalkPreferencesInternal.KeyValueChangeListener {
         return nativeDevToolsAgentId(mNativeContent);
     }
 
-    public XWalkSettingsInternal getSettings() {
+    public XWalkSettings getSettings() {
         return mSettings;
     }
 

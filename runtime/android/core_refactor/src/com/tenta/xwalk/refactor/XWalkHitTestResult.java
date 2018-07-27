@@ -17,15 +17,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package org.xwalk.core.internal;
+package com.tenta.xwalk.refactor;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.util.Map;
+import android.webkit.WebView;
 
-@XWalkAPI(createInternally = true)
-public class XWalkHitTestResultInternal {
-    @XWalkAPI
+public class XWalkHitTestResult {
     public enum type {
         UNKNOWN_TYPE,
         ANCHOR_TYPE,
@@ -50,7 +46,7 @@ public class XWalkHitTestResultInternal {
     /**
      * @hide Only for use by XWalkViewProvider implementations
      */
-    public XWalkHitTestResultInternal() {
+    public XWalkHitTestResult() {
         mType = 0;
     }
 
@@ -87,7 +83,6 @@ public class XWalkHitTestResultInternal {
      * @return the type of the hit test result
      * @since 7.0
      */
-    @XWalkAPI
     public type getType() {
         type a;
         switch (mType){
@@ -136,20 +131,16 @@ public class XWalkHitTestResultInternal {
      * @return additional type-dependant information about the result
      * @since 7.0
      */
-    @XWalkAPI
     public String getExtra() {
         return mExtra;
     }
 
-    @XWalkAPI
     public String getHref() {
         return mHref;
     }
-    @XWalkAPI
     public String getAnchorText() {
         return mAnchorText;
     }
-    @XWalkAPI
     public String getImgSrc() {
         return mImgSrc;
     }
