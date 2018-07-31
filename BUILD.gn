@@ -30,7 +30,7 @@ group("xwalk_builder") {
       # For internal testing.
       "app/android/runtime_client_embedded_shell:xwalk_runtime_client_embedded_shell_apk",
       "app/android/runtime_client_shell:xwalk_runtime_client_shell_apk",
-      "runtime/android/core_internal_shell:xwalk_core_internal_shell_apk",
+      #"runtime/android/core_internal_shell:xwalk_core_internal_shell_apk",
       "runtime/android/core_shell:xwalk_core_shell_apk",
 #      "test/android/core/javatests:xwalk_core_test_apk",
 #      "test/android/core_internal/javatests:xwalk_core_internal_test_apk",
@@ -41,7 +41,7 @@ group("xwalk_builder") {
       "app/android/app_hello_world:xwalk_app_hello_world_apk",
       "app/android/app_template:xwalk_app_template",
       "runtime/android/core:xwalk_core_library",
-      "runtime/android/core:xwalk_core_library_documentation",
+      #"runtime/android/core:xwalk_core_library_documentation",
       "runtime/android/core:xwalk_core_library_pom_gen",
       "runtime/android/core:xwalk_shared_library",
       "runtime/android/core:xwalk_shared_library_pom_gen",
@@ -444,9 +444,10 @@ source_set("xwalk_runtime") {
       "//content/public/android:content_java",
       "//components/autofill/android:autofill_java",
       "//components/cdm/browser",
-      "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
-      "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",
+#       "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
+#       "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",
       "//xwalk/runtime/android/core_refactor:xwalk_refactor_native_jni",
+      "//xwalk/runtime/android/core_refactor:xwalk_core_jar_jni",
     ]
   } else {
     deps += [

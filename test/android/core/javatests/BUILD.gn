@@ -111,7 +111,7 @@ android_library("xwalk_core_test_java") {
     "//third_party/android_tools:legacy_http_javalib",
     "//ui/android:ui_java",
     "//xwalk/runtime/android/core:xwalk_core_java",
-    "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
+    #"//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
     "//xwalk/runtime/android/core_shell:xwalk_core_shell_apk_java",
   ]
 }
