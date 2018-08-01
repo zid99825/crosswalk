@@ -24,9 +24,7 @@ public class XWalkPreferences {
     
     public static String getChromeVersion()
     {
-        org.chromium.base.Log.e("iotto", "XWalkContent.getChromeVersion()");
-        return "64.0.3282.137";
-//        return XWalkContent.getChromeVersion();
+        return XWalkContent.getChromeVersion();
     }
     
     static class PreferenceValue {
