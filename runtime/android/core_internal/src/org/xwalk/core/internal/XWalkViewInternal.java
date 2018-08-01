@@ -325,7 +325,8 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         mContext = getContext();
 
         mXWalkHitTestResult = new XWalkHitTestResultInternal();
-        initXWalkContent(null);
+        // call initWhenXWalkReady
+//        initXWalkContent(null);
     }
 
     // A View is usually in edit mode when displayed within a developer tool, like Android Studio.
@@ -350,13 +351,15 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
             "                FrameLayout.LayoutParams.MATCH_PARENT,",
             "                FrameLayout.LayoutParams.MATCH_PARENT));", "        removeViewAt(0);",
             "        new org.xwalk.core.extension.XWalkExternalExtensionManagerImpl(this);"
-    }, postBridgeLines = {
-            "        String animatable = null;", "        try {",
-            "            animatable = (String) new ReflectField(wrapper, \"mAnimatable\").get();",
-            "        } catch (RuntimeException e) {", "        }",
-            "        initXWalkContent(animatable);"
     })
     public XWalkViewInternal(Context context, AttributeSet attrs) {
+
+//      , postBridgeLines = {
+//              "        String animatable = null;", "        try {",
+//              "            animatable = (String) new ReflectField(wrapper, \"mAnimatable\").get();",
+//              "        } catch (RuntimeException e) {", "        }",
+//              "        initXWalkContent(animatable);"
+//      }
         super(context, attrs);
 
         checkThreadSafety();
@@ -393,7 +396,8 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         mContext = getContext();
 
         mXWalkHitTestResult = new XWalkHitTestResultInternal();
-        initXWalkContent(null);
+        // call initWhenXWalkReady
+        // initXWalkContent(null);
     }
 
     // TODO(yongsheng): we should remove this since we have getContext()?
@@ -408,6 +412,14 @@ public class XWalkViewInternal extends android.widget.FrameLayout {
         mContent.supplyContentsForPopup(newXWalkView == null ? null : newXWalkView.mContent);
     }
 
+    /**
+     * Must be called when XWALK load ready
+     */
+    @XWalkAPI
+    public void initWhenXWalkReady() {
+        initXWalkContent(null);
+    }
+    
     protected void initXWalkContent(String animatable) {
         XWalkViewDelegate.init(null, mContext);
 
