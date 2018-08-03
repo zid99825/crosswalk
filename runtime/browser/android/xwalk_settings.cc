@@ -179,7 +179,6 @@ XWalkRenderViewHostExt* XWalkSettings::GetXWalkRenderViewHostExt() {
 }
 
 void XWalkSettings::UpdateEverything() {
-  LOG(INFO) << "iotto " << __func__;
   JNIEnv* env = base::android::AttachCurrentThread();
   CHECK(env);
   ScopedJavaLocalRef<jobject> scoped_obj = xwalk_settings_.get(env);
@@ -189,7 +188,6 @@ void XWalkSettings::UpdateEverything() {
 }
 
 void XWalkSettings::UpdateEverythingLocked(JNIEnv* env, const JavaParamRef<jobject>& obj) {
-  LOG(INFO) << "iotto " << __func__;
   UpdateInitialPageScale(env, obj);
   UpdateWebkitPreferences(env, obj);
   UpdateUserAgent(env, obj);
@@ -200,7 +198,6 @@ void XWalkSettings::UpdateEverythingLocked(JNIEnv* env, const JavaParamRef<jobje
 }
 
 void XWalkSettings::UpdateUserAgent(JNIEnv* env, const JavaParamRef<jobject>& obj) {
-  LOG(INFO) << "iotto " << __func__;
   if (!web_contents()) return;
 
   ScopedJavaLocalRef<jstring> str =
@@ -219,8 +216,6 @@ void XWalkSettings::UpdateUserAgent(JNIEnv* env, const JavaParamRef<jobject>& ob
 }
 
 void XWalkSettings::PopulateWebPreferences(content::WebPreferences* webPrefs) {
-  LOG(INFO) << "iotto " << __func__;
-
   JNIEnv* env = base::android::AttachCurrentThread();
   CHECK(env);
   ScopedJavaLocalRef<jobject> scoped_obj = xwalk_settings_.get(env);
@@ -257,7 +252,6 @@ void XWalkSettings::PopulateWebPreferences(content::WebPreferences* webPrefs) {
 
 void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
                                                  jlong webPrefsPtr) {
-  LOG(INFO) << "iotto " << __func__;
   if (!web_contents())
     return;
   content::WebPreferences* web_prefs = reinterpret_cast<WebPreferences*>(webPrefsPtr);
@@ -282,7 +276,6 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
       render_view_host_ext->SetTextZoomFactor(text_size_percent / 100.0f);
     }
   }
-
 
 //  web_prefs->standard_font_family_map[content::kCommonScript] =
 //      ConvertJavaStringToUTF16(
@@ -332,11 +325,12 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
   web_prefs->javascript_enabled = Java_XWalkSettings_getJavaScriptEnabledLocked(env, obj);
 
   web_prefs->allow_universal_access_from_file_urls = Java_XWalkSettings_getAllowUniversalAccessFromFileURLsLocked(env,
-                                                                                                                 obj);
+                                                                                                                  obj);
 
   web_prefs->allow_file_access_from_file_urls = Java_XWalkSettings_getAllowFileAccessFromFileURLsLocked(env, obj);
 
-  _javascript_can_open_windows_automatically = Java_XWalkSettings_getJavaScriptCanOpenWindowsAutomaticallyLocked(env, obj);
+  _javascript_can_open_windows_automatically = Java_XWalkSettings_getJavaScriptCanOpenWindowsAutomaticallyLocked(env,
+                                                                                                                 obj);
 
   web_prefs->supports_multiple_windows = Java_XWalkSettings_getSupportMultipleWindowsLocked(env, obj);
 
@@ -425,18 +419,17 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
 //    web_prefs->css_hex_alpha_color_enabled =
 //        Java_AwSettings_getCSSHexAlphaColorEnabledLocked(env, obj);
 
-    // Keep spellcheck disabled on html elements unless the spellcheck="true"
-    // attribute is explicitly specified. This "opt-in" behavior is for backward
-    // consistency in apps that use WebView (see crbug.com/652314).
-    web_prefs->spellcheck_enabled_by_default = false;
+  // Keep spellcheck disabled on html elements unless the spellcheck="true"
+  // attribute is explicitly specified. This "opt-in" behavior is for backward
+  // consistency in apps that use WebView (see crbug.com/652314).
+  web_prefs->spellcheck_enabled_by_default = false;
 
-    // default true
+  // default true
 //    web_prefs->scroll_top_left_interop_enabled =
 //        Java_AwSettings_getScrollTopLeftInteropEnabledLocked(env, obj);
 }
 
 void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobject>& obj) {
-  LOG(INFO) << "iotto " << __func__;
 
   if (!web_contents()) return;
   XWalkRenderViewHostExt* render_view_host_ext = GetXWalkRenderViewHostExt();
