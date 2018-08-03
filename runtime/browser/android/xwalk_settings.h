@@ -14,6 +14,10 @@
 #include "components/prefs/pref_service.h"
 #include "content/public/browser/web_contents_observer.h"
 
+namespace content {
+struct WebPreferences;
+}
+
 namespace xwalk {
 
 class XWalkRenderViewHostExt;
@@ -27,6 +31,7 @@ class XWalkSettings : public content::WebContentsObserver {
 
   // Called from Java.
   void Destroy(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void PopulateWebPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, jlong webPrefsPtr);
   void ResetScrollAndScaleState(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateEverythingLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateInitialPageScale(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
@@ -36,6 +41,7 @@ class XWalkSettings : public content::WebContentsObserver {
   void UpdateFormDataPreferences(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
 
   bool GetJavaScriptCanOpenWindowsAutomatically();
+  void PopulateWebPreferences(content::WebPreferences* webPrefs);
 
  private:
   struct FieldIds;
@@ -46,8 +52,7 @@ class XWalkSettings : public content::WebContentsObserver {
   PrefService* GetPrefs();
 
   // WebContentsObserver overrides:
-  void RenderViewCreated(
-      content::RenderViewHost* render_view_host) override;
+  void RenderViewHostChanged(content::RenderViewHost* old_host, content::RenderViewHost* new_host) override;
 
   void RenderFrameForInterstitialPageCreated(content::RenderFrameHost* render_frame_host) override;
 

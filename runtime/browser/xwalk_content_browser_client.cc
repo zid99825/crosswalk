@@ -72,6 +72,7 @@
 #include "content/public/browser/navigation_throttle.h"
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
+#include "xwalk/runtime/browser/android/xwalk_settings.h"
 #include "xwalk/runtime/browser/android/xwalk_web_contents_view_delegate.h"
 #include "xwalk/runtime/browser/xwalk_browser_main_parts_android.h"
 #include "xwalk/runtime/common/android/xwalk_globals_android.h"
@@ -140,69 +141,76 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
 /**
  *
  */
-void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
-                                   content::WebPreferences* prefs) {
-#if TENTA_LOG_ENABLE == 1
-#if 0
-  LOG(INFO) << "webPref images_enabled=" << prefs->images_enabled;
-  LOG(INFO) << "webPref plugins_enabled=" << prefs->plugins_enabled;
-  LOG(INFO) << "webPref encrypted_media_enabled=" << prefs->encrypted_media_enabled;
-  LOG(INFO) << "webPref accelerated_2d_canvas_enabled=" << prefs->accelerated_2d_canvas_enabled;
-  LOG(INFO) << "webPref antialiased_2d_canvas_disabled=" << prefs->antialiased_2d_canvas_disabled;
-  LOG(INFO) << "webPref antialiased_clips_2d_canvas_enabled=" << prefs->antialiased_clips_2d_canvas_enabled;
+  void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* renderViewHost,
+      content::WebPreferences* webPrefs) {
+    XWalkSettings* settings = XWalkSettings::FromWebContents(
+        content::WebContents::FromRenderViewHost(renderViewHost));
+  if (settings) {
+    settings->PopulateWebPreferences(webPrefs);
+  }
 
-  LOG(INFO) << "webPref accelerated_filters_enabled=" << prefs->accelerated_filters_enabled;
-  LOG(INFO) << "webPref deferred_filters_enabled=" << prefs->deferred_filters_enabled;
-  LOG(INFO) << "webPref container_culling_enabled=" << prefs->container_culling_enabled;
-  LOG(INFO) << "webPref pepper_accelerated_video_decode_enabled=" << prefs->pepper_accelerated_video_decode_enabled;
-  LOG(INFO) << "webPref pepper_3d_enabled=" << prefs->pepper_3d_enabled;
-  LOG(INFO) << "webPref media_playback_gesture_whitelist_scope=" << prefs->media_playback_gesture_whitelist_scope;
-  LOG(INFO) << "webPref video_fullscreen_detection_enabled=" << prefs->video_fullscreen_detection_enabled;
-  LOG(INFO) << "webPref embedded_media_experience_enabled=" << prefs->embedded_media_experience_enabled;
-  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->background_video_track_optimization_enabled;
-  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->media_controls_enabled;
-
-  LOG(INFO) << "webPref default_minimum_page_scale_factor=" << prefs->default_minimum_page_scale_factor;
-  LOG(INFO) << "webPref default_maximum_page_scale_factor=" << prefs->default_maximum_page_scale_factor;
-  LOG(INFO) << "webPref use_wide_viewport=" << prefs->use_wide_viewport;
-  LOG(INFO) << "webPref wide_viewport_quirk=" << prefs->wide_viewport_quirk;
-  LOG(INFO) << "webPref viewport_meta_layout_size_quirk=" << prefs->viewport_meta_layout_size_quirk;
-  LOG(INFO) << "webPref viewport_meta_non_user_scalable_quirk=" << prefs->viewport_meta_non_user_scalable_quirk;
-  LOG(INFO) << "webPref report_screen_size_in_physical_pixels_quirk=" << prefs->report_screen_size_in_physical_pixels_quirk;
-  LOG(INFO) << "webPref force_enable_zoom=" << prefs->force_enable_zoom;
-  LOG(INFO) << "webPref device_scale_adjustment=" << prefs->device_scale_adjustment;
-  LOG(INFO) << "webPref font_scale_factor=" << prefs->font_scale_factor;
-  LOG(INFO) << "webPref text_autosizing_enabled=" << prefs->text_autosizing_enabled;
-
-  LOG(INFO) << "webPref default_font_size=" << prefs->default_font_size;
-  LOG(INFO) << "webPref default_fixed_font_size=" << prefs->default_fixed_font_size;
-  LOG(INFO) << "webPref minimum_font_size=" << prefs->minimum_font_size;
-  LOG(INFO) << "webPref minimum_logical_font_size=" << prefs->minimum_logical_font_size;
-  LOG(INFO) << "webPref javascript_can_access_clipboard=" << prefs->javascript_can_access_clipboard;
-  LOG(INFO) << "webPref number_of_cpu_cores=" << prefs->number_of_cpu_cores;
-  LOG(INFO) << "webPref viewport_enabled=" << prefs->viewport_enabled;
-  LOG(INFO) << "webPref shrinks_viewport_contents_to_fit=" << prefs->shrinks_viewport_contents_to_fit;
-  LOG(INFO) << "webPref viewport_style=" << static_cast<int>(prefs->viewport_style);
-  LOG(INFO) << "webPref initialize_at_minimum_page_scale=" << prefs->initialize_at_minimum_page_scale;
-  LOG(INFO) << "webPref inert_visual_viewport=" << prefs->inert_visual_viewport;
-
-  LOG(INFO) << "webPref double_tap_to_zoom_enabled=" << prefs->double_tap_to_zoom_enabled;
-  LOG(INFO) << "webPref support_deprecated_target_density_dpi=" << prefs->support_deprecated_target_density_dpi;
-  LOG(INFO) << "webPref use_legacy_background_size_shorthand_behavior=" << prefs->use_legacy_background_size_shorthand_behavior;
-
-  LOG(INFO) << "webPref clobber_user_agent_initial_scale_quirk=" << prefs->clobber_user_agent_initial_scale_quirk;
-  LOG(INFO) << "webPref cookie_enabled=" << prefs->cookie_enabled;
-  LOG(INFO) << "webPref progress_bar_completion=" << static_cast<int>(prefs->progress_bar_completion);
-  LOG(INFO) << "webPref viewport_meta_enabled=" << prefs->viewport_meta_enabled;
-#endif
-  LOG(INFO) << "webPref context_menu_on_mouse_up=" << prefs->context_menu_on_mouse_up;
-  LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
-#endif
-  prefs->viewport_meta_enabled = true;
-  prefs->context_menu_on_mouse_up = true;
-  prefs->always_show_context_menu_on_touch = true;
-//  prefs->viewport_style = content::ViewportStyle::DEFAULT;
-//  prefs->accelerated_filters_enabled = true;
+  return;
+//#if TENTA_LOG_ENABLE == 1
+//#if 0
+//  LOG(INFO) << "webPref images_enabled=" << prefs->images_enabled;
+//  LOG(INFO) << "webPref plugins_enabled=" << prefs->plugins_enabled;
+//  LOG(INFO) << "webPref encrypted_media_enabled=" << prefs->encrypted_media_enabled;
+//  LOG(INFO) << "webPref accelerated_2d_canvas_enabled=" << prefs->accelerated_2d_canvas_enabled;
+//  LOG(INFO) << "webPref antialiased_2d_canvas_disabled=" << prefs->antialiased_2d_canvas_disabled;
+//  LOG(INFO) << "webPref antialiased_clips_2d_canvas_enabled=" << prefs->antialiased_clips_2d_canvas_enabled;
+//
+//  LOG(INFO) << "webPref accelerated_filters_enabled=" << prefs->accelerated_filters_enabled;
+//  LOG(INFO) << "webPref deferred_filters_enabled=" << prefs->deferred_filters_enabled;
+//  LOG(INFO) << "webPref container_culling_enabled=" << prefs->container_culling_enabled;
+//  LOG(INFO) << "webPref pepper_accelerated_video_decode_enabled=" << prefs->pepper_accelerated_video_decode_enabled;
+//  LOG(INFO) << "webPref pepper_3d_enabled=" << prefs->pepper_3d_enabled;
+//  LOG(INFO) << "webPref media_playback_gesture_whitelist_scope=" << prefs->media_playback_gesture_whitelist_scope;
+//  LOG(INFO) << "webPref video_fullscreen_detection_enabled=" << prefs->video_fullscreen_detection_enabled;
+//  LOG(INFO) << "webPref embedded_media_experience_enabled=" << prefs->embedded_media_experience_enabled;
+//  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->background_video_track_optimization_enabled;
+//  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->media_controls_enabled;
+//
+//  LOG(INFO) << "webPref default_minimum_page_scale_factor=" << prefs->default_minimum_page_scale_factor;
+//  LOG(INFO) << "webPref default_maximum_page_scale_factor=" << prefs->default_maximum_page_scale_factor;
+//  LOG(INFO) << "webPref use_wide_viewport=" << prefs->use_wide_viewport;
+//  LOG(INFO) << "webPref wide_viewport_quirk=" << prefs->wide_viewport_quirk;
+//  LOG(INFO) << "webPref viewport_meta_layout_size_quirk=" << prefs->viewport_meta_layout_size_quirk;
+//  LOG(INFO) << "webPref viewport_meta_non_user_scalable_quirk=" << prefs->viewport_meta_non_user_scalable_quirk;
+//  LOG(INFO) << "webPref report_screen_size_in_physical_pixels_quirk=" << prefs->report_screen_size_in_physical_pixels_quirk;
+//  LOG(INFO) << "webPref force_enable_zoom=" << prefs->force_enable_zoom;
+//  LOG(INFO) << "webPref device_scale_adjustment=" << prefs->device_scale_adjustment;
+//  LOG(INFO) << "webPref font_scale_factor=" << prefs->font_scale_factor;
+//  LOG(INFO) << "webPref text_autosizing_enabled=" << prefs->text_autosizing_enabled;
+//
+//  LOG(INFO) << "webPref default_font_size=" << prefs->default_font_size;
+//  LOG(INFO) << "webPref default_fixed_font_size=" << prefs->default_fixed_font_size;
+//  LOG(INFO) << "webPref minimum_font_size=" << prefs->minimum_font_size;
+//  LOG(INFO) << "webPref minimum_logical_font_size=" << prefs->minimum_logical_font_size;
+//  LOG(INFO) << "webPref javascript_can_access_clipboard=" << prefs->javascript_can_access_clipboard;
+//  LOG(INFO) << "webPref number_of_cpu_cores=" << prefs->number_of_cpu_cores;
+//  LOG(INFO) << "webPref viewport_enabled=" << prefs->viewport_enabled;
+//  LOG(INFO) << "webPref shrinks_viewport_contents_to_fit=" << prefs->shrinks_viewport_contents_to_fit;
+//  LOG(INFO) << "webPref viewport_style=" << static_cast<int>(prefs->viewport_style);
+//  LOG(INFO) << "webPref initialize_at_minimum_page_scale=" << prefs->initialize_at_minimum_page_scale;
+//  LOG(INFO) << "webPref inert_visual_viewport=" << prefs->inert_visual_viewport;
+//
+//  LOG(INFO) << "webPref double_tap_to_zoom_enabled=" << prefs->double_tap_to_zoom_enabled;
+//  LOG(INFO) << "webPref support_deprecated_target_density_dpi=" << prefs->support_deprecated_target_density_dpi;
+//  LOG(INFO) << "webPref use_legacy_background_size_shorthand_behavior=" << prefs->use_legacy_background_size_shorthand_behavior;
+//
+//  LOG(INFO) << "webPref clobber_user_agent_initial_scale_quirk=" << prefs->clobber_user_agent_initial_scale_quirk;
+//  LOG(INFO) << "webPref cookie_enabled=" << prefs->cookie_enabled;
+//  LOG(INFO) << "webPref progress_bar_completion=" << static_cast<int>(prefs->progress_bar_completion);
+//  LOG(INFO) << "webPref viewport_meta_enabled=" << prefs->viewport_meta_enabled;
+//#endif
+//  LOG(INFO) << "webPref context_menu_on_mouse_up=" << prefs->context_menu_on_mouse_up;
+//  LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
+//#endif
+//  webPrefs->viewport_meta_enabled = true;
+//  webPrefs->context_menu_on_mouse_up = true;
+//  webPrefs->always_show_context_menu_on_touch = true;
+////  prefs->viewport_style = content::ViewportStyle::DEFAULT;
+////  prefs->accelerated_filters_enabled = true;
 }
 
 content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(

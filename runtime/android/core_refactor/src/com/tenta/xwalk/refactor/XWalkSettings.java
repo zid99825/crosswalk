@@ -6,6 +6,7 @@ package com.tenta.xwalk.refactor;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -88,6 +89,8 @@ public class XWalkSettings {
     private boolean mDomStorageEnabled = true;
     private boolean mDatabaseEnabled = true;
     private boolean mUseWideViewport = false;
+    private boolean mZeroLayoutHeightDisablesViewportQuirk;
+    private boolean mForceZeroLayoutHeight;
     private boolean mLoadWithOverviewMode = false;
     private boolean mMediaPlaybackRequiresUserGesture = false;
     private String mDefaultVideoPosterURL;
@@ -101,6 +104,11 @@ public class XWalkSettings {
     private boolean mGeolocationEnabled = true;
     private String mUserAgent;
     private String mAcceptLanguages;
+    
+    private final boolean mSupportLegacyQuirks;
+    private final boolean mAllowEmptyDocumentPersistence;
+    private final boolean mAllowGeolocationOnInsecureOrigins;
+    private final boolean mDoNotUpdateSelectionOnMutatingSelectionRange;
 
     // Protects access to settings global fields.
     private static final Object sGlobalContentSettingsLock = new Object();
@@ -132,7 +140,9 @@ public class XWalkSettings {
     private boolean mBuiltInZoomControls = false;
     private boolean mDisplayZoomControls = true;
 
-    private boolean mSpatialNavigationEnabled = true;
+    private boolean mSpatialNavigationEnabled;
+    private boolean mEnableSupportedHardwareAcceleratedFeatures = true; // TODO(iotto): check and set
+    private boolean mFullscreenSupported = true;
     private boolean mQuirksModeEnabled = false;
 
     private LayoutAlgorithmInternal mLayoutAlgorithm = LayoutAlgorithmInternal.NARROW_COLUMNS;
@@ -214,36 +224,48 @@ public class XWalkSettings {
                 boolean supportsDoubleTapZoom, boolean supportsMultiTouchZoom);
     }
 
-    // Never use this constructor.
-    // It is only used in XWalkSettingsBridge.
-    XWalkSettings() {
-        mContext = null;
-        mEventHandler = null;
-        mPasswordEchoEnabled = false;
-    }
+//    // Never use this constructor.
+//    // It is only used in XWalkSettingsBridge.
+//    XWalkSettings() {
+//        mContext = null;
+//        mEventHandler = null;
+//        mPasswordEchoEnabled = false;
+//    }
 
     public XWalkSettings(Context context, WebContents webContents,
             boolean isAccessFromFileURLsGrantedByDefault) {
         ThreadUtils.assertOnUiThread();
         mContext = context;
-        mBlockNetworkLoads = mContext.checkPermission(
-                android.Manifest.permission.INTERNET,
-                Process.myPid(),
-                Process.myUid()) != PackageManager.PERMISSION_GRANTED;
+        synchronized (mXWalkSettingsLock) {
+            mBlockNetworkLoads = mContext.checkPermission(
+                    android.Manifest.permission.INTERNET,
+                    Process.myPid(),
+                    Process.myUid()) != PackageManager.PERMISSION_GRANTED;
 
-        if (isAccessFromFileURLsGrantedByDefault) {
-            mAllowUniversalAccessFromFileURLs = true;
-            mAllowFileAccessFromFileURLs = true;
+            if (isAccessFromFileURLsGrantedByDefault) {
+                mAllowUniversalAccessFromFileURLs = true;
+                mAllowFileAccessFromFileURLs = true;
+            }
+
+            mUserAgent = LazyDefaultUserAgent.sInstance;
+
+            // Respect the system setting for password echoing.
+            mPasswordEchoEnabled = Settings.System.getInt(context.getContentResolver(),
+                    Settings.System.TEXT_SHOW_PASSWORD, 1) == 1;
+
+            mEventHandler = new EventHandler();
+
+            final int appTargetSdkVersion = mContext.getApplicationInfo().targetSdkVersion;
+
+            mSupportLegacyQuirks = appTargetSdkVersion < Build.VERSION_CODES.KITKAT;
+            mAllowEmptyDocumentPersistence = appTargetSdkVersion <= Build.VERSION_CODES.M;
+            mAllowGeolocationOnInsecureOrigins = appTargetSdkVersion <= Build.VERSION_CODES.M;
+            mDoNotUpdateSelectionOnMutatingSelectionRange = appTargetSdkVersion <= Build.VERSION_CODES.M;
+
+            // Best-guess a sensible initial value based on the features supported on the device.
+            mSpatialNavigationEnabled = !context.getPackageManager().hasSystemFeature(
+                    PackageManager.FEATURE_TOUCHSCREEN);
         }
-
-        mUserAgent = LazyDefaultUserAgent.sInstance;
-
-        // Respect the system setting for password echoing.
-        mPasswordEchoEnabled = Settings.System.getInt(context.getContentResolver(),
-                Settings.System.TEXT_SHOW_PASSWORD, 1) == 1;
-
-        mEventHandler = new EventHandler();
-
         setWebContents(webContents);
     }
 
@@ -523,6 +545,12 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getLoadsImagesAutomaticallyLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mLoadsImagesAutomatically;
+    }
+    
     /**
      * Sets whether the XWalkView should not load image resources from the network (resources
      * accessed via http and https URI schemes). Note that this method has no effect unless
@@ -558,6 +586,12 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getImagesEnabledLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mImagesEnabled;
+    }
+    
     /**
      * Gets whether JavaScript is enabled.
      *
@@ -571,6 +605,11 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getJavaScriptEnabledLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mJavaScriptEnabled;
+    }
     /**
      * Gets whether JavaScript running in the context of a file scheme URL can access content from
      * any origin. This includes access to content from other file scheme URLs.
@@ -586,6 +625,12 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getAllowUniversalAccessFromFileURLsLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mAllowUniversalAccessFromFileURLs;
+    }
+    
     /**
      * Gets whether JavaScript running in the context of a file scheme URL can access content from
      * other file scheme URLs.
@@ -601,6 +646,12 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getAllowFileAccessFromFileURLsLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mAllowFileAccessFromFileURLs;
+    }
+    
     /**
      * Tells JavaScript to open windows automatically. This applies to the JavaScript function
      * window.open(). The default is true.
@@ -630,6 +681,12 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getJavaScriptCanOpenWindowsAutomaticallyLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mJavaScriptCanOpenWindowsAutomatically;
+    }
+    
     /**
      * Sets whether the XWalkView supports multiple windows. If set to true,
      * {@link XWalkUIClient#onCreateWindowRequested} must be implemented by the host application.
@@ -660,6 +717,36 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getSupportMultipleWindowsLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mSupportMultipleWindows;
+    }
+    
+    @CalledByNative
+    private boolean getSupportLegacyQuirksLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mSupportLegacyQuirks;
+    }
+    
+    @CalledByNative
+    private boolean getAllowEmptyDocumentPersistenceLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mAllowEmptyDocumentPersistence;
+    }
+    
+    @CalledByNative
+    private boolean getAllowGeolocationOnInsecureOrigins() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mAllowGeolocationOnInsecureOrigins;
+    }
+    
+    @CalledByNative
+    private boolean getDoNotUpdateSelectionOnMutatingSelectionRange() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mDoNotUpdateSelectionOnMutatingSelectionRange;
+    }
+    
     /**
      * Sets whether the XWalkView should enable support for the "viewport" HTML meta tag or should
      * use a wide viewport. When the value of the setting is false, the layout width is always set
@@ -688,10 +775,66 @@ public class XWalkSettings {
      */
     public boolean getUseWideViewPort() {
         synchronized (mXWalkSettingsLock) {
-            return mUseWideViewport;
+            return getUseWideViewportLocked();
         }
     }
 
+    @CalledByNative
+    private boolean getUseWideViewportLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mUseWideViewport;
+    }
+
+    /**
+     * New in Tenta
+     * @param enabled
+     */
+    public void setZeroLayoutHeightDisablesViewportQuirk(boolean enabled) {
+        synchronized (mXWalkSettingsLock) {
+            if (mZeroLayoutHeightDisablesViewportQuirk != enabled) {
+                mZeroLayoutHeightDisablesViewportQuirk = enabled;
+                mEventHandler.updateWebkitPreferencesLocked();
+            }
+        }
+    }
+
+    public boolean getZeroLayoutHeightDisablesViewportQuirk() {
+        synchronized (mXWalkSettingsLock) {
+            return getZeroLayoutHeightDisablesViewportQuirkLocked();
+        }
+    }
+
+    @CalledByNative
+    private boolean getZeroLayoutHeightDisablesViewportQuirkLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mZeroLayoutHeightDisablesViewportQuirk;
+    }
+    
+    /**
+     * New in Tenta
+     * @param enabled
+     */
+    public void setForceZeroLayoutHeight(boolean enabled) {
+        synchronized (mXWalkSettingsLock) {
+            if (mForceZeroLayoutHeight != enabled) {
+                mForceZeroLayoutHeight = enabled;
+                mEventHandler.updateWebkitPreferencesLocked();
+            }
+        }
+    }
+
+    public boolean getForceZeroLayoutHeight() {
+        synchronized (mXWalkSettingsLock) {
+            return getForceZeroLayoutHeightLocked();
+        }
+    }
+
+    @CalledByNative
+    private boolean getForceZeroLayoutHeightLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mForceZeroLayoutHeight;
+    }
+    
     /**
      * See {@link android.webkit.WebSettings#setAppCacheEnabled}.
      */
@@ -733,10 +876,19 @@ public class XWalkSettings {
      * @hide
      */
     @CalledByNative
-    private boolean getAppCacheEnabled() {
+    private boolean getAppCacheEnabledLocked() {
         // When no app cache path is set, use chromium default cache path.
         assert Thread.holdsLock(mXWalkSettingsLock);
         return mAppCacheEnabled;
+        
+        // TODO(iotto): From AwSettings
+//        assert Thread.holdsLock(mAwSettingsLock);
+//        if (!mAppCacheEnabled) {
+//            return false;
+//        }
+//        synchronized (sGlobalContentSettingsLock) {
+//            return sAppCachePathIsSet;
+//        }
     }
 
     /**
@@ -768,6 +920,12 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getDomStorageEnabledLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mDomStorageEnabled;
+    }
+    
     /**
      * Sets whether the database storage API is enabled. The default value is true, which is
      * different with WebView. This setting is global in effect, across all XWalkView instances in a
@@ -799,6 +957,12 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getDatabaseEnabledLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mDatabaseEnabled;
+    }
+    
     /**
      * Sets whether the XWalkView requires a user gesture to play media. The default is false, which
      * is different with WebView.
@@ -824,8 +988,14 @@ public class XWalkSettings {
      */
     public boolean getMediaPlaybackRequiresUserGesture() {
         synchronized (mXWalkSettingsLock) {
-            return mMediaPlaybackRequiresUserGesture;
+            return getMediaPlaybackRequiresUserGestureLocked();
         }
+    }
+
+    @CalledByNative
+    private boolean getMediaPlaybackRequiresUserGestureLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mMediaPlaybackRequiresUserGesture;
     }
 
     /**
@@ -841,6 +1011,21 @@ public class XWalkSettings {
         }
     }
 
+    /**
+     * See {@link android.webkit.WebSettings#getDefaultVideoPosterURL}.
+     */
+    public String getDefaultVideoPosterURL() {
+        synchronized (mXWalkSettingsLock) {
+            return getDefaultVideoPosterURLLocked();
+        }
+    }
+
+    @CalledByNative
+    private String getDefaultVideoPosterURLLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mDefaultVideoPosterURL;
+    }
+    
     /**
      * @return returns the default User-Agent used by each ContentViewCore instance, i.e. unless
      *         overridden by {@link #setUserAgentString()}
@@ -896,15 +1081,6 @@ public class XWalkSettings {
     private String getUserAgentLocked() {
         assert Thread.holdsLock(mXWalkSettingsLock);
         return mUserAgent;
-    }
-
-    /**
-     * See {@link android.webkit.WebSettings#getDefaultVideoPosterURL}.
-     */
-    public String getDefaultVideoPosterURL() {
-        synchronized (mXWalkSettingsLock) {
-            return mDefaultVideoPosterURL;
-        }
     }
 
     @CalledByNative
@@ -1073,8 +1249,14 @@ public class XWalkSettings {
      */
     public int getTextZoom() {
         synchronized (mXWalkSettingsLock) {
-            return mTextSizePercent;
+            return getTextSizePercentLocked();
         }
+    }
+
+    @CalledByNative
+    private int getTextSizePercentLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mTextSizePercent;
     }
 
     private int clipFontSize(int size) {
@@ -1277,6 +1459,41 @@ public class XWalkSettings {
         }
     }
 
+    @CalledByNative
+    private boolean getSpatialNavigationLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mSpatialNavigationEnabled;
+    }
+    
+    void setEnableSupportedHardwareAcceleratedFeatures(boolean enable) {
+        synchronized (mXWalkSettingsLock) {
+            if (mEnableSupportedHardwareAcceleratedFeatures != enable) {
+                mEnableSupportedHardwareAcceleratedFeatures = enable;
+                mEventHandler.updateWebkitPreferencesLocked();
+            }
+        }
+    }
+
+    @CalledByNative
+    private boolean getEnableSupportedHardwareAcceleratedFeaturesLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mEnableSupportedHardwareAcceleratedFeatures;
+    }
+    
+    public void setFullscreenSupported(boolean supported) {
+        synchronized (mXWalkSettingsLock) {
+            if (mFullscreenSupported != supported) {
+                mFullscreenSupported = supported;
+                mEventHandler.updateWebkitPreferencesLocked();
+            }
+        }
+    }
+
+    @CalledByNative
+    private boolean getFullscreenSupportedLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mFullscreenSupported;
+    }
     /**
      * Sets whether the XWalkView should support the quirks mode.
      * 
@@ -1372,16 +1589,32 @@ public class XWalkSettings {
      */
     public boolean getLoadWithOverviewMode() {
         synchronized (mXWalkSettingsLock) {
-            return mLoadWithOverviewMode;
+            return getLoadWithOverviewModeLocked();
         }
     }
 
+    @CalledByNative
+    private boolean getLoadWithOverviewModeLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mLoadWithOverviewMode;
+    }
+
+    @CalledByNative
+    private void populateWebPreferences(long webPrefsPtr) {
+        synchronized (mXWalkSettingsLock) {
+            assert mNativeXWalkSettings != 0;
+            nativePopulateWebPreferencesLocked(mNativeXWalkSettings, webPrefsPtr);
+        }
+    }
+    
     private native long nativeInit(WebContents webContents);
 
     private native void nativeDestroy(long nativeXWalkSettings);
 
     private static native String nativeGetDefaultUserAgent();
 
+    private native void nativePopulateWebPreferencesLocked(long nativeXWalkSettings, long webPrefsPtr);
+    
     private native void nativeUpdateEverythingLocked(long nativeXWalkSettings);
 
     private native void nativeUpdateUserAgent(long nativeXWalkSettings);
