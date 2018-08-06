@@ -669,6 +669,7 @@ public class XWalkView extends android.widget.FrameLayout {
         if (mContent == null)
             return null;
         checkThreadSafety();
+        // TODO(iotto) : No need to duplicate data
         XWalkContent.HitTestData data = mContent.getLastHitTestResult();
         mXWalkHitTestResult.setType(data.hitTestResultType);
         mXWalkHitTestResult.setExtra(data.hitTestResultExtraData);
@@ -1546,10 +1547,12 @@ public class XWalkView extends android.widget.FrameLayout {
      * @param onTop true for on top.
      * @since 5.0
      */
-    /*
-//     * @XWalkAPI public void setZOrderOnTop(boolean onTop) { if (mContent == null) return;
-     * mContent.setZOrderOnTop(onTop); }
-     */
+//     * @XWalkAPI 
+//    public void setZOrderOnTop(boolean onTop) {
+//        if (mContent == null)
+//            return;
+//        mContent.setZOrderOnTop(onTop);
+//    }
     /**
      * Removes the autocomplete popup from the currently focused form field, if present. Note this
      * only affects the display of the autocomplete popup, it does not remove any saved form data
@@ -1579,6 +1582,11 @@ public class XWalkView extends android.widget.FrameLayout {
 //            "        setSurfaceViewVisibility(visibility);"
 //    })
     public void setVisibility(int visibility) {
+        if (visibility == View.INVISIBLE)
+            visibility = View.GONE;
+        super.setVisibility(visibility);
+        setXWalkViewInternalVisibility(visibility);
+        setSurfaceViewVisibility(visibility);
     }
 
     /**
@@ -1694,65 +1702,49 @@ public class XWalkView extends android.widget.FrameLayout {
     // This is used to call back to XWalkView's performLongClick() so that developer can
     // override performLongClick() or setOnLongClickListener to disable copy/paste
     // action bar.
-//    @XWalkAPI(delegate = true, preWrapperLines = {
-//            "return performLongClick();"
-//    })
     public boolean performLongClickDelegate() {
-        return false;
+        return performLongClick();
     }
 
-//    @XWalkAPI(delegate = true, preWrapperLines = {
-//            "return onTouchEvent(event);"
-//    })
     public boolean onTouchEventDelegate(MotionEvent event) {
-        return false;
+        return onTouchEvent(event);
     }
 
     // Usually super.onTouchEvent is called within XWalkView.onTouchEvent override
     // This is used as our default touch event handler.
     @Override
-//    @XWalkAPI
     public boolean onTouchEvent(MotionEvent event) {
         return mContent.onTouchEvent(event);
     }
 
     // Use delegate to access XWalkView's protected method
-//    @XWalkAPI(delegate = true, preWrapperLines = {
-//            "onScrollChanged(l, t, oldl, oldt);"
-//    })
     public void onScrollChangedDelegate(int l, int t, int oldl, int oldt) {
+        onScrollChanged(l, t, oldl, oldt);
     }
 
-//    @XWalkAPI(delegate = true, preWrapperLines = {
-//            "onFocusChanged(gainFocus, direction, previouslyFocusedRect);"
-//    })
     public void onFocusChangedDelegate(boolean gainFocus, int direction,
             Rect previouslyFocusedRect) {
+        onFocusChanged(gainFocus, direction, previouslyFocusedRect);
     }
 
-//    @XWalkAPI(delegate = true, preWrapperLines = {
-//            "onOverScrolled(scrollX, scrollY, clampedX, clampedY);"
-//    })
     public void onOverScrolledDelegate(int scrollX, int scrollY, boolean clampedX,
             boolean clampedY) {
+        onOverScrolled(scrollX, scrollY, clampedX, clampedY);
     }
 
     // Override XWalkView.setOnTouchListener to install the listener to ContentView
     // therefore touch event intercept through onTouchListener is available on XWalkView.
     @Override
-//    @XWalkAPI
     public void setOnTouchListener(OnTouchListener l) {
         mContent.setOnTouchListener(l);
     }
 
     @Override
-//    @XWalkAPI
     public void scrollTo(int x, int y) {
         mContent.scrollTo(x, y);
     }
 
     @Override
-//    @XWalkAPI
     public void scrollBy(int x, int y) {
         mContent.scrollBy(x, y);
     }
