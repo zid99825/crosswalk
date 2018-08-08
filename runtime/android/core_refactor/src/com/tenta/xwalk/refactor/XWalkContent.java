@@ -39,6 +39,8 @@ import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
+import org.chromium.content.browser.ActivityContentVideoViewEmbedder;
+import org.chromium.content.browser.ContentVideoViewEmbedder;
 import org.chromium.content.browser.ContentViewCore;
 import org.chromium.content.browser.ContentViewCoreImpl;
 import org.chromium.content.browser.ContentViewRenderView;
@@ -1328,12 +1330,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         }
     }
 
-    public void setOverlayVideoMode(boolean enabled) {
-        if (mContentViewRenderView != null) {
-            mContentViewRenderView.setOverlayVideoMode(enabled);
-        }
-    }
-
 /*    public void setZOrderOnTop(boolean onTop) {
         if (mContentViewRenderView == null)
             return;
@@ -1502,11 +1498,36 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mContentsClientBridge.onOpenDnsSettings(failedUrl);
     }
     
-    // TODO(iotto) : Fix this and ivoce from native
-//    @CalledByNative
-//    public void setOverlayMode(boolean useOverlayMode) {
-//        mContentViewRenderView.setOverlayVideoMode(useOverlayMode);
-//    }
+    public void setOverlayVideoMode(boolean enabled) {
+//        org.chromium.base.Log.d("iotto", "setOverlayVideoMode");
+        if (mContentViewRenderView != null) {
+            mContentViewRenderView.setOverlayVideoMode(enabled);
+        }
+    }
+    
+    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
+//        org.chromium.base.Log.d("iotto", "getContentVideoViewEmbedder");
+        return new ActivityContentVideoViewEmbedder((Activity) mViewContext) {
+            @Override
+            public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
+//                org.chromium.base.Log.d("iotto", "enterFullscreenVideo");
+                super.enterFullscreenVideo(view, isVideoLoaded);
+                if (mContentViewRenderView != null) {
+                    mContentViewRenderView.setOverlayVideoMode(true);
+                }
+            }
+
+            @Override
+            public void exitFullscreenVideo() {
+//                org.chromium.base.Log.d("iotto", "exitFullscreenVideo");
+                super.exitFullscreenVideo();
+                if (mContentViewRenderView != null) {
+                    mContentViewRenderView.setOverlayVideoMode(false);
+                }
+            }
+        };
+
+    }
     
     private native long nativeInit();
 

@@ -64,4 +64,7 @@ abstract class XWalkWebContentsDelegate extends WebContentsDelegateAndroid {
     @Override
     @CalledByNative
     public abstract void navigationStateChanged(int flags);
+    
+    @CalledByNative
+    public abstract void setOverlayMode(boolean useOverlayMode);
 }

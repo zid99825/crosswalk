@@ -13,6 +13,7 @@ import android.view.KeyEvent;
 import android.webkit.ConsoleMessage;
 
 import org.chromium.base.ContextUtils;
+import org.chromium.base.annotations.CalledByNative;
 import org.chromium.content.browser.ActivityContentVideoViewEmbedder;
 import org.chromium.content.browser.ContentVideoView;
 import org.chromium.content.browser.ContentVideoViewEmbedder;
@@ -30,22 +31,6 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
         mXwalkContent = content;
     }
 
-//    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
-//        +        return new ActivityContentVideoViewEmbedder((Activity) getContext()) {
-//        +            @Override
-//        +            public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
-//        +                super.enterFullscreenVideo(view, isVideoLoaded);
-//        +                mContentViewRenderView.setOverlayVideoMode(true);
-//        +            }
-//        +
-//        +            @Override
-//        +            public void exitFullscreenVideo() {
-//        +                super.exitFullscreenVideo();
-//        +                mContentViewRenderView.setOverlayVideoMode(false);
-//        +            }
-//        +        };
-//        +    }
-    
     @Override
     public boolean shouldCreateWebContents(String contentUrl) {
         if (mXWalkContentsClient != null) {
@@ -155,6 +140,37 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
     }
 
     @Override
+    public boolean shouldOverrideRunFileChooser(int processId, int renderId, int mode,
+            String acceptTypes, boolean capture) {
+        if (mXWalkContentsClient != null) {
+            return mXWalkContentsClient.shouldOverrideRunFileChooser(processId, renderId, mode,
+                    acceptTypes, capture);
+        }
+        return false;
+    }
+    
+    @Override
+    public void setOverlayMode(boolean useOverlayMode) {
+        mXwalkContent.setOverlayVideoMode(useOverlayMode);
+    }
+    
+    @Override
+    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
+//        org.chromium.base.Log.d("iotto", "getContentVideoViewEmbedder");
+        return mXwalkContent.getContentVideoViewEmbedder();
+    }
+    
+    @Override
+    public void toggleFullscreenModeForTab(boolean enterFullscreen) {
+//        org.chromium.base.Log.d("iotto", "toggleFullscreenModeForTab %b", enterFullscreen);
+//        if (enterFullscreen) {
+//            enterFullscreen();
+//        } else {
+//            exitFullscreen();
+//        }
+    }
+
+    @Override
     public void toggleFullscreen(boolean enterFullscreen) {
         if (!enterFullscreen) {
             ContentVideoView videoView = ContentVideoView.getContentVideoView();
@@ -169,14 +185,5 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
 
         return false;
     }
-
-    @Override
-    public boolean shouldOverrideRunFileChooser(int processId, int renderId, int mode,
-            String acceptTypes, boolean capture) {
-        if (mXWalkContentsClient != null) {
-            return mXWalkContentsClient.shouldOverrideRunFileChooser(processId, renderId, mode,
-                    acceptTypes, capture);
-        }
-        return false;
-    }
+    
 }
