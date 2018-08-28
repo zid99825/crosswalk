@@ -30,6 +30,7 @@ source_set("tenta_exposed") {
 }
 
 config("tenta_public") {
+  defines = []
   if ( tenta_chromium_build ) {
     defines += [
       "TENTA_CHROMIUM_BUILD"
@@ -51,6 +52,9 @@ config("tenta_public") {
       }
       if ( enable_tenta_log_history ) {
         defines += [ "TENTA_LOG_HISTORY_ENABLE=1" ]
+      }
+      if ( enable_tenta_log_gui ) {
+        defines += [ "TENTA_LOG_GUI_ENABLE=1" ]
       }
     } else {
       defines += [ "TENTA_LOG_ENABLE=0" ]

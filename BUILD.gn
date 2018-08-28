@@ -425,6 +425,7 @@ source_set("xwalk_runtime") {
     "//xwalk/resources:xwalk_resources_300_percent_pak",
     "//xwalk/sysapps",
     "//xwalk/sysapps:xwalk_sysapps_resources",
+    "//xwalk/runtime/android/empty_tenta",
   ]
 
   if ( tenta_chromium_build ) {
@@ -435,7 +436,7 @@ source_set("xwalk_runtime") {
     ]
   } else {
     deps += [
-      "//xwalk/runtime/android/empty_tenta",
+#       "//xwalk/runtime/android/empty_tenta",
     ]
   }
                              
