@@ -9,6 +9,7 @@
 #include "third_party/WebKit/public/platform/WebURL.h"
 #include "third_party/WebKit/public/web/WebLocalFrame.h"
 #include "url/gurl.h"
+#include "meta_logging.h"
 
 namespace xwalk {
 
@@ -24,4 +25,11 @@ void XWalkPermissionClient::OnDestruct() {
   delete this;
 }
 
+bool XWalkPermissionClient::AllowStorage(bool local) {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " local=" << local;
+  if (local) {
+    return false;
+  }
+  return true;
+}
 }  // namespace xwalk

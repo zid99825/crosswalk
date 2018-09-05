@@ -22,6 +22,9 @@ class XWalkPermissionClient : public content::RenderFrameObserver,
   // content::RenderFrameObserver implementation.
   void OnDestruct() override;
 
+  // implement blink::WebContentSettingsClient
+  bool AllowStorage(bool local) override;
+
   DISALLOW_COPY_AND_ASSIGN(XWalkPermissionClient);
 };
 
