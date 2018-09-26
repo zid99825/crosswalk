@@ -120,7 +120,7 @@ public class XWalkWebChromeClient {
             XWalkGeolocationPermissions.Callback callback) {
         // Allow all origins for geolocation requests here for Crosswalk.
         // TODO(yongsheng): Need to define a UI prompt?
-        callback.invoke(origin, true, false);
+        callback.invoke(origin, false, false);
     }
 
     /**

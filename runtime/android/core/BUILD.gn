@@ -27,6 +27,7 @@ android_library("xwalk_core_java") {
     "//xwalk/runtime/android/core_refactor:xwalk_refactor_java",
     "//xwalk/third_party/lzma_sdk:lzma_sdk_java",
     "//xwalk/extensions/android:xwalk_core_extensions_java",
+    "//device/geolocation:geolocation_java",
   ]
   if (tenta_chromium_build) {
     deps += [

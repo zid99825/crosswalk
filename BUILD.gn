@@ -397,6 +397,8 @@ source_set("xwalk_runtime") {
     "//content/public/child",
     "//content/public/common",
     "//content/public/utility",
+    "//device/geolocation",
+    "//device/geolocation/public/interfaces",
     "//gin",
     "//ipc",
     "//media",
