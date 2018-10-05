@@ -27,9 +27,9 @@ void XWalkPermissionClient::OnDestruct() {
 
 bool XWalkPermissionClient::AllowStorage(bool local) {
   TENTA_LOG_NET(INFO) << "iotto " << __func__ << " local=" << local;
-  if (local) {
-    return false;
-  }
+//  if (local) {
+//    return false;
+//  }
   return true;
 }
 }  // namespace xwalk

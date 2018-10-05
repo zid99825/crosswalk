@@ -64,6 +64,7 @@ int XWalkMainDelegateAndroid::RunProcess(
 }
 
 void XWalkMainDelegateAndroid::InitResourceBundle() {
+  LOG(INFO) << "iotto " << __func__;
   ui::SetLocalePaksStoredInApk(true);
 
   base::FilePath pak_file;

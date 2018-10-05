@@ -68,7 +68,8 @@ class XWalkWebContentsDelegate : public web_contents_delegate_android::WebConten
   void SetOverlayMode(bool useOverlayMode) override;
   base::android::ScopedJavaLocalRef<jobject> GetContentVideoViewEmbedder() override;
  private:
-  std::unique_ptr<content::JavaScriptDialogManager> javascript_dialog_manager_;DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsDelegate)
+//  std::unique_ptr<content::JavaScriptDialogManager> javascript_dialog_manager_;
+  DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsDelegate)
   ;
 };
 

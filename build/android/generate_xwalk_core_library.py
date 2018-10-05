@@ -43,6 +43,7 @@ def CopyJSBindingFiles(js_files, output_dir):
   build_utils.MakeDirectory(res_raw_dir)
   for js_file in js_files:
     shutil.copy2(js_file, res_raw_dir)
+    print("CopyJSBindingFiles %s" % (js_file))
 
 
 def CopyMainJar(output_dir, jar_path):
@@ -197,7 +198,7 @@ def main(argv):
                       help='Binary files to store in res/raw.')
   parser.add_argument('--asset-sources', default='',
                       help='Binary files to store in assets.')
-  parser.add_argument('--js-bindings', required=True,
+  parser.add_argument('--js-bindings', default='',
                       help='.js files to copy to res/raw.')
   parser.add_argument('--main-jar', required=True,
                       help='Path to the main JAR to copy to libs/.')

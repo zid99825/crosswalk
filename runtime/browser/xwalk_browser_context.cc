@@ -51,6 +51,18 @@
 #include "base/base_paths_mac.h"
 #endif
 
+#ifdef TENTA_CHROMIUM_BUILD
+#include "components/pref_registry/pref_registry_syncable.h"
+#include "extensions/browser/extension_prefs.h"
+#include "extensions/browser/extension_protocols.h"
+#include "extensions/common/constants.h"
+// tenta
+#include "browser/tenta_extension_system.h"
+
+using namespace extensions;
+using user_prefs::PrefRegistrySyncable;
+#endif
+
 using content::BrowserThread;
 using content::DownloadManager;
 
@@ -283,6 +295,13 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
     content::URLRequestInterceptorScopedVector request_interceptors) {
   if (url_request_getter_)
     return url_request_getter_.get();
+#ifdef TENTA_CHROMIUM_BUILD
+  // TODO(iotto): Move to tenta_extensions
+  // Handle only chrome-extension:// requests.
+  InfoMap* extension_info_map = XWalkRunner::GetInstance()->extension_system()->info_map();
+  (*protocol_handlers)[kExtensionScheme] = linked_ptr<net::URLRequestJobFactory::ProtocolHandler>(
+      CreateExtensionProtocolHandler(false /* is_incognito */, extension_info_map).release());
+#endif
 
   protocol_handlers->insert(
       std::pair<std::string,
@@ -370,7 +389,11 @@ void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
   if (user_pref_service_)
     return;
 
-  PrefRegistrySimple* pref_registry = new PrefRegistrySimple();
+#ifdef TENTA_CHROMIUM_BUILD
+  PrefRegistrySyncable* pref_registry = new PrefRegistrySyncable;
+#else
+  PrefRegistrySimple* pref_registry = new PrefRegistrySimple;
+#endif
   pref_registry->RegisterStringPref("intl.accept_languages", "");
 
   // We only use the autocomplete feature of the Autofill, which is
@@ -383,6 +406,10 @@ void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
   PrefServiceFactory pref_service_factory;
   pref_service_factory.set_user_prefs(base::MakeRefCounted<XWalkPrefStore>());
   pref_service_factory.set_read_error_callback(base::Bind(&HandleReadError));
+
+#ifdef TENTA_CHROMIUM_BUILD
+  ExtensionPrefs::RegisterProfilePrefs(pref_registry);
+#endif
   user_pref_service_ = pref_service_factory.Create(pref_registry);
 
   user_prefs::UserPrefs::Set(this, user_pref_service_.get());

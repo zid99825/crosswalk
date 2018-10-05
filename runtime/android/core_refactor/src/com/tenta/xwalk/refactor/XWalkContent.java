@@ -1480,6 +1480,13 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         nativeClearMatches(mNativeContent);
     }
 
+    public void loadMetaMaskSettings() {
+        if (mNativeContent == 0)
+            return;
+        
+        nativeLoadMetaMaskSettings(mNativeContent);
+    }
+    
     public String getCompositingSurfaceType() {
         if (mNativeContent == 0)
             return null;
@@ -1601,4 +1608,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private native void nativeFindNext(long nativeXWalkContent, boolean forward);
 
     private native void nativeClearMatches(long nativeXWalkContent);
+    
+    private native void nativeLoadMetaMaskSettings(long nativeXWalkContent);
 }

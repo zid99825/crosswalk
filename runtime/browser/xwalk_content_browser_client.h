@@ -53,6 +53,8 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   ~XWalkContentBrowserClient() override;
 
   // ContentBrowserClient overrides.
+  GURL GetEffectiveURL(content::BrowserContext* browser_context, const GURL& url) override;
+
   content::BrowserMainParts* CreateBrowserMainParts(
       const content::MainFunctionParams& parameters) override;
   void AppendExtraCommandLineSwitches(base::CommandLine* command_line,
@@ -63,6 +65,7 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
       content::WebContents* web_contents) override;
   void RenderProcessWillLaunch(
       content::RenderProcessHost* host) override;
+  bool IsHandledURL(const GURL& url) override;
   content::MediaObserver* GetMediaObserver() override;
   void BindInterfaceRequestFromFrame(
         content::RenderFrameHost* render_frame_host,
@@ -141,6 +144,10 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
 
   void GetAdditionalAllowedSchemesForFileSystem(
       std::vector<std::string>* additional_schemes) override;
+  // |schemes| is a return value parameter that gets a whitelist of schemes that
+  // should bypass the Is Privileged Context check.
+  // See http://www.w3.org/TR/powerful-features/#settings-privileged
+  void GetSchemesBypassingSecureContextCheckWhitelist(std::set<std::string>* schemes) override;
 
   content::DevToolsManagerDelegate* GetDevToolsManagerDelegate() override;
 
@@ -192,6 +199,11 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   //**************** private ************
  private:
   virtual void ExposeInterfacesToFrame(service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>* registry);
+#ifdef TENTA_CHROMIUM_BUILD
+  // Returns the extension or app associated with |site_instance| or NULL.
+  void SiteInstanceGotProcess(content::SiteInstance* site_instance) override;
+  void SiteInstanceDeleting(content::SiteInstance* site_instance) override;
+#endif
 
   XWalkRunner* xwalk_runner_;
   std::unique_ptr<content::ClientCertificateDelegate> delegate_;
@@ -206,7 +218,9 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
       resource_dispatcher_host_delegate_;
 
   std::unique_ptr<service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>> frame_interfaces_;
-
+//#ifdef TENTA_CHROMIUM_BUILD
+//  ::tenta::ext::TentaExtensionsContentBrowserClient _tenta_extensions_cbc;
+//#endif
   DISALLOW_COPY_AND_ASSIGN(XWalkContentBrowserClient);
 };
 

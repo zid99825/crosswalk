@@ -58,6 +58,11 @@
 #include "ui/base/ime/input_method_initializer.h"
 #endif
 
+#ifdef TENTA_CHROMIUM_BUILD
+#include "browser/tenta_extensions_browser_client.h"
+#endif
+#include "meta_logging.h"
+
 namespace {
 
 // FIXME: Compare with method in startup_browser_creator.cc.
@@ -154,6 +159,14 @@ void XWalkBrowserMainParts::PreEarlyInitialization() {
 }
 
 int XWalkBrowserMainParts::PreCreateThreads() {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__;
+#ifdef TENTA_CHROMIUM_BUILD
+  extensions_browser_client_ =
+      base::MakeUnique<::tenta::ext::TentaExtensionsBrowserClient>();
+  ::extensions::ExtensionsBrowserClient::Set(extensions_browser_client_.get());
+#endif
+
+
   return content::RESULT_CODE_NORMAL_EXIT;
 }
 
@@ -182,8 +195,10 @@ void XWalkBrowserMainParts::RegisterExternalExtensions() {
 }
 
 void XWalkBrowserMainParts::PreMainMessageLoopRun() {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__;
   xwalk_runner_->PreMainMessageLoopRun();
 
+  // TODO(iotto): Move to XWalkBrowserMainPartsAndroid
   XWalkDevToolsManagerDelegate::StartHttpHandler(xwalk_runner_->browser_context());
 
 /*  devtools_http_handler_.reset(
@@ -267,6 +282,7 @@ void XWalkBrowserMainParts::PostMainMessageLoopRun() {
   xwalk_runner_->PostMainMessageLoopRun();
   XWalkDevToolsManagerDelegate::StopHttpHandler();
 //  devtools_http_handler_.reset();
+
 }
 
 void XWalkBrowserMainParts::CreateInternalExtensionsForUIThread(

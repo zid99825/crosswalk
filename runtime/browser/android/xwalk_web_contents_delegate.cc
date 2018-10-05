@@ -132,10 +132,11 @@ void XWalkWebContentsDelegate::RunFileChooser(content::RenderFrameHost* render_f
 
 content::JavaScriptDialogManager*
 XWalkWebContentsDelegate::GetJavaScriptDialogManager(WebContents* source) {
-  if (!javascript_dialog_manager_.get()) {
-    javascript_dialog_manager_.reset(new RuntimeJavaScriptDialogManager);
-  }
-  return javascript_dialog_manager_.get();
+  return RuntimeJavaScriptDialogManager::GetInstance();
+//  if (!javascript_dialog_manager_.get()) {
+//    javascript_dialog_manager_.reset(new RuntimeJavaScriptDialogManager);
+//  }
+//  return javascript_dialog_manager_.get();
 }
 
 void XWalkWebContentsDelegate::RequestMediaAccessPermission(content::WebContents* web_contents,

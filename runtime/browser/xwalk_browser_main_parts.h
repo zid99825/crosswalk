@@ -29,6 +29,10 @@ namespace content {
 class DevToolsHttpHandler;
 }
 
+namespace extensions {
+class ExtensionsBrowserClient;
+}
+
 namespace xwalk {
 
 class XWalkRunner;
@@ -85,6 +89,8 @@ class XWalkBrowserMainParts : public content::BrowserMainParts {
 
   std::unique_ptr<content::DevToolsHttpHandler> devtools_http_handler_;
 
+  std::unique_ptr<::extensions::ExtensionsBrowserClient>
+      extensions_browser_client_;
  private:
 #if defined(USE_AURA)
   std::unique_ptr<wm::WMState> wm_state_;

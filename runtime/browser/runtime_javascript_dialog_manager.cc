@@ -5,7 +5,7 @@
 #include "xwalk/runtime/browser/runtime_javascript_dialog_manager.h"
 
 #include <string>
-
+#include "base/lazy_instance.h"
 #include "components/url_formatter/url_formatter.h"
 #include "content/public/browser/javascript_dialog_manager.h"
 #include "content/public/browser/web_contents.h"
@@ -20,6 +20,13 @@ RuntimeJavaScriptDialogManager::RuntimeJavaScriptDialogManager() {
 }
 
 RuntimeJavaScriptDialogManager::~RuntimeJavaScriptDialogManager() {
+}
+
+//static
+RuntimeJavaScriptDialogManager* RuntimeJavaScriptDialogManager::GetInstance() {
+  static base::LazyInstance<RuntimeJavaScriptDialogManager>::Leaky client = LAZY_INSTANCE_INITIALIZER;
+
+  return client.Pointer();
 }
 
 void RuntimeJavaScriptDialogManager::RunJavaScriptDialog(

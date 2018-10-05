@@ -10,12 +10,28 @@
 #include "base/compiler_specific.h"
 #include "net/base/network_delegate_impl.h"
 
+#ifdef TENTA_CHROMIUM_BUILD
+
+namespace extensions {
+class InfoMap;
+} // namespace extensions
+namespace tenta {
+namespace ext {
+class TentaExtensionsNetworkDelegate;
+} // namespace ext
+} // namespace tenta
+#endif
+
 namespace xwalk {
 
 class RuntimeNetworkDelegate : public net::NetworkDelegateImpl {
  public:
   RuntimeNetworkDelegate();
   ~RuntimeNetworkDelegate() override;
+
+#ifdef TENTA_CHROMIUM_BUILD
+  void set_extension_info_map(extensions::InfoMap* extension_info_map);
+#endif
 
  private:
   // net::NetworkDelegate implementation.
@@ -38,7 +54,7 @@ class RuntimeNetworkDelegate : public net::NetworkDelegateImpl {
   void OnResponseStarted(net::URLRequest* request, int net_error) override;
   void OnNetworkBytesReceived(net::URLRequest* request,
                               int64_t bytes_received) override;
-  void OnCompleted(net::URLRequest* request, bool started) override;
+  void OnCompleted(net::URLRequest* request, bool started, int net_error) override;
   void OnURLRequestDestroyed(net::URLRequest* request) override;
   void OnPACScriptError(int line_number,
                         const base::string16& error) override;
@@ -56,6 +72,9 @@ class RuntimeNetworkDelegate : public net::NetworkDelegateImpl {
                        const base::FilePath& original_path,
                        const base::FilePath& absolute_path) const override;
 
+#ifdef TENTA_CHROMIUM_BUILD
+  std::unique_ptr<::tenta::ext::TentaExtensionsNetworkDelegate> _extensions_delegate;
+#endif
   DISALLOW_COPY_AND_ASSIGN(RuntimeNetworkDelegate);
 };
 

@@ -27,6 +27,7 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_descriptors.h"
 #include "content/public/common/main_function_params.h"
+#include "content/public/common/url_constants.h"
 #include "content/public/common/web_preferences.h"
 #include "device/geolocation/geolocation_provider.h"
 #include "gin/v8_initializer.h"
@@ -92,6 +93,14 @@
 #include "xwalk/runtime/browser/xwalk_presentation_service_delegate_win.h"
 #endif
 
+#ifdef TENTA_CHROMIUM_BUILD
+// tenta
+#include "browser/tenta_extensions_content_browser_client.h"
+#include "meta_logging.h"
+using namespace tenta::ext;
+using namespace content;
+#endif
+
 namespace xwalk {
 
 namespace {
@@ -136,6 +145,15 @@ XWalkContentBrowserClient::XWalkContentBrowserClient(XWalkRunner* xwalk_runner)
 XWalkContentBrowserClient::~XWalkContentBrowserClient() {
   DCHECK(g_browser_client);
   g_browser_client = nullptr;
+}
+
+GURL XWalkContentBrowserClient::GetEffectiveURL( content::BrowserContext* browser_context, const GURL& url) {
+#ifdef TENTA_CHROMIUM_BUILD
+  GURL ret_val = TentaExtensionsContentBrowserClient::GetEffectiveURL(browser_context, url);
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " url=" << url.spec() << " effective_url=" << ret_val.spec();
+  return ret_val;
+#endif
+  return ContentBrowserClient::GetEffectiveURL(browser_context, url);
 }
 
 /**
@@ -279,6 +297,35 @@ void XWalkContentBrowserClient::RenderProcessWillLaunch(
   host->AddFilter(new cdm::CdmMessageFilterAndroid(true, false));
   host->AddFilter(new XWalkRenderMessageFilter(host->GetID()));
 #endif
+#ifdef TENTA_CHROMIUM_BUILD
+  TentaExtensionsContentBrowserClient::RenderProcessWillLaunch(host);
+#endif
+
+}
+
+bool XWalkContentBrowserClient::IsHandledURL(const GURL& url) {
+  if (!url.is_valid())
+    return false;
+  // Keep in sync with ProtocolHandlers added in
+  // ShellBrowserContext::CreateRequestContext() and in
+  // content::ShellURLRequestContextGetter::GetURLRequestContext().
+  static const char* const kProtocolList[] = {
+      url::kBlobScheme,
+      content::kChromeDevToolsScheme,
+      content::kChromeUIScheme,
+      url::kDataScheme,
+      url::kFileScheme,
+      url::kFileSystemScheme,
+  };
+  for (const char* scheme : kProtocolList) {
+    if (url.SchemeIs(scheme))
+      return true;
+  }
+
+#ifdef TENTA_CHROMIUM_BUILD
+  return TentaExtensionsContentBrowserClient::IsHandledURL(url);
+#endif
+  return false;
 }
 
 content::MediaObserver* XWalkContentBrowserClient::GetMediaObserver() {
@@ -476,8 +523,19 @@ void XWalkContentBrowserClient::GetStoragePartitionConfigForSite(
 
 void XWalkContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
     std::vector<std::string>* additional_schemes) {
+#ifdef TENTA_CHROMIUM_BUILD
+  ContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem (additional_schemes);
+  TentaExtensionsContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(additional_schemes);
+#endif
 #if !defined(OS_ANDROID)
   additional_schemes->push_back("app");
+#endif
+}
+
+void XWalkContentBrowserClient::GetSchemesBypassingSecureContextCheckWhitelist(std::set<std::string>* schemes) {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__;
+#ifdef TENTA_CHROMIUM_BUILD
+  TentaExtensionsContentBrowserClient::GetSchemesBypassingSecureContextCheckWhitelist(schemes);
 #endif
 }
 
@@ -520,6 +578,10 @@ XWalkContentBrowserClient::CreateThrottlesForNavigation(
         navigation_interception::InterceptNavigationDelegate::CreateThrottleFor(
             navigation_handle));
   }
+
+#ifdef TENTA_CHROMIUM_BUILD
+  TentaExtensionsContentBrowserClient::CreateThrottlesForNavigation(navigation_handle, throttles);
+#endif
   return throttles;
 }
 #endif // OS_ANDROID
@@ -546,5 +608,17 @@ void XWalkContentBrowserClient::ExposeInterfacesToFrame(
     registry) {
 
 }
+
+#ifdef TENTA_CHROMIUM_BUILD
+void XWalkContentBrowserClient::SiteInstanceGotProcess(content::SiteInstance* site_instance) {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " url=" << site_instance->GetSiteURL();
+  TentaExtensionsContentBrowserClient::SiteInstanceGotProcess(site_instance);
+}
+
+void XWalkContentBrowserClient::SiteInstanceDeleting(content::SiteInstance* site_instance) {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " url=" << site_instance->GetSiteURL();
+  TentaExtensionsContentBrowserClient::SiteInstanceDeleting(site_instance);
+}
+#endif
 
 }  // namespace xwalk

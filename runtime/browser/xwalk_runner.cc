@@ -31,6 +31,15 @@
 #include "xwalk/runtime/browser/xwalk_runner_win.h"
 #endif
 
+#ifdef TENTA_CHROMIUM_BUILD
+#include "extensions/browser/extension_system.h"
+//tenta
+//#include "browser/tenta_event_router_forwarder.h"
+#include "browser/tenta_extension_system_provider.h"
+#include "browser/tenta_extension_system.h"
+#include "browser/tenta_extensions_browser_main_delegate.h"
+#endif
+
 namespace xwalk {
 
 namespace {
@@ -51,6 +60,10 @@ XWalkRunner::XWalkRunner()
   // Initializing after the g_xwalk_runner is set to ensure
   // XWalkRunner::GetInstance() can be used in all sub objects if needed.
   content_browser_client_.reset(new XWalkContentBrowserClient(this));
+#ifdef TENTA_CHROMIUM_BUILD
+  _tenta_extensions_delegate.reset(new tenta::ext::TentaExtensionsBrowserMainDelegate());
+//  extension_event_router_forwarder_ = base::MakeRefCounted<tenta::ext::TentaEventRouterForwarder>();
+#endif
 }
 
 XWalkRunner::~XWalkRunner() {
@@ -77,6 +90,12 @@ void XWalkRunner::PreMainMessageLoopRun() {
     extension_service_.reset(new extensions::XWalkExtensionService(
         app_extension_bridge_.get()));
 
+#ifdef TENTA_CHROMIUM_BUILD
+  _tenta_extension_system = static_cast<::tenta::ext::TentaExtensionSystem*>(::extensions::ExtensionSystem::Get(
+      browser_context_.get()));
+  _tenta_extension_system->InitForRegularProfile(true);
+  ::tenta::ext::TentaExtensionSystemProvider::GetInstance();
+#endif
   CreateComponents();
   app_extension_bridge_->SetApplicationSystem(app_component_->app_system());
   browser_context_->set_application_service(
@@ -86,6 +105,10 @@ void XWalkRunner::PreMainMessageLoopRun() {
 void XWalkRunner::PostMainMessageLoopRun() {
   DestroyComponents();
   extension_service_.reset();
+#ifdef TENTA_CHROMIUM_BUILD
+  // tied to browser context
+  _tenta_extension_system = nullptr;
+#endif
   browser_context_.reset();
   DisableRemoteDebugging();
 }

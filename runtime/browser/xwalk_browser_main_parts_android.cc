@@ -39,6 +39,14 @@
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "gpu/config/gpu_switches.h"
 
+#ifdef TENTA_CHROMIUM_BUILD
+#include "xwalk/runtime/browser/xwalk_browser_context.h"
+
+#include "browser/tenta_extensions_browser_client.h"
+#include "browser/tenta_extensions_browser_main_delegate.h"
+#endif
+#include "meta_logging.h"
+
 namespace {
 
 const char kPreKitkatDataDirectory[] = "app_database";
@@ -187,6 +195,7 @@ void XWalkBrowserMainPartsAndroid::PostMainMessageLoopStart() {
 }
 
 void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__;
   net::NetModule::SetResourceProvider(PlatformResourceProvider);
 //  if (parameters_.ui_task) {
 //    parameters_.ui_task->Run();
@@ -214,11 +223,18 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
           command_line->GetSwitchValuePath(switches::kXWalkProfileName));
       MoveUserDataDirIfNecessary(user_data_dir, profile);
   }
+
+#ifdef TENTA_CHROMIUM_BUILD
+  xwalk_runner_->extensions_delegate()->Start(xwalk_runner_->browser_context());
+#endif
 }
 
 void XWalkBrowserMainPartsAndroid::PostMainMessageLoopRun() {
   XWalkBrowserMainParts::PostMainMessageLoopRun();
 
+#ifdef TENTA_CHROMIUM_BUILD
+  xwalk_runner_->extensions_delegate()->Shutdown();
+#endif
 //  base::MessageLoopForUI::current()->Start();
 }
 

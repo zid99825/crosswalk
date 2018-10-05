@@ -39,4 +39,8 @@
     "includes": [33000],
     "messages": [33010],
   },
+  "xwalk/third_party/tenta/crosswalk_extensions/resources/extensions_renderer_resources.grd" : {
+    "includes": [33100],
+    "structures": [33200],
+  },
 }

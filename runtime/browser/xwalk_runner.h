@@ -12,6 +12,15 @@
 
 #include "xwalk/runtime/browser/storage_component.h"
 
+#ifdef TENTA_CHROMIUM_BUILD
+namespace tenta {
+namespace ext {
+class TentaExtensionSystem;
+class TentaExtensionsBrowserMainDelegate;
+} // namespace ext
+} // namespace tenta
+#endif
+
 namespace content {
 class ContentBrowserClient;
 class RenderProcessHost;
@@ -72,7 +81,10 @@ class XWalkRunner {
   extensions::XWalkExtensionService* extension_service() {
     return extension_service_.get();
   }
-
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaExtensionSystem* extension_system() { return _tenta_extension_system; }
+  ::tenta::ext::TentaExtensionsBrowserMainDelegate* extensions_delegate() { return _tenta_extensions_delegate.get(); }
+#endif
   // Stages of main parts. See content/browser_main_parts.h for description.
   virtual void PreMainMessageLoopRun();
   virtual void PostMainMessageLoopRun();
@@ -135,6 +147,11 @@ class XWalkRunner {
   std::unique_ptr<XWalkContentBrowserClient> content_browser_client_;
   std::unique_ptr<XWalkBrowserContext> browser_context_;
   std::unique_ptr<extensions::XWalkExtensionService> extension_service_;
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaExtensionSystem* _tenta_extension_system;
+  std::unique_ptr<::tenta::ext::TentaExtensionsBrowserMainDelegate> _tenta_extensions_delegate;
+//  scoped_refptr<::tenta::ext::TentaEventRouterForwarder> extension_event_router_forwarder_;
+#endif
   std::unique_ptr<XWalkAppExtensionBridge> app_extension_bridge_;
 
   // XWalkRunner uses the XWalkComponent interface to be able to handle

@@ -6,6 +6,7 @@ import("//build/config/android/rules.gni")
 import("//third_party/icu/config.gni")
 import("//v8/gni/v8.gni")
 import("//xwalk/build/version.gni")
+import("//xwalk/build/tenta.gni")
 
 android_apk("xwalk_runtime_lib_apk") {
   apk_name = "XWalkRuntimeLib"
@@ -23,6 +24,12 @@ android_apk("xwalk_runtime_lib_apk") {
 #     "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
 #     "//xwalk/runtime/android/core_internal:xwalk_core_internal_java_resources",
   ]
+  if ( tenta_chromium_build ) {
+    print(" ... tenta_assets ...")
+    deps += [
+      "//xwalk/third_party/tenta/crosswalk_extensions/resources:tenta_assets",
+    ]
+  }
 }
 
 android_resources("xwalk_runtime_lib_apk_resources") {
@@ -35,10 +42,12 @@ android_assets("xwalk_runtime_lib_apk_assets") {
   renaming_sources = [
     "//xwalk/experimental/launch_screen/launch_screen_api.js",
     "//xwalk/experimental/wifidirect/wifidirect_api.js",
+    "//xwalk/third_party/tenta/crosswalk_extensions/resources/extensions/metamask-chrome/background.js",
   ]
   renaming_destinations = [
     "jsapi/launch_screen_api.js",
     "jsapi/wifidirect_api.js",
+    "tenta/background.js",
   ]
   deps = [
     "//third_party/icu:icu_assets",

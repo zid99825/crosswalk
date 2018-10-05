@@ -64,6 +64,11 @@
 #include "xwalk/third_party/tenta/meta_fs/jni/java_byte_array.h"
 #include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
 #include "xwalk/third_party/tenta/crosswalk_extensions/tenta_history_store.h"
+//
+#include "meta_logging.h"
+
+#include "extensions/browser/event_router.h"
+using namespace extensions;
 #endif
 
 using base::android::AttachCurrentThread;
@@ -858,6 +863,19 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
 jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& oldKey,
                                 const JavaParamRef<jstring>& newKey) {
   return -1;
+}
+
+void XWalkContent::LoadMetaMaskSettings(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__;
+  XWalkBrowserContext* context = static_cast<XWalkBrowserContext*>(web_contents_->GetBrowserContext());
+
+  events::HistogramValue histogram_value = events::BROWSER_ACTION_ON_CLICKED;
+  const char* event_name = "browserAction.onClicked";
+  std::unique_ptr<base::ListValue> event_args(new base::ListValue());
+  std::string extension_id("ciddmbnandgeimdnjghpdbilnninlbgn");
+
+  auto event = base::MakeUnique<Event>(histogram_value, event_name, std::move(event_args), context);
+  EventRouter::Get(context)->DispatchEventToExtension(extension_id, std::move(event));
 }
 
 /************ End MetaFS ****************/

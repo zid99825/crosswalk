@@ -61,10 +61,15 @@ repack("xwalk_pak") {
   if ( tenta_chromium_build ) {
     sources += [
       "$root_gen_dir/xwalk/third_party/tenta/crosswalk_extensions/resources/tenta_error_pages_browser_resources.pak",
+      "$root_gen_dir/xwalk/third_party/tenta/crosswalk_extensions/resources/tenta_extensions_renderer_resources.pak",
+      "$root_gen_dir/extensions/extensions_renderer_resources.pak",
+      "$root_gen_dir/chrome/common_resources.pak",
     ]
 
     deps += [
       "//xwalk/third_party/tenta/crosswalk_extensions/resources",
+      "//extensions:extensions_renderer_resources",
+      "//chrome/common:resources",
     ]
   }
 }

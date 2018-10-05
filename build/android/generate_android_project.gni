@@ -29,12 +29,12 @@ import("//build/config/android/rules.gni")
 #     AndroidManifest.xml and others.
 template("generate_xwalk_core_library") {
   assert(defined(invoker.build_config))
-  assert(defined(invoker.js_bindings))
+#   assert(defined(invoker.js_bindings))
   assert(defined(invoker.output_dir))
   assert(defined(invoker.template_dir))
 
   _build_config = invoker.build_config
-  _js_bindings = invoker.js_bindings
+  
   _output_dir = invoker.output_dir
   _template_dir = invoker.template_dir
 
@@ -52,14 +52,13 @@ template("generate_xwalk_core_library") {
 
     _rebased_build_config = rebase_path(_build_config, root_build_dir)
     _rebased_depfile = rebase_path(depfile, root_build_dir)
-    _rebased_js_bindings = rebase_path(_js_bindings, root_build_dir)
+    
     _rebased_output_dir = rebase_path(_output_dir, root_build_dir)
     _rebased_template_dir = rebase_path(_template_dir, root_build_dir)
 
     args = [
       "--abi=$android_app_abi",
       "--depfile=$_rebased_depfile",
-      "--js-bindings=$_rebased_js_bindings",
       "--main-jar=@FileArg(${_rebased_build_config}:deps_info:jar_path)",
       "--output-dir=$_rebased_output_dir",
       "--resource-zips=@FileArg(${_rebased_build_config}:resources:dependency_zips)",
@@ -67,6 +66,11 @@ template("generate_xwalk_core_library") {
       "--template-dir=$_rebased_template_dir",
     ]
 
+    if (defined(invoker.js_bindings) && invoker.js_bindings !=[] ) {
+      _js_bindings = invoker.js_bindings
+      _rebased_js_bindings = rebase_path(_js_bindings, root_build_dir)
+      args += [ "--js-bindings=$_rebased_js_bindings", ]
+    } 
     if (defined(invoker.binary_files) && invoker.binary_files != []) {
       binary_files = rebase_path(invoker.binary_files, root_build_dir)
       args += [ "--binary-files=$binary_files" ]
@@ -108,7 +112,7 @@ template("generate_xwalk_core_library") {
 #     AndroidManifest.xml and others.
 template("generate_android_project") {
   assert(defined(invoker.android_manifest))
-  assert(defined(invoker.js_bindings))
+#   assert(defined(invoker.js_bindings))
   assert(defined(invoker.template_dir))
 
   _base_path = "$target_gen_dir/$target_name"

@@ -49,9 +49,30 @@ class XWalkContentRendererClient :
   unsigned long long VisitedLinkHash(const char* canonical_url, size_t length) override;
   bool IsLinkVisited(unsigned long long link_hash) override;
 
+  bool OverrideCreatePlugin(content::RenderFrame* render_frame, const blink::WebPluginParams& params,
+                            blink::WebPlugin** plugin) override;
+
+  bool ShouldFork(blink::WebLocalFrame* frame, const GURL& url, const std::string& http_method,
+                  bool is_initial_navigation, bool is_server_redirect, bool* send_referrer) override;
   bool WillSendRequest(blink::WebLocalFrame* frame, ui::PageTransition transition_type, const blink::WebURL& url,
                        std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
                        GURL* new_url) override;
+  // Notifies that a document element has been inserted in the frame's document.
+  // This may be called multiple times for the same document. This method may
+  // invalidate the frame.
+  void RunScriptsAtDocumentStart(content::RenderFrame* render_frame) override;
+
+  // Notifies that the DOM is ready in the frame's document.
+  // This method may invalidate the frame.
+  void RunScriptsAtDocumentEnd(content::RenderFrame* render_frame) override;
+
+  // Notifies that the window.onload event is about to fire.
+  // This method may invalidate the frame.
+  void RunScriptsAtDocumentIdle(content::RenderFrame* render_frame) override;
+
+  // TODO(iotto) : Implement
+//  DidInitializeServiceWorkerContextOnWorkerThread
+//  WillDestroyServiceWorkerContextOnWorkerThread
 
   void AddSupportedKeySystems(std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) override;
 

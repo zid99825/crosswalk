@@ -35,6 +35,10 @@
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/common/xwalk_paths.h"
 
+#ifdef TENTA_CHROMIUM_BUILD
+#include "extensions/common/constants.h"
+#endif
+
 const char* const xwalk::XWalkContentClient::kNaClPluginName = "Native Client";
 
 namespace {
@@ -233,6 +237,14 @@ void XWalkContentClient::AddAdditionalSchemes(Schemes* schemes) {
       blink::WebString::fromASCII(xwalk::kContentScheme));
   blink::WebSecurityPolicy::registerURLSchemeAsLocal(content_scheme);
 */
+#endif
+
+#ifdef TENTA_CHROMIUM_BUILD
+  schemes->standard_schemes.push_back(extensions::kExtensionScheme);
+  schemes->savable_schemes.push_back(extensions::kExtensionScheme);
+  schemes->secure_schemes.push_back(extensions::kExtensionScheme);
+  schemes->cors_enabled_schemes.push_back(extensions::kExtensionScheme);
+  schemes->csp_bypassing_schemes.push_back(extensions::kExtensionScheme);
 #endif
 
 }

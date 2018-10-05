@@ -108,6 +108,8 @@ class XWalkContent :
 
   /******** End Metafs **********/
 
+  void LoadMetaMaskSettings(JNIEnv* env, const JavaParamRef<jobject>& obj);
+
 //  jboolean PushStateWitkKey(JNIEnv* env, jobject obj,
 //                            const JavaParamRef<jbyteArray>& state,
 //                            jstring id,

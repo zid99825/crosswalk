@@ -23,10 +23,12 @@
 #include "grit/xwalk_sysapps_resources.h"
 #include "net/base/net_errors.h"
 #include "ppapi/features/features.h"
+#include "services/service_manager/public/cpp/binder_registry.h"
 #include "third_party/WebKit/public/platform/WebString.h"
 #include "third_party/WebKit/public/platform/WebURLError.h"
 #include "third_party/WebKit/public/platform/WebURLRequest.h"
 #include "third_party/WebKit/public/web/WebDocument.h"
+#include "third_party/WebKit/public/web/WebPluginParams.h"
 #include "third_party/WebKit/public/web/WebSecurityPolicy.h"
 #include "third_party/WebKit/public/platform/modules/fetch/fetch_api_request.mojom-shared.h"
 #include "xwalk/application/common/constants.h"
@@ -37,7 +39,7 @@
 #include "xwalk/runtime/common/xwalk_localized_error.h"
 #include "xwalk/runtime/renderer/isolated_file_system.h"
 #include "xwalk/runtime/renderer/pepper/pepper_helper.h"
-#include "services/service_manager/public/cpp/binder_registry.h"
+
 #include "meta_logging.h"
 
 #if defined(OS_ANDROID)
@@ -58,10 +60,17 @@
 // gen
 #include "xwalk/third_party/tenta/crosswalk_extensions/resources/grit/tenta_error_pages_browser_resources.h"
 //tenta
+#include "common/tenta_extensions_client.h"
 #include "renderer/neterror/tenta_net_error_helper.h"
+#include "renderer/tenta_extensions_renderer_client.h"
 //chromium
+#include "extensions/common/extension_urls.h"
+#include "extensions/renderer/extensions_renderer_client.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "third_party/zlib/google/compression_utils.h"
+
+using namespace extensions;
+using namespace tenta::ext;
 #endif
 
 using content::RenderThread;
@@ -120,6 +129,10 @@ XWalkContentRendererClient* XWalkContentRendererClient::Get() {
 XWalkContentRendererClient::XWalkContentRendererClient() {
   DCHECK(!g_renderer_client);
   g_renderer_client = this;
+#ifdef TENTA_CHROMIUM_BUILD
+  ::extensions::ExtensionsClient::Set(::tenta::ext::TentaExtensionsClient::GetInstance());
+  ::extensions::ExtensionsRendererClient::Set(::tenta::ext::TentaExtensionsRendererClient::GetInstance());
+#endif
 }
 
 XWalkContentRendererClient::~XWalkContentRendererClient() {
@@ -143,6 +156,9 @@ void XWalkContentRendererClient::RenderThreadStarted() {
       ->AddConnectionFilter(base::MakeUnique<content::SimpleConnectionFilter>(
           std::move(registry)));
 
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaExtensionsRendererClient::GetInstance()->RenderThreadStarted();
+#endif
 
   // TODO(iotto) : Fix extensions!
 //  base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
@@ -249,6 +265,7 @@ void XWalkContentRendererClient::RenderFrameCreated(
 //  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr);
 #ifdef TENTA_CHROMIUM_BUILD
   new ::tenta::ext::TentaNetErrorHelper(render_frame);
+  ::tenta::ext::TentaExtensionsRendererClient::GetInstance()->RenderFrameCreated(render_frame);
 #endif
 }
 
@@ -293,6 +310,29 @@ bool XWalkContentRendererClient::IsLinkVisited(unsigned long long link_hash) {
   return visited_link_slave_->IsVisited(link_hash);
 }
 
+bool XWalkContentRendererClient::OverrideCreatePlugin(content::RenderFrame* render_frame,
+                                                      const blink::WebPluginParams& params, blink::WebPlugin** plugin) {
+  std::string orig_mime_type = params.mime_type.Utf8();
+  GURL url(params.url);
+
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " mime=" << orig_mime_type << " url=" << url;
+  return false;
+}
+
+bool XWalkContentRendererClient::ShouldFork(blink::WebLocalFrame* frame, const GURL& url,
+                                            const std::string& http_method, bool is_initial_navigation,
+                                            bool is_server_redirect, bool* send_referrer) {
+#ifdef TENTA_CHROMIUM_BUILD
+  bool should_fork = TentaExtensionsRendererClient::ShouldFork(frame, url, is_initial_navigation, is_server_redirect,
+                                                               send_referrer);
+
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " result=" << should_fork;
+  if (should_fork)
+    return true;
+#endif
+  return false;
+}
+
 bool XWalkContentRendererClient::WillSendRequest(
                        blink::WebLocalFrame* frame,
                        ui::PageTransition transition_type,
@@ -303,6 +343,11 @@ bool XWalkContentRendererClient::WillSendRequest(
                << frame->GetDocument().Url().GetString().Utf8() << " url="
                << url.GetString().Utf8();
 #if defined(OS_ANDROID)
+#ifdef TENTA_CHROMIUM_BUILD
+  if (TentaExtensionsRendererClient::GetInstance()->WillSendRequest(frame, transition_type, url, new_url)) {
+    return true;
+  }
+#endif
   content::RenderView* render_view =
       content::RenderView::FromWebView(frame->View());
   if ( render_view == nullptr ) {
@@ -365,6 +410,24 @@ bool XWalkContentRendererClient::WillSendRequest(
 #endif
 }
 
+void XWalkContentRendererClient::RunScriptsAtDocumentStart(content::RenderFrame* render_frame) {
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaExtensionsRendererClient::GetInstance()->RunScriptsAtDocumentStart(render_frame);
+#endif
+}
+
+void XWalkContentRendererClient::RunScriptsAtDocumentEnd(content::RenderFrame* render_frame) {
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaExtensionsRendererClient::GetInstance()->RunScriptsAtDocumentEnd(render_frame);
+#endif
+}
+
+void XWalkContentRendererClient::RunScriptsAtDocumentIdle(content::RenderFrame* render_frame) {
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaExtensionsRendererClient::GetInstance()->RunScriptsAtDocumentIdle(render_frame);
+#endif
+}
+
 void XWalkContentRendererClient::GetNavigationErrorStrings(
     content::RenderFrame* render_frame,
     const blink::WebURLRequest& failed_request,
@@ -412,6 +475,9 @@ void XWalkContentRendererClient::AddSupportedKeySystems(
 
 bool XWalkContentRendererClient::ShouldReportDetailedMessageForSource(const base::string16& source) const {
   TENTA_LOG_NET(INFO) << __func__ << " src=" << source;
+#ifdef TENTA_CHROMIUM_BUILD
+  return IsSourceFromAnExtension(source);
+#endif
   return false;
 }
 

@@ -52,11 +52,18 @@
 #include "xwalk/runtime/browser/runtime_network_delegate.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+
 #ifdef TENTA_CHROMIUM_BUILD
+#include "extensions/browser/info_map.h"
+#include "xwalk/runtime/browser/xwalk_runner.h"
+
+// tenta
+#include "browser/tenta_extension_system.h"
 #include "host_resolver_tenta.h"
 #include "xwalk/third_party/tenta/chromium_cache/chromium_cache_factory.h"
 
 namespace tenta_cache = tenta::fs::cache;
+using namespace extensions;
 #endif
 
 #if defined(OS_ANDROID)
@@ -207,6 +214,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
                                                  xwalk::GetUserAgent())));
 
 #ifdef TENTA_CHROMIUM_BUILD
+    network_delegate_->set_extension_info_map(XWalkRunner::GetInstance()->extension_system()->info_map());
+
     std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(new tenta_cache::ChromiumCacheFactory());
 
     //TODO (iotto): Remove backup, needed for speed comparison

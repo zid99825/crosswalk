@@ -25,6 +25,7 @@ from util import build_utils
 
 
 def AddDirectoryToAAR(aar_file, src_dir, dest_dir):
+  print ("AddDirectoryToAAR aar=%s dir=%s" % (aar_file,dest_dir))
   """Adds |src_dir| to |aar_file| with the name |dest_dir|."""
   for root, _, files in os.walk(src_dir):
     for f in files:

@@ -124,6 +124,7 @@ generate_android_project("xwalk_core_library") {
     "$root_out_dir/xwalk_100_percent.pak",
   ]
   js_bindings = [
+    "//xwalk/third_party/tenta/crosswalk_extensions/resources/extensions/metamask-chrome/background.js",
     "//xwalk/experimental/launch_screen/launch_screen_api.js",
     "//xwalk/experimental/wifidirect/wifidirect_api.js",
   ]
@@ -219,6 +220,7 @@ generate_android_project("xwalk_shared_library") {
   js_bindings = [
     "//xwalk/experimental/launch_screen/launch_screen_api.js",
     "//xwalk/experimental/wifidirect/wifidirect_api.js",
+    "//xwalk/third_party/tenta/crosswalk_extensions/resources/extensions/metamask-chrome/background.js",
   ]
 
   # This target does not depend on //xwalk/runtime/android/core_internal, but

@@ -258,6 +258,10 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
 
   PopulateFixedWebPreferences(web_prefs);
 
+//  web_prefs->video_rotate_to_fullscreen_enabled = true;
+//  web_prefs->video_fullscreen_detection_enabled = true;
+  web_prefs->video_fullscreen_orientation_lock_enabled = true;
+
   web_prefs->text_autosizing_enabled = Java_XWalkSettings_getTextAutosizingEnabledLocked(env, obj);
 
   {
@@ -276,6 +280,9 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
       render_view_host_ext->SetTextZoomFactor(text_size_percent / 100.0f);
     }
   }
+
+  // disable
+  web_prefs->disable_reading_from_canvas = true;
 
 //  web_prefs->standard_font_family_map[content::kCommonScript] =
 //      ConvertJavaStringToUTF16(
@@ -399,7 +406,8 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
 //    // allowed.
 //    DCHECK(!Java_AwSettings_getUseStricMixedContentCheckingLocked(env, obj) ||
 //           !Java_AwSettings_getAllowRunningInsecureContentLocked(env, obj));
-//    web_prefs->allow_running_insecure_content =
+  // TODO(iotto): Use value from settings
+    web_prefs->allow_running_insecure_content = true;
 //        Java_AwSettings_getAllowRunningInsecureContentLocked(env, obj);
 //    web_prefs->strict_mixed_content_checking =
 //        Java_AwSettings_getUseStricMixedContentCheckingLocked(env, obj);

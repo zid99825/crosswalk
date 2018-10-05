@@ -16,6 +16,8 @@ class RuntimeJavaScriptDialogManager : public content::JavaScriptDialogManager {
   RuntimeJavaScriptDialogManager();
   ~RuntimeJavaScriptDialogManager() override;
 
+  static RuntimeJavaScriptDialogManager* GetInstance();
+
   void RunJavaScriptDialog(
       content::WebContents* web_contents,
       const GURL& origin_url,

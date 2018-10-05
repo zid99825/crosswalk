@@ -2070,4 +2070,15 @@ public class XWalkView extends android.widget.FrameLayout {
             return null;
         return mContent.getCompositingSurfaceType();
     }
+    
+    /**
+     * Fire up metamask
+     */
+    public void loadMetaMaskSettings() {
+        org.chromium.base.Log.d("iotto", "loadMetaMaskSettings");
+        if (mContent == null)
+            return;
+        
+        mContent.loadMetaMaskSettings();
+    }
 }
