@@ -1,17 +1,20 @@
-import("//build/config/android/rules.gni")
 import("//xwalk/build/tenta.gni")
 
-android_library("tenta_empty_java") {
-  
-  java_files = [
-    "src/com/tenta/chromium/cache/MetaCacheBackend.java",
-    "src/com/tenta/fs/MetaErrors.java",
-  ]
-  
-  deps = [
-    "//base:base_java",
-  ]
-}
+if (is_android) {
+  import("//build/config/android/rules.gni")
+
+  android_library("tenta_empty_java") {
+    
+    java_files = [
+      "src/com/tenta/chromium/cache/MetaCacheBackend.java",
+      "src/com/tenta/fs/MetaErrors.java",
+    ]
+    
+    deps = [
+      "//base:base_java",
+    ]
+  }
+} #is_android
 
 component("empty_tenta") {
   public_configs = [
