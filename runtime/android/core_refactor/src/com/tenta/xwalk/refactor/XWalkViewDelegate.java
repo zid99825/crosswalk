@@ -52,6 +52,7 @@ import org.chromium.base.library_loader.ProcessInitException;
 import org.chromium.content.browser.BrowserStartupController;
 import org.chromium.content.browser.DeviceUtils;
 //import org.xwalk.core.internal.ResourceRewriter;
+import org.chromium.net.NetworkChangeNotifier;
 
 @JNINamespace("xwalk")
 public class XWalkViewDelegate {
@@ -210,6 +211,15 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
 
         ResourceExtractor.get().waitForCompletion();
         XWalkInternalResources.resetIds(context.getApplicationContext());
+        
+        ThreadUtils.runOnUiThreadBlocking(new Runnable() {
+            @Override
+            public void run() {
+                NetworkChangeNotifier.init();
+                NetworkChangeNotifier.setAutoDetectConnectivityState(true);
+            }
+        });
+
         sInitialized = true;
     }
 
