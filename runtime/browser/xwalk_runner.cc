@@ -38,6 +38,7 @@
 #include "browser/tenta_extension_system_provider.h"
 #include "browser/tenta_extension_system.h"
 #include "browser/tenta_extensions_browser_main_delegate.h"
+#include "browser/tenta_toolbar_actions_model_factory.h"
 #endif
 
 namespace xwalk {
@@ -82,6 +83,11 @@ application::ApplicationSystem* XWalkRunner::app_system() {
 }
 
 void XWalkRunner::PreMainMessageLoopRun() {
+#ifdef TENTA_CHROMIUM_BUILD
+  // Pre context init
+  ::tenta::ext::TentaToolbarActionsModelFactory::GetInstance();
+#endif
+
   browser_context_.reset(new XWalkBrowserContext);
   app_extension_bridge_.reset(new XWalkAppExtensionBridge());
 
@@ -96,6 +102,7 @@ void XWalkRunner::PreMainMessageLoopRun() {
   _tenta_extension_system->InitForRegularProfile(true);
   ::tenta::ext::TentaExtensionSystemProvider::GetInstance();
 #endif
+
   CreateComponents();
   app_extension_bridge_->SetApplicationSystem(app_component_->app_system());
   browser_context_->set_application_service(

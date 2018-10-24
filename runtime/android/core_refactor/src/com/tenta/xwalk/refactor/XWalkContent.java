@@ -1505,6 +1505,12 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mContentsClientBridge.onOpenDnsSettings(failedUrl);
     }
     
+    @CalledByNative
+    public long createExtensionPopupView() {
+        org.chromium.base.Log.d("iotto", "createExtensionPopupView");
+        return mWindow.getNativePointer();
+    }
+    
     public void setOverlayVideoMode(boolean enabled) {
 //        org.chromium.base.Log.d("iotto", "setOverlayVideoMode");
         if (mContentViewRenderView != null) {

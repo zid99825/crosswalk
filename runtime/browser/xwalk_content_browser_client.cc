@@ -541,6 +541,7 @@ void XWalkContentBrowserClient::GetSchemesBypassingSecureContextCheckWhitelist(s
 
 content::DevToolsManagerDelegate* 
 XWalkContentBrowserClient::GetDevToolsManagerDelegate() {
+  LOG(INFO) << "iotto " << __func__;
   return new XWalkDevToolsManagerDelegate(xwalk_runner_->browser_context());
 }
 

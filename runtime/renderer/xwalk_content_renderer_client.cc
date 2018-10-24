@@ -428,6 +428,26 @@ void XWalkContentRendererClient::RunScriptsAtDocumentIdle(content::RenderFrame* 
 #endif
 }
 
+void XWalkContentRendererClient::DidInitializeServiceWorkerContextOnWorkerThread(v8::Local<v8::Context> context,
+                                                                                 int64_t service_worker_version_id,
+                                                                                 const GURL& service_worker_scope,
+                                                                                 const GURL& script_url) {
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaExtensionsRendererClient::GetInstance()->DidInitializeServiceWorkerContextOnWorkerThread(
+      context, service_worker_version_id, service_worker_scope, script_url);
+#endif
+}
+
+void XWalkContentRendererClient::WillDestroyServiceWorkerContextOnWorkerThread(v8::Local<v8::Context> context,
+                                                                               int64_t service_worker_version_id,
+                                                                               const GURL& service_worker_scope,
+                                                                               const GURL& script_url) {
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaExtensionsRendererClient::GetInstance()->WillDestroyServiceWorkerContextOnWorkerThread(
+      context, service_worker_version_id, service_worker_scope, script_url);
+#endif
+}
+
 void XWalkContentRendererClient::GetNavigationErrorStrings(
     content::RenderFrame* render_frame,
     const blink::WebURLRequest& failed_request,

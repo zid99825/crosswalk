@@ -52,7 +52,9 @@
 #endif
 
 #ifdef TENTA_CHROMIUM_BUILD
+#include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "components/pref_registry/pref_registry_syncable.h"
+#include "extensions/browser/api/runtime/runtime_api.h"
 #include "extensions/browser/extension_prefs.h"
 #include "extensions/browser/extension_protocols.h"
 #include "extensions/common/constants.h"
@@ -114,6 +116,10 @@ XWalkBrowserContext::XWalkBrowserContext()
   InitVisitedLinkMaster();
   CHECK(!g_browser_context);
   g_browser_context = this;
+
+#ifdef TENTA_CHROMIUM_BUILD
+  BrowserContextDependencyManager::GetInstance()->CreateBrowserContextServices(this);
+#endif
 }
 
 XWalkBrowserContext::~XWalkBrowserContext() {
@@ -145,6 +151,8 @@ XWalkBrowserContext* XWalkBrowserContext::FromWebContents(
 }
 
 void XWalkBrowserContext::InitWhileIOAllowed() {
+  CreateUserPrefServiceIfNecessary();
+
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
   base::FilePath path;
   if (cmd_line->HasSwitch(switches::kXWalkDataPath)) {
@@ -152,7 +160,7 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
     PathService::OverrideAndCreateIfNeeded(
                                            DIR_DATA_PATH,
                                            path, false, true);
-    BrowserContext::Initialize(this, path);
+//    BrowserContext::Initialize(this, path);
   } else {
     base::FilePath::StringType xwalk_suffix;
     xwalk_suffix = FILE_PATH_LITERAL("xwalk");
@@ -408,7 +416,16 @@ void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
   pref_service_factory.set_read_error_callback(base::Bind(&HandleReadError));
 
 #ifdef TENTA_CHROMIUM_BUILD
+  // TODO(iotto) : Register the others too
+  // TODO(iotto): See chrome/browser/prefs/browser_prefs.cc
+//  extensions::api::CryptotokenRegisterProfilePrefs(registry);
+//  extensions::ActivityLog::RegisterProfilePrefs(registry);
+//  extensions::AudioAPI::RegisterUserPrefs(registry);
   ExtensionPrefs::RegisterProfilePrefs(pref_registry);
+//  extensions::launch_util::RegisterProfilePrefs(registry);
+//  extensions::NtpOverriddenBubbleDelegate::RegisterPrefs(registry);
+  RuntimeAPI::RegisterPrefs(pref_registry);
+  BrowserContextDependencyManager::GetInstance()->RegisterProfilePrefsForServices(this, pref_registry);
 #endif
   user_pref_service_ = pref_service_factory.Create(pref_registry);
 

@@ -16,19 +16,20 @@
 #include "xwalk/runtime/browser/android/find_helper.h"
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
 
+
 #ifdef TENTA_CHROMIUM_BUILD
+#include "browser/tenta_extensions_gateway.h"
 #include "browser/neterror/tenta_net_error_client.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
-using tenta::fs::MetaFile;
 
 namespace tenta {
 namespace fs {
 class MetaDb;
 class MetaFile;
 }  // namespace fs
-} 
+} // namespace tenta
 
-#endif
+#endif //TENTA_CHROMIUM_BUILD
 
 using base::android::JavaParamRef;
 using base::android::ScopedJavaLocalRef;
@@ -36,12 +37,14 @@ using base::android::ScopedJavaLocalRef;
 namespace content {
 class BrowserContext;
 class WebContents;
-}
+} //namespace content
 
 namespace xwalk {
 namespace tenta {
+
 class FsDelegateSqlite;
-}
+} //namespace tenta
+
 class XWalkAutofillManager;
 class XWalkWebContentsDelegate;
 class XWalkContentsClientBridge;
@@ -50,7 +53,8 @@ class XWalkContent :
     public FindHelper::Listener
 #ifdef TENTA_CHROMIUM_BUILD
     ,
-    public ::tenta::ext::TentaNetErrorClient::Listener
+    public ::tenta::ext::TentaNetErrorClient::Listener,
+    public ::tenta::ext::TentaExtensionsGateway::Delegate
 #endif
 {
  public:
@@ -109,6 +113,9 @@ class XWalkContent :
   /******** End Metafs **********/
 
   void LoadMetaMaskSettings(JNIEnv* env, const JavaParamRef<jobject>& obj);
+
+  // ::tenta::ext::TentaExtensionsDelegate
+  gfx::NativeView CreateExtensionPopupView() override;
 
 //  jboolean PushStateWitkKey(JNIEnv* env, jobject obj,
 //                            const JavaParamRef<jbyteArray>& state,

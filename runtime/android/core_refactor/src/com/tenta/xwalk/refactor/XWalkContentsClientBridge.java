@@ -541,6 +541,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public boolean onCreateWindow(boolean isDialog, boolean isUserGesture) {
+        org.chromium.base.Log.d("iotto", "onCreateWindow isDialog=%b, isUserGesture=%b", isDialog, isUserGesture);
         if (isDialog)
             return false;
 

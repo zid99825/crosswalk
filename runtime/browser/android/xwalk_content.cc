@@ -64,11 +64,13 @@
 #include "xwalk/third_party/tenta/meta_fs/jni/java_byte_array.h"
 #include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
 #include "xwalk/third_party/tenta/crosswalk_extensions/tenta_history_store.h"
-//
+// tenta
 #include "meta_logging.h"
 
 #include "extensions/browser/event_router.h"
 using namespace extensions;
+using namespace tenta::ext;
+namespace metafs = ::tenta::fs;
 #endif
 
 using base::android::AttachCurrentThread;
@@ -79,11 +81,6 @@ using content::BrowserThread;
 using content::WebContents;
 using navigation_interception::InterceptNavigationDelegate;
 using xwalk::application_manifest_keys::kDisplay;
-
-#ifdef TENTA_CHROMIUM_BUILD
-using tenta::ext::TentaHistoryStore;
-namespace metafs = ::tenta::fs;
-#endif
 
 namespace keys = xwalk::application_manifest_keys;
 
@@ -283,9 +280,13 @@ void XWalkContent::SetJavaPeers(
   XWalkContentsIoThreadClientImpl::RegisterPendingContents(web_contents_.get());
 
 #ifdef TENTA_CHROMIUM_BUILD
+  WebContents* web_contents = web_contents_.get();
   // Net Error handler on client side
-  ::tenta::ext::TentaNetErrorClient::CreateForWebContents(web_contents_.get());
-  ::tenta::ext::TentaNetErrorClient::FromWebContents(web_contents_.get())->SetListener(this);
+  ::tenta::ext::TentaNetErrorClient::CreateForWebContents(web_contents);
+  ::tenta::ext::TentaNetErrorClient::FromWebContents(web_contents)->SetListener(this);
+
+  TentaExtensionsGateway::CreateForWebContents(web_contents);
+  TentaExtensionsGateway::FromWebContents(web_contents)->SetDelegate(this);
 #endif // TENTA_CHROMIUM_BUILD
 
   // XWalk does not use disambiguation popup for multiple targets.
@@ -867,15 +868,27 @@ jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, c
 
 void XWalkContent::LoadMetaMaskSettings(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   TENTA_LOG_NET(INFO) << "iotto " << __func__;
-  XWalkBrowserContext* context = static_cast<XWalkBrowserContext*>(web_contents_->GetBrowserContext());
+#ifdef TENTA_CHROMIUM_BUILD
+  TentaExtensionsGateway::FromWebContents(web_contents_.get())->LoadMetamask();
+#endif
+//
+//  events::HistogramValue histogram_value = events::BROWSER_ACTION_ON_CLICKED;
+//  const char* event_name = "browserAction.onClicked";
+//  std::unique_ptr<base::ListValue> event_args(new base::ListValue());
+//  std::string extension_id("ciddmbnandgeimdnjghpdbilnninlbgn");
+//
+//  auto event = base::MakeUnique<Event>(histogram_value, event_name, std::move(event_args), context);
+//  EventRouter::Get(context)->DispatchEventToExtension(extension_id, std::move(event));
+}
 
-  events::HistogramValue histogram_value = events::BROWSER_ACTION_ON_CLICKED;
-  const char* event_name = "browserAction.onClicked";
-  std::unique_ptr<base::ListValue> event_args(new base::ListValue());
-  std::string extension_id("ciddmbnandgeimdnjghpdbilnninlbgn");
+gfx::NativeView XWalkContent::CreateExtensionPopupView() {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  JNIEnv* env = AttachCurrentThread();
+  ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
+  if (obj.is_null())
+    return nullptr;
 
-  auto event = base::MakeUnique<Event>(histogram_value, event_name, std::move(event_args), context);
-  EventRouter::Get(context)->DispatchEventToExtension(extension_id, std::move(event));
+  return reinterpret_cast<gfx::NativeView>(Java_XWalkContent_createExtensionPopupView(env, obj));
 }
 
 /************ End MetaFS ****************/
@@ -915,14 +928,14 @@ void ShowGeolocationPromptHelper(const JavaObjectWeakGlobalRef& java_ref, const 
 }
 // anonymous namespace
 
-                                     void XWalkContent::ShowGeolocationPrompt(const GURL& requesting_frame, const base::Callback<void(bool)>& callback) {  // NOLINT
-      GURL origin = requesting_frame.GetOrigin();
-      bool show_prompt = pending_geolocation_prompts_.empty();
-      pending_geolocation_prompts_.push_back(OriginCallback(origin, callback));
-      if (show_prompt) {
-        ShowGeolocationPromptHelper(java_ref_, origin);
-      }
-    }
+void XWalkContent::ShowGeolocationPrompt(const GURL& requesting_frame, const base::Callback<void(bool)>& callback) {  // NOLINT
+  GURL origin = requesting_frame.GetOrigin();
+  bool show_prompt = pending_geolocation_prompts_.empty();
+  pending_geolocation_prompts_.push_back(OriginCallback(origin, callback));
+  if (show_prompt) {
+    ShowGeolocationPromptHelper(java_ref_, origin);
+  }
+}
 
 // Called by Java.
 void XWalkContent::InvokeGeolocationCallback(JNIEnv* env, jobject obj, jboolean value, jstring origin) {

@@ -207,6 +207,7 @@ void XWalkBrowserMainParts::PreMainMessageLoopRun() {
 */
   extension_service_ = xwalk_runner_->extension_service();
 
+  // TODO (iotto): Move to XWalkBrowserMainPartsAndroid and tailor to Tenta
   if (extension_service_)
     RegisterExternalExtensions();
 
