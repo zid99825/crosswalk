@@ -83,6 +83,13 @@ def CopyNativeLibraries(output_dir, abi_name, native_libraries):
     shutil.copy2(native_lib, destination_path)
 
 
+def CopyAssets(output_dir, assets_files):
+  destination_path = os.path.join(output_dir, 'assets')
+  build_utils.MakeDirectory(destination_path)
+  for asset in assets_files:
+    shutil.copy2(asset, destination_path)
+    print("CopyAssets %s" % (asset))
+
 def CopyResources(output_dir, resources, resource_strings):
   res_dir = os.path.join(output_dir, 'res')
   build_utils.MakeDirectory(res_dir)
@@ -167,12 +174,14 @@ def MakeResourceTuple(resource_zip, resource_src):
 
   # With GN, |resource_src| is None and we derive the source path from
   # |resource_zip|.
-  if not resource_zip.startswith('gen/'):
-    raise ValueError('%s is expected to be in gen/.' % resource_zip)
+  #if not resource_zip.startswith('gen/'):
+  if not resource_zip.startswith('resource_zips/'):
+    raise ValueError('%s is expected to be in resource_zips/.' % resource_zip)
+
   src_subpath = os.path.dirname(resource_zip)
   for res_subpath in ('android/java/res', 'java/res', 'res'):
     path = os.path.join(SRC_ROOT,
-                        src_subpath[4:],  # Drop the gen/ part.
+                        src_subpath[14:],  # Drop the resource_zips/ part.
                         res_subpath)
     if os.path.isdir(path):
       return Resource(filename=resource_zip, src=path)
@@ -186,6 +195,8 @@ def main(argv):
                       help='Android ABI being used in the build.')
   parser.add_argument('--binary-files', default='',
                       help='Binary files to store in res/raw.')
+  parser.add_argument('--asset-sources', default='',
+                      help='Binary files to store in assets.')
   parser.add_argument('--js-bindings', required=True,
                       help='.js files to copy to res/raw.')
   parser.add_argument('--main-jar', required=True,
@@ -233,6 +244,15 @@ def main(argv):
       resources.append(MakeResourceTuple(resource_zip, appcompat_path))
       continue
 
+    if resource_zip.find('google_play_services') != -1:
+      continue
+    
+    if resource_zip.find('android_arch') != -1:
+        continue
+    
+    if resource_zip.find('android_support') != -1:
+        continue
+    
     if resource_zip.endswith('_grd.resources.zip'): 
       # In GN, we just use --resource-zips, and the string files are
       # part of the list.
@@ -243,6 +263,7 @@ def main(argv):
       resources.append(MakeResourceTuple(resource_zip, resource_src))
 
   options.binary_files = build_utils.ParseGnList(options.binary_files)
+  options.asset_sources = build_utils.ParseGnList(options.asset_sources)
   options.js_bindings = build_utils.ParseGnList(options.js_bindings)
   options.native_libraries = build_utils.ParseGnList(options.native_libraries)
 
@@ -257,6 +278,9 @@ def main(argv):
   if options.binary_files:
     CopyBinaryData(options.output_dir, options.binary_files)
 
+  if options.asset_sources:
+    CopyAssets(options.output_dir, options.asset_sources)
+    
   if options.native_libraries:
     CopyNativeLibraries(options.output_dir, options.abi,
                         options.native_libraries)

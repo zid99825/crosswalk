@@ -20,10 +20,12 @@ namespace xwalk {
 
 XWalkIconHelper::XWalkIconHelper(WebContents* web_contents)
     : content::WebContentsObserver(web_contents),
-      listener_(NULL) {
+      listener_(NULL),
+      _this_weak(this) {
 }
 
 XWalkIconHelper::~XWalkIconHelper() {
+  _this_weak.InvalidateWeakPtrs();
 }
 
 void XWalkIconHelper::SetListener(Listener* listener) {
@@ -33,7 +35,7 @@ void XWalkIconHelper::SetListener(Listener* listener) {
 void XWalkIconHelper::DownloadIcon(const GURL& icon_url) {
   web_contents()->DownloadImage(icon_url, true, 0, false,
       base::Bind(&XWalkIconHelper::DownloadFaviconCallback,
-                 base::Unretained(this)));
+                 _this_weak.GetWeakPtr()));
 }
 
 void XWalkIconHelper::DidUpdateFaviconURL(
@@ -45,14 +47,19 @@ void XWalkIconHelper::DidUpdateFaviconURL(
       continue;
 
     switch (i->icon_type) {
-      case content::FaviconURL::FAVICON:
-        if (listener_) listener_->OnIconAvailable(i->icon_url);
+      case content::FaviconURL::IconType::kFavicon:
+//        if (listener_) listener_->OnIconAvailable(i->icon_url);
+        // TODO(iotto) : Ask Clinet if favicons should be downloaded
+        web_contents()->DownloadImage(i->icon_url, true,  // Is a favicon
+                                      0,  // No maximum size
+                                      false,  // Normal cache policy
+                                      base::Bind(&XWalkIconHelper::DownloadFaviconCallback, _this_weak.GetWeakPtr()));
         break;
-      case content::FaviconURL::TOUCH_ICON:
+      case content::FaviconURL::IconType::kTouchIcon:
         break;
-      case content::FaviconURL::TOUCH_PRECOMPOSED_ICON:
+      case content::FaviconURL::IconType::kTouchPrecomposedIcon:
         break;
-      case content::FaviconURL::INVALID_ICON:
+      case content::FaviconURL::IconType::kInvalid:
         break;
       default:
         NOTREACHED();

@@ -28,16 +28,16 @@ void RuntimeJavaScriptDialogManager::RunJavaScriptDialog(
     content::JavaScriptDialogType javascript_dialog_type,
     const base::string16& message_text,
     const base::string16& default_prompt_text,
-    const DialogClosedCallback& callback,
+    DialogClosedCallback callback,
     bool* did_suppress_message) {
 #if defined(OS_ANDROID)
-  XWalkContentsClientBridgeBase* bridge =
-      XWalkContentsClientBridgeBase::FromWebContents(web_contents);
+  XWalkContentsClientBridge* bridge =
+      XWalkContentsClientBridge::FromWebContents(web_contents);
   bridge->RunJavaScriptDialog(javascript_dialog_type,
                               origin_url,
                               message_text,
                               default_prompt_text,
-                              callback);
+                              std::move(callback));
 #else
   *did_suppress_message = true;
   NOTIMPLEMENTED();
@@ -46,13 +46,14 @@ void RuntimeJavaScriptDialogManager::RunJavaScriptDialog(
 
 void RuntimeJavaScriptDialogManager::RunBeforeUnloadDialog(
     content::WebContents* web_contents,
+    content::RenderFrameHost* render_frame_host,
     bool is_reload,
-    const DialogClosedCallback& callback) {
+    DialogClosedCallback callback) {
 #if defined(OS_ANDROID)
-  XWalkContentsClientBridgeBase* bridge =
-      XWalkContentsClientBridgeBase::FromWebContents(web_contents);
+  XWalkContentsClientBridge* bridge =
+      XWalkContentsClientBridge::FromWebContents(web_contents);
   bridge->RunBeforeUnloadDialog(web_contents->GetURL(),
-                                callback);
+                                std::move(callback));
 #else
   NOTIMPLEMENTED();
   callback.Run(true, base::string16());

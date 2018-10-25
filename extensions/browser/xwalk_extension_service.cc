@@ -401,9 +401,9 @@ void XWalkExtensionService::OnExtensionProcessDied(
 
   content::RenderProcessHost* rph = data->render_process_host();
   if (rph) {
-    BrowserThread::PostTask(BrowserThread::UI, FROM_HERE, base::Bind(
+    BrowserThread::PostTask(BrowserThread::UI, FROM_HERE, base::BindOnce(
         base::IgnoreResult(&content::RenderProcessHost::FastShutdownIfPossible),
-        base::Unretained(rph)));
+        base::Unretained(rph), 0, false));
   }
 
   extension_data_map_.erase(it);

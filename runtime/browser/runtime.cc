@@ -10,7 +10,6 @@
 #include "base/command_line.h"
 #include "base/message_loop/message_loop.h"
 #include "base/strings/utf_string_conversions.h"
-#include "base/threading/non_thread_safe.h"
 #include "components/app_modal/javascript_dialog_manager.h"
 #include "components/content_settings/core/common/content_settings.h"
 #include "components/content_settings/core/common/content_settings_types.h"
@@ -43,6 +42,7 @@
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "xwalk/runtime/common/xwalk_notification_types.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+#include "meta_logging.h"
 
 #if !defined(OS_ANDROID)
 #include "xwalk/runtime/browser/runtime_ui_delegate.h"
@@ -129,7 +129,8 @@ NativeAppWindow* Runtime::window() {
 }
 
 content::RenderProcessHost* Runtime::GetRenderProcessHost() {
-  return web_contents_->GetRenderProcessHost();
+  // TODO(iotto) : Test if it's ok!
+  return web_contents_->GetMainFrame()->GetProcess();
 }
 
 //////////////////////////////////////////////////////
@@ -314,7 +315,7 @@ void Runtime::DidUpdateFaviconURL(const std::vector<FaviconURL>& candidates) {
           &Runtime::DidDownloadFavicon, weak_ptr_factory_.GetWeakPtr()));
 }
 
-void Runtime::TitleWasSet(content::NavigationEntry* entry, bool explicit_set) {
+void Runtime::TitleWasSet(content::NavigationEntry* entry) {
   if (ui_delegate_)
     ui_delegate_->UpdateTitle(entry->GetTitle());
 }
@@ -392,6 +393,10 @@ void Runtime::LoadProgressChanged(content::WebContents* source,
                                   double progress) {
   if (ui_delegate_)
     ui_delegate_->SetLoadProgress(progress);
+}
+
+void Runtime::SetOverlayMode(bool useOverlayMode) {
+  TENTA_LOG_NET(WARNING) << __func__ << " not_implemented useOverlayMode=" << useOverlayMode;
 }
 
 bool Runtime::AddDownloadItem(content::DownloadItem* download_item,

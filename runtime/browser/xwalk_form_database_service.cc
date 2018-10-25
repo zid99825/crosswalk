@@ -52,7 +52,7 @@ void XWalkFormDatabaseService::Shutdown() {
   // TODO(sgurun) we don't run into this logic right now,
   // but if we do, then we need to implement cancellation
   // of pending queries.
-  autofill_data_->ShutdownOnUIThread();
+  autofill_data_->ShutdownOnUISequence();
   web_database_->ShutdownDatabase();
 }
 

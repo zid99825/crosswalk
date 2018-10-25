@@ -8,6 +8,8 @@ import("//third_party/ffmpeg/ffmpeg_options.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/build/xwalk.gni")
 import("//xwalk/build/tenta.gni")
+import("//ppapi/features/features.gni") 
+import("//components/nacl/features.gni")
 
 group("xwalk_builder") {
   # In GN, When a target is marked "testonly = true", it must only be depended
@@ -28,7 +30,7 @@ group("xwalk_builder") {
       # For internal testing.
       "app/android/runtime_client_embedded_shell:xwalk_runtime_client_embedded_shell_apk",
       "app/android/runtime_client_shell:xwalk_runtime_client_shell_apk",
-      "runtime/android/core_internal_shell:xwalk_core_internal_shell_apk",
+      #"runtime/android/core_internal_shell:xwalk_core_internal_shell_apk",
       "runtime/android/core_shell:xwalk_core_shell_apk",
 #      "test/android/core/javatests:xwalk_core_test_apk",
 #      "test/android/core_internal/javatests:xwalk_core_internal_test_apk",
@@ -39,7 +41,7 @@ group("xwalk_builder") {
       "app/android/app_hello_world:xwalk_app_hello_world_apk",
       "app/android/app_template:xwalk_app_template",
       "runtime/android/core:xwalk_core_library",
-      "runtime/android/core:xwalk_core_library_documentation",
+      #"runtime/android/core:xwalk_core_library_documentation",
       "runtime/android/core:xwalk_core_library_pom_gen",
       "runtime/android/core:xwalk_shared_library",
       "runtime/android/core:xwalk_shared_library_pom_gen",
@@ -126,8 +128,9 @@ source_set("xwalk_runtime") {
     "runtime/browser/android/xwalk_content_lifecycle_notifier.h",
     "runtime/browser/android/xwalk_contents_client_bridge.cc",
     "runtime/browser/android/xwalk_contents_client_bridge.h",
-    "runtime/browser/android/xwalk_contents_client_bridge_base.cc",
-    "runtime/browser/android/xwalk_contents_client_bridge_base.h",
+# TODO(iotto): Remove next two lines
+#    "runtime/browser/android/xwalk_contents_client_bridge_base.cc",
+#    "runtime/browser/android/xwalk_contents_client_bridge_base.h",
     "runtime/browser/android/xwalk_contents_io_thread_client.h",
     "runtime/browser/android/xwalk_contents_io_thread_client_impl.cc",
     "runtime/browser/android/xwalk_contents_io_thread_client_impl.h",
@@ -168,8 +171,8 @@ source_set("xwalk_runtime") {
     "runtime/browser/devtools/remote_debugging_server.h",
     "runtime/browser/devtools/xwalk_devtools_manager_delegate.cc",
     "runtime/browser/devtools/xwalk_devtools_manager_delegate.h",
-    "runtime/browser/geolocation/xwalk_access_token_store.cc",
-    "runtime/browser/geolocation/xwalk_access_token_store.h",
+#     "runtime/browser/geolocation/xwalk_access_token_store.cc",
+#     "runtime/browser/geolocation/xwalk_access_token_store.h",
     "runtime/browser/image_util.cc",
     "runtime/browser/image_util.h",
     "runtime/browser/media/media_capture_devices_dispatcher.cc",
@@ -332,13 +335,6 @@ source_set("xwalk_runtime") {
     "//android_webview/browser/renderer_host/auto_login_parser.h",
   ]
 
-  if ( tenta_chromium_build ) {
-    sources += [
-      "runtime/browser/android/net/host_resolver_tenta.cc",
-      "runtime/browser/android/net/host_resolver_tenta.h",
-    ]
-  }
-
   if (!is_android) {
     sources += [
       "runtime/browser/devtools/xwalk_devtools_frontend.cc",
@@ -375,7 +371,8 @@ source_set("xwalk_runtime") {
     "XWALK_VERSION=\"$xwalk_version\"",
   ]
   deps = [
-    ":generate_upstream_blink_version",
+#     ":generate_upstream_blink_version",
+    "//build/util:webkit_version",
     "//base",
     "//base:base_static",
     "//base:i18n",
@@ -386,6 +383,8 @@ source_set("xwalk_runtime") {
     "//components/autofill/core/browser",
     "//components/cdm/renderer",
 #    "//components/devtools_http_handler",
+    "//components/error_page/common",
+    "//components/nacl/common:features",
     "//components/resources:components_resources",
     "//components/strings",
     "//components/url_formatter",
@@ -398,11 +397,14 @@ source_set("xwalk_runtime") {
     "//content/public/child",
     "//content/public/common",
     "//content/public/utility",
+    "//device/geolocation",
+    "//device/geolocation/public/interfaces",
     "//gin",
     "//ipc",
     "//media",
     "//net",
     "//net:net_resources",
+    "//ppapi/features",
     "//skia",
     "//storage/browser",
     "//storage/common",
@@ -416,7 +418,7 @@ source_set("xwalk_runtime") {
     "//v8",
     "//xwalk/application:xwalk_application_lib",
     "//xwalk/application:xwalk_application_resources",
-    "//xwalk/experimental",
+#    "//xwalk/experimental",
     "//xwalk/extensions",
     "//xwalk/resources:xwalk_pak",
     "//xwalk/resources:xwalk_resources",
@@ -425,27 +427,32 @@ source_set("xwalk_runtime") {
     "//xwalk/resources:xwalk_resources_300_percent_pak",
     "//xwalk/sysapps",
     "//xwalk/sysapps:xwalk_sysapps_resources",
-#    "//xwalk/third_party/tenta/file_blocks",
-    "//xwalk/third_party/tenta/meta_fs",
-    "//xwalk/third_party/tenta/chromium_cache",
-    "//xwalk/third_party/tenta/mimicvpn",
+    "//xwalk/runtime/android/empty_tenta",
   ]
 
-public_deps = [ "//xwalk/third_party/tenta/mimicvpn:mimicvpn_src" ]
-    # TODO remove  
-#  if ( enable_tenta_log ) {
-#    defines += [ "TENTA_LOG_ENABLE=1" ]
-#  } else {
-#    defines += [ "TENTA_LOG_ENABLE=0" ]
-#  }
-
+  if ( tenta_chromium_build ) {
+    deps += [
+      "//xwalk/third_party/tenta/meta_fs",
+      "//xwalk/third_party/tenta/chromium_cache",
+      "//xwalk/third_party/tenta/crosswalk_extensions",
+      "//xwalk/third_party/tenta/mimicvpn",
+    ]
+    public_deps = [ "//xwalk/third_party/tenta/mimicvpn:mimicvpn_src" ]
+  } else {
+    deps += [
+#       "//xwalk/runtime/android/empty_tenta",
+    ]
+  }
+                             
   if (is_android) {
     deps += [
       "//content/public/android:content_java",
       "//components/autofill/android:autofill_java",
       "//components/cdm/browser",
-      "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
-      "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",
+#       "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
+#       "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",
+      "//xwalk/runtime/android/core_refactor:xwalk_refactor_native_jni",
+      "//xwalk/runtime/android/core_refactor:xwalk_core_jar_jni",
     ]
   } else {
     deps += [

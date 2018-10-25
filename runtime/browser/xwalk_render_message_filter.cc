@@ -6,7 +6,7 @@
 #include "xwalk/runtime/browser/xwalk_render_message_filter.h"
 
 #if defined(OS_ANDROID)
-#include "xwalk/runtime/browser/android/xwalk_contents_client_bridge_base.h"
+#include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
 #include "xwalk/runtime/common/android/xwalk_render_view_messages.h"
 #endif
@@ -57,7 +57,9 @@ bool XWalkRenderMessageFilter::OnMessageReceived(
 }
 
 void XWalkRenderMessageFilter::OnOpenLinkExternal(const GURL& url) {
+#if TENTA_LOG_ENABLE == 1
   LOG(INFO) << "OpenLinkExternal: " << url.spec();
+#endif
   platform_util::OpenExternal(url);
 }
 
@@ -77,10 +79,12 @@ void XWalkRenderMessageFilter::OnShouldOverrideUrlLoading(int render_frame_id,
                                                           bool* ignore_navigation) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   *ignore_navigation = false;
-  XWalkContentsClientBridgeBase* client =
-      XWalkContentsClientBridgeBase::FromRenderFrameID(process_id_, render_frame_id);
+  XWalkContentsClientBridge* client =
+      XWalkContentsClientBridge::FromRenderFrameID(process_id_, render_frame_id);
+#if TENTA_LOG_ENABLE == 1
   LOG(INFO) << __func__ << " pocess_id=" << process_id_ << " frame_id="
                << render_frame_id;
+#endif
   if (client) {
     *ignore_navigation = client->ShouldOverrideUrlLoading(
                                                           url,
@@ -101,8 +105,8 @@ void XWalkRenderMessageFilter::OnWillSendRequest(int render_frame_id, const std:
                                                  bool* did_overwrite) {
   // TODO(iotto) check new_url/did_overwrite for null
   *did_overwrite = false;
-  XWalkContentsClientBridgeBase* client =
-      XWalkContentsClientBridgeBase::FromRenderFrameID(process_id_, render_frame_id);
+  XWalkContentsClientBridge* client =
+      XWalkContentsClientBridge::FromRenderFrameID(process_id_, render_frame_id);
 
   if ( client ) {
     *did_overwrite = client->RewriteUrlIfNeeded(url, transition_type, new_url);

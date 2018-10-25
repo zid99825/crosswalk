@@ -17,8 +17,8 @@
 #include "base/numerics/safe_math.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/string_util.h"
+#include "base/task_scheduler/post_task.h"
 #include "base/threading/thread_restrictions.h"
-#include "base/threading/worker_pool.h"
 #include "base/threading/sequenced_worker_pool.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/resource_request_info.h"
@@ -124,15 +124,13 @@ class URLRequestApplicationJob : public net::URLRequestFileJob {
     base::FilePath* read_file_path = new base::FilePath;
 
     resource_.SetLocales(locales_);
-    bool posted = base::WorkerPool::PostTaskAndReply(
-        FROM_HERE,
-        base::Bind(&ReadResourceFilePath, resource_,
-                   base::Unretained(read_file_path)),
-        base::Bind(&URLRequestApplicationJob::OnFilePathRead,
-                   weak_factory_.GetWeakPtr(),
-                   base::Owned(read_file_path)),
-        true /* task is slow */);
-    DCHECK(posted);
+
+    base::PostTaskWithTraitsAndReply(FROM_HERE, {base::MayBlock(), base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
+    base::BindOnce(&ReadResourceFilePath, resource_,
+        base::Unretained(read_file_path)),
+    base::BindOnce(&URLRequestApplicationJob::OnFilePathRead,
+        weak_factory_.GetWeakPtr(),
+        base::Owned(read_file_path)));
   }
 
  protected:
@@ -285,9 +283,7 @@ ApplicationProtocolHandler::MaybeCreateJob(
   return new URLRequestApplicationJob(
       request,
       network_delegate,
-      content::BrowserThread::GetBlockingPool()->
-      GetTaskRunnerWithShutdownBehavior(
-          base::SequencedWorkerPool::SKIP_ON_SHUTDOWN),
+      base::CreateSequencedTaskRunnerWithTraits({base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN}),
       application_id,
       directory_path,
       relative_path,

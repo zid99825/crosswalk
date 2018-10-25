@@ -8,6 +8,7 @@
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "components/nacl/common/features.h"
 #include "content/public/browser/browser_main_runner.h"
 #include "content/public/common/content_switches.h"
 #include "ui/base/material_design/material_design_controller.h"
@@ -22,7 +23,7 @@
 #include "xwalk/runtime/common/xwalk_resource_delegate.h"
 #include "xwalk/runtime/renderer/xwalk_content_renderer_client.h"
 
-#if !defined(DISABLE_NACL) && defined(OS_LINUX)
+#if BUILDFLAG(ENABLE_NACL) && defined(OS_LINUX)
 #include "components/nacl/common/nacl_paths.h"
 #include "components/nacl/zygote/nacl_fork_delegate_linux.h"
 #endif
@@ -53,21 +54,22 @@ XWalkMainDelegate::XWalkMainDelegate()
 XWalkMainDelegate::~XWalkMainDelegate() {}
 
 bool XWalkMainDelegate::BasicStartupComplete(int* exit_code) {
-  SetContentClient(content_client_.get());
+  content::SetContentClient(content_client_.get());
 #if defined(OS_MACOSX)
   OverrideFrameworkBundlePath();
   OverrideChildProcessPath();
 #endif
 
-#if !defined(DISABLE_NACL) && defined(OS_LINUX)
+#if BUILDFLAG(ENABLE_NACL) && defined(OS_LINUX)
   nacl::RegisterPathProvider();
 #endif
+
+  RegisterPathProvider();
 
   return false;
 }
 
 void XWalkMainDelegate::PreSandboxStartup() {
-  RegisterPathProvider();
   InitializeResourceBundle();
 
 #if !defined(OS_ANDROID) && !defined(OS_WIN)
@@ -92,8 +94,19 @@ void XWalkMainDelegate::SandboxInitialized(const std::string& process_type) {
 
 int XWalkMainDelegate::RunProcess(const std::string& process_type,
     const content::MainFunctionParams& main_function_params) {
-  if (process_type == switches::kXWalkExtensionProcess)
+  if (process_type.empty()) {
+    browser_runner_.reset(content::BrowserMainRunner::Create());
+    int exit_code = browser_runner_->Initialize(main_function_params);
+    DCHECK_LT(exit_code, 0);
+
+    // Return 0 so that we do NOT trigger the default behavior. On Android, the
+    // UI message loop is managed by the Java application.
+    return 0;
+  }
+
+  if (process_type == switches::kXWalkExtensionProcess) {
     return XWalkExtensionProcessMain(main_function_params);
+  }
   // Tell content to use default process main entries by returning -1.
   return -1;
 }
@@ -110,7 +123,7 @@ void XWalkMainDelegate::ProcessExiting(const std::string& process_type) {
 #if defined(OS_POSIX) && !defined(OS_ANDROID) && !defined(OS_MACOSX)
 void XWalkMainDelegate::ZygoteStarting(
     ScopedVector<content::ZygoteForkDelegate>* delegates) {
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
   nacl::AddNaClZygoteForkDelegates(delegates);
 #endif
 }

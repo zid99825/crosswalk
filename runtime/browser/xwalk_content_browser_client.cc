@@ -6,17 +6,18 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "base/command_line.h"
+#include "base/memory/ptr_util.h"
 #include "base/path_service.h"
 #include "base/files/file.h"
+#include "components/nacl/common/features.h"
 #include "content/public/browser/browser_child_process_host.h"
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/browser/browser_ppapi_host.h"
 #include "content/public/browser/child_process_data.h"
 #include "content/public/browser/client_certificate_delegate.h"
-#include "device/geolocation/geolocation_delegate.h"
-#include "device/geolocation/geolocation_provider.h"
 #include "content/public/browser/presentation_service_delegate.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
@@ -27,14 +28,15 @@
 #include "content/public/common/content_descriptors.h"
 #include "content/public/common/main_function_params.h"
 #include "content/public/common/web_preferences.h"
+#include "device/geolocation/geolocation_provider.h"
 #include "gin/v8_initializer.h"
 #include "gin/public/isolate_holder.h"
 #include "net/ssl/ssl_info.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "ppapi/host/ppapi_host.h"
+#include "ppapi/features/features.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
 #include "xwalk/application/common/constants.h"
-#include "xwalk/runtime/browser/geolocation/xwalk_access_token_store.h"
 #include "xwalk/runtime/browser/media/media_capture_devices_dispatcher.h"
 #include "xwalk/runtime/browser/renderer_host/pepper/xwalk_browser_pepper_host_factory.h"
 #include "xwalk/runtime/browser/runtime_platform_util.h"
@@ -50,7 +52,7 @@
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/browser/devtools/xwalk_devtools_manager_delegate.h"
 
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
 #include "components/nacl/browser/nacl_browser.h"
 #include "components/nacl/browser/nacl_host_message_filter.h"
 #include "components/nacl/browser/nacl_process_host.h"
@@ -70,6 +72,7 @@
 #include "content/public/browser/navigation_throttle.h"
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
+#include "xwalk/runtime/browser/android/xwalk_settings.h"
 #include "xwalk/runtime/browser/android/xwalk_web_contents_view_delegate.h"
 #include "xwalk/runtime/browser/xwalk_browser_main_parts_android.h"
 #include "xwalk/runtime/common/android/xwalk_globals_android.h"
@@ -96,21 +99,21 @@ namespace {
 // The application-wide singleton of ContentBrowserClient impl.
 XWalkContentBrowserClient* g_browser_client = nullptr;
 
-// A provider of services for Geolocation.
-class XWalkGeolocationDelegate : public device::GeolocationDelegate {
- public:
-  explicit XWalkGeolocationDelegate(net::URLRequestContextGetter* request_context)
-      : request_context_(request_context) {}
-
-  scoped_refptr<device::AccessTokenStore> CreateAccessTokenStore() final {
-    return scoped_refptr<device::AccessTokenStore>( new XWalkAccessTokenStore(request_context_));
-  }
-
- private:
-  net::URLRequestContextGetter* request_context_;
-
-  DISALLOW_COPY_AND_ASSIGN(XWalkGeolocationDelegate);
-};
+//// A provider of services for Geolocation.
+//class XWalkGeolocationDelegate : public device::GeolocationDelegate {
+// public:
+//  explicit XWalkGeolocationDelegate(net::URLRequestContextGetter* request_context)
+//      : request_context_(request_context) {}
+//
+//  scoped_refptr<device::AccessTokenStore> CreateAccessTokenStore() final {
+//    return scoped_refptr<device::AccessTokenStore>( new XWalkAccessTokenStore(request_context_));
+//  }
+//
+// private:
+//  net::URLRequestContextGetter* request_context_;
+//
+//  DISALLOW_COPY_AND_ASSIGN(XWalkGeolocationDelegate);
+//};
 
 }  // namespace
 
@@ -136,71 +139,78 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
 }
 
 /**
- * iotto
+ *
  */
-void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* render_view_host,
-                                   content::WebPreferences* prefs) {
-#if TENTA_LOG_ENABLE == 1
-#if 0
-  LOG(INFO) << "webPref images_enabled=" << prefs->images_enabled;
-  LOG(INFO) << "webPref plugins_enabled=" << prefs->plugins_enabled;
-  LOG(INFO) << "webPref encrypted_media_enabled=" << prefs->encrypted_media_enabled;
-  LOG(INFO) << "webPref accelerated_2d_canvas_enabled=" << prefs->accelerated_2d_canvas_enabled;
-  LOG(INFO) << "webPref antialiased_2d_canvas_disabled=" << prefs->antialiased_2d_canvas_disabled;
-  LOG(INFO) << "webPref antialiased_clips_2d_canvas_enabled=" << prefs->antialiased_clips_2d_canvas_enabled;
+  void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* renderViewHost,
+      content::WebPreferences* webPrefs) {
+    XWalkSettings* settings = XWalkSettings::FromWebContents(
+        content::WebContents::FromRenderViewHost(renderViewHost));
+  if (settings) {
+    settings->PopulateWebPreferences(webPrefs);
+  }
 
-  LOG(INFO) << "webPref accelerated_filters_enabled=" << prefs->accelerated_filters_enabled;
-  LOG(INFO) << "webPref deferred_filters_enabled=" << prefs->deferred_filters_enabled;
-  LOG(INFO) << "webPref container_culling_enabled=" << prefs->container_culling_enabled;
-  LOG(INFO) << "webPref pepper_accelerated_video_decode_enabled=" << prefs->pepper_accelerated_video_decode_enabled;
-  LOG(INFO) << "webPref pepper_3d_enabled=" << prefs->pepper_3d_enabled;
-  LOG(INFO) << "webPref media_playback_gesture_whitelist_scope=" << prefs->media_playback_gesture_whitelist_scope;
-  LOG(INFO) << "webPref video_fullscreen_detection_enabled=" << prefs->video_fullscreen_detection_enabled;
-  LOG(INFO) << "webPref embedded_media_experience_enabled=" << prefs->embedded_media_experience_enabled;
-  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->background_video_track_optimization_enabled;
-  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->media_controls_enabled;
-
-  LOG(INFO) << "webPref default_minimum_page_scale_factor=" << prefs->default_minimum_page_scale_factor;
-  LOG(INFO) << "webPref default_maximum_page_scale_factor=" << prefs->default_maximum_page_scale_factor;
-  LOG(INFO) << "webPref use_wide_viewport=" << prefs->use_wide_viewport;
-  LOG(INFO) << "webPref wide_viewport_quirk=" << prefs->wide_viewport_quirk;
-  LOG(INFO) << "webPref viewport_meta_layout_size_quirk=" << prefs->viewport_meta_layout_size_quirk;
-  LOG(INFO) << "webPref viewport_meta_non_user_scalable_quirk=" << prefs->viewport_meta_non_user_scalable_quirk;
-  LOG(INFO) << "webPref report_screen_size_in_physical_pixels_quirk=" << prefs->report_screen_size_in_physical_pixels_quirk;
-  LOG(INFO) << "webPref force_enable_zoom=" << prefs->force_enable_zoom;
-  LOG(INFO) << "webPref device_scale_adjustment=" << prefs->device_scale_adjustment;
-  LOG(INFO) << "webPref font_scale_factor=" << prefs->font_scale_factor;
-  LOG(INFO) << "webPref text_autosizing_enabled=" << prefs->text_autosizing_enabled;
-
-  LOG(INFO) << "webPref default_font_size=" << prefs->default_font_size;
-  LOG(INFO) << "webPref default_fixed_font_size=" << prefs->default_fixed_font_size;
-  LOG(INFO) << "webPref minimum_font_size=" << prefs->minimum_font_size;
-  LOG(INFO) << "webPref minimum_logical_font_size=" << prefs->minimum_logical_font_size;
-  LOG(INFO) << "webPref javascript_can_access_clipboard=" << prefs->javascript_can_access_clipboard;
-  LOG(INFO) << "webPref number_of_cpu_cores=" << prefs->number_of_cpu_cores;
-  LOG(INFO) << "webPref viewport_enabled=" << prefs->viewport_enabled;
-  LOG(INFO) << "webPref shrinks_viewport_contents_to_fit=" << prefs->shrinks_viewport_contents_to_fit;
-  LOG(INFO) << "webPref viewport_style=" << static_cast<int>(prefs->viewport_style);
-  LOG(INFO) << "webPref initialize_at_minimum_page_scale=" << prefs->initialize_at_minimum_page_scale;
-  LOG(INFO) << "webPref inert_visual_viewport=" << prefs->inert_visual_viewport;
-
-  LOG(INFO) << "webPref double_tap_to_zoom_enabled=" << prefs->double_tap_to_zoom_enabled;
-  LOG(INFO) << "webPref support_deprecated_target_density_dpi=" << prefs->support_deprecated_target_density_dpi;
-  LOG(INFO) << "webPref use_legacy_background_size_shorthand_behavior=" << prefs->use_legacy_background_size_shorthand_behavior;
-
-  LOG(INFO) << "webPref clobber_user_agent_initial_scale_quirk=" << prefs->clobber_user_agent_initial_scale_quirk;
-  LOG(INFO) << "webPref cookie_enabled=" << prefs->cookie_enabled;
-  LOG(INFO) << "webPref progress_bar_completion=" << static_cast<int>(prefs->progress_bar_completion);
-  LOG(INFO) << "webPref viewport_meta_enabled=" << prefs->viewport_meta_enabled;
-#endif
-  LOG(INFO) << "webPref context_menu_on_mouse_up=" << prefs->context_menu_on_mouse_up;
-  LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
-#endif
-  prefs->viewport_meta_enabled = true;
-  prefs->context_menu_on_mouse_up = true;
-  prefs->always_show_context_menu_on_touch = true;
-//  prefs->viewport_style = content::ViewportStyle::DEFAULT;
-//  prefs->accelerated_filters_enabled = true;
+  return;
+//#if TENTA_LOG_ENABLE == 1
+//#if 0
+//  LOG(INFO) << "webPref images_enabled=" << prefs->images_enabled;
+//  LOG(INFO) << "webPref plugins_enabled=" << prefs->plugins_enabled;
+//  LOG(INFO) << "webPref encrypted_media_enabled=" << prefs->encrypted_media_enabled;
+//  LOG(INFO) << "webPref accelerated_2d_canvas_enabled=" << prefs->accelerated_2d_canvas_enabled;
+//  LOG(INFO) << "webPref antialiased_2d_canvas_disabled=" << prefs->antialiased_2d_canvas_disabled;
+//  LOG(INFO) << "webPref antialiased_clips_2d_canvas_enabled=" << prefs->antialiased_clips_2d_canvas_enabled;
+//
+//  LOG(INFO) << "webPref accelerated_filters_enabled=" << prefs->accelerated_filters_enabled;
+//  LOG(INFO) << "webPref deferred_filters_enabled=" << prefs->deferred_filters_enabled;
+//  LOG(INFO) << "webPref container_culling_enabled=" << prefs->container_culling_enabled;
+//  LOG(INFO) << "webPref pepper_accelerated_video_decode_enabled=" << prefs->pepper_accelerated_video_decode_enabled;
+//  LOG(INFO) << "webPref pepper_3d_enabled=" << prefs->pepper_3d_enabled;
+//  LOG(INFO) << "webPref media_playback_gesture_whitelist_scope=" << prefs->media_playback_gesture_whitelist_scope;
+//  LOG(INFO) << "webPref video_fullscreen_detection_enabled=" << prefs->video_fullscreen_detection_enabled;
+//  LOG(INFO) << "webPref embedded_media_experience_enabled=" << prefs->embedded_media_experience_enabled;
+//  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->background_video_track_optimization_enabled;
+//  LOG(INFO) << "webPref background_video_track_optimization_enabled=" << prefs->media_controls_enabled;
+//
+//  LOG(INFO) << "webPref default_minimum_page_scale_factor=" << prefs->default_minimum_page_scale_factor;
+//  LOG(INFO) << "webPref default_maximum_page_scale_factor=" << prefs->default_maximum_page_scale_factor;
+//  LOG(INFO) << "webPref use_wide_viewport=" << prefs->use_wide_viewport;
+//  LOG(INFO) << "webPref wide_viewport_quirk=" << prefs->wide_viewport_quirk;
+//  LOG(INFO) << "webPref viewport_meta_layout_size_quirk=" << prefs->viewport_meta_layout_size_quirk;
+//  LOG(INFO) << "webPref viewport_meta_non_user_scalable_quirk=" << prefs->viewport_meta_non_user_scalable_quirk;
+//  LOG(INFO) << "webPref report_screen_size_in_physical_pixels_quirk=" << prefs->report_screen_size_in_physical_pixels_quirk;
+//  LOG(INFO) << "webPref force_enable_zoom=" << prefs->force_enable_zoom;
+//  LOG(INFO) << "webPref device_scale_adjustment=" << prefs->device_scale_adjustment;
+//  LOG(INFO) << "webPref font_scale_factor=" << prefs->font_scale_factor;
+//  LOG(INFO) << "webPref text_autosizing_enabled=" << prefs->text_autosizing_enabled;
+//
+//  LOG(INFO) << "webPref default_font_size=" << prefs->default_font_size;
+//  LOG(INFO) << "webPref default_fixed_font_size=" << prefs->default_fixed_font_size;
+//  LOG(INFO) << "webPref minimum_font_size=" << prefs->minimum_font_size;
+//  LOG(INFO) << "webPref minimum_logical_font_size=" << prefs->minimum_logical_font_size;
+//  LOG(INFO) << "webPref javascript_can_access_clipboard=" << prefs->javascript_can_access_clipboard;
+//  LOG(INFO) << "webPref number_of_cpu_cores=" << prefs->number_of_cpu_cores;
+//  LOG(INFO) << "webPref viewport_enabled=" << prefs->viewport_enabled;
+//  LOG(INFO) << "webPref shrinks_viewport_contents_to_fit=" << prefs->shrinks_viewport_contents_to_fit;
+//  LOG(INFO) << "webPref viewport_style=" << static_cast<int>(prefs->viewport_style);
+//  LOG(INFO) << "webPref initialize_at_minimum_page_scale=" << prefs->initialize_at_minimum_page_scale;
+//  LOG(INFO) << "webPref inert_visual_viewport=" << prefs->inert_visual_viewport;
+//
+//  LOG(INFO) << "webPref double_tap_to_zoom_enabled=" << prefs->double_tap_to_zoom_enabled;
+//  LOG(INFO) << "webPref support_deprecated_target_density_dpi=" << prefs->support_deprecated_target_density_dpi;
+//  LOG(INFO) << "webPref use_legacy_background_size_shorthand_behavior=" << prefs->use_legacy_background_size_shorthand_behavior;
+//
+//  LOG(INFO) << "webPref clobber_user_agent_initial_scale_quirk=" << prefs->clobber_user_agent_initial_scale_quirk;
+//  LOG(INFO) << "webPref cookie_enabled=" << prefs->cookie_enabled;
+//  LOG(INFO) << "webPref progress_bar_completion=" << static_cast<int>(prefs->progress_bar_completion);
+//  LOG(INFO) << "webPref viewport_meta_enabled=" << prefs->viewport_meta_enabled;
+//#endif
+//  LOG(INFO) << "webPref context_menu_on_mouse_up=" << prefs->context_menu_on_mouse_up;
+//  LOG(INFO) << "webPref animation_policy=" << static_cast<int>(prefs->animation_policy);
+//#endif
+//  webPrefs->viewport_meta_enabled = true;
+//  webPrefs->context_menu_on_mouse_up = true;
+//  webPrefs->always_show_context_menu_on_touch = true;
+////  prefs->viewport_style = content::ViewportStyle::DEFAULT;
+////  prefs->accelerated_filters_enabled = true;
 }
 
 content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
@@ -213,11 +223,6 @@ content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
   main_parts_ = new XWalkBrowserMainParts(parameters);
 #endif
 
-  // TODO(iotto) see how and when this needs to be initialized
-/*  device::GeolocationProvider::SetGeolocationDelegate(
-      new XWalkGeolocationDelegate(
-      xwalk_runner_->browser_context()->url_request_getter()));
-*/
   return main_parts_;
 }
 
@@ -229,7 +234,7 @@ void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
       *base::CommandLine::ForCurrentProcess();
   const char* extra_switches[] = {
     switches::kXWalkDisableExtensionProcess,
-#if defined(ENABLE_PLUGINS)
+#if BUILDFLAG(ENABLE_PLUGINS)
     switches::kPpapiFlashPath,
     switches::kPpapiFlashVersion
 #endif
@@ -256,7 +261,7 @@ XWalkContentBrowserClient::GetWebContentsViewDelegate(
 
 void XWalkContentBrowserClient::RenderProcessWillLaunch(
     content::RenderProcessHost* host) {
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
   int id = host->GetID();
   net::URLRequestContextGetter* context =
       host->GetStoragePartition()->GetURLRequestContext();
@@ -269,10 +274,10 @@ void XWalkContentBrowserClient::RenderProcessWillLaunch(
       context));
 #endif
   xwalk_runner_->OnRenderProcessWillLaunch(host);
-//  host->AddFilter(new XWalkRenderMessageFilter);
+  host->AddFilter(new XWalkRenderMessageFilter);
 #if defined(OS_ANDROID)
+  host->AddFilter(new cdm::CdmMessageFilterAndroid(true, false));
   host->AddFilter(new XWalkRenderMessageFilter(host->GetID()));
-  host->AddFilter(new cdm::CdmMessageFilterAndroid());
 #endif
 }
 
@@ -303,7 +308,7 @@ bool XWalkContentBrowserClient::AllowGetCookie(
 bool XWalkContentBrowserClient::AllowSetCookie(
     const GURL& url,
     const GURL& first_party,
-    const std::string& cookie_line,
+    const net::CanonicalCookie& cookie,
     content::ResourceContext* context,
     int render_process_id,
     int render_frame_id,
@@ -312,7 +317,7 @@ bool XWalkContentBrowserClient::AllowSetCookie(
   return XWalkCookieAccessPolicy::GetInstance()->AllowSetCookie(
       url,
       first_party,
-      cookie_line,
+      cookie,
       context,
       render_process_id,
       render_frame_id,
@@ -327,14 +332,15 @@ bool XWalkContentBrowserClient::AllowSetCookie(
 void XWalkContentBrowserClient::SelectClientCertificate(
     content::WebContents* web_contents,
     net::SSLCertRequestInfo* cert_request_info,
+    net::ClientCertIdentityList client_certs,
     std::unique_ptr<content::ClientCertificateDelegate> delegate) {
 #if defined(OS_ANDROID)
-  XWalkContentsClientBridgeBase* client =
-      XWalkContentsClientBridgeBase::FromWebContents(web_contents);
+  XWalkContentsClientBridge* client =
+      XWalkContentsClientBridge::FromWebContents(web_contents);
   if (client) {
     client->SelectClientCertificate(cert_request_info, std::move(delegate));
   } else {
-    delegate->ContinueWithCertificate(nullptr);
+    delegate->ContinueWithCertificate(nullptr, nullptr);
   }
 #endif
 }
@@ -345,15 +351,14 @@ void XWalkContentBrowserClient::AllowCertificateError(
     const net::SSLInfo& ssl_info,
     const GURL& request_url,
     content::ResourceType resource_type,
-    bool overridable,
     bool strict_enforcement,
     bool expired_previous_decision,
     const base::Callback<void(content::CertificateRequestResultType)>& callback) {
   // Currently only Android handles it.
   // TODO(yongsheng): applies it for other platforms?
 #if defined(OS_ANDROID)
-  XWalkContentsClientBridgeBase* client =
-      XWalkContentsClientBridgeBase::FromWebContents(web_contents);
+  XWalkContentsClientBridge* client =
+      XWalkContentsClientBridge::FromWebContents(web_contents);
 //  bool cancel_request = true;
   if (client)
     client->AllowCertificateError(cert_error,
@@ -378,7 +383,7 @@ XWalkContentBrowserClient::GetPlatformNotificationService() {
 
 void XWalkContentBrowserClient::DidCreatePpapiPlugin(
     content::BrowserPpapiHost* browser_host) {
-#if defined(ENABLE_PLUGINS)
+#if BUILDFLAG(ENABLE_PLUGINS)
   browser_host->GetPpapiHost()->AddHostFactoryFilter(
       std::unique_ptr<ppapi::host::HostFactory>(
           new XWalkBrowserPepperHostFactory(browser_host)));
@@ -388,7 +393,7 @@ void XWalkContentBrowserClient::DidCreatePpapiPlugin(
 content::BrowserPpapiHost*
     XWalkContentBrowserClient::GetExternalBrowserPpapiHost(
         int plugin_process_id) {
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
   content::BrowserChildProcessHostIterator iter(PROCESS_TYPE_NACL_LOADER);
   while (!iter.Done()) {
     nacl::NaClProcessHost* host = static_cast<nacl::NaClProcessHost*>(
@@ -517,6 +522,29 @@ XWalkContentBrowserClient::CreateThrottlesForNavigation(
   }
   return throttles;
 }
-#endif
+#endif // OS_ANDROID
+
+/**
+ *
+ */
+void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
+    content::RenderFrameHost* render_frame_host,
+    const std::string& interface_name,
+    mojo::ScopedMessagePipeHandle interface_pipe) {
+  if (!frame_interfaces_) {
+    frame_interfaces_ = std::make_unique<
+    service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();
+    ExposeInterfacesToFrame(frame_interfaces_.get());
+  }
+
+  frame_interfaces_->TryBindInterface(interface_name, &interface_pipe,
+      render_frame_host);
+}
+
+void XWalkContentBrowserClient::ExposeInterfacesToFrame(
+    service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>*
+    registry) {
+
+}
 
 }  // namespace xwalk

@@ -60,6 +60,11 @@ IoThreadClientData::IoThreadClientData() : pending_association(false) {}
 typedef map<pair<int, int>, IoThreadClientData>
     RenderFrameHostToIoThreadClientType;
 
+// When browser side navigation is enabled, RenderFrameIDs do not have
+// valid render process host and render frame ids for frame navigations.
+// We need to identify these by using Frame Tree Node ids.
+typedef map<int, IoThreadClientData> FrameTreeNodeToIoThreadClientType;
+
 static pair<int, int> GetRenderFrameHostIdPair(RenderFrameHost* rfh) {
   return pair<int, int>(rfh->GetProcess()->GetID(), rfh->GetRoutingID());
 }
@@ -72,10 +77,15 @@ class RfhToIoThreadClientMap {
   bool Get(pair<int, int> rfh_id, IoThreadClientData* client);
   void Erase(pair<int, int> rfh_id);
 
+  void Set(int frame_tree_node_id, const IoThreadClientData& client);
+  bool Get(int frame_tree_node_id, IoThreadClientData* client);
+  void Erase(int frame_tree_node_id);
+
  private:
   friend struct base::LazyInstanceTraitsBase<RfhToIoThreadClientMap>;
   base::Lock map_lock_;
   RenderFrameHostToIoThreadClientType rfh_to_io_thread_client_;
+  FrameTreeNodeToIoThreadClientType frame_tree_node_to_io_thread_client_;
 };
 
 // static
@@ -110,6 +120,26 @@ void RfhToIoThreadClientMap::Erase(pair<int, int> rfh_id) {
   rfh_to_io_thread_client_.erase(rfh_id);
 }
 
+void RfhToIoThreadClientMap::Set(int frame_tree_node_id, const IoThreadClientData& client) {
+  base::AutoLock lock(map_lock_);
+  frame_tree_node_to_io_thread_client_[frame_tree_node_id] = client;
+}
+
+bool RfhToIoThreadClientMap::Get(int frame_tree_node_id, IoThreadClientData* client) {
+  base::AutoLock lock(map_lock_);
+  FrameTreeNodeToIoThreadClientType::iterator iterator = frame_tree_node_to_io_thread_client_.find(frame_tree_node_id);
+  if (iterator == frame_tree_node_to_io_thread_client_.end())
+    return false;
+
+  *client = iterator->second;
+  return true;
+}
+
+void RfhToIoThreadClientMap::Erase(int frame_tree_node_id) {
+  base::AutoLock lock(map_lock_);
+  frame_tree_node_to_io_thread_client_.erase(frame_tree_node_id);
+}
+
 // ClientMapEntryUpdater ------------------------------------------------------
 
 class ClientMapEntryUpdater : public content::WebContentsObserver {
@@ -141,13 +171,14 @@ void ClientMapEntryUpdater::RenderFrameCreated(RenderFrameHost* rfh) {
   IoThreadClientData client_data;
   client_data.io_thread_client = jdelegate_;
   client_data.pending_association = false;
-  RfhToIoThreadClientMap::GetInstance()->Set(
-      GetRenderFrameHostIdPair(rfh), client_data);
+  RfhToIoThreadClientMap::GetInstance()->Set(GetRenderFrameHostIdPair(rfh), client_data);
+  RfhToIoThreadClientMap::GetInstance()->Set(rfh->GetFrameTreeNodeId(), client_data);
 }
 
 
 void ClientMapEntryUpdater::RenderFrameDeleted(RenderFrameHost* rfh) {
   RfhToIoThreadClientMap::GetInstance()->Erase(GetRenderFrameHostIdPair(rfh));
+  RfhToIoThreadClientMap::GetInstance()->Erase(rfh->GetFrameTreeNodeId());
 }
 
 void ClientMapEntryUpdater::WebContentsDestroyed() {
@@ -191,21 +222,30 @@ struct WebResourceRequest {
 // XWalkContentsIoThreadClientImpl -------------------------------------------
 
 // static
-std::unique_ptr<XWalkContentsIoThreadClient>
-XWalkContentsIoThreadClient::FromID(int render_process_id,
-                                    int render_frame_id) {
+std::unique_ptr<XWalkContentsIoThreadClient> XWalkContentsIoThreadClient::FromID(int render_process_id,
+                                                                                 int render_frame_id) {
   pair<int, int> rfh_id(render_process_id, render_frame_id);
   IoThreadClientData client_data;
   if (!RfhToIoThreadClientMap::GetInstance()->Get(rfh_id, &client_data))
     return std::unique_ptr<XWalkContentsIoThreadClient>();
 
   JNIEnv* env = AttachCurrentThread();
-  ScopedJavaLocalRef<jobject> java_delegate =
-      client_data.io_thread_client.get(env);
+  ScopedJavaLocalRef<jobject> java_delegate = client_data.io_thread_client.get(env);
   DCHECK(!client_data.pending_association || java_delegate.is_null());
   return std::unique_ptr<XWalkContentsIoThreadClient>(
-      new XWalkContentsIoThreadClientImpl(
-          client_data.pending_association, java_delegate));
+      new XWalkContentsIoThreadClientImpl(client_data.pending_association, java_delegate));
+}
+
+std::unique_ptr<XWalkContentsIoThreadClient> XWalkContentsIoThreadClient::FromID(int frame_tree_node_id) {
+  IoThreadClientData client_data;
+  if (!RfhToIoThreadClientMap::GetInstance()->Get(frame_tree_node_id, &client_data))
+    return std::unique_ptr<XWalkContentsIoThreadClient>();
+
+  JNIEnv* env = AttachCurrentThread();
+  ScopedJavaLocalRef<jobject> java_delegate = client_data.io_thread_client.get(env);
+  DCHECK(!client_data.pending_association || java_delegate.is_null());
+  return std::unique_ptr<XWalkContentsIoThreadClient>(
+      new XWalkContentsIoThreadClientImpl(client_data.pending_association, java_delegate));
 }
 
 // static
@@ -267,7 +307,7 @@ XWalkContentsIoThreadClientImpl::GetCacheMode() const {
   JNIEnv* env = AttachCurrentThread();
   return static_cast<XWalkContentsIoThreadClient::CacheMode>(
       Java_XWalkContentsIoThreadClient_getCacheMode(
-          env, java_object_.obj()));
+          env, java_object_));
 }
 
 std::unique_ptr<XWalkWebResourceResponse>
@@ -309,13 +349,13 @@ XWalkContentsIoThreadClientImpl::ShouldInterceptRequest(
   ScopedJavaLocalRef<jobject> ret =
       Java_XWalkContentsIoThreadClient_shouldInterceptRequest(
           env,
-          java_object_.obj(),
-          jstring_url.obj(),
+          java_object_,
+          jstring_url,
           is_main_frame,
           has_user_gesture,
-          jstring_method.obj(),
-          jstringArray_headers_names.obj(),
-          jstringArray_headers_values.obj());
+          jstring_method,
+          jstringArray_headers_names,
+          jstringArray_headers_values);
   if (ret.is_null())
     return std::unique_ptr<XWalkWebResourceResponse>();
   return std::unique_ptr<XWalkWebResourceResponse>(
@@ -329,7 +369,7 @@ bool XWalkContentsIoThreadClientImpl::ShouldBlockContentUrls() const {
 
   JNIEnv* env = AttachCurrentThread();
   return Java_XWalkContentsIoThreadClient_shouldBlockContentUrls(
-      env, java_object_.obj());
+      env, java_object_);
 }
 
 bool XWalkContentsIoThreadClientImpl::ShouldBlockFileUrls() const {
@@ -339,7 +379,7 @@ bool XWalkContentsIoThreadClientImpl::ShouldBlockFileUrls() const {
 
   JNIEnv* env = AttachCurrentThread();
   return Java_XWalkContentsIoThreadClient_shouldBlockFileUrls(
-      env, java_object_.obj());
+      env, java_object_);
 }
 
 bool XWalkContentsIoThreadClientImpl::ShouldBlockNetworkLoads() const {
@@ -349,57 +389,7 @@ bool XWalkContentsIoThreadClientImpl::ShouldBlockNetworkLoads() const {
 
   JNIEnv* env = AttachCurrentThread();
   return Java_XWalkContentsIoThreadClient_shouldBlockNetworkLoads(
-      env, java_object_.obj());
-}
-
-void XWalkContentsIoThreadClientImpl::NewDownload(
-    const GURL& url,
-    const string& user_agent,
-    const string& content_disposition,
-    const string& mime_type,
-    int64_t content_length) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
-  if (java_object_.is_null())
-    return;
-
-  JNIEnv* env = AttachCurrentThread();
-  ScopedJavaLocalRef<jstring> jstring_url =
-      ConvertUTF8ToJavaString(env, url.spec());
-  ScopedJavaLocalRef<jstring> jstring_user_agent =
-      ConvertUTF8ToJavaString(env, user_agent);
-  ScopedJavaLocalRef<jstring> jstring_content_disposition =
-      ConvertUTF8ToJavaString(env, content_disposition);
-  ScopedJavaLocalRef<jstring> jstring_mime_type =
-      ConvertUTF8ToJavaString(env, mime_type);
-
-  Java_XWalkContentsIoThreadClient_onDownloadStart(
-      env,
-      java_object_.obj(),
-      jstring_url.obj(),
-      jstring_user_agent.obj(),
-      jstring_content_disposition.obj(),
-      jstring_mime_type.obj(),
-      content_length);
-}
-
-void XWalkContentsIoThreadClientImpl::NewLoginRequest(
-    const string& realm,
-    const string& account,
-    const string& args) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
-  if (java_object_.is_null())
-    return;
-
-  JNIEnv* env = AttachCurrentThread();
-  ScopedJavaLocalRef<jstring> jrealm = ConvertUTF8ToJavaString(env, realm);
-  ScopedJavaLocalRef<jstring> jargs = ConvertUTF8ToJavaString(env, args);
-
-  ScopedJavaLocalRef<jstring> jaccount;
-  if (!account.empty())
-    jaccount = ConvertUTF8ToJavaString(env, account);
-
-  Java_XWalkContentsIoThreadClient_newLoginRequest(
-      env, java_object_.obj(), jrealm.obj(), jaccount.obj(), jargs.obj());
+      env, java_object_);
 }
 
 void XWalkContentsIoThreadClientImpl::OnReceivedResponseHeaders(
@@ -440,19 +430,19 @@ void XWalkContentsIoThreadClientImpl::OnReceivedResponseHeaders(
 
   Java_XWalkContentsIoThreadClient_onReceivedResponseHeaders(
       env,
-      java_object_.obj(),
-      web_request.jstring_url.obj(),
+      java_object_,
+      web_request.jstring_url,
       web_request.is_main_frame,
       web_request.has_user_gesture,
-      web_request.jstring_method.obj(),
-      web_request.jstringArray_header_names.obj(),
-      web_request.jstringArray_header_values.obj(),
-      jstring_mime_type.obj(),
-      jstring_encoding.obj(),
+      web_request.jstring_method,
+      web_request.jstringArray_header_names,
+      web_request.jstringArray_header_values,
+      jstring_mime_type,
+      jstring_encoding,
       status_code,
-      jstring_reason.obj(),
-      jstringArray_response_header_names.obj(),
-      jstringArray_response_header_values.obj());
+      jstring_reason,
+      jstringArray_response_header_names,
+      jstringArray_response_header_values);
 }
 
 bool RegisterXWalkContentsIoThreadClientImpl(JNIEnv* env) {

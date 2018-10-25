@@ -54,12 +54,12 @@ InputStreamImpl::InputStreamImpl(const JavaRef<jobject>& stream)
 
 InputStreamImpl::~InputStreamImpl() {
   JNIEnv* env = AttachCurrentThread();
-  Java_InputStream_close(env, jobject_.obj());
+  Java_InputStream_close(env, jobject_);
 }
 
 bool InputStreamImpl::BytesAvailable(int* bytes_available) const {
   JNIEnv* env = AttachCurrentThread();
-  int bytes = Java_InputStream_available(env, jobject_.obj());
+  int bytes = Java_InputStream_available(env, jobject_);
   if (ClearException(env))
     return false;
   *bytes_available = bytes;
@@ -68,7 +68,7 @@ bool InputStreamImpl::BytesAvailable(int* bytes_available) const {
 
 bool InputStreamImpl::Skip(int64_t n, int64_t* bytes_skipped) {
   JNIEnv* env = AttachCurrentThread();
-  int bytes = Java_InputStream_skip(env, jobject_.obj(), n);
+  int bytes = Java_InputStream_skip(env, jobject_, n);
   if (ClearException(env))
     return false;
   if (bytes > n)
@@ -86,7 +86,6 @@ bool InputStreamImpl::Read(net::IOBuffer* dest, int length, int* bytes_read) {
       return false;
   }
 
-  jbyteArray buffer = buffer_.obj();
   *bytes_read = 0;
 
   const int read_size = std::min(length, kBufferSize);
@@ -97,7 +96,7 @@ bool InputStreamImpl::Read(net::IOBuffer* dest, int length, int* bytes_read) {
     // signals EOF by setting |bytes_read| to 0 and returning true necessary to
     // call the Java-side read method until it returns something other than 0.
     byte_count = Java_InputStream_readI_AB_I_I(
-        env, jobject_.obj(), buffer, 0, read_size);
+        env, jobject_, buffer_, 0, read_size);
     if (ClearException(env))
       return false;
   } while (byte_count == 0);
@@ -107,7 +106,7 @@ bool InputStreamImpl::Read(net::IOBuffer* dest, int length, int* bytes_read) {
     return true;
 
 #ifndef NDEBUG
-  int32_t buffer_length = env->GetArrayLength(buffer);
+  int32_t buffer_length = env->GetArrayLength(buffer_.obj());
   DCHECK_GE(read_size, byte_count);
   DCHECK_GE(buffer_length, byte_count);
 #endif  // NDEBUG
@@ -120,7 +119,7 @@ bool InputStreamImpl::Read(net::IOBuffer* dest, int length, int* bytes_read) {
 
   // Copy the data over to the provided C++ side buffer.
   DCHECK_GE(length, byte_count);
-  env->GetByteArrayRegion(buffer, 0, byte_count,
+  env->GetByteArrayRegion(buffer_.obj(), 0, byte_count,
       reinterpret_cast<jbyte*>(dest->data() + *bytes_read));
   if (ClearException(env))
     return false;

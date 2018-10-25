@@ -7,4 +7,6 @@ declare_args() {
     enable_tenta_log_db = false
     enable_tenta_log_net = false
     enable_tenta_log_cookie = false
+    enable_tenta_log_history = false
+    enable_tenta_log_gui = false
 }

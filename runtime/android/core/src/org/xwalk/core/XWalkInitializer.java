@@ -151,7 +151,7 @@ public class XWalkInitializer {
         public void onXWalkInitCompleted();
     }
 
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkInitializer";
 
     private XWalkInitListener mInitListener;
     private Context mContext;
@@ -254,6 +254,7 @@ public class XWalkInitializer {
 
         @Override
         public void onActivateFailed() {
+            org.chromium.base.Log.d("iotto", "onActivateFailed");
             mInitListener.onXWalkInitFailed();
         }
 

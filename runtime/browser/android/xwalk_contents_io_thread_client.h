@@ -60,8 +60,11 @@ class XWalkContentsIoThreadClient {
   // |render_process_id|, |render_frame_id| pair.
   // This method can be called from any thread.
   // An empty scoped_ptr is a valid return value.
-  static std::unique_ptr<XWalkContentsIoThreadClient> FromID(int render_process_id,
-                                                        int render_frame_id);
+  static std::unique_ptr<XWalkContentsIoThreadClient> FromID(int render_process_id, int render_frame_id);
+
+  // This map is useful when browser side navigations are enabled as
+  // render_frame_ids will not be valid anymore for some of the navigations.
+  static std::unique_ptr<XWalkContentsIoThreadClient> FromID(int frame_tree_node_id);
 
   // Called on the IO thread when a subframe is created.
   static void SubFrameCreated(int render_process_id,
@@ -84,22 +87,6 @@ class XWalkContentsIoThreadClient {
   // Retrieve the BlockNetworkLoads setting value of this XWalkContent.
   // This method is called on the IO thread only.
   virtual bool ShouldBlockNetworkLoads() const = 0;
-
-  // Called when ResourceDispathcerHost detects a download request.
-  // The download is already cancelled when this is called, since
-  // relevant for DownloadListener is already extracted.
-  virtual void NewDownload(const GURL& url,
-                           const std::string& user_agent,
-                           const std::string& content_disposition,
-                           const std::string& mime_type,
-                           int64_t content_length) = 0;
-
-  // Called when a new login request is detected. See the documentation for
-  // WebViewClient.onReceivedLoginRequest for arguments. Note that |account|
-  // may be empty.
-  virtual void NewLoginRequest(const std::string& realm,
-                               const std::string& account,
-                               const std::string& args) = 0;
 
   virtual void OnReceivedResponseHeaders(
     const net::URLRequest* request,

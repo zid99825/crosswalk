@@ -41,55 +41,55 @@ class UserData : public base::SupportsUserData::Data {
 
 }  // namespace
 
-// static
-void XWalkContentsClientBridgeBase::Associate(
-    WebContents* web_contents,
-    XWalkContentsClientBridgeBase* handler) {
-  web_contents->SetUserData(kXWalkContentsClientBridgeBase,
-                            new UserData(handler));
-}
+//// static
+//void XWalkContentsClientBridgeBase::Associate(
+//    WebContents* web_contents,
+//    XWalkContentsClientBridgeBase* handler) {
+//  web_contents->SetUserData(kXWalkContentsClientBridgeBase,
+//                            base::MakeUnique<UserData>(handler));
+//}
 
-// static
-XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromWebContents(
-    WebContents* web_contents) {
-  return UserData::GetContents(web_contents);
-}
-
-// static
-XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromRenderViewID(
-    int render_process_id,
-    int render_view_id) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  content::RenderViewHost* rvh =
-      content::RenderViewHost::FromID(render_process_id, render_view_id);
-  if (!rvh) return NULL;
-  content::WebContents* web_contents =
-      content::WebContents::FromRenderViewHost(rvh);
-  return UserData::GetContents(web_contents);
-}
-
-// static
-XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromRenderFrameID(
-    int render_process_id,
-    int render_frame_id) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  content::RenderFrameHost* rfh =
-      content::RenderFrameHost::FromID(render_process_id, render_frame_id);
-  if (!rfh) return NULL;
-  content::WebContents* web_contents =
-      content::WebContents::FromRenderFrameHost(rfh);
-  return UserData::GetContents(web_contents);
-}
-
-// static
-XWalkContentsClientBridgeBase*
-  XWalkContentsClientBridgeBase::FromRenderFrameHost(
-    content::RenderFrameHost* render_frame_host) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  content::WebContents* web_contents =
-      content::WebContents::FromRenderFrameHost(render_frame_host);
-  return UserData::GetContents(web_contents);
-}
+//// static
+//XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromWebContents(
+//    WebContents* web_contents) {
+//  return UserData::GetContents(web_contents);
+//}
+//
+//// static
+//XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromRenderViewID(
+//    int render_process_id,
+//    int render_view_id) {
+//  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+//  content::RenderViewHost* rvh =
+//      content::RenderViewHost::FromID(render_process_id, render_view_id);
+//  if (!rvh) return NULL;
+//  content::WebContents* web_contents =
+//      content::WebContents::FromRenderViewHost(rvh);
+//  return UserData::GetContents(web_contents);
+//}
+//
+//// static
+//XWalkContentsClientBridgeBase* XWalkContentsClientBridgeBase::FromRenderFrameID(
+//    int render_process_id,
+//    int render_frame_id) {
+//  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+//  content::RenderFrameHost* rfh =
+//      content::RenderFrameHost::FromID(render_process_id, render_frame_id);
+//  if (!rfh) return NULL;
+//  content::WebContents* web_contents =
+//      content::WebContents::FromRenderFrameHost(rfh);
+//  return UserData::GetContents(web_contents);
+//}
+//
+//// static
+//XWalkContentsClientBridgeBase*
+//  XWalkContentsClientBridgeBase::FromRenderFrameHost(
+//    content::RenderFrameHost* render_frame_host) {
+//  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+//  content::WebContents* web_contents =
+//      content::WebContents::FromRenderFrameHost(render_frame_host);
+//  return UserData::GetContents(web_contents);
+//}
 
 XWalkContentsClientBridgeBase::~XWalkContentsClientBridgeBase() {
 }

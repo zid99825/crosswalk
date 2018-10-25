@@ -7,10 +7,12 @@
 #include <memory>
 #include <string>
 
+#include "base/android/locale_utils.h"
 #include "base/command_line.h"
 #include "base/cpu.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "base/i18n/rtl.h"
 #include "base/logging.h"
 #include "base/base_paths_android.h"
 #include "base/path_service.h"
@@ -18,10 +20,12 @@
 #include "base/posix/global_descriptors.h"
 #include "content/public/browser/browser_main_runner.h"
 #include "ui/base/resource/resource_bundle.h"
+#include "ui/base/resource/resource_bundle_android.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/ui_base_switches.h"
 #include "xwalk/runtime/common/android/xwalk_globals_android.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
+#include "xwalk/runtime/common/xwalk_resource_delegate.h"
 
 namespace xwalk {
 
@@ -60,15 +64,18 @@ int XWalkMainDelegateAndroid::RunProcess(
 }
 
 void XWalkMainDelegateAndroid::InitResourceBundle() {
+  ui::SetLocalePaksStoredInApk(true);
+
   base::FilePath pak_file;
   base::FilePath pak_dir;
   bool got_path = PathService::Get(base::DIR_ANDROID_APP_DATA, &pak_dir);
   DCHECK(got_path);
   pak_dir = pak_dir.Append(FILE_PATH_LITERAL("paks"));
   pak_file = pak_dir.Append(FILE_PATH_LITERAL(kXWalkPakFilePath));
+
   ui::ResourceBundle::InitSharedInstanceWithPakPath(pak_file);
   pak_file = pak_dir.Append(FILE_PATH_LITERAL("xwalk_100_percent.pak"));
-  ResourceBundle::GetSharedInstance().AddDataPackFromPath(
+  ui::ResourceBundle::GetSharedInstance().AddDataPackFromPath(
       pak_file, ui::SCALE_FACTOR_100P);
 }
 

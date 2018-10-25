@@ -134,7 +134,7 @@ void LifecycleTracker(const v8::FunctionCallbackInfo<v8::Value>& info) {
       v8::String::NewFromUtf8(isolate, "destructor"),
       LifecycleTrackerDestructorGetter, LifecycleTrackerDestructorSetter,
       v8::External::New(isolate, wrapper), v8::AccessControl::DEFAULT,
-      v8::PropertyAttribute::DontDelete);
+      v8::PropertyAttribute::DontDelete).ToChecked();
   info.GetReturnValue().Set(wrapper->handle);
 }
 
@@ -180,7 +180,7 @@ void GetWindowObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
   WebFrame* frame = new_view->GetWebView()->MainFrame();
   frame->SetOpener(opener);
 
-  v8::Local<v8::Value> window = frame->MainWorldScriptContext()->Global();
+  v8::Local<v8::Value> window = frame->ToWebLocalFrame()->MainWorldScriptContext()->Global();
   args.GetReturnValue().Set(window);
 }
 

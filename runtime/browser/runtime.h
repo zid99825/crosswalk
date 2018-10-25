@@ -161,11 +161,12 @@ class Runtime : public content::WebContentsDelegate,
                                   content::MediaStreamType type) override;
   void LoadProgressChanged(content::WebContents* source,
                            double progress) override;
+  void SetOverlayMode(bool useOverlayMode) override;
 
   // Overridden from content::WebContentsObserver.
   void DidUpdateFaviconURL(
       const std::vector<content::FaviconURL>& candidates) override;
-  void TitleWasSet(content::NavigationEntry* entry, bool explicit_set) override;
+  void TitleWasSet(content::NavigationEntry* entry) override;
   void DidFinishNavigation(content::NavigationHandle* navigation_handle) override;
 
   // Callback method for WebContents::DownloadImage.

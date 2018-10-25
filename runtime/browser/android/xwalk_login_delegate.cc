@@ -49,7 +49,7 @@ XWalkLoginDelegate::XWalkLoginDelegate(net::AuthChallengeInfo* auth_info,
 
     if (count == NULL) {
       count = new UrlRequestAuthAttemptsData();
-      request->SetUserData(kAuthAttemptsKey, count);
+      request->SetUserData(kAuthAttemptsKey, base::WrapUnique(count));
     }
 
     BrowserThread::PostTask(BrowserThread::UI, FROM_HERE,

@@ -88,36 +88,36 @@ std::vector<XWalkPresentationHost::AndroidDisplay> XWalkPresentationHost::
   }
 
   auto jObjectArray =
-    Java_XWalkPresentationHost_getAndroidDisplayInfo(javaEnv, obj.obj());
+    Java_XWalkPresentationHost_getAndroidDisplayInfo(javaEnv, obj);
   int COUNT = javaEnv->GetArrayLength(jObjectArray.obj());
 
   for ( int i = 0 ; i < COUNT ; ++i ) {
-    auto object = javaEnv->GetObjectArrayElement(jObjectArray.obj(), i);
-    auto jclass = javaEnv->GetObjectClass(object);
+    jobject object = javaEnv->GetObjectArrayElement(jObjectArray.obj(), i);
+    jclass jclass = javaEnv->GetObjectClass(object);
 
     std::string cxxName("");
     int cxxID = -1;
     int cxxFlags = 0;
 
     // Extract name of the display
-    auto nameMethod = javaEnv->GetMethodID(jclass,
+    jmethodID nameMethod = javaEnv->GetMethodID(jclass,
       "getName", "()Ljava/lang/String;");
     if ( nameMethod ) {
-      auto value = (jstring)javaEnv->CallObjectMethod(object, nameMethod);
+      jstring value = (jstring)javaEnv->CallObjectMethod(object, nameMethod);
       base::android::ConvertJavaStringToUTF8(javaEnv, value, &cxxName);
     }
 
     // Extract ID of the display
-    auto getIDMethod = javaEnv->GetMethodID(jclass, "getDisplayId", "()I");
+    jmethodID getIDMethod = javaEnv->GetMethodID(jclass, "getDisplayId", "()I");
     if ( getIDMethod ) {
-      auto value = (jint)javaEnv->CallIntMethod(object, getIDMethod);
+      jint value = (jint)javaEnv->CallIntMethod(object, getIDMethod);
       cxxID = value;
     }
 
     // Extract Flags of the display
-    auto getFlagsMethod = javaEnv->GetMethodID(jclass, "getFlags", "()I");
+    jmethodID getFlagsMethod = javaEnv->GetMethodID(jclass, "getFlags", "()I");
     if ( getFlagsMethod ) {
-      auto value = (jint)javaEnv->CallIntMethod(object, getFlagsMethod);
+      jint value = (jint)javaEnv->CallIntMethod(object, getFlagsMethod);
       cxxFlags = value;
     }
 
@@ -153,8 +153,8 @@ bool XWalkPresentationHost::ShowPresentation(const int render_process_id,
 
   ScopedJavaLocalRef<jstring> javaString =
     base::android::ConvertUTF8ToJavaString(javaEnv, url);
-  success = Java_XWalkPresentationHost_showPresentation(javaEnv, obj.obj(),
-    render_process_id, render_frame_id, display_d, javaString.obj());
+  success = Java_XWalkPresentationHost_showPresentation(javaEnv, obj,
+    render_process_id, render_frame_id, display_d, javaString);
 
   return success;
 }
@@ -167,17 +167,18 @@ void XWalkPresentationHost::closePresentation(const int render_process_id,
     LOG(ERROR) << "Failed to obtain JNI object";
   }
 
-  Java_XWalkPresentationHost_closePresentation(javaEnv, obj.obj(),
+  Java_XWalkPresentationHost_closePresentation(javaEnv, obj,
     render_process_id, render_frame_id);
 }
 
-static jlong Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
-  auto nativeObj = new XWalkPresentationHost(env, obj);
+static jlong JNI_XWalkPresentationHost_Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  XWalkPresentationHost* nativeObj = new XWalkPresentationHost(env, obj);
   return reinterpret_cast<intptr_t>(nativeObj);
 }
 
 bool RegisterXWalkPresentationHost(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return false;
 }
 
 }  // namespace xwalk

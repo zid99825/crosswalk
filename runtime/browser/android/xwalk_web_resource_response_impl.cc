@@ -9,7 +9,7 @@
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
 #include "base/memory/ptr_util.h"
-#include "jni/XWalkWebResourceResponseInternal_jni.h"
+#include "jni/XWalkWebResourceResponse_jni.h"
 #include "net/http/http_response_headers.h"
 #include "net/url_request/url_request.h"
 #include "net/url_request/url_request_job.h"
@@ -31,8 +31,8 @@ XWalkWebResourceResponseImpl::~XWalkWebResourceResponseImpl() {
 std::unique_ptr<InputStream>
 XWalkWebResourceResponseImpl::GetInputStream(JNIEnv* env) const {
   ScopedJavaLocalRef<jobject> jstream =
-      Java_XWalkWebResourceResponseInternal_getDataNative(
-         env, java_object_.obj());
+      Java_XWalkWebResourceResponse_getDataNative(
+         env, java_object_);
   if (jstream.is_null())
     return std::unique_ptr<InputStream>();
   return base::WrapUnique(new InputStreamImpl(jstream));
@@ -41,8 +41,8 @@ XWalkWebResourceResponseImpl::GetInputStream(JNIEnv* env) const {
 bool XWalkWebResourceResponseImpl::GetMimeType(
     JNIEnv* env, std::string* mime_type) const {
   ScopedJavaLocalRef<jstring> jstring_mime_type =
-      Java_XWalkWebResourceResponseInternal_getMimeTypeNative(
-         env, java_object_.obj());
+      Java_XWalkWebResourceResponse_getMimeTypeNative(
+         env, java_object_);
   if (jstring_mime_type.is_null())
     return false;
   *mime_type = ConvertJavaStringToUTF8(jstring_mime_type);
@@ -52,8 +52,8 @@ bool XWalkWebResourceResponseImpl::GetMimeType(
 bool XWalkWebResourceResponseImpl::GetCharset(
     JNIEnv* env, std::string* charset) const {
   ScopedJavaLocalRef<jstring> jstring_charset =
-      Java_XWalkWebResourceResponseInternal_getEncodingNative(
-         env, java_object_.obj());
+      Java_XWalkWebResourceResponse_getEncodingNative(
+         env, java_object_);
   if (jstring_charset.is_null())
     return false;
   *charset = ConvertJavaStringToUTF8(jstring_charset);
@@ -71,11 +71,11 @@ bool XWalkWebResourceResponseImpl::GetStatusInfo(
     int* status_code,
     std::string* reason_phrase) const {
   int status =
-      Java_XWalkWebResourceResponseInternal_getStatusCodeNative(
-         env, java_object_.obj());
+      Java_XWalkWebResourceResponse_getStatusCodeNative(
+         env, java_object_);
   ScopedJavaLocalRef<jstring> jstring_reason_phrase =
-      Java_XWalkWebResourceResponseInternal_getReasonPhraseNative(
-         env, java_object_.obj());
+      Java_XWalkWebResourceResponse_getReasonPhraseNative(
+         env, java_object_);
   if (status < 100 || status >= 600 || jstring_reason_phrase.is_null())
     return false;
   *status_code = status;
@@ -87,11 +87,11 @@ bool XWalkWebResourceResponseImpl::GetResponseHeaders(
     JNIEnv* env,
     net::HttpResponseHeaders* headers) const {
   ScopedJavaLocalRef<jobjectArray> jstringArray_headerNames =
-      Java_XWalkWebResourceResponseInternal_getResponseHeaderNames(
-         env, java_object_.obj());
+      Java_XWalkWebResourceResponse_getResponseHeaderNames(
+         env, java_object_);
   ScopedJavaLocalRef<jobjectArray> jstringArray_headerValues =
-      Java_XWalkWebResourceResponseInternal_getResponseHeaderValues(
-         env, java_object_.obj());
+      Java_XWalkWebResourceResponse_getResponseHeaderValues(
+         env, java_object_);
   if (jstringArray_headerNames.is_null() || jstringArray_headerValues.is_null())
     return false;
   std::vector<std::string> header_names;

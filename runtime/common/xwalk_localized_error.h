@@ -20,11 +20,11 @@ namespace blink {
 struct WebURLError;
 }
 
+namespace xwalk {
 class LocalizedError {
  public:
   // Returns a description of the encountered error.
-  static base::string16 GetErrorDetails(const blink::WebURLError& error,
-                                        bool is_post);
+  static base::string16 GetErrorDetails(const std::string& error_domain, const blink::WebURLError& error, bool is_post);
 
   static const char kHttpErrorDomain[];
   static const char kDnsProbeErrorDomain[];
@@ -33,4 +33,5 @@ class LocalizedError {
   DISALLOW_IMPLICIT_CONSTRUCTORS(LocalizedError);
 };
 
+} // namesapce xwalk
 #endif  // XWALK_RUNTIME_COMMON_XWALK_LOCALIZED_ERROR_H_

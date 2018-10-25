@@ -392,7 +392,7 @@ void RuntimeFileSelectHelper::RunFileChooserOnUIThread(
   }
 
   select_file_dialog_ = ui::SelectFileDialog::Create(
-      this, new RuntimeSelectFilePolicy());
+      this, base::WrapUnique(new RuntimeSelectFilePolicy()));
 
   switch (params.mode) {
     case FileChooserParams::Open:

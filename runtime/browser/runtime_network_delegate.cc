@@ -9,6 +9,7 @@
 #include "net/base/net_errors.h"
 #include "net/base/static_cookie_policy.h"
 #include "net/url_request/url_request.h"
+#include "meta_logging.h"
 
 #if defined(OS_ANDROID)
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
@@ -68,9 +69,10 @@ int RuntimeNetworkDelegate::OnHeadersReceived(
 
 void RuntimeNetworkDelegate::OnBeforeRedirect(net::URLRequest* request,
                                               const GURL& new_location) {
+  TENTA_LOG_NET(INFO) << __func__ << " url=" << new_location.spec();
 }
 
-void RuntimeNetworkDelegate::OnResponseStarted(net::URLRequest* request) {
+void RuntimeNetworkDelegate::OnResponseStarted(net::URLRequest* request, int net_error) {
 }
 
 void RuntimeNetworkDelegate::OnNetworkBytesReceived(net::URLRequest* request,
@@ -109,19 +111,20 @@ bool RuntimeNetworkDelegate::OnCanGetCookies(
 }
 
 bool RuntimeNetworkDelegate::OnCanSetCookie(const net::URLRequest& request,
-                                            const std::string& cookie_line,
+                                            const net::CanonicalCookie& cookie,
                                             net::CookieOptions* options) {
 #if defined(OS_ANDROID)
   return XWalkCookieAccessPolicy::GetInstance()->OnCanSetCookie(request,
-                                                                cookie_line,
+                                                                cookie,
                                                                 options);
 #else
   return true;
 #endif
 }
 
-bool RuntimeNetworkDelegate::OnCanAccessFile(const net::URLRequest& request,
-                                             const base::FilePath& path) const {
+bool RuntimeNetworkDelegate::OnCanAccessFile(
+    const net::URLRequest& request, const base::FilePath& original_path,
+    const base::FilePath& absolute_path) const {
   return true;
 }
 

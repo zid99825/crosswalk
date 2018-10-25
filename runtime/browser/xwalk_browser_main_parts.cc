@@ -17,6 +17,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "cc/base/switches.h"
+#include "components/nacl/common/features.h"
 #include "content/browser/devtools/devtools_http_handler.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
@@ -39,7 +40,7 @@
 #include "xwalk/runtime/common/xwalk_runtime_features.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 
-#if !defined(DISABLE_NACL)
+#if BUILDFLAG(ENABLE_NACL)
 #include "components/nacl/browser/nacl_browser.h"
 #include "components/nacl/browser/nacl_process_host.h"
 #include "xwalk/runtime/browser/nacl_host/nacl_browser_delegate_impl.h"
@@ -194,9 +195,9 @@ void XWalkBrowserMainParts::PreMainMessageLoopRun() {
   if (extension_service_)
     RegisterExternalExtensions();
 
-#if !defined(DISABLE_NACL)
-  NaClBrowserDelegateImpl* delegate = new NaClBrowserDelegateImpl();
-  nacl::NaClBrowser::SetDelegate(delegate);
+#if BUILDFLAG(ENABLE_NACL)
+  std::unique_ptr<NaClBrowserDelegateImpl> delegate(new NaClBrowserDelegateImpl());
+  nacl::NaClBrowser::SetDelegate(std::move(delegate));
 
   content::BrowserThread::PostTask(
       content::BrowserThread::IO,

@@ -6,7 +6,6 @@
 
 #include <string>
 
-#include "base/android/context_utils.h"
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
 #include "base/android/jni_weak_ref.h"
@@ -54,7 +53,7 @@ void* kPreviouslyFailedKey = &kPreviouslyFailedKey;
 
 void MarkRequestAsFailed(net::URLRequest* request) {
   request->SetUserData(kPreviouslyFailedKey,
-                       new base::SupportsUserData::Data());
+                       base::WrapUnique(new base::SupportsUserData::Data()));
 }
 
 bool HasRequestPreviouslyFailed(net::URLRequest* request) {
@@ -132,16 +131,6 @@ class ContentSchemeRequestInterceptor : public AndroidRequestInterceptorBase {
       const net::URLRequest* request) const override;
 };
 
-static ScopedJavaLocalRef<jobject> GetResourceContext(JNIEnv* env) {
-  if (g_resource_context)
-    return g_resource_context->get(env);
-  ScopedJavaLocalRef<jobject> context;
-  // We have to reset as GetApplicationContext() returns a jobject with a
-  // global ref. The constructor that takes a jobject would expect a local ref
-  // and would assert.
-  context.Reset(env, base::android::GetApplicationContext().obj());
-  return context;
-}
 
 // AndroidStreamReaderURLRequestJobDelegateImpl -------------------------------
 
@@ -162,10 +151,7 @@ AndroidStreamReaderURLRequestJobDelegateImpl::OpenInputStream(
   ScopedJavaLocalRef<jstring> jurl =
       ConvertUTF8ToJavaString(env, url.spec());
   ScopedJavaLocalRef<jobject> stream =
-      xwalk::Java_AndroidProtocolHandler_open(
-          env,
-          GetResourceContext(env).obj(),
-          jurl.obj());
+      xwalk::Java_AndroidProtocolHandler_open(env, jurl);
 
   // Check and clear pending exceptions.
   if (ClearException(env) || stream.is_null()) {
@@ -201,8 +187,7 @@ bool AndroidStreamReaderURLRequestJobDelegateImpl::GetMimeType(
   ScopedJavaLocalRef<jstring> returned_type =
       xwalk::Java_AndroidProtocolHandler_getMimeType(
           env,
-          GetResourceContext(env).obj(),
-          stream_impl->jobj(), url.obj());
+          stream_impl->jobj(), url);
   if (ClearException(env) || returned_type.is_null())
     return false;
 
@@ -223,9 +208,7 @@ bool AndroidStreamReaderURLRequestJobDelegateImpl::GetPackageName(
     JNIEnv* env,
     std::string* name) {
   ScopedJavaLocalRef<jstring> returned_name =
-      xwalk::Java_AndroidProtocolHandler_getPackageName(
-          env,
-          GetResourceContext(env).obj());
+      xwalk::Java_AndroidProtocolHandler_getPackageName(env);
 
   if (ClearException(env) || returned_name.is_null())
     return false;
@@ -326,7 +309,7 @@ bool AppSchemeRequestInterceptor::ShouldHandleRequest(
 namespace xwalk {
 
 bool RegisterAndroidProtocolHandler(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+  return false;
 }
 
 // static
@@ -354,9 +337,8 @@ std::unique_ptr<net::URLRequestInterceptor> CreateAppSchemeRequestInterceptor() 
 //
 // |context| should be a android.content.Context instance or NULL to enable
 // the use of the standard application context.
-static void SetResourceContextForTesting(JNIEnv* env,
-                                         const JavaParamRef<jclass>& /*clazz*/,
-                                         const JavaParamRef<jobject>& context) {
+static void JNI_AndroidProtocolHandler_SetResourceContextForTesting(JNIEnv* env, const JavaParamRef<jclass>& /*clazz*/,
+                                                                    const JavaParamRef<jobject>& context) {
   if (context) {
     ResetResourceContext(new JavaObjectWeakGlobalRef(env, context));
   } else {
@@ -364,13 +346,13 @@ static void SetResourceContextForTesting(JNIEnv* env,
   }
 }
 
-static ScopedJavaLocalRef<jstring> GetAndroidAssetPath(JNIEnv* env,
-                                   const JavaParamRef<jclass>& /*clazz*/) {
+static ScopedJavaLocalRef<jstring> JNI_AndroidProtocolHandler_GetAndroidAssetPath(
+    JNIEnv* env, const JavaParamRef<jclass>& /*clazz*/) {
   // OK to release, JNI binding.
   return ConvertUTF8ToJavaString(env, xwalk::kAndroidAssetPath);
 }
 
-static ScopedJavaLocalRef<jstring> GetAndroidResourcePath(
+static ScopedJavaLocalRef<jstring> JNI_AndroidProtocolHandler_GetAndroidResourcePath(
     JNIEnv* env, const JavaParamRef<jclass>& /*clazz*/) {
   // OK to release, JNI binding.
   return ConvertUTF8ToJavaString(env, xwalk::kAndroidResourcePath);

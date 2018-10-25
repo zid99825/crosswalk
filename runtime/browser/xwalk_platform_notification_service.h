@@ -44,9 +44,7 @@ class XWalkPlatformNotificationService
       const std::string& notification_id,
       const GURL& origin,
       const content::PlatformNotificationData& notification_data,
-      const content::NotificationResources& notification_resources,
-      std::unique_ptr<content::DesktopNotificationDelegate> delegate,
-      base::Closure* cancel_callback) override;
+      const content::NotificationResources& notification_resources) override;
 
   void DisplayPersistentNotification(
       content::BrowserContext* browser_context,
@@ -56,6 +54,9 @@ class XWalkPlatformNotificationService
       const content::PlatformNotificationData& notification_data,
       const content::NotificationResources& notification_resources) override {}
 
+  // Closes the notification identified by |notification_id|. This method must
+  // be called on the UI thread.
+  void CloseNotification(content::BrowserContext* browser_context, const std::string& notification_id) override;
   void ClosePersistentNotification(
       content::BrowserContext* browser_context,
       const std::string& notification_id) override {}

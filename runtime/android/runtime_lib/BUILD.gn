@@ -20,13 +20,12 @@ android_apk("xwalk_runtime_lib_apk") {
     "//base:base_java",
     "//components/web_contents_delegate_android:web_contents_delegate_android_java_resources",
     "//ui/android:ui_java_resources",
-    "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
-    "//xwalk/runtime/android/core_internal:xwalk_core_internal_java_resources",
+#     "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
+#     "//xwalk/runtime/android/core_internal:xwalk_core_internal_java_resources",
   ]
 }
 
 android_resources("xwalk_runtime_lib_apk_resources") {
-  visibility = [ ":*" ]
   resource_dirs = [ "res" ]
   custom_package = "org.xwalk.core"
 }

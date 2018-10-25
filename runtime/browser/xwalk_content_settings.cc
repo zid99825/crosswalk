@@ -18,6 +18,8 @@
 
 namespace xwalk {
 
+//extensions::kExtensionScheme, chrome::kChromeSearchScheme
+const char* const kWildcardDomainNonPortSchemes[] = {"app"};
 // static
 XWalkContentSettings* XWalkContentSettings::GetInstance() {
   return base::Singleton<XWalkContentSettings>::get();
@@ -35,15 +37,13 @@ XWalkContentSettings::~XWalkContentSettings() {
 }
 
 void XWalkContentSettings::Init() {
-  ContentSettingsPattern::SetNonWildcardDomainNonPortScheme("app");
+  ContentSettingsPattern::SetNonWildcardDomainNonPortSchemes(
+      kWildcardDomainNonPortSchemes,
+      arraysize(kWildcardDomainNonPortSchemes));
   base::FilePath xwalk_data_dir;
   CHECK(PathService::Get(xwalk::DIR_DATA_PATH, &xwalk_data_dir));
-  sequenced_task_runner_ = JsonPrefStore::GetTaskRunnerForFile(
-      xwalk_data_dir, content::BrowserThread::GetBlockingPool());
 
-  pref_store_ = new JsonPrefStore(GetPrefFilePathFromPath(xwalk_data_dir),
-      sequenced_task_runner_.get(),
-      std::unique_ptr<PrefFilter>());
+  pref_store_ = new JsonPrefStore(GetPrefFilePathFromPath(xwalk_data_dir));
 
   // The name is misleading, we do not sync anything.
   pref_registry_ = new user_prefs::PrefRegistrySyncable();
@@ -52,13 +52,17 @@ void XWalkContentSettings::Init() {
 
   pref_service_ = pref_service_factory.Create(pref_registry_.get());
 
+  // TODO (iotto): analyse chrome/browser/prefs/browser_prefs.cc:458
+  // void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
+
   HostContentSettingsMap::RegisterProfilePrefs(pref_registry_.get());
-  host_content_settings_map_ =
-      new HostContentSettingsMap(pref_service_.get(), false, false);
+  host_content_settings_map_ = new HostContentSettingsMap(
+      pref_service_.get(), false /* incognito */, false /* guest_profile */,
+      false /* store_last_modified */);
 }
 
 void XWalkContentSettings::Shutdown() {
-  pref_store_->CommitPendingWrite();
+  pref_store_->CommitPendingWrite(base::OnceClosure());
   host_content_settings_map_->ShutdownOnUIThread();
 }
 

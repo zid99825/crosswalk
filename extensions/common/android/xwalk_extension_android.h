@@ -87,7 +87,7 @@ class XWalkExtensionAndroidInstance : public XWalkExtensionInstance {
       XWalkExtensionAndroid* extension,
       const JavaObjectWeakGlobalRef& java_ref,
       int id);
-  ~XWalkExtensionAndroidInstance();
+  ~XWalkExtensionAndroidInstance() override;
 
   void PostMessageWrapper(const char* msg) {
     PostMessageToJS(std::unique_ptr<base::Value>(new base::Value(msg)));

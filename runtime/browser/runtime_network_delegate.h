@@ -35,7 +35,7 @@ class RuntimeNetworkDelegate : public net::NetworkDelegateImpl {
       GURL* allowed_unsafe_redirect_url) override;
   void OnBeforeRedirect(net::URLRequest* request,
                         const GURL& new_location) override;
-  void OnResponseStarted(net::URLRequest* request) override;
+  void OnResponseStarted(net::URLRequest* request, int net_error) override;
   void OnNetworkBytesReceived(net::URLRequest* request,
                               int64_t bytes_received) override;
   void OnCompleted(net::URLRequest* request, bool started) override;
@@ -50,10 +50,11 @@ class RuntimeNetworkDelegate : public net::NetworkDelegateImpl {
   bool OnCanGetCookies(const net::URLRequest& request,
                        const net::CookieList& cookie_list) override;
   bool OnCanSetCookie(const net::URLRequest& request,
-                      const std::string& cookie_line,
+                      const net::CanonicalCookie& cookie,
                       net::CookieOptions* options) override;
   bool OnCanAccessFile(const net::URLRequest& request,
-                       const base::FilePath& path) const override;
+                       const base::FilePath& original_path,
+                       const base::FilePath& absolute_path) const override;
 
   DISALLOW_COPY_AND_ASSIGN(RuntimeNetworkDelegate);
 };

@@ -28,9 +28,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import org.xwalk.core.XWalkExternalExtensionManager;
-import org.xwalk.core.XWalkNativeExtensionLoader;
-import org.xwalk.core.XWalkView;
+import com.tenta.xwalk.refactor.XWalkExternalExtensionManager;
+import com.tenta.xwalk.refactor.XWalkNativeExtensionLoader;
+import com.tenta.xwalk.refactor.XWalkView;
 
 /**
  * This internal class acts as a manager to manage external extensions.
@@ -55,13 +55,14 @@ public class XWalkExternalExtensionManagerImpl extends XWalkExternalExtensionMan
 
         mXWalkView = view;
 
-        if (getBridge() == null) {
-            Log.e(TAG, "Cannot load external extensions due to old version of runtime library");
-            mContext = null;
-            mLoadExternalExtensions = false;
-            mNativeExtensionLoader = null;
-            return;
-        }
+        // TODO(iotto): No more bridge
+//        if (getBridge() == null) {
+//            Log.e(TAG, "Cannot load external extensions due to old version of runtime library");
+//            mContext = null;
+//            mLoadExternalExtensions = false;
+//            mNativeExtensionLoader = null;
+//            return;
+//        }
 
         mContext = getViewContext();
         mLoadExternalExtensions = true;

@@ -42,7 +42,7 @@ class XWalkDecompressor {
         "xwalk_100_percent.pak",
     };
 
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkDecompressor";
 
     private static final int STREAM_BUFFER_SIZE = 0x1000;
     private static final int LZMA_PROP_SIZE = 5;

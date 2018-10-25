@@ -15,18 +15,17 @@ using base::android::JavaParamRef;
 namespace xwalk {
 namespace extensions {
 
-void RegisterExtensionInPath(JNIEnv* env,
-                             const JavaParamRef<jclass>& jcaller,
-                             const JavaParamRef<jstring>& path) {
+void JNI_XWalkNativeExtensionLoaderAndroid_RegisterExtensionInPath(JNIEnv* env, const JavaParamRef<jclass>& jcaller,
+                                                                   const JavaParamRef<jstring>& path) {
   const char *str = env->GetStringUTFChars(path, 0);
-  xwalk::XWalkBrowserMainPartsAndroid* main_parts =
-      ToAndroidMainParts(XWalkContentBrowserClient::Get()->main_parts());
+  xwalk::XWalkBrowserMainPartsAndroid* main_parts = ToAndroidMainParts(XWalkContentBrowserClient::Get()->main_parts());
   main_parts->RegisterExtensionInPath(str);
   env->ReleaseStringUTFChars(path, str);
 }
 
 bool RegisterXWalkNativeExtensionLoaderAndroid(JNIEnv* env) {
-  return RegisterNativesImpl(env);
+//  return RegisterNativesImpl(env);
+  return true;
 }
 
 }  // namespace extensions

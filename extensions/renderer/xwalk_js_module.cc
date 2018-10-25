@@ -13,7 +13,7 @@ namespace extensions {
 
 std::unique_ptr<XWalkNativeModule> CreateJSModuleFromResource(int resource_id) {
   std::string js_api(
-      ResourceBundle::GetSharedInstance().GetRawDataResource(
+      ui::ResourceBundle::GetSharedInstance().GetRawDataResource(
           resource_id).as_string());
   std::unique_ptr<XWalkNativeModule> module(new XWalkJSModule(js_api));
   return module;

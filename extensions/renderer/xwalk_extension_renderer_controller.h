@@ -60,7 +60,11 @@ class XWalkExtensionRendererController : public content::RenderThreadObserver {
 
   // RenderThreadObserver implementation.
   bool OnControlMessageReceived(const IPC::Message& message) override;
-  void OnRenderProcessShutdown() override;
+  // TODO(iotto): Check how to signal event
+  // shutdown isn't called see commits
+  // bbfdd9f0669c9856883ffbf2cd9909e2a4df9dcf
+  // 8dbd83c66912ffb764d8a2b7e4eb3a88f9c9be16
+//  void OnRenderProcessShutdown() override;
 
  private:
   void SetupBrowserProcessClient(IPC::SyncChannel* browser_channel);

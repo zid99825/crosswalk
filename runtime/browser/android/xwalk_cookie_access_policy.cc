@@ -47,7 +47,7 @@ bool XWalkCookieAccessPolicy::OnCanGetCookies(
 
 bool XWalkCookieAccessPolicy::OnCanSetCookie(
     const net::URLRequest& request,
-    const std::string& cookie_line,
+    const net::CanonicalCookie& cookie,
     net::CookieOptions* options) {
   return GetGlobalAllowAccess();
 }
@@ -65,11 +65,20 @@ bool XWalkCookieAccessPolicy::AllowGetCookie(
 bool XWalkCookieAccessPolicy::AllowSetCookie(
     const GURL& url,
     const GURL& first_party,
-    const std::string& cookie_line,
+    const net::CanonicalCookie& cookie,
     content::ResourceContext* context,
     int render_process_id,
     int render_frame_id,
     const net::CookieOptions& options) {
+
+/* TODO(iotto) : snippet from ./browser/aw_cookie_access_policy.cc
+ *   bool global = GetShouldAcceptCookies();
+ *   bool thirdParty = GetShouldAcceptThirdPartyCookies(
+      render_process_id, render_frame_id,
+      content::RenderFrameHost::kNoFrameTreeNodeId);
+      return AwStaticCookiePolicy(global, thirdParty).AllowSet(url, first_party);
+ *
+ */
   return GetGlobalAllowAccess();
 }
 

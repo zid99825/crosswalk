@@ -32,8 +32,6 @@ class NaClBrowserDelegateImpl : public NaClBrowserDelegate {
   bool IsNonSfiModeAllowed(const base::FilePath& profile_directory,
                            const GURL& manifest_url) override;
   bool URLMatchesDebugPatterns(const GURL& manifest_url) override;
-  content::BrowserPpapiHost::OnKeepaliveCallback
-      GetOnKeepaliveCallback() override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(NaClBrowserDelegateImpl);

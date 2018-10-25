@@ -14,24 +14,34 @@
 #include "components/prefs/pref_service.h"
 #include "content/public/browser/web_contents_observer.h"
 
+namespace content {
+struct WebPreferences;
+}
+
 namespace xwalk {
 
 class XWalkRenderViewHostExt;
 
 class XWalkSettings : public content::WebContentsObserver {
  public:
-  XWalkSettings(JNIEnv* env, jobject obj, content::WebContents* web_contents);
+  XWalkSettings(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, content::WebContents* web_contents);
   ~XWalkSettings() override;
 
+  static XWalkSettings* FromWebContents(content::WebContents* web_contents);
+
   // Called from Java.
-  void Destroy(JNIEnv* env, jobject obj);
-  void ResetScrollAndScaleState(JNIEnv* env, jobject obj);
-  void UpdateEverythingLocked(JNIEnv* env, jobject obj);
-  void UpdateInitialPageScale(JNIEnv* env, jobject obj);
-  void UpdateUserAgent(JNIEnv* env, jobject obj);
-  void UpdateWebkitPreferences(JNIEnv* env, jobject obj);
-  void UpdateAcceptLanguages(JNIEnv* env, jobject obj);
-  void UpdateFormDataPreferences(JNIEnv* env, jobject obj);
+  void Destroy(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void PopulateWebPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, jlong webPrefsPtr);
+  void ResetScrollAndScaleState(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateEverythingLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateInitialPageScale(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateUserAgent(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateWebkitPreferences(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateAcceptLanguages(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateFormDataPreferences(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+
+  bool GetJavaScriptCanOpenWindowsAutomatically();
+  void PopulateWebPreferences(content::WebPreferences* webPrefs);
 
  private:
   struct FieldIds;
@@ -42,8 +52,7 @@ class XWalkSettings : public content::WebContentsObserver {
   PrefService* GetPrefs();
 
   // WebContentsObserver overrides:
-  void RenderViewCreated(
-      content::RenderViewHost* render_view_host) override;
+  void RenderViewHostChanged(content::RenderViewHost* old_host, content::RenderViewHost* new_host) override;
 
   void RenderFrameForInterstitialPageCreated(content::RenderFrameHost* render_frame_host) override;
 
@@ -51,6 +60,8 @@ class XWalkSettings : public content::WebContentsObserver {
   std::unique_ptr<FieldIds> field_ids_;
 
   JavaObjectWeakGlobalRef xwalk_settings_;
+
+  bool _javascript_can_open_windows_automatically;
 };
 
 bool RegisterXWalkSettings(JNIEnv* env);

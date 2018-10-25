@@ -34,12 +34,11 @@ android_apk("xwalk_core_sample_apk") {
     "//base:base_java",
     "//xwalk/extensions/android:xwalk_core_extensions_java",
     "//xwalk/runtime/android/core:xwalk_core_java",
-    "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
+    #"//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
   ]
 }
 
 android_resources("xwalk_core_sample_apk_resources") {
-  visibility = [ ":*" ]
   resource_dirs = [ "res" ]
   custom_package = "org.xwalk.core.sample"
 }

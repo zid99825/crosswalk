@@ -127,7 +127,7 @@ class XWalkLibraryLoader {
     private static final String DEFAULT_DOWNLOAD_FILE_NAME = "xwalk_download.tmp";
     private static final String DOWNLOAD_WITHOUT_NOTIFICATION =
             "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION";
-    private static final String TAG = "XWalkLib";
+    private static final String TAG = "XWalkLibraryLoader";
 
     private static AsyncTask<Void, Integer, Integer> sActiveTask;
 
@@ -292,7 +292,9 @@ class XWalkLibraryLoader {
             if (!XWalkDecompressor.decompressLibrary()) return 1;
 
             SharedPreferences sp = XWalkEnvironment.getSharedPreferences();
-            sp.edit().putInt("version", XWalkAppVersion.API_VERSION).apply();
+            SharedPreferences.Editor spe = sp.edit();
+            spe.putInt("version", XWalkAppVersion.API_VERSION);
+            spe.apply();
             return 0;
         }
 

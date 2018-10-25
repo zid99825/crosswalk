@@ -17,7 +17,6 @@ class GURL;
 class SkBitmap;
 
 namespace content {
-class DesktopNotificationDelegate;
 struct NotificationResources;
 struct PlatformNotificationData;
 class RenderFrameHost;
@@ -39,16 +38,16 @@ class XWalkContentsClientBridgeBase {
  public:
   typedef base::Callback<void(net::X509Certificate*)> SelectCertificateCallback;
   // Adds the handler to the UserData registry.
-  static void Associate(content::WebContents* web_contents,
-                        XWalkContentsClientBridgeBase* handler);
-  static XWalkContentsClientBridgeBase* FromWebContents(
-      content::WebContents* web_contents);
-  static XWalkContentsClientBridgeBase* FromRenderViewID(int render_process_id,
-                                            int render_view_id);
-  static XWalkContentsClientBridgeBase* FromRenderFrameID(int render_process_id,
-                                            int render_frame_id);
-  static XWalkContentsClientBridgeBase* FromRenderFrameHost(
-      content::RenderFrameHost* render_frame_host);
+//  static void Associate(content::WebContents* web_contents,
+//                        XWalkContentsClientBridgeBase* handler);
+//  static XWalkContentsClientBridgeBase* FromWebContents(
+//      content::WebContents* web_contents);
+//  static XWalkContentsClientBridgeBase* FromRenderViewID(int render_process_id,
+//                                            int render_view_id);
+//  static XWalkContentsClientBridgeBase* FromRenderFrameID(int render_process_id,
+//                                            int render_frame_id);
+//  static XWalkContentsClientBridgeBase* FromRenderFrameHost(
+//      content::RenderFrameHost* render_frame_host);
 
   virtual ~XWalkContentsClientBridgeBase();
 
@@ -75,7 +74,6 @@ class XWalkContentsClientBridgeBase {
   virtual void ShowNotification(
       const content::PlatformNotificationData& notification_data,
       const content::NotificationResources& notification_resources,
-      std::unique_ptr<content::DesktopNotificationDelegate> delegate,
       base::Closure* cancel_callback)
       = 0;
   virtual void OnWebLayoutPageScaleFactorChanged(float page_scale_factor) = 0;

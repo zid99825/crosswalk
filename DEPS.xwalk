@@ -20,26 +20,30 @@
 #orig 
 #chromium_crosswalk_rev = 'dd39e4fbbc1e4417cef2f908cc0a42af1e2120aa'
 
-chromium_crosswalk_rev = 'a5812a4b897a9196893218606dd18f0bddf46fdf'
-#2f425a3067f3818b259c408e5c9388153816242f'
-#3f0c134e3299ef2854b1820a12a53a954e4e719e'
-#ab86416ce7cdfc76426688a6f7a5788da51d4cea'
-#bf6425cb49dd10d03de847bb541f4fe4a19ae6cd'
-#65e04d512372ad906151a31a4aceaffb62060cab'
-#711a913fae0dac71a37ffceccc55352f64712885'
-#e526ec607a1647d25fa39d5704d242146a8749ce'
-#3bb406193913d2548be154d0fdb608b6f16c40c8'
-#9a8193737aefbe39d0762d10317ab0538fd3dd41'
-v8_crosswalk_rev = 'ca914831c3631a8383951c5f300102ec7035c69d'
-#7899d5c8f19284cbc23ab9c0951ebc0d01f33ccd'
-#ef3437f1c30743c8cdabe1431d0a92eaceacfe45'
+chromium_crosswalk_rev = '9db0e92d9c998c3c3d8627e1254c9167775b6ef9'
+#11f4efb7a21c9060b6b47920d5a16190e7b8af53'
+#202c98d560da445d3c3e1d8befaabd386efa5ed9'
+#5fb45679b8286bb0f58889651cc940959445f2c6'
+#226af6588b960bc251a64990a4a9d2573b3a4c11'
+#2dce970272ddeb9cebebb1738181001082e4fa02'
+#cfcda85f869ffff4819ddef52b4f2c3b7ba68a53'
+#e6a03197d1d35ef9be25465cb82322711d652bb6'
+#786da550d09b71d103909ac45108481e6d5aed0d'
+#9966be6de6022a7d0e5291c8588fac207627025a'
+#3c0c974ac4fa6b70aa42fee2c8843179388c341f'
+#6b010fba59036ddca3300884c9222c3cbfafd1f6'
+#7d2360f230609adff7f91c104ed84840e8116f86'
+#6a02a038b21381e1840e00f7a15fca26830dd7fe'
+v8_crosswalk_rev = 'b8e695a5f1f59576670206aef30f8b896f0813cd'
+#ca914831c3631a8383951c5f300102ec7035c69d'
 
 # We need our own copy of src/buildtools in order to have the gn and
 # clang-format binaries in a location that can be found automatically both by
 # our bots as well as locally for our developers. Its hash does not necessarily
 # need to be rolled together with |chromium_crosswalk_rev|, but it is good
 # practice to not have it lag behind too much.
-buildtools_rev = 'b3771b1935ea74c388b6fb1750e83f5d83b39dec'
+buildtools_rev = '505de88083136eefd056e5ee4ca0f01fe9b33de8'
+#b3771b1935ea74c388b6fb1750e83f5d83b39dec'
 
 chromium_git = 'https://chromium.googlesource.com'
 tenta_git = 'https://github.com/tenta-browser'
@@ -85,7 +89,9 @@ solutions = [
       'src/chrome/tools/test/reference_build/chrome_mac': None,
       'src/chrome/tools/test/reference_build/chrome_win': None,
     },
-
+    "custom_vars": {
+      "checkout_android": True,
+    },
     'custom_hooks': [
       # Disable the hook that downloads the Google Play services library and
       # asks the user to accept its EULA if necessary. The prompt is not show
@@ -108,20 +114,6 @@ solutions = [
 ]
 
 hooks = [
-  {
-    'action': [
-      'python',
-      'src/build/util/lastchange.py',
-      '--git-hash-only',
-      '--source-dir',
-      'src/third_party/WebKit',
-      '--output',
-      'src/xwalk/build/UPSTREAM.blink'
-    ],
-    'pattern': '.',
-    'name': 'upstream_revision'
-  },
-
   # Pull clang-format and gn binaries like Chromium itself does.
   # We need our own copy for them to be found correctly when working in
   # src/xwalk.

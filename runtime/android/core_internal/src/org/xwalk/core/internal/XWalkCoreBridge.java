@@ -5,6 +5,7 @@
 package org.xwalk.core.internal;
 
 import android.content.Context;
+import android.util.Log;
 
 class XWalkCoreBridge {
     private static final String WRAPPER_PACKAGE = "org.xwalk.core";
@@ -23,6 +24,7 @@ class XWalkCoreBridge {
         sInstance = new XWalkCoreBridge(context, wrapper);
     }
 
+    @SuppressWarnings("GetClassOnClass")
     private XWalkCoreBridge(Context context, Object wrapper) {
         mBridgeContext = context;
         mWrapperLoader = wrapper.getClass().getClassLoader();
@@ -50,6 +52,7 @@ class XWalkCoreBridge {
         try {
             return mWrapperLoader.loadClass(WRAPPER_PACKAGE + "." + name);
         } catch (ClassNotFoundException e) {
+//            Log.e("iotto", "getWrapperClass failed: " + name, e);
         }
         return null;
     }

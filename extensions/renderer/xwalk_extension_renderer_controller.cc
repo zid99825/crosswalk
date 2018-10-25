@@ -6,7 +6,7 @@
 
 #include "base/command_line.h"
 #include "base/values.h"
-#include "content/public/child/v8_value_converter.h"
+#include "content/public/renderer/v8_value_converter.h"
 #include "content/public/renderer/render_thread.h"
 #include "grit/xwalk_extensions_resources.h"
 #include "ipc/ipc_channel_handle.h"
@@ -114,9 +114,13 @@ bool XWalkExtensionRendererController::OnControlMessageReceived(
   return in_browser_process_extensions_client_->OnMessageReceived(message);
 }
 
-void XWalkExtensionRendererController::OnRenderProcessShutdown() {
-  shutdown_event_.Signal();
-}
+// TODO(iotto): Check how to signal event
+// shutdown isn't called see commits
+// bbfdd9f0669c9856883ffbf2cd9909e2a4df9dcf
+// 8dbd83c66912ffb764d8a2b7e4eb3a88f9c9be16
+//void XWalkExtensionRendererController::OnRenderProcessShutdown() {
+//  shutdown_event_.Signal();
+//}
 
 void XWalkExtensionRendererController::SetupBrowserProcessClient(
     IPC::SyncChannel* browser_channel) {
@@ -134,7 +138,8 @@ void XWalkExtensionRendererController::SetupExtensionProcessClient(
   external_extensions_client_.reset(new XWalkExtensionClient);
   extension_process_channel_ = IPC::SyncChannel::Create(handle,
       IPC::Channel::MODE_CLIENT, external_extensions_client_.get(),
-      content::RenderThread::Get()->GetIOTaskRunner(), true,
+      content::RenderThread::Get()->GetIOTaskRunner(),
+      base::ThreadTaskRunnerHandle::Get(), true,
       &shutdown_event_);
 
   external_extensions_client_->Initialize(extension_process_channel_.get());

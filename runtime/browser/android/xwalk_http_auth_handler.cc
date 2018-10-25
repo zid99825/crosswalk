@@ -10,7 +10,7 @@
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
 #include "content/public/browser/browser_thread.h"
-#include "jni/XWalkHttpAuthHandlerInternal_jni.h"
+#include "jni/XWalkHttpAuthHandler_jni.h"
 #include "net/base/auth.h"
 #include "content/public/browser/web_contents.h"
 
@@ -27,15 +27,15 @@ XWalkHttpAuthHandler::XWalkHttpAuthHandler(XWalkLoginDelegate* login_delegate,
   DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
   JNIEnv* env = base::android::AttachCurrentThread();
   http_auth_handler_.Reset(
-      Java_XWalkHttpAuthHandlerInternal_create(
+      Java_XWalkHttpAuthHandler_create(
           env, reinterpret_cast<intptr_t>(this), first_auth_attempt));
 }
 
 XWalkHttpAuthHandler:: ~XWalkHttpAuthHandler() {
   DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
-  Java_XWalkHttpAuthHandlerInternal_handlerDestroyed(
+  Java_XWalkHttpAuthHandler_handlerDestroyed(
       base::android::AttachCurrentThread(),
-      http_auth_handler_.obj());
+      http_auth_handler_);
 }
 
 void XWalkHttpAuthHandler::Proceed(JNIEnv* env,
@@ -74,10 +74,6 @@ XWalkHttpAuthHandlerBase* XWalkHttpAuthHandlerBase::Create(
     bool first_auth_attempt) {
   return new XWalkHttpAuthHandler(login_delegate, auth_info,
                                   first_auth_attempt);
-}
-
-bool RegisterXWalkHttpAuthHandler(JNIEnv* env) {
-  return RegisterNativesImpl(env);
 }
 
 }  // namespace xwalk

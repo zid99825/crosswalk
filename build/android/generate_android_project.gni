@@ -11,6 +11,8 @@ import("//build/config/android/rules.gni")
 #   binary_files [optional]
 #     List of additional binary data (icudtl.dat, for example) that will be
 #     added to res/raw.
+#   asset_sources [optional]
+#
 #   build_config [required]
 #     Path to a .build_config file with resource and native libraries
 #     information (generally, a build_config with the "android_apk" type).
@@ -69,6 +71,11 @@ template("generate_xwalk_core_library") {
       binary_files = rebase_path(invoker.binary_files, root_build_dir)
       args += [ "--binary-files=$binary_files" ]
     }
+    if (defined(invoker.asset_sources)) {
+      _rebased_asset_sources =
+          rebase_path(invoker.asset_sources, root_build_dir)
+      args += [ "--asset-sources=$_rebased_asset_sources" ]
+    }
     if (defined(invoker.has_native_libraries) && invoker.has_native_libraries) {
       args += [ "--native-libraries=@FileArg(${_rebased_build_config}:native:libraries)" ]
     }
@@ -110,8 +117,16 @@ template("generate_android_project") {
   _resource_jar_path = "${_base_path}_resources.jar"
   _target_name = target_name
 
+#     _use_chromium_linker =
+#         defined(invoker.use_chromium_linker) && invoker.use_chromium_linker
+#     _load_library_from_apk =
+#         defined(invoker.load_library_from_apk) && invoker.load_library_from_apk
+
   _native_libs_deps = []
-  if (defined(invoker.shared_libraries) && invoker.shared_libraries != []) {
+  _shared_libraries_is_valid =
+      defined(invoker.shared_libraries) && invoker.shared_libraries != []
+      
+  if (_shared_libraries_is_valid) {
     _native_libs_deps += invoker.shared_libraries
 
     # To determine the filenames of all dependent shared libraries, write the
@@ -123,7 +138,49 @@ template("generate_android_project") {
       deps = _native_libs_deps
       write_runtime_deps = _runtime_deps_file
     }
+    _native_lib_version_rule = ""
+    if (defined(invoker.native_lib_version_rule)) {
+      _native_lib_version_rule = invoker.native_lib_version_rule
+    }
+    _native_lib_version_arg = "\"\""
+    if (defined(invoker.native_lib_version_arg)) {
+      _native_lib_version_arg = invoker.native_lib_version_arg
+    }
+  } else {
+    # Must exist for instrumentation_test_apk() to depend on.
+    group("${_target_name}__runtime_deps") {
+    }
   }
+
+#     _rebased_build_config = rebase_path(_build_config, root_build_dir)
+#     _create_abi_split =
+#         defined(invoker.create_abi_split) && invoker.create_abi_split
+#     _create_density_splits =
+#         defined(invoker.create_density_splits) && invoker.create_density_splits
+#     _create_language_splits =
+#         defined(invoker.language_splits) && invoker.language_splits != []
+# 
+#     _density_splits = []
+#     if (_create_density_splits) {
+#       _density_splits = [
+#         "hdpi",
+#         "xhdpi",
+#         "xxhdpi",
+#         "xxxhdpi",
+#         "tvdpi",
+#       ]
+#     }
+# 
+#     _language_splits = []
+#     if (_create_language_splits) {
+#       _language_splits = invoker.language_splits
+#     }
+
+#     _proguard_enabled =
+#         defined(invoker.proguard_enabled) && invoker.proguard_enabled
+#     if (_proguard_enabled) {
+#       _proguard_output_jar_path = "$_base_path.proguard.jar"
+#     }
 
   # Write a build_config file. Its contents are used by several other targets
   # within this template via the "@FileArg" expansion. We are not really
@@ -133,6 +190,7 @@ template("generate_android_project") {
   _build_config_target = "${target_name}__build_config"
   _build_config = _base_path + ".build_config"
   _rebased_build_config = rebase_path(_build_config, root_build_dir)
+  
   write_build_config(_build_config_target) {
     type = "android_apk"
     deps = invoker.deps
@@ -156,6 +214,10 @@ template("generate_android_project") {
     }
   }
 
+  if (defined(invoker.classpath_deps)) {
+    _deps += invoker.classpath_deps
+  }
+  
   _srcjar_deps = []
 
   # Process resources from all dependencies (obtained via the build config
@@ -169,10 +231,8 @@ template("generate_android_project") {
       ":$_build_config_target",
     ]
     generate_constant_ids = true
-#    r_text_path = _r_file_path
     r_text_out_path = _r_file_path
-#    r_text_in_path = _r_file_path
-    resource_dirs = [ "//build/android/ant/empty/res" ]
+    resource_dirs = [ "//build/android/empty" ]
     srcjar_path = "$target_gen_dir/$target_name.srcjar"
 
     # Unused, but required.
@@ -192,25 +252,62 @@ template("generate_android_project") {
   # If we are shipping native libraries, we need to create a wrapper to be able
   # to load them at runtime.
   if (_native_libs_deps != []) {
+    print("_native_libs_deps ", _native_libs_deps)
     # TODO(rakuco): We may need an additional block adding libc++_shared.so for
     # the is_component_build case. See the android_apk template in rules.gni.
     # M53 also added a block to order the library dependencies, but we do not
     # need that for now.
 
+    _ordered_libraries_json =
+        "$target_gen_dir/$target_name.ordered_libararies.json"
+    _rebased_ordered_libraries_json =
+        rebase_path(_ordered_libraries_json, root_build_dir)
+    _ordered_libraries_target = "${target_name}__write_ordered_libraries"
+
+    # TODO(agrieve): Make GN write runtime deps in dependency order so as to
+    # not need this manual sorting step.
+    action(_ordered_libraries_target) {
+      script = "//build/android/gyp/write_ordered_libraries.py"
+      deps = _native_libs_deps + [ ":$_build_config_target" ]
+      outputs = [
+        _ordered_libraries_json,
+      ]
+      _rebased_android_readelf = rebase_path(android_readelf, root_build_dir)
+      args = [
+        "--readelf=$_rebased_android_readelf",
+        "--output=$_rebased_ordered_libraries_json",
+        "--libraries-dir=.",
+        "--input-libraries=@FileArg($_rebased_build_config:native:libraries)",
+      ]
+    }
+                                
     java_cpp_template("${target_name}__native_libraries_java") {
-      package_name = "org/chromium/base/library_loader"
+      package_path = "org/chromium/base/library_loader"
       sources = [
         "//base/android/java/templates/NativeLibraries.template",
       ]
       inputs = [
-        _build_config,
+        _ordered_libraries_json,
       ]
       deps = [
-        ":$_build_config_target",
+        ":${_ordered_libraries_target}",
       ]
-      defines =
-          [ "NATIVE_LIBRARIES_LIST=" +
-            "@FileArg($_rebased_build_config:native:java_libraries_list)" ]
+      
+      if (_native_lib_version_rule != "") {
+        deps += [ _native_lib_version_rule ]
+      }
+      
+      defines = [
+        "NATIVE_LIBRARIES_LIST=" +
+            "@FileArg($_rebased_ordered_libraries_json:java_libraries_list)",
+        "NATIVE_LIBRARIES_VERSION_NUMBER=$_native_lib_version_arg",
+      ]
+#         if (_use_chromium_linker) {
+#           defines += [ "ENABLE_CHROMIUM_LINKER" ]
+#         }
+#         if (_load_library_from_apk) {
+#           defines += [ "ENABLE_CHROMIUM_LINKER_LIBRARY_IN_ZIP_FILE" ]
+#         }
     }
     _srcjar_deps += [ ":${target_name}__native_libraries_java" ]
 
@@ -221,9 +318,12 @@ template("generate_android_project") {
     # we do not want any Chromium bits at all (i.e. we are building
     # xwalk_shared_library).
     java_cpp_template("${target_name}__build_config_java") {
-      package_name = "org/chromium/base"
+      package_path = "org/chromium/base"
       sources = [
         "//base/android/java/templates/BuildConfig.template",
+      ]
+      deps = [
+        ":$_build_config_target",
       ]
     }
     _srcjar_deps += [ ":${target_name}__build_config_java" ]
@@ -233,6 +333,18 @@ template("generate_android_project") {
   # and the wrappers).
   _java_target = "${target_name}__java"
   java_library_impl(_java_target) {
+    forward_variables_from(invoker,
+                       [
+                         "chromium_code",
+                         "java_files",
+                         "no_build_hooks",
+                         "javac_args",
+                       ])
+    supports_android = true
+    requires_android = true
+    override_build_config = _build_config
+    srcjar_deps = _srcjar_deps
+    
     android_manifest = "//build/android/AndroidManifest.xml"
     deps = [
       ":$_build_config_target",
@@ -240,17 +352,21 @@ template("generate_android_project") {
     dex_path = _base_path + "__unused.dex.jar"
     emma_never_instrument = true
 #    chromium_code = true
+    jar_excluded_patterns = []
     if (defined(invoker.resource_excluded_patterns)) {
-      jar_excluded_patterns = invoker.resource_excluded_patterns
+      jar_excluded_patterns += invoker.resource_excluded_patterns
     }
+
+    if (defined(invoker.jar_excluded_patterns)) {
+      jar_excluded_patterns += invoker.jar_excluded_patterns
+    }
+                                   
+    print("java_library_impl", _java_target, " exclude_patterns", jar_excluded_patterns)
     jar_path = _resource_jar_path
     if (defined(invoker.java_files)) {
         java_files = invoker.java_files
     }
-    override_build_config = _build_config
-    requires_android = true
-    srcjar_deps = _srcjar_deps
-    supports_android = true
+
   }
 
   # Merge all JARs from the dependencies and the one we generated above into a
@@ -283,6 +399,7 @@ template("generate_android_project") {
     forward_variables_from(invoker,
                            [
                              "binary_files",
+                             "asset_sources",
                              "js_bindings",
                              "template_dir",
                            ])
@@ -323,6 +440,8 @@ template("generate_android_project") {
       rebase_path(depfile, root_build_dir),
       "--res-dir",
       rebase_path("$root_out_dir/$_target_name/res", root_build_dir),
+      "--assets-dir",
+      rebase_path("$root_out_dir/$_target_name/assets", root_build_dir),
       "--r-txt",
       rebase_path(_r_file_path, root_build_dir),
     ]

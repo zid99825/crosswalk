@@ -86,7 +86,7 @@ void XWalkAutofillManager::InitAutofillIfNecessary(bool enabled) {
       web_contents_,
       XWalkAutofillClientAndroid::FromWebContents(web_contents_),
       base::android::GetDefaultLocaleString(),
-      autofill::AutofillManager::DISABLE_AUTOFILL_DOWNLOAD_MANAGER);
+      autofill::AutofillManager::AutofillDownloadManagerState::DISABLE_AUTOFILL_DOWNLOAD_MANAGER);
 #else
   XWalkAutofillClientDesktop::CreateForWebContents(web_contents_);
   autofill::ContentAutofillDriverFactory::CreateForWebContentsAndDelegate(

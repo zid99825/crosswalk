@@ -246,7 +246,7 @@ bool XWalkModuleSystem::SetTrampolineAccessorForEntryPoint(
   // FIXME(cmarcelo): ensure that trampoline is readonly.
   value.As<v8::Object>()->SetAccessor(context,
       v8::String::NewFromUtf8(isolate, basename.c_str()),
-      TrampolineCallback, TrampolineSetterCallback, params);
+      TrampolineCallback, TrampolineSetterCallback, params).ToChecked();
   return true;
 }
 

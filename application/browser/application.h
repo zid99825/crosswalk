@@ -15,7 +15,7 @@
 #include "base/compiler_specific.h"
 #include "base/files/file_path.h"
 #include "base/memory/ref_counted.h"
-#include "base/memory/scoped_vector.h"
+//#include "base/memory/scoped_vector.h"
 #include "base/observer_list.h"
 #include "content/public/browser/render_process_host_observer.h"
 #include "ui/base/ui_base_types.h"
@@ -67,7 +67,7 @@ class Application : public Runtime::Observer,
   // immediately after its termination.
   void Terminate();
 
-  const std::vector<Runtime*>& runtimes() const { return runtimes_.get(); }
+  const std::vector<Runtime*>& runtimes() const { return runtimes_; }
 
   // Returns the unique application id which is used to distinguish the
   // application amoung both running applications and installed ones
@@ -125,7 +125,7 @@ class Application : public Runtime::Observer,
   virtual base::FilePath GetSplashScreenPath();
 
   XWalkBrowserContext* browser_context_;
-  ScopedVector<Runtime> runtimes_;
+  std::vector<Runtime*> runtimes_;
   scoped_refptr<ApplicationData> const data_;
   // The application's render process host.
   content::RenderProcessHost* render_process_host_;

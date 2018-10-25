@@ -180,15 +180,17 @@ bool XWalkRenderFrameExt::OnMessageReceived(const IPC::Message& message) {
 }
 
 void XWalkRenderFrameExt::OnDocumentHasImagesRequest(uint32_t id) {
-  bool hasImages = false;
-  blink::WebView* webview = GetWebView();
-  if (webview) {
-    blink::WebDocument document = webview->MainFrame()->GetDocument();
-    const blink::WebElement child_img = GetImgChild(document);
-    hasImages = !child_img.IsNull();
-  }
+  blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
+
+  // AwViewMsg_DocumentHasImages should only be sent to the main frame.
+  DCHECK(frame);
+  DCHECK(!frame->Parent());
+
+  const blink::WebElement child_img = GetImgChild(frame->GetDocument());
+  bool has_images = !child_img.IsNull();
+
   Send(new XWalkViewHostMsg_DocumentHasImagesResponse(routing_id(), id,
-                                                   hasImages));
+                                                      has_images));
 }
 
 void XWalkRenderFrameExt::DidCommitProvisionalLoad(
@@ -196,10 +198,9 @@ void XWalkRenderFrameExt::DidCommitProvisionalLoad(
 
   blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
   content::DocumentState* document_state =
-      content::DocumentState::FromDataSource(frame->DataSource());
+      content::DocumentState::FromDocumentLoader(frame->GetDocumentLoader());
   if (document_state->can_load_local_resources()) {
-    blink::WebSecurityOrigin origin = frame->GetDocument().GetSecurityOrigin();
-    origin.GrantLoadLocalResources();
+    frame->GetDocument().GrantLoadLocalResources();
   }
 
   // Clear the cache when we cross site boundaries in the main frame.
@@ -210,7 +211,7 @@ void XWalkRenderFrameExt::DidCommitProvisionalLoad(
   // renderer code to say "this navigation would have switched processes" would
   // be disruptive, so this clearing of the cache is the compromise.
   if (!frame->Parent()) {
-    url::Origin new_origin(frame->GetDocument().Url());
+    url::Origin new_origin = url::Origin::Create(frame->GetDocument().Url());
     if (!new_origin.IsSameOriginWith(last_origin_)) {
       last_origin_ = new_origin;
       blink::WebImageCache::Clear();

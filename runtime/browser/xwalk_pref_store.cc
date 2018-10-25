@@ -83,3 +83,7 @@ void XWalkPrefStore::ReportValueChanged(const std::string& key,
     observer.OnPrefValueChanged(key);
   }
 }
+
+void XWalkPrefStore::OnStoreDeletionFromDisk() {
+  prefs_.Clear();
+}

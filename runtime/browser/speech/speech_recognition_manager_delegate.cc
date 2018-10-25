@@ -29,7 +29,7 @@ XWalkSpeechRecognitionManagerDelegate
 
 void XWalkSpeechRecognitionManagerDelegate::CheckRecognitionIsAllowed(
     int session_id,
-    base::Callback<void(bool ask_user, bool is_allowed)> callback) {
+    base::OnceCallback<void(bool ask_user, bool is_allowed)> callback) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
 
   const content::SpeechRecognitionSessionContext& context =
@@ -51,8 +51,8 @@ void XWalkSpeechRecognitionManagerDelegate::CheckRecognitionIsAllowed(
   // Check that the render view type is appropriate, and whether or not we
   // need to request permission from the user.
   BrowserThread::PostTask(BrowserThread::UI, FROM_HERE,
-                          base::Bind(&CheckRenderViewType,
-                                     callback,
+                          base::BindOnce(&CheckRenderViewType,
+                                     std::move(callback),
                                      render_process_id,
                                      render_view_id));
 }
@@ -71,7 +71,7 @@ bool XWalkSpeechRecognitionManagerDelegate::FilterProfanities(
 
 // static.
 void XWalkSpeechRecognitionManagerDelegate::CheckRenderViewType(
-    base::Callback<void(bool ask_user, bool is_allowed)> callback,
+    base::OnceCallback<void(bool ask_user, bool is_allowed)> callback,
     int render_process_id,
     int render_view_id) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
@@ -82,7 +82,7 @@ void XWalkSpeechRecognitionManagerDelegate::CheckRenderViewType(
   bool check_permission = false;
 
   BrowserThread::PostTask(BrowserThread::IO, FROM_HERE,
-                          base::Bind(callback, check_permission, allowed));
+                          base::BindOnce(std::move(callback), check_permission, allowed));
 }
 
 }  // namespace xwalk

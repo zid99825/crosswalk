@@ -16,7 +16,7 @@ android_apk("xwalk_core_shell_apk") {
     ":xwalk_core_shell_apk_java",
     ":xwalk_core_shell_apk_resources",
     "//base:base_java",
-    "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
+    #"//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
   ]
 }
 
@@ -67,7 +67,6 @@ android_assets("xwalk_core_shell_apk_assets") {
 }
 
 android_resources("xwalk_core_shell_apk_resources") {
-  visibility = [ ":*" ]
   resource_dirs = [ "res" ]
   custom_package = "org.xwalk.core.xwview.shell"
 }

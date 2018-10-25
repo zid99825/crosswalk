@@ -12,6 +12,7 @@
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "base/memory/scoped_refptr.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/pref_service_factory.h"
@@ -170,11 +171,12 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
 #endif
 }
 
-std::unique_ptr<content::ZoomLevelDelegate>
-XWalkBrowserContext::CreateZoomLevelDelegate(
-                                             const base::FilePath& partition_path) {
+#if !defined(OS_ANDROID)
+std::unique_ptr<content::ZoomLevelDelegate> XWalkBrowserContext::CreateZoomLevelDelegate(
+    const base::FilePath& partition_path) {
   return nullptr;
 }
+#endif
 
 base::FilePath XWalkBrowserContext::GetPath() const {
   base::FilePath result;
@@ -246,8 +248,18 @@ content::PermissionManager* XWalkBrowserContext::GetPermissionManager() {
   return permission_manager_.get();
 }
 
+content::BackgroundFetchDelegate* XWalkBrowserContext::GetBackgroundFetchDelegate() {
+  LOG(WARNING) << __func__ << " not_implemented";
+  return nullptr;
+}
+
 content::BackgroundSyncController*
 XWalkBrowserContext::GetBackgroundSyncController() {
+  return nullptr;
+}
+
+content::BrowsingDataRemoverDelegate* XWalkBrowserContext::GetBrowsingDataRemoverDelegate() {
+  LOG(WARNING) << __func__ << " not_implemented";
   return nullptr;
 }
 
@@ -369,7 +381,7 @@ void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
                                      false);
 
   PrefServiceFactory pref_service_factory;
-  pref_service_factory.set_user_prefs(make_scoped_refptr(new XWalkPrefStore()));
+  pref_service_factory.set_user_prefs(base::MakeRefCounted<XWalkPrefStore>());
   pref_service_factory.set_read_error_callback(base::Bind(&HandleReadError));
   user_pref_service_ = pref_service_factory.Create(pref_registry);
 

@@ -20,6 +20,7 @@
 #include "components/nacl/common/nacl_constants.h"
 #include "ipc/ipc_message.h"
 #include "ipc/message_filter.h"
+#include "services/service_manager/sandbox/sandbox_type.h"
 #include "xwalk/extensions/common/xwalk_extension_messages.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
@@ -109,6 +110,11 @@ class ExtensionSandboxedProcessLauncherDelegate
   }
 */
 #endif  // OS_WIN
+  // Returns the SandboxType to enforce on the process, or
+  // SANDBOX_TYPE_NO_SANDBOX to run without a sandbox policy.
+  service_manager::SandboxType GetSandboxType() override {
+    return service_manager::SandboxType::SANDBOX_TYPE_NO_SANDBOX;
+  }
 private:
 
   DISALLOW_COPY_AND_ASSIGN(ExtensionSandboxedProcessLauncherDelegate);
@@ -164,6 +170,7 @@ void XWalkExtensionProcessHost::StartProcess() {
   CHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
 //  CHECK(!process_ || !channel_);
 
+  // TODO(iotto): fix this!
   process_.reset(content::BrowserChildProcessHost::Create(
       content::PROCESS_TYPE_CONTENT_END, this));
 
