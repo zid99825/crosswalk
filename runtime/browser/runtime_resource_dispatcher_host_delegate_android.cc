@@ -27,7 +27,15 @@
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
 #include "xwalk/runtime/browser/android/xwalk_login_delegate.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
+#include "xwalk/runtime/browser/xwalk_runner.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
+
+#ifdef TENTA_CHROMIUM_BUILD
+#include "extensions/browser/extension_throttle_manager.h"
+//tenta
+#include "browser/tenta_extension_system.h"
+using namespace extensions;
+#endif
 
 using content::BrowserThread;
 using navigation_interception::InterceptNavigationDelegate;
@@ -287,6 +295,16 @@ void RuntimeResourceDispatcherHostDelegateAndroid::RequestBeginning(
 //      base::MakeUnique<web_restrictions::WebRestrictionsResourceThrottle>(
 //          AwBrowserContext::GetDefault()->GetWebRestrictionProvider(),
 //          request->url(), is_main_frame));
+#ifdef TENTA_CHROMIUM_BUILD
+  ExtensionThrottleManager* extension_throttle_manager =
+      XWalkRunner::GetInstance()->extension_system()->GetExtensionThrottleManager();
+  if (extension_throttle_manager) {
+    std::unique_ptr<content::ResourceThrottle> extension_throttle = extension_throttle_manager->MaybeCreateThrottle(
+        request);
+    if (extension_throttle)
+      throttles->push_back(std::move(extension_throttle));
+  }
+#endif
 }
 
 void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(

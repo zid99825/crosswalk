@@ -37,6 +37,7 @@
 
 #ifdef TENTA_CHROMIUM_BUILD
 #include "extensions/common/constants.h"
+#include "extensions/common/features/feature_util.h"
 #endif
 
 const char* const xwalk::XWalkContentClient::kNaClPluginName = "Native Client";
@@ -240,6 +241,9 @@ void XWalkContentClient::AddAdditionalSchemes(Schemes* schemes) {
 #endif
 
 #ifdef TENTA_CHROMIUM_BUILD
+  if (extensions::feature_util::ExtensionServiceWorkersEnabled())
+    schemes->service_worker_schemes.push_back(extensions::kExtensionScheme);
+
   schemes->standard_schemes.push_back(extensions::kExtensionScheme);
   schemes->savable_schemes.push_back(extensions::kExtensionScheme);
   schemes->secure_schemes.push_back(extensions::kExtensionScheme);
