@@ -4,10 +4,10 @@
 
 package org.xwalk.core.extension;
 
+import com.tenta.xwalk.refactor.XWalkExtension;
+
 import android.content.Context;
 import android.content.Intent;
-
-import org.xwalk.core.XWalkExtension;
 
 /**
  * The extension bridge for the implementation based on xwalk core.

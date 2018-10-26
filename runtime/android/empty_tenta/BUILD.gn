@@ -1,17 +1,20 @@
-import("//build/config/android/rules.gni")
 import("//xwalk/build/tenta.gni")
 
-android_library("tenta_empty_java") {
-  
-  java_files = [
-    "src/com/tenta/chromium/cache/MetaCacheBackend.java",
-    "src/com/tenta/fs/MetaErrors.java",
-  ]
-  
-  deps = [
-    "//base:base_java",
-  ]
-}
+if (is_android) {
+  import("//build/config/android/rules.gni")
+
+  android_library("tenta_empty_java") {
+    
+    java_files = [
+      "src/com/tenta/chromium/cache/MetaCacheBackend.java",
+      "src/com/tenta/fs/MetaErrors.java",
+    ]
+    
+    deps = [
+      "//base:base_java",
+    ]
+  }
+} #is_android
 
 component("empty_tenta") {
   public_configs = [
@@ -30,6 +33,7 @@ source_set("tenta_exposed") {
 }
 
 config("tenta_public") {
+  defines = []
   if ( tenta_chromium_build ) {
     defines += [
       "TENTA_CHROMIUM_BUILD"
@@ -51,6 +55,9 @@ config("tenta_public") {
       }
       if ( enable_tenta_log_history ) {
         defines += [ "TENTA_LOG_HISTORY_ENABLE=1" ]
+      }
+      if ( enable_tenta_log_gui ) {
+        defines += [ "TENTA_LOG_GUI_ENABLE=1" ]
       }
     } else {
       defines += [ "TENTA_LOG_ENABLE=0" ]

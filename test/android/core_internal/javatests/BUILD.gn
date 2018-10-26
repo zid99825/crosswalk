@@ -58,7 +58,7 @@ android_library("xwalk_core_internal_test_java") {
     "//third_party/android_tools:legacy_http_javalib",
     "//ui/android:ui_java",
     "//xwalk/extensions/android:xwalk_core_extensions_java",
-    "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
+    #"//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
     "//xwalk/runtime/android/core_internal_shell:xwalk_core_internal_shell_apk_java",
   ]
 }

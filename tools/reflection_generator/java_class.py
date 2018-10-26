@@ -173,6 +173,7 @@ class InternalJavaFileData(object):
       if imported.startswith('org.xwalk.core.internal') or \
           imported.startswith('org.xwalk.core') or \
           imported.startswith('org.chromium'):
+        print("ignoring import %s" % imported)
         continue
       self._imports.append(imported)
 

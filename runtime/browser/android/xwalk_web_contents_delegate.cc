@@ -321,6 +321,21 @@ void XWalkWebContentsDelegate::LoadingStateChanged(content::WebContents* source,
 #endif
 }
 
+void XWalkWebContentsDelegate::SetOverlayMode(bool useOverlayMode) {
+  JNIEnv* env = AttachCurrentThread();
+
+  ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
+  if (java_delegate.obj()) {
+    Java_XWalkWebContentsDelegate_setOverlayMode(env, java_delegate, useOverlayMode);
+  } else {
+    TENTA_LOG_CACHE(ERROR) << __func__ << " null_java_delegate";
+  }
+}
+
+base::android::ScopedJavaLocalRef<jobject> XWalkWebContentsDelegate::GetContentVideoViewEmbedder() {
+  return base::android::ScopedJavaLocalRef<jobject>();
+}
+
 bool RegisterXWalkWebContentsDelegate(JNIEnv* env) {
   // TODO(iotto) remove registering too
 //  return RegisterNativesImpl(env);

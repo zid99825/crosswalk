@@ -47,8 +47,6 @@ class XWalkHttpAuthHandler : public XWalkHttpAuthHandlerBase {
   std::string realm_;
 };
 
-bool RegisterXWalkHttpAuthHandler(JNIEnv* env);
-
 }  // namespace xwalk
 
 #endif  // XWALK_RUNTIME_BROWSER_ANDROID_XWALK_HTTP_AUTH_HANDLER_H_

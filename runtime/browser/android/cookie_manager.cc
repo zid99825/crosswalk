@@ -32,7 +32,7 @@
 #include "content/public/common/url_constants.h"
 #include "net/cookies/canonical_cookie.h"
 
-#include "jni/XWalkCookieManagerInternal_jni.h"
+#include "jni/XWalkCookieManager_jni.h"
 #include "net/cookies/cookie_monster.h"
 #include "net/cookies/cookie_options.h"
 #include "net/cookies/cookie_store.h"
@@ -473,7 +473,7 @@ void CookieManager::FlushCookieStore() {
 /**
  *
  */
-static ScopedJavaLocalRef<jbyteArray> JNI_XWalkCookieManagerInternal_SaveCookies(JNIEnv* env,
+static ScopedJavaLocalRef<jbyteArray> JNI_XWalkCookieManager_SaveCookies(JNIEnv* env,
                                                                                  const JavaParamRef<jobject>& jcaller) {
 
   base::Pickle pickle;
@@ -486,7 +486,7 @@ static ScopedJavaLocalRef<jbyteArray> JNI_XWalkCookieManagerInternal_SaveCookies
 /**
  *
  */
-static jboolean JNI_XWalkCookieManagerInternal_RestoreCookies(JNIEnv* env, const JavaParamRef<jobject>& jcaller,
+static jboolean JNI_XWalkCookieManager_RestoreCookies(JNIEnv* env, const JavaParamRef<jobject>& jcaller,
                                                               const JavaParamRef<jbyteArray>& data) {
 
   jbyte* _bytes = nullptr;
@@ -825,16 +825,16 @@ void CookieManager::Reset() {
 #endif
 }
 
-static void JNI_XWalkCookieManagerInternal_SetAcceptCookie(JNIEnv* env, const JavaParamRef<jobject>& obj,
+static void JNI_XWalkCookieManager_SetAcceptCookie(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                                            jboolean accept) {
   CookieManager::GetInstance()->SetAcceptCookie(accept);
 }
 
-static jboolean JNI_XWalkCookieManagerInternal_AcceptCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+static jboolean JNI_XWalkCookieManager_AcceptCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   return CookieManager::GetInstance()->AcceptCookie();
 }
 
-static void JNI_XWalkCookieManagerInternal_SetCookie(JNIEnv* env, const JavaParamRef<jobject>& obj,
+static void JNI_XWalkCookieManager_SetCookie(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                                      const JavaParamRef<jstring>& url,
                                                      const JavaParamRef<jstring>& value) {
   GURL host(ConvertJavaStringToUTF16(env, url));
@@ -843,7 +843,7 @@ static void JNI_XWalkCookieManagerInternal_SetCookie(JNIEnv* env, const JavaPara
   CookieManager::GetInstance()->SetCookie(host, cookie_value);
 }
 
-static ScopedJavaLocalRef<jstring> JNI_XWalkCookieManagerInternal_GetCookie(JNIEnv* env,
+static ScopedJavaLocalRef<jstring> JNI_XWalkCookieManager_GetCookie(JNIEnv* env,
                                                                             const JavaParamRef<jobject>& obj,
                                                                             const JavaParamRef<jstring>& url) {
   GURL host(ConvertJavaStringToUTF16(env, url));
@@ -851,43 +851,43 @@ static ScopedJavaLocalRef<jstring> JNI_XWalkCookieManagerInternal_GetCookie(JNIE
   return base::android::ConvertUTF8ToJavaString(env, CookieManager::GetInstance()->GetCookie(host));
 }
 
-static void JNI_XWalkCookieManagerInternal_RemoveSessionCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+static void JNI_XWalkCookieManager_RemoveSessionCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   CookieManager::GetInstance()->RemoveSessionCookie();
 }
 
-static void JNI_XWalkCookieManagerInternal_RemoveAllCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+static void JNI_XWalkCookieManager_RemoveAllCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   CookieManager::GetInstance()->RemoveAllCookie();
 }
 
-static void JNI_XWalkCookieManagerInternal_RemoveExpiredCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+static void JNI_XWalkCookieManager_RemoveExpiredCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   CookieManager::GetInstance()->RemoveExpiredCookie();
 }
 
-static void JNI_XWalkCookieManagerInternal_FlushCookieStore(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+static void JNI_XWalkCookieManager_FlushCookieStore(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   CookieManager::GetInstance()->FlushCookieStore();
 }
 
-static jboolean JNI_XWalkCookieManagerInternal_HasCookies(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+static jboolean JNI_XWalkCookieManager_HasCookies(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   return CookieManager::GetInstance()->HasCookies();
 }
 
-static jboolean JNI_XWalkCookieManagerInternal_AllowFileSchemeCookies(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+static jboolean JNI_XWalkCookieManager_AllowFileSchemeCookies(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   return CookieManager::GetInstance()->AllowFileSchemeCookies();
 }
 
-static void JNI_XWalkCookieManagerInternal_SetAcceptFileSchemeCookies(JNIEnv* env, const JavaParamRef<jobject>& obj,
+static void JNI_XWalkCookieManager_SetAcceptFileSchemeCookies(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                                                       jboolean accept) {
   return CookieManager::GetInstance()->SetAcceptFileSchemeCookies(accept);
 }
 
-static void JNI_XWalkCookieManagerInternal_SetDbKey(JNIEnv* env, const JavaParamRef<jobject>& obj,
+static void JNI_XWalkCookieManager_SetDbKey(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                                     const JavaParamRef<jstring>& dbKey) {
   std::string db_key(ConvertJavaStringToUTF8(env, dbKey));
 
   CookieManager::GetInstance()->SetDbKey(db_key);
 }
 
-static jint JNI_XWalkCookieManagerInternal_RekeyDb(JNIEnv* env, const JavaParamRef<_jobject*>& obj,
+static jint JNI_XWalkCookieManager_RekeyDb(JNIEnv* env, const JavaParamRef<_jobject*>& obj,
                                                    const JavaParamRef<_jstring*>& oldKey,
                                                    const JavaParamRef<_jstring*>& newKey) {
   std::string old_key(ConvertJavaStringToUTF8(env, oldKey));
@@ -896,28 +896,28 @@ static jint JNI_XWalkCookieManagerInternal_RekeyDb(JNIEnv* env, const JavaParamR
   return CookieManager::GetInstance()->RekeyDb(old_key, new_key);
 }
 
-static void JNI_XWalkCookieManagerInternal_SetZone(JNIEnv* env, const JavaParamRef<jobject>& obj,
+static void JNI_XWalkCookieManager_SetZone(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                                    const JavaParamRef<jstring>& zone) {
   std::string zone_str(ConvertJavaStringToUTF8(env, zone));
 
   CookieManager::GetInstance()->SetZone(zone_str);
 }
 
-static jint JNI_XWalkCookieManagerInternal_NukeDomain(JNIEnv* env, const JavaParamRef<jobject>& obj,
+static jint JNI_XWalkCookieManager_NukeDomain(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                                       const JavaParamRef<jstring>& domain) {
   std::string domain_str(ConvertJavaStringToUTF8(env, domain));
 
   return CookieManager::GetInstance()->NukeDomain(domain_str);
 }
 
-static void JNI_XWalkCookieManagerInternal_PageLoadStarted(JNIEnv* env, const JavaParamRef<jobject>& obj,
+static void JNI_XWalkCookieManager_PageLoadStarted(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                                            const JavaParamRef<jstring>& url) {
   std::string url_str(ConvertJavaStringToUTF8(env, url));
 
   CookieManager::GetInstance()->PageLoadStarted(url_str);
 }
 
-static void JNI_XWalkCookieManagerInternal_Reset(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+static void JNI_XWalkCookieManager_Reset(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   CookieManager::GetInstance()->Reset();
 }
 

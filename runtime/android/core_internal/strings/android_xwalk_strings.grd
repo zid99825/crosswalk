@@ -14,6 +14,7 @@
       <message desc="Title for the Javascript Prompt dialog [CHAR-LIMIT=32]" name="IDS_JS_PROMPT_TITLE">
         Javascript Prompt
       </message>
+<!-- 
       <message desc="Prompt for the Download Starting toast [CHAR-LIMIT=32]" name="IDS_DOWNLOAD_START_TOAST">
         Downloading file:
       </message>
@@ -29,6 +30,7 @@
       <message desc="Prompt for finished to download toast [CHAR-LIMIT=32]" name="IDS_DOWNLOAD_FINISHED_TOAST">
         Finished to download file.
       </message>
+-->
 <!--      <message desc="Title for the Ssl Alert dialog [CHAR-LIMIT=32]" name="IDS_SSL_ALERT_TITLE">
         Ssl Certificate Error Alert
       </message>

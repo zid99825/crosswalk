@@ -1,0 +1,184 @@
+# Copyright (c) 2016 Intel Corporation. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/android/rules.gni")
+import("//xwalk/build/version.gni")
+import("//xwalk/build/xwalk.gni")
+import("//xwalk/runtime/android/core_internal/chromium_java_deps.gni")
+import("//xwalk/build/tenta.gni")
+
+android_library("xwalk_refactor_java") {
+  java_files = [
+    "src/com/tenta/xwalk/refactor/AndroidProtocolHandler.java",
+    "src/com/tenta/xwalk/refactor/ClientCertLookupTable.java",
+    "src/com/tenta/xwalk/refactor/ClientCertRequest.java",
+    "src/com/tenta/xwalk/refactor/ClientCertRequestHandler.java",
+    "src/com/tenta/xwalk/refactor/CustomViewCallback.java",
+    "src/com/tenta/xwalk/refactor/CustomViewCallbackHandler.java",
+    "src/com/tenta/xwalk/refactor/ErrorCodeConversionHelper.java",
+    "src/com/tenta/xwalk/refactor/InMemorySharedPreferences.java",
+    "src/com/tenta/xwalk/refactor/MixedContext.java",
+    "src/com/tenta/xwalk/refactor/PageLoadListener.java",
+    "src/com/tenta/xwalk/refactor/ReflectField.java",
+    "src/com/tenta/xwalk/refactor/ReflectMethod.java",
+    "src/com/tenta/xwalk/refactor/RewriteUrlValue.java",
+    "src/com/tenta/xwalk/refactor/SslUtil.java",
+    "src/com/tenta/xwalk/refactor/SwipeRefreshHandler.java",
+    "src/com/tenta/xwalk/refactor/UrlUtilities.java",
+    "src/com/tenta/xwalk/refactor/XWalkActionModeCallback.java",
+    "src/com/tenta/xwalk/refactor/XWalkAutofillClientAndroid.java",
+    "src/com/tenta/xwalk/refactor/XWalkCleanupReference.java",
+    "src/com/tenta/xwalk/refactor/XWalkClient.java",
+    "src/com/tenta/xwalk/refactor/XWalkContent.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentLifecycleNotifier.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentsClient.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentsClientBridge.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentsClientCallbackHelper.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentsIoThreadClient.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentVideoViewClient.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentView.java",
+    "src/com/tenta/xwalk/refactor/XWalkCookieManager.java",
+    "src/com/tenta/xwalk/refactor/XWalkCoreBridge.java",
+    "src/com/tenta/xwalk/refactor/XWalkDevToolsServer.java",
+    "src/com/tenta/xwalk/refactor/XWalkDownloadListenerImpl.java",
+    "src/com/tenta/xwalk/refactor/XWalkDownloadListener.java",
+    "src/com/tenta/xwalk/refactor/XWalkExtension.java",
+    "src/com/tenta/xwalk/refactor/XWalkExternalExtensionManager.java",
+    "src/com/tenta/xwalk/refactor/XWalkFindListener.java",
+    "src/com/tenta/xwalk/refactor/XWalkFormDatabase.java",
+    "src/com/tenta/xwalk/refactor/XWalkGeolocationPermissions.java",
+    "src/com/tenta/xwalk/refactor/XWalkGetBitmapCallback.java",
+    "src/com/tenta/xwalk/refactor/XWalkHitTestResult.java",
+    "src/com/tenta/xwalk/refactor/XWalkHttpAuth.java",
+    "src/com/tenta/xwalk/refactor/XWalkHttpAuthHandler.java",
+    "src/com/tenta/xwalk/refactor/XWalkInternalResources.java",
+    "src/com/tenta/xwalk/refactor/XWalkJavascriptResult.java",
+    "src/com/tenta/xwalk/refactor/XWalkJavascriptResultHandler.java",
+    "src/com/tenta/xwalk/refactor/XWalkLaunchScreenManager.java",
+    "src/com/tenta/xwalk/refactor/XWalkMediaPlayerResourceLoadingFilter.java",
+    "src/com/tenta/xwalk/refactor/XWalkNativeExtensionLoader.java",
+    "src/com/tenta/xwalk/refactor/XWalkNavigationHandler.java",
+    "src/com/tenta/xwalk/refactor/XWalkNavigationHandlerImpl.java",
+    "src/com/tenta/xwalk/refactor/XWalkNavigationHistory.java",
+    "src/com/tenta/xwalk/refactor/XWalkNavigationItem.java",
+    "src/com/tenta/xwalk/refactor/XWalkNotificationService.java",
+    "src/com/tenta/xwalk/refactor/XWalkNotificationServiceImpl.java",
+    "src/com/tenta/xwalk/refactor/XWalkPathHelper.java",
+    "src/com/tenta/xwalk/refactor/XWalkPreferences.java",
+    "src/com/tenta/xwalk/refactor/XWalkPresentationHost.java",
+    "src/com/tenta/xwalk/refactor/XWalkResourceClient.java",
+    "src/com/tenta/xwalk/refactor/XWalkSettings.java",
+    "src/com/tenta/xwalk/refactor/XWalkSwitches.java",
+    "src/com/tenta/xwalk/refactor/XWalkUIClient.java",
+    "src/com/tenta/xwalk/refactor/XWalkView.java",
+    "src/com/tenta/xwalk/refactor/XWalkViewDatabase.java",
+    "src/com/tenta/xwalk/refactor/XWalkViewDelegate.java",
+    "src/com/tenta/xwalk/refactor/XWalkWebChromeClient.java",
+    "src/com/tenta/xwalk/refactor/XWalkWebContentsDelegate.java",
+    "src/com/tenta/xwalk/refactor/XWalkWebContentsDelegateAdapter.java",
+    "src/com/tenta/xwalk/refactor/XWalkWebResourceRequest.java",
+    "src/com/tenta/xwalk/refactor/XWalkWebResourceRequestHandler.java",
+    "src/com/tenta/xwalk/refactor/XWalkWebResourceResponse.java",
+    "src/com/tenta/xwalk/refactor/extension/api/DisplayManagerJBMR1.java",
+    "src/com/tenta/xwalk/refactor/extension/api/DisplayManagerNull.java",
+    "src/com/tenta/xwalk/refactor/extension/api/XWalkDisplayManager.java",
+  ]
+  
+  deps = [
+    ":xwalk_refactor_java_resources",
+    ":xwalk_core_version_gen",
+    ":xwalk_app_version_gen",
+    "//base:base_java",
+    "//components/autofill/android:autofill_java",
+    "//components/navigation_interception/android:navigation_interception_java",
+    "//components/web_contents_delegate_android:web_contents_delegate_android_java",
+    "//content/public/android:content_java",
+    "//media/base/android:media_java",
+    "//net/android:net_java",
+    "//third_party/android_swipe_refresh:android_swipe_refresh_java",
+    "//ui/android:ui_java",
+    "//xwalk/extensions/android:xwalk_core_extensions_java",
+  ]
+  if (tenta_chromium_build) {
+    deps += [
+      "//xwalk/third_party/tenta/meta_fs/java:meta_fs_java",
+      "//xwalk/third_party/tenta/chromium_cache:chromium_cache_java",
+      "//xwalk/third_party/tenta/crosswalk_extensions/java:crosswalk_extensions_java",
+    ]
+  } else {
+    deps += [
+      "//xwalk/runtime/android/empty_tenta:tenta_empty_java",
+    ]
+  }
+  srcjars = [ 
+    "$root_gen_dir/xwalk/runtime/android/core_refactor/xwalk_core_version_gen.srcjar",
+    "$root_gen_dir/xwalk/runtime/android/core_refactor/xwalk_app_version_gen.srcjar",
+  ]
+}
+
+generate_jni("xwalk_refactor_native_jni") {
+  jni_package = "xwalk"
+  sources = [
+    "src/com/tenta/xwalk/refactor/AndroidProtocolHandler.java",
+    "src/com/tenta/xwalk/refactor/XWalkAutofillClientAndroid.java",
+    "src/com/tenta/xwalk/refactor/XWalkCookieManager.java",
+    "src/com/tenta/xwalk/refactor/XWalkContent.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentLifecycleNotifier.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentsClientBridge.java",
+    "src/com/tenta/xwalk/refactor/XWalkContentsIoThreadClient.java",
+    "src/com/tenta/xwalk/refactor/XWalkDevToolsServer.java",
+    "src/com/tenta/xwalk/refactor/XWalkFormDatabase.java",
+    "src/com/tenta/xwalk/refactor/XWalkHttpAuthHandler.java",
+    "src/com/tenta/xwalk/refactor/XWalkPathHelper.java",
+    "src/com/tenta/xwalk/refactor/XWalkPresentationHost.java",
+    "src/com/tenta/xwalk/refactor/XWalkSettings.java",
+    "src/com/tenta/xwalk/refactor/XWalkViewDelegate.java",
+    "src/com/tenta/xwalk/refactor/XWalkWebContentsDelegate.java",
+    "src/com/tenta/xwalk/refactor/XWalkWebResourceResponse.java",
+  ]
+}
+
+
+java_strings_grd("xwalk_refactor_strings_grd") {
+  grd_file = "strings/android_xwalk_strings.grd"
+  outputs = [
+    "values/android_xwalk_refactor_strings.xml",
+  ]
+}
+
+android_resources("xwalk_refactor_java_resources") {
+  resource_dirs = [ "res" ]
+  custom_package = "com.tenta.xwalk.refactor"
+  deps = [
+    ":xwalk_refactor_strings_grd",
+  ]
+}
+
+java_cpp_template("xwalk_core_version_gen") {
+  sources = [
+    "//xwalk/runtime/android/core_refactor/templates/XWalkCoreVersion.template",
+  ]
+  
+  package_path = "com/tenta/xwalk/refactor"
+  defines = ["XWALK_API_VERSION=$api_version"]
+}
+
+java_cpp_template("xwalk_app_version_gen") {
+  sources = [
+    "//xwalk/runtime/android/core_refactor/templates/XWalkAppVersion.template",
+  ]
+  
+  package_path = "com/tenta/xwalk/refactor"
+  defines = ["XWALK_API_VERSION=$api_version",
+             "_XWALK_VERSION=\"$xwalk_version\"",
+  ]
+  if (verify_xwalk_apk) {
+    defines += [ "_VERIFY_XWALK_APK" ]
+  }
+}
+
+generate_jar_jni("xwalk_core_jar_jni") {
+  jni_package = "xwalk"
+  classes = [ "java/io/InputStream.class" ]
+}
