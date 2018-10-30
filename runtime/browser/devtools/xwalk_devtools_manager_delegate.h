@@ -27,8 +27,12 @@ class XWalkDevToolsManagerDelegate : public content::DevToolsManagerDelegate {
   static int GetHttpHandlerPort();
   
   scoped_refptr<content::DevToolsAgentHost> CreateNewTarget(const GURL& url) override;
+  content::DevToolsAgentHost::List RemoteDebuggingTargets() override;
+  std::string GetTargetType(content::WebContents* web_contents) override;
+  std::string GetTargetDescription(content::WebContents* web_contents) override;
   std::string GetDiscoveryPageHTML() override;
   std::string GetFrontendResource(const std::string& path) override;
+  bool IsBrowserTargetDiscoverable() override;
 
   ~XWalkDevToolsManagerDelegate() override;
 

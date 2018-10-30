@@ -41,6 +41,7 @@
 #include "xwalk/runtime/browser/runtime.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 
+#include "meta_logging.h"
 
 namespace xwalk {
 
@@ -204,23 +205,55 @@ XWalkDevToolsManagerDelegate::CreateNewTarget(const GURL& url) {
   return content::DevToolsAgentHost::GetOrCreateFor(runtime->web_contents());
 }
 
-std::string XWalkDevToolsManagerDelegate::GetDiscoveryPageHTML() {
-#if defined(OS_ANDROID)
+content::DevToolsAgentHost::List XWalkDevToolsManagerDelegate::RemoteDebuggingTargets() {
+  content::DevToolsAgentHost::List result = content::DevToolsAgentHost::GetOrCreateAll();
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " size=" << result.size();
+  return result;
+}
+
+std::string XWalkDevToolsManagerDelegate::GetTargetType(content::WebContents* web_contents) {
+  return content::DevToolsAgentHost::kTypePage;
+}
+
+std::string XWalkDevToolsManagerDelegate::GetTargetDescription(content::WebContents* web_contents) {
   return std::string();
-#else
-  return ResourceBundle::GetSharedInstance().GetRawDataResource(
+//  android_webview::BrowserViewRenderer* bvr = android_webview::BrowserViewRenderer::FromWebContents(web_contents);
+//  if (!bvr)
+//    return "";
+//  base::DictionaryValue description;
+//  description.SetBoolean("attached", bvr->attached_to_window());
+//  description.SetBoolean("visible", bvr->IsVisible());
+//  gfx::Rect screen_rect = bvr->GetScreenRect();
+//  description.SetInteger("screenX", screen_rect.x());
+//  description.SetInteger("screenY", screen_rect.y());
+//  description.SetBoolean("empty", screen_rect.size().IsEmpty());
+//  if (!screen_rect.size().IsEmpty()) {
+//    description.SetInteger("width", screen_rect.width());
+//    description.SetInteger("height", screen_rect.height());
+//  }
+//  std::string json;
+//  base::JSONWriter::Write(description, &json);
+//  return json;
+}
+
+std::string XWalkDevToolsManagerDelegate::GetDiscoveryPageHTML() {
+  return ui::ResourceBundle::GetSharedInstance().GetRawDataResource(
       IDR_DEVTOOLS_FRONTEND_PAGE_HTML).as_string();
-#endif
 }
 
 std::string XWalkDevToolsManagerDelegate::GetFrontendResource(
     const std::string& path) {
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " resource=" << path;
 #if defined(OS_ANDROID)
   return std::string();
 #else
   return content::DevToolsFrontendHost::GetFrontendResource(path).as_string();
 #endif
 
+}
+
+bool XWalkDevToolsManagerDelegate::IsBrowserTargetDiscoverable() {
+  return true;
 }
 
 XWalkDevToolsManagerDelegate::~XWalkDevToolsManagerDelegate() {

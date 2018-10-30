@@ -18,6 +18,7 @@
 #include "components/prefs/pref_service_factory.h"
 #include "base/strings/utf_string_conversions.h"
 #include "components/autofill/core/common/autofill_pref_names.h"
+#include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "components/user_prefs/user_prefs.h"
 #include "components/visitedlink/browser/visitedlink_master.h"
 #include "content/public/browser/browser_thread.h"
@@ -109,12 +110,15 @@ XWalkBrowserContext::~XWalkBrowserContext() {
   XWalkContentSettings::GetInstance()->Shutdown();
 #endif
   if (resource_context_.get()) {
-    BrowserThread::DeleteSoon(
-                              BrowserThread::IO,
-                              FROM_HERE, resource_context_.release());
+    BrowserThread::DeleteSoon(BrowserThread::IO,
+    FROM_HERE, resource_context_.release());
   }
   DCHECK_EQ(this, g_browser_context);
   g_browser_context = nullptr;
+  NotifyWillBeDestroyed(this);
+  BrowserContextDependencyManager::GetInstance()->DestroyBrowserContextServices(
+  this);
+  ShutdownStoragePartitions();
 }
 
 // static
@@ -140,7 +144,6 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
     PathService::OverrideAndCreateIfNeeded(
                                            DIR_DATA_PATH,
                                            path, false, true);
-    BrowserContext::Initialize(this, path);
   } else {
     base::FilePath::StringType xwalk_suffix;
     xwalk_suffix = FILE_PATH_LITERAL("xwalk");
