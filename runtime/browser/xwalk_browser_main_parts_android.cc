@@ -34,10 +34,16 @@
 #include "xwalk/extensions/common/xwalk_extension.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
 #include "xwalk/runtime/browser/android/cookie_manager.h"
+#include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "xwalk/runtime/common/xwalk_runtime_features.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "gpu/config/gpu_switches.h"
+
+#ifdef TENTA_CHROMIUM_BUILD
+#include "browser/tenta_tab_model.h"
+using namespace tenta::ext;
+#endif
 
 namespace {
 
@@ -117,6 +123,7 @@ namespace xwalk {
 
 using content::BrowserThread;
 using extensions::XWalkExtension;
+using content::BrowserContext;
 
 void GetUserDataDir(base::FilePath* user_data_dir) {
   if (!PathService::Get(base::DIR_ANDROID_APP_DATA, user_data_dir)) {
@@ -194,8 +201,18 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
 //    run_default_message_loop_ = false;
 //  }
 
+#ifdef TENTA_CHROMIUM_BUILD
+  // PreProfileInit();
+  // EnsureBrowserContextKeyedServiceFactoriesBuilt
+  TentaTabModelFactory::GetInstance();
+#endif
   xwalk_runner_->PreMainMessageLoopRun();
 
+#ifdef TENTA_CHROMIUM_BUILD
+  // create TentaTabModel for BrowserContext
+  content::BrowserContext* context = xwalk_runner_->browser_context();
+  TentaTabModelFactory::GetForContext(context);
+#endif
   extension_service_ = xwalk_runner_->extension_service();
 
   // Due to http://code.google.com/p/chromium/issues/detail?id=507809,

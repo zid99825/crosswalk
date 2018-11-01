@@ -191,9 +191,9 @@ class XWalkContent :
   OriginCallback;
   // The first element in the list is always the currently pending request.
   std::list<OriginCallback> pending_geolocation_prompts_;
-};
 
-bool RegisterXWalkContent(JNIEnv* env);
+  int tab_id; // curent webview ID
+};
 
 }  // namespace xwalk
 
