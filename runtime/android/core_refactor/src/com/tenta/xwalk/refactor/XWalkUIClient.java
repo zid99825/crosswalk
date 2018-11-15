@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Message;
@@ -18,7 +17,6 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.ValueCallback;
 import android.widget.EditText;
@@ -271,15 +269,15 @@ public class XWalkUIClient {
      * @param uploadFile the callback class to handle the result from caller. It MUST be invoked in
      *            all cases. Leave it not invoked will block all following requests to open file
      *            chooser.
-     * @param acceptType value of the 'accept' attribute of the input tag associated with this file
+     * @param acceptType comma separated value(s) of the 'accept' attribute of the input tag associated with this file
      *            picker.
-     * @param capture value of the 'capture' attribute of the input tag associated with this file
-     *            picker
+     * @param capture If true, the data should be obtained using the device's camera/mic/etc.
+     * @param modeFlags flags of android.webkit.WebChromeClient.FileChooserParams
+     * 
      * @since 1.0
      */
-//TODO(iotto) :     @XWalkAPI
-    public void openFileChooser(XWalkView view, ValueCallback<Uri> uploadFile,
-            String acceptType, String capture) {
+    public void openFileChooser(XWalkView view, ValueCallback<String[]> uploadFile, String acceptType, boolean capture,
+            int modeFlags) {
         uploadFile.onReceiveValue(null);
     }
 

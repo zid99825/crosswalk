@@ -97,11 +97,6 @@ class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
   void NotificationDisplayed(JNIEnv*, jobject, jint id);
   void NotificationClicked(JNIEnv*, jobject, jint id);
   void NotificationClosed(JNIEnv*, jobject, jint id, bool by_user);
-  void OnFilesSelected(
-      JNIEnv*, jobject, int process_id, int render_id,
-      int mode, jstring filepath, jstring display_name);
-  void OnFilesNotSelected(
-      JNIEnv*, jobject, int process_id, int render_id, int mode);
   void DownloadIcon(JNIEnv* env, jobject obj, jstring url);
 
   // XWalkIconHelper::Listener Interface
