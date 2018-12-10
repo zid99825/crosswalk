@@ -6,6 +6,7 @@
 package com.tenta.xwalk.refactor;
 
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -13,6 +14,7 @@ import android.graphics.Picture;
 import android.net.Uri;
 import android.net.http.SslCertificate;
 import android.net.http.SslError;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
@@ -25,6 +27,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebResourceResponse;
 import android.widget.Toast;
 
+import org.chromium.base.ContentUriUtils;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
@@ -629,77 +632,89 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         return true;
     }
 
+    /**
+     * Async task to get file names
+     * @author iotto
+     *
+     */
+    private static class GetDisplayNameTask extends AsyncTask<Void, Void, String[]> {
+        final int mProcessId;
+        final int mRenderId;
+        final int mModeFlags;
+        final String[] mFilePaths;
+        final Context mContext;
+
+        public GetDisplayNameTask(Context context, int processId, int renderId, int modeFlags, String[] filePaths) {
+            mProcessId = processId;
+            mRenderId = renderId;
+            mModeFlags = modeFlags;
+            mFilePaths = filePaths;
+            mContext = context;
+        }
+
+        @Override
+        protected String[] doInBackground(Void... voids) {
+            String[] displayNames = new String[mFilePaths.length];
+            for (int i = 0; i < mFilePaths.length; i++) {
+                displayNames[i] = resolveFileName(mFilePaths[i]);
+            }
+            return displayNames;
+        }
+
+        @Override
+        protected void onPostExecute(String[] result) {
+            nativeOnFilesSelected(mProcessId, mRenderId, mModeFlags, mFilePaths, result);
+        }
+
+        /**
+         * @return the display name of a path if it is a content URI and is present in the database
+         *         or an empty string otherwise.
+         */
+        private String resolveFileName(String filePath) {
+            if (filePath == null)
+                return "";
+            Uri uri = Uri.parse(filePath);
+            return ContentUriUtils.getDisplayName(
+                    uri, mContext, MediaStore.MediaColumns.DISPLAY_NAME);
+        }
+    }
+    
     @Override
-    public boolean shouldOverrideRunFileChooser(
-            final int processId, final int renderId, final int modeFlags,
+    public boolean shouldOverrideRunFileChooser(final int processId, final int renderId, final int modeFlags,
             String acceptTypes, boolean capture) {
-        abstract class UriCallback implements ValueCallback<Uri> {
+        abstract class UriCallback implements ValueCallback<String[]> {
             boolean syncNullReceived = false;
             boolean syncCallFinished = false;
-
-            protected String resolveFileName(Uri uri, ContentResolver contentResolver) {
-                if (contentResolver == null || uri == null)
-                    return "";
-                Cursor cursor = null;
-                try {
-                    cursor = contentResolver.query(uri, null, null, null, null);
-
-                    if (cursor != null && cursor.getCount() >= 1) {
-                        cursor.moveToFirst();
-                        int index = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME);
-                        if (index > -1)
-                            return cursor.getString(index);
-                    }
-                } catch (NullPointerException e) {
-                    // Some android models don't handle the provider call correctly.
-                    // see crbug.com/345393
-                    return "";
-                } finally {
-                    if (cursor != null)
-                        cursor.close();
-                }
-                return "";
+            int processId;
+            int renderId;
+            int modeFlags;
+            public UriCallback(int processId, int renderId, int modeFlags) {
+                this.processId = processId;
+                this.renderId = renderId;
+                this.modeFlags = modeFlags;
             }
         }
-        UriCallback uploadFile = new UriCallback() {
+        UriCallback uploadFile = new UriCallback(processId, renderId, modeFlags) {
             boolean completed = false;
 
             @Override
-            public void onReceiveValue(Uri value) {
+            public void onReceiveValue(String[] results) {
                 if (completed) {
                     throw new IllegalStateException("Duplicate openFileChooser result");
                 }
-                if (value == null && !syncCallFinished) {
-                    syncNullReceived = true;
-                    return;
-                }
                 completed = true;
-                if (value == null) {
-                    nativeOnFilesNotSelected(mNativeContentsClientBridge,
-                            processId, renderId, modeFlags);
+                if (results == null || results.length == 0) {
+                    syncNullReceived = true;
+                    nativeOnFilesSelected(processId, renderId, modeFlags, null, null);
                 } else {
-                    String result = "";
-                    String displayName = null;
-                    if (ContentResolver.SCHEME_FILE.equals(value.getScheme())) {
-                        result = value.getSchemeSpecificPart();
-                        displayName = value.getLastPathSegment();
-                    } else if (ContentResolver.SCHEME_CONTENT.equals(value.getScheme())) {
-                        result = value.toString();
-                        displayName = resolveFileName(
-                                value, mXWalkView.getContext().getContentResolver());
-                    } else {
-                        result = value.getPath();
-                        displayName = value.getLastPathSegment();
-                    }
-                    if (displayName == null || displayName.isEmpty())
-                        displayName = result;
-                    nativeOnFilesSelected(mNativeContentsClientBridge,
-                            processId, renderId, modeFlags, result, displayName);
+                    
+                    GetDisplayNameTask task =
+                            new GetDisplayNameTask(mXWalkView.getContext(), processId, renderId, modeFlags, results);
+                    task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 }
             }
         };
-        mXWalkUIClient.openFileChooser(
-                mXWalkView, uploadFile, acceptTypes, Boolean.toString(capture));
+        mXWalkUIClient.openFileChooser(mXWalkView, uploadFile, acceptTypes, capture, modeFlags);
         uploadFile.syncCallFinished = true;
         return !uploadFile.syncNullReceived;
     }
@@ -982,11 +997,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     private native void nativeNotificationClosed(long nativeXWalkContentsClientBridge, int id,
             boolean byUser);
 
-    private native void nativeOnFilesSelected(long nativeXWalkContentsClientBridge,
-            int processId, int renderId, int mode_flags, String filepath, String displayName);
-
-    private native void nativeOnFilesNotSelected(long nativeXWalkContentsClientBridge,
-            int processId, int renderId, int mode_flags);
+    private static native void nativeOnFilesSelected(int processId, int renderId, int mode_flags, String[] filePath,
+            String[] displayName);
 
     private native void nativeDownloadIcon(long nativeXWalkContentsClientBridge, String url);
 

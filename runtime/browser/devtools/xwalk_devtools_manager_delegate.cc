@@ -41,6 +41,18 @@
 #include "xwalk/runtime/browser/runtime.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 
+#ifdef TENTA_CHROMIUM_BUILD
+#include "content/public/browser/devtools_external_agent_proxy.h"
+#include "content/public/browser/devtools_external_agent_proxy_delegate.h"
+
+// tenta
+#include "browser/tenta_tab_model.h"
+using namespace tenta::ext;
+using content::DevToolsAgentHost;
+using content::WebContents;
+#endif
+
+#include "meta_logging.h"
 
 namespace xwalk {
 
@@ -51,17 +63,14 @@ const char kLocalHost[] = "127.0.0.1";
 base::subtle::Atomic32 g_last_used_port;
 
 uint16_t GetInspectorPort() {
-  const base::CommandLine& command_line =
-    *base::CommandLine::ForCurrentProcess();
+  const base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
   // See if the user specified a port on the command line (useful for
   // automation). If not, use an ephemeral port by specifying 0.
   uint16_t port = 0;
   if (command_line.HasSwitch(switches::kRemoteDebuggingPort)) {
     int temp_port;
-    std::string port_str =
-      command_line.GetSwitchValueASCII(switches::kRemoteDebuggingPort);
-    if (base::StringToInt(port_str, &temp_port) &&
-      temp_port > 0 && temp_port < 65535) {
+    std::string port_str = command_line.GetSwitchValueASCII(switches::kRemoteDebuggingPort);
+    if (base::StringToInt(port_str, &temp_port) && temp_port > 0 && temp_port < 65535) {
       port = static_cast<uint16_t>(temp_port);
     } else {
       DLOG(WARNING) << "Invalid http debugger port number " << temp_port;
@@ -70,17 +79,17 @@ uint16_t GetInspectorPort() {
   return port;
 }
 
-class TCPServerSocketFactory
-    : public content::DevToolsSocketFactory {
+class TCPServerSocketFactory :
+    public content::DevToolsSocketFactory {
  public:
   TCPServerSocketFactory(const std::string& address, uint16_t port)
-      : address_(address), port_(port) {
+      : address_(address),
+        port_(port) {
   }
 
  private:
   std::unique_ptr<net::ServerSocket> CreateForHttpServer() override {
-    std::unique_ptr<net::ServerSocket> socket(
-        new net::TCPServerSocket(nullptr, net::NetLogSource()));
+    std::unique_ptr<net::ServerSocket> socket(new net::TCPServerSocket(nullptr, net::NetLogSource()));
     if (socket->ListenWithAddressAndPort(address_, port_, kBackLog) != net::OK)
       return std::unique_ptr<net::ServerSocket>();
 
@@ -91,86 +100,259 @@ class TCPServerSocketFactory
     return socket;
   }
 
-  std::unique_ptr<net::ServerSocket> CreateForTethering(
-      std::string* name) override {
+  std::unique_ptr<net::ServerSocket> CreateForTethering(std::string* name) override {
     return nullptr;
   }
 
   std::string address_;
   uint16_t port_;
 
-  DISALLOW_COPY_AND_ASSIGN(TCPServerSocketFactory);
+  DISALLOW_COPY_AND_ASSIGN(TCPServerSocketFactory)
+  ;
 };
 
-std::unique_ptr<content::DevToolsSocketFactory>
-CreateSocketFactory(uint16_t port) {
-  return std::unique_ptr<content::DevToolsSocketFactory>(
-      new TCPServerSocketFactory(kLocalHost, port));
+std::unique_ptr<content::DevToolsSocketFactory> CreateSocketFactory(uint16_t port) {
+  return std::unique_ptr<content::DevToolsSocketFactory>(new TCPServerSocketFactory(kLocalHost, port));
 }
 /*
-scoped_refptr<content::DevToolsAgentHost>
-CreateNewShellTarget(XWalkBrowserContext* browser_context, const GURL& url) {
-  Runtime* runtime = Runtime::Create(browser_context);
-  return content::DevToolsAgentHost::GetOrCreateFor(runtime->web_contents());
-}
+ scoped_refptr<content::DevToolsAgentHost>
+ CreateNewShellTarget(XWalkBrowserContext* browser_context, const GURL& url) {
+ Runtime* runtime = Runtime::Create(browser_context);
+ return content::DevToolsAgentHost::GetOrCreateFor(runtime->web_contents());
+ }
 
-class XWalkDevToolsDelegate :
-    public devtools_http_handler::DevToolsHttpHandlerDelegate {
+ class XWalkDevToolsDelegate :
+ public devtools_http_handler::DevToolsHttpHandlerDelegate {
  public:
-  explicit XWalkDevToolsDelegate(XWalkBrowserContext* browser_context);
-  ~XWalkDevToolsDelegate() override;
+ explicit XWalkDevToolsDelegate(XWalkBrowserContext* browser_context);
+ ~XWalkDevToolsDelegate() override;
 
-  // devtools_http_handler::DevToolsHttpHandlerDelegate implementation.
-  std::string GetDiscoveryPageHTML() override;
-  std::string GetFrontendResource(const std::string& path) override;
-  std::string GetPageThumbnailData(const GURL& url) override;
-  content::DevToolsExternalAgentProxyDelegate*
-      HandleWebSocketConnection(const std::string& path) override;
+ // devtools_http_handler::DevToolsHttpHandlerDelegate implementation.
+ std::string GetDiscoveryPageHTML() override;
+ std::string GetFrontendResource(const std::string& path) override;
+ std::string GetPageThumbnailData(const GURL& url) override;
+ content::DevToolsExternalAgentProxyDelegate*
+ HandleWebSocketConnection(const std::string& path) override;
 
  private:
-  XWalkBrowserContext* browser_context_;
+ XWalkBrowserContext* browser_context_;
 
-  DISALLOW_COPY_AND_ASSIGN(XWalkDevToolsDelegate);
+ DISALLOW_COPY_AND_ASSIGN(XWalkDevToolsDelegate);
+ };
+
+ XWalkDevToolsDelegate::XWalkDevToolsDelegate(
+ XWalkBrowserContext* browser_context)
+ : browser_context_(browser_context) {
+ devtools_discovery::DevToolsDiscoveryManager::GetInstance()->
+ SetCreateCallback(base::Bind(&CreateNewShellTarget,
+ base::Unretained(browser_context_)));
+ }
+
+ XWalkDevToolsDelegate::~XWalkDevToolsDelegate() {
+ devtools_discovery::DevToolsDiscoveryManager::GetInstance()->
+ SetCreateCallback(
+ devtools_discovery::DevToolsDiscoveryManager::CreateCallback());
+ }
+
+ std::string XWalkDevToolsDelegate::GetDiscoveryPageHTML() {
+ return ResourceBundle::GetSharedInstance().GetRawDataResource(
+ IDR_DEVTOOLS_FRONTEND_PAGE_HTML).as_string();
+ }
+
+ std::string XWalkDevToolsDelegate::GetFrontendResource(
+ const std::string& path) {
+ return content::DevToolsFrontendHost::GetFrontendResource(path).as_string();
+ }
+
+ std::string XWalkDevToolsDelegate::GetPageThumbnailData(const GURL& url) {
+ return std::string();
+ }
+
+ content::DevToolsExternalAgentProxyDelegate*
+ XWalkDevToolsDelegate::HandleWebSocketConnection(const std::string& path) {
+ return nullptr;
+ }
+ */
+
+#ifdef TENTA_CHROMIUM_BUILD
+/**
+ *
+ */
+class ClientProxy :
+    public content::DevToolsAgentHostClient {
+ public:
+  explicit ClientProxy(content::DevToolsExternalAgentProxy* proxy)
+      : proxy_(proxy) {
+  }
+  ~ClientProxy() override {
+  }
+
+  void DispatchProtocolMessage(DevToolsAgentHost* agent_host, const std::string& message) override {
+    proxy_->DispatchOnClientHost(message);
+  }
+
+  void AgentHostClosed(DevToolsAgentHost* agent_host) override {
+    proxy_->ConnectionClosed();
+  }
+
+ private:
+  content::DevToolsExternalAgentProxy* proxy_;DISALLOW_COPY_AND_ASSIGN(ClientProxy)
+  ;
 };
 
-XWalkDevToolsDelegate::XWalkDevToolsDelegate(
-    XWalkBrowserContext* browser_context)
-    : browser_context_(browser_context) {
-  devtools_discovery::DevToolsDiscoveryManager::GetInstance()->
-      SetCreateCallback(base::Bind(&CreateNewShellTarget,
-                                   base::Unretained(browser_context_)));
-}
+/**
+ *
+ */
+class TabProxyDelegate :
+    public content::DevToolsExternalAgentProxyDelegate {
+ public:
+  explicit TabProxyDelegate(TentaTabModel::TabItem* tab)
+      : tab_id_(tab->tab_id()),
+        title_(tab->GetTitle()),
+        url_(tab->GetURL()),
+        _tab_model(tab->GetParent()),
+        agent_host_(tab->web_contents() ? DevToolsAgentHost::GetOrCreateFor(tab->web_contents()) : nullptr) {
+  }
 
-XWalkDevToolsDelegate::~XWalkDevToolsDelegate() {
-  devtools_discovery::DevToolsDiscoveryManager::GetInstance()->
-      SetCreateCallback(
-          devtools_discovery::DevToolsDiscoveryManager::CreateCallback());
-}
+  ~TabProxyDelegate() override {
+  }
 
-std::string XWalkDevToolsDelegate::GetDiscoveryPageHTML() {
-  return ResourceBundle::GetSharedInstance().GetRawDataResource(
-      IDR_DEVTOOLS_FRONTEND_PAGE_HTML).as_string();
-}
+  void Attach(content::DevToolsExternalAgentProxy* proxy) override {
+    proxies_[proxy].reset(new ClientProxy(proxy));
+    MaterializeAgentHost();
+    if (agent_host_)
+      agent_host_->AttachClient(proxies_[proxy].get());
+  }
 
-std::string XWalkDevToolsDelegate::GetFrontendResource(
-    const std::string& path) {
-  return content::DevToolsFrontendHost::GetFrontendResource(path).as_string();
-}
+  void Detach(content::DevToolsExternalAgentProxy* proxy) override {
+    auto it = proxies_.find(proxy);
+    if (it == proxies_.end())
+      return;
+    if (agent_host_)
+      agent_host_->DetachClient(it->second.get());
+    proxies_.erase(it);
+    if (proxies_.empty())
+      agent_host_ = nullptr;
+  }
 
-std::string XWalkDevToolsDelegate::GetPageThumbnailData(const GURL& url) {
-  return std::string();
-}
+  std::string GetType() override {
+    return agent_host_ ? agent_host_->GetType() : DevToolsAgentHost::kTypePage;
+  }
 
-content::DevToolsExternalAgentProxyDelegate*
-XWalkDevToolsDelegate::HandleWebSocketConnection(const std::string& path) {
-  return nullptr;
+  std::string GetTitle() override {
+    return agent_host_ ? agent_host_->GetTitle() : title_;
+  }
+
+  std::string GetDescription() override {
+    return agent_host_ ? agent_host_->GetDescription() : "";
+  }
+
+  GURL GetURL() override {
+    return agent_host_ ? agent_host_->GetURL() : url_;
+  }
+
+  GURL GetFaviconURL() override {
+    return agent_host_ ? agent_host_->GetFaviconURL() : GURL();
+  }
+
+  std::string GetFrontendURL() override {
+    return std::string();
+  }
+
+  bool Activate() override {
+//    TabModel* model;
+//    int index;
+//    if (!FindTab(&model, &index))
+//      return false;
+//    model->SetActiveIndex(index);
+    return true;
+  }
+
+  void Reload() override {
+    MaterializeAgentHost();
+    if (agent_host_)
+      agent_host_->Reload();
+  }
+
+  bool Close() override {
+//    TabModel* model;
+//    int index;
+//    if (!FindTab(&model, &index))
+//      return false;
+//    model->CloseTabAt(index);
+    return true;
+  }
+
+  base::TimeTicks GetLastActivityTime() override {
+    return agent_host_ ? agent_host_->GetLastActivityTime() : base::TimeTicks();
+  }
+
+  void SendMessageToBackend(content::DevToolsExternalAgentProxy* proxy, const std::string& message) override {
+    auto it = proxies_.find(proxy);
+    if (it == proxies_.end()) {
+      TENTA_LOG_NET(ERROR) << __func__ << " NO_proxy_found";
+      return;
+    }
+    if (agent_host_) {
+      agent_host_->DispatchProtocolMessage(it->second.get(), message);
+    } else {
+      TENTA_LOG_NET(ERROR) << __func__ << " NULL_agent_host";
+    }
+  }
+
+ private:
+  void MaterializeAgentHost() {
+    if (agent_host_)
+      return;
+    TentaTabModel::TabItem* tab;
+    if (!FindTab(&tab))
+      return;
+    WebContents* web_contents = tab->web_contents();
+    if (!web_contents)
+      return;
+    agent_host_ = DevToolsAgentHost::GetOrCreateFor(web_contents);
+  }
+
+  bool FindTab(TentaTabModel::TabItem** tab_out) const {
+    if ( _tab_model ) {
+      for (TentaTabModel::const_iterator iter = _tab_model->begin(); iter != _tab_model->end(); ++iter) {
+        TentaTabModel::TabItem* tab = iter->get();
+
+        if ( tab->tab_id() == tab_id_ ) {
+          *tab_out = tab;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  const int tab_id_;
+  const std::string title_;
+  const GURL url_;
+  base::WeakPtr<TentaTabModel> _tab_model;
+  scoped_refptr<DevToolsAgentHost> agent_host_;
+  std::map<content::DevToolsExternalAgentProxy*, std::unique_ptr<ClientProxy>> proxies_;DISALLOW_COPY_AND_ASSIGN(TabProxyDelegate)
+  ;
+};
+
+/**
+ *
+ */
+scoped_refptr<DevToolsAgentHost> DevToolsAgentHostForTab(TentaTabModel::TabItem* tab) {
+  scoped_refptr<DevToolsAgentHost> result = tab->GetDevToolsAgentHost();
+  if (result)
+    return result;
+
+  result = DevToolsAgentHost::Forward(base::IntToString(tab->tab_id()), base::MakeUnique<TabProxyDelegate>(tab));
+  tab->SetDevToolsAgentHost(result);
+  return result;
 }
-*/
+#endif
 }  // namespace
 
 XWalkDevToolsManagerDelegate::XWalkDevToolsManagerDelegate(XWalkBrowserContext* browserContext)
-  : _browser_context(browserContext)
-{
+    : _browser_context(browserContext) {
 }
 
 // static
@@ -181,16 +363,13 @@ int XWalkDevToolsManagerDelegate::GetHttpHandlerPort() {
 //static
 void XWalkDevToolsManagerDelegate::StartHttpHandler(XWalkBrowserContext* browserContext) {
   std::string frontend_url;
-/*
- #if defined(OS_ANDROID)
+  /*
+   #if defined(OS_ANDROID)
    frontend_url = base::StringPrintf(kFrontEndURL, GetWebKitRevision().c_str());
- #endif
-*/
-  content::DevToolsAgentHost::StartRemoteDebuggingServer(
-    CreateSocketFactory(GetInspectorPort()),
-    frontend_url,
-    browserContext->GetPath(),
-    base::FilePath());
+   #endif
+   */
+  content::DevToolsAgentHost::StartRemoteDebuggingServer(CreateSocketFactory(GetInspectorPort()), frontend_url,
+                                                         browserContext->GetPath(), base::FilePath());
 }
 
 // static
@@ -198,29 +377,100 @@ void XWalkDevToolsManagerDelegate::StopHttpHandler() {
   content::DevToolsAgentHost::StopRemoteDebuggingServer();
 }
 
-scoped_refptr<content::DevToolsAgentHost> 
-XWalkDevToolsManagerDelegate::CreateNewTarget(const GURL& url) {
+scoped_refptr<content::DevToolsAgentHost> XWalkDevToolsManagerDelegate::CreateNewTarget(const GURL& url) {
   Runtime* runtime = Runtime::Create(_browser_context);
   return content::DevToolsAgentHost::GetOrCreateFor(runtime->web_contents());
 }
 
-std::string XWalkDevToolsManagerDelegate::GetDiscoveryPageHTML() {
-#if defined(OS_ANDROID)
-  return std::string();
+content::DevToolsAgentHost::List XWalkDevToolsManagerDelegate::RemoteDebuggingTargets() {
+  // Enumerate existing tabs, including the ones with no WebContents.
+  DevToolsAgentHost::List result;
+
+#ifdef TENTA_CHROMIUM_BUILD
+  std::set<WebContents*> tab_web_contents;
+
+  TentaTabModel* tab_model = TentaTabModelFactory::GetForContext(_browser_context);
+  if (tab_model) {
+    for (TentaTabModel::const_iterator iter = tab_model->begin(); iter != tab_model->end(); ++iter) {
+      TentaTabModel::TabItem* tab = iter->get();
+
+      if (tab->web_contents()) {
+        tab_web_contents.insert(tab->web_contents());
+      }
+      result.push_back(DevToolsAgentHostForTab(tab));
+    }
+  } else {
+    TENTA_LOG_NET(ERROR) << __func__ << " NULL_tab_model";
+  }
+
+  // Add descriptors for targets not associated with any tabs.
+  DevToolsAgentHost::List agents = DevToolsAgentHost::GetOrCreateAll();
+  for (DevToolsAgentHost::List::iterator it = agents.begin(); it != agents.end(); ++it) {
+    if (WebContents* web_contents = (*it)->GetWebContents()) {
+      if (tab_web_contents.find(web_contents) != tab_web_contents.end())
+        continue;
+    }
+    result.push_back(*it);
+  }
 #else
-  return ResourceBundle::GetSharedInstance().GetRawDataResource(
-      IDR_DEVTOOLS_FRONTEND_PAGE_HTML).as_string();
+  result = content::DevToolsAgentHost::GetOrCreateAll();
 #endif
+    return result;
 }
 
-std::string XWalkDevToolsManagerDelegate::GetFrontendResource(
-    const std::string& path) {
+std::string XWalkDevToolsManagerDelegate::GetTargetType(content::WebContents* web_contents) {
+  return content::DevToolsAgentHost::kTypePage;
+}
+
+std::string XWalkDevToolsManagerDelegate::GetTargetDescription(content::WebContents* web_contents) {
+  return std::string();
+//  android_webview::BrowserViewRenderer* bvr = android_webview::BrowserViewRenderer::FromWebContents(web_contents);
+//  if (!bvr)
+//    return "";
+//  base::DictionaryValue description;
+//  description.SetBoolean("attached", bvr->attached_to_window());
+//  description.SetBoolean("visible", bvr->IsVisible());
+//  gfx::Rect screen_rect = bvr->GetScreenRect();
+//  description.SetInteger("screenX", screen_rect.x());
+//  description.SetInteger("screenY", screen_rect.y());
+//  description.SetBoolean("empty", screen_rect.size().IsEmpty());
+//  if (!screen_rect.size().IsEmpty()) {
+//    description.SetInteger("width", screen_rect.width());
+//    description.SetInteger("height", screen_rect.height());
+//  }
+//  std::string json;
+//  base::JSONWriter::Write(description, &json);
+//  return json;
+}
+
+std::string XWalkDevToolsManagerDelegate::GetDiscoveryPageHTML() {
+  return ui::ResourceBundle::GetSharedInstance().GetRawDataResource(
+  IDR_DEVTOOLS_FRONTEND_PAGE_HTML).as_string();
+}
+
+std::string XWalkDevToolsManagerDelegate::GetFrontendResource(const std::string& path) {
 #if defined(OS_ANDROID)
   return std::string();
 #else
   return content::DevToolsFrontendHost::GetFrontendResource(path).as_string();
 #endif
 
+}
+
+bool XWalkDevToolsManagerDelegate::IsBrowserTargetDiscoverable() {
+  return true;
+}
+
+bool XWalkDevToolsManagerDelegate::HandleCommand(
+    DevToolsAgentHost* agent_host,
+    int session_id,
+    base::DictionaryValue* command_dict) {
+  /*
+   * TODO(iotto): for implementation details (like scroll, click, etc ...) see:
+   * chrome/browser/devtools/chrome_devtools_session.h
+   * chrome/browser/devtools/chrome_devtools_manager_delegate.cc
+   */
+  return false;
 }
 
 XWalkDevToolsManagerDelegate::~XWalkDevToolsManagerDelegate() {

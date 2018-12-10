@@ -53,7 +53,7 @@
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "jni/XWalkContent_jni.h"
 
-#if defined(TENTA_CHROMIUM_BUILD)
+#ifdef TENTA_CHROMIUM_BUILD
 #include "xwalk/third_party/tenta/meta_fs/meta_errors.h"
 #include "xwalk/third_party/tenta/meta_fs/meta_db.h"
 #include "xwalk/third_party/tenta/meta_fs/meta_file.h"
@@ -63,8 +63,15 @@
 #include "xwalk/third_party/tenta/meta_fs/jni/meta_virtual_file.h"
 #include "xwalk/third_party/tenta/meta_fs/jni/java_byte_array.h"
 #include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
-#include "xwalk/third_party/tenta/crosswalk_extensions/tenta_history_store.h"
-#endif
+
+#include "tenta_history_store.h"
+#include "browser/tenta_tab_model.h"
+
+using namespace tenta::ext;
+namespace metafs = ::tenta::fs;
+#endif  // #ifdef TENTA_CHROMIUM_BUILD
+
+#include "meta_logging.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertUTF8ToJavaString;
@@ -74,11 +81,6 @@ using content::BrowserThread;
 using content::WebContents;
 using navigation_interception::InterceptNavigationDelegate;
 using xwalk::application_manifest_keys::kDisplay;
-
-#ifdef TENTA_CHROMIUM_BUILD
-using tenta::ext::TentaHistoryStore;
-namespace metafs = ::tenta::fs;
-#endif
 
 namespace keys = xwalk::application_manifest_keys;
 
@@ -227,7 +229,8 @@ XWalkContent* XWalkContent::FromWebContents(content::WebContents* web_contents) 
 }
 
 XWalkContent::XWalkContent(std::unique_ptr<content::WebContents> web_contents)
-    : web_contents_(std::move(web_contents)) {
+    : web_contents_(std::move(web_contents)),
+      tab_id(base::Time::Now().ToInternalValue()) {
   xwalk_autofill_manager_.reset(new XWalkAutofillManager(web_contents_.get()));
   XWalkContentLifecycleNotifier::OnXWalkViewCreated();
 }
@@ -257,6 +260,13 @@ XWalkContent::~XWalkContent() {
 #ifdef TENTA_CHROMIUM_BUILD
   TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
   h_store->SetController(reinterpret_cast<intptr_t>(this), nullptr);
+
+  TentaTabModel * tab_model = TentaTabModelFactory::GetForContext(web_contents_->GetBrowserContext());
+  if ( tab_model ) {
+    tab_model->RemoveTab(tab_id);
+  } else {
+    TENTA_LOG_NET(ERROR) << __func__ << " NULL_tab_model";
+  }
 #endif
 }
 
@@ -279,8 +289,17 @@ void XWalkContent::SetJavaPeers(
 
 #ifdef TENTA_CHROMIUM_BUILD
   // Net Error handler on client side
-  ::tenta::ext::TentaNetErrorClient::CreateForWebContents(web_contents_.get());
-  ::tenta::ext::TentaNetErrorClient::FromWebContents(web_contents_.get())->SetListener(this);
+  TentaNetErrorClient::CreateForWebContents(web_contents_.get());
+  TentaNetErrorClient::FromWebContents(web_contents_.get())->SetListener(this);
+
+  // new tab created notify tabModel
+  // TODO(iotto) : Have a TabId
+  TentaTabModel * tab_model = TentaTabModelFactory::GetForContext(web_contents_->GetBrowserContext());
+  if ( tab_model ) {
+    tab_model->AddTab(tab_id, web_contents_.get());
+  } else {
+    TENTA_LOG_NET(ERROR) << __func__ << " NULL_tab_model";
+  }
 #endif // TENTA_CHROMIUM_BUILD
 
   // XWalk does not use disambiguation popup for multiple targets.
@@ -865,10 +884,6 @@ static jlong JNI_XWalkContent_Init(JNIEnv* env, const JavaParamRef<jobject>& obj
   std::unique_ptr<WebContents> web_contents(
       content::WebContents::Create(content::WebContents::CreateParams(XWalkRunner::GetInstance()->browser_context())));
   return reinterpret_cast<intptr_t>(new XWalkContent(std::move(web_contents)));
-}
-
-bool RegisterXWalkContent(JNIEnv* env) {
-  return true;
 }
 
 namespace {

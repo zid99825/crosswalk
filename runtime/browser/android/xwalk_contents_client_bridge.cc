@@ -30,6 +30,7 @@
 #include "ui/gfx/android/java_bitmap.h"
 #include "ui/shell_dialogs/selected_file_info.h"
 #include "url/gurl.h"
+#include "net/base/escape.h"
 #include "net/cert/cert_database.h"
 #include "net/cert/x509_certificate.h"
 //#include "net/ssl/openssl_client_key_store.h"
@@ -558,40 +559,49 @@ void XWalkContentsClientBridge::NotificationClosed(JNIEnv*, jobject, jint id, bo
 //    notification_delegate->NotificationClosed();
 }
 
-void XWalkContentsClientBridge::OnFilesSelected(
-    JNIEnv* env, jobject, int process_id, int render_id,
-    int mode, jstring filepath, jstring display_name) {
-  content::RenderFrameHost* rfh =
-      content::RenderFrameHost::FromID(process_id, render_id);
+static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, const JavaParamRef<jclass>& jclazz, int process_id,
+                                                int render_id, int mode_flags, const JavaParamRef<jobjectArray>& file_paths,
+                                                const JavaParamRef<jobjectArray>& display_names) {
+  content::RenderFrameHost* rfh = content::RenderFrameHost::FromID(process_id, render_id);
   if (!rfh)
     return;
 
-  std::string path = base::android::ConvertJavaStringToUTF8(env, filepath);
-  std::string file_name =
-      base::android::ConvertJavaStringToUTF8(env, display_name);
-  base::FilePath file_path = base::FilePath(path);
-  content::FileChooserFileInfo file_info;
-  file_info.file_path = file_path;
-  if (!file_name.empty())
-    file_info.display_name = file_name;
+  std::vector<std::string> file_path_str;
+  std::vector<std::string> display_name_str;
+  // Note file_paths maybe NULL, but this will just yield a zero-length vector.
+  base::android::AppendJavaStringArrayToStringVector(env, file_paths, &file_path_str);
+  base::android::AppendJavaStringArrayToStringVector(env, display_names, &display_name_str);
   std::vector<content::FileChooserFileInfo> files;
-  files.push_back(file_info);
-
-  rfh->FilesSelectedInChooser(
-      files, static_cast<content::FileChooserParams::Mode>(mode));
-}
-
-void XWalkContentsClientBridge::OnFilesNotSelected(
-    JNIEnv* env, jobject, int process_id, int render_id, int mode) {
-  content::RenderFrameHost* rfh =
-      content::RenderFrameHost::FromID(process_id, render_id);
-  if (!rfh)
-    return;
-
-  std::vector<content::FileChooserFileInfo> files;
-
-  rfh->FilesSelectedInChooser(
-      files, static_cast<content::FileChooserParams::Mode>(mode));
+  files.reserve(file_path_str.size());
+  for (size_t i = 0; i < file_path_str.size(); ++i) {
+    GURL url(file_path_str[i]);
+    if (!url.is_valid()) {
+      TENTA_LOG_NET(WARNING) << "iotto " << __func__ << " invalid_url=" << file_path_str[i];
+      continue;
+    }
+    base::FilePath path(
+        url.SchemeIsFile() ?
+            net::UnescapeURLComponent(
+                url.path(), net::UnescapeRule::SPACES | net::UnescapeRule::URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS) :
+            file_path_str[i]);
+    content::FileChooserFileInfo file_info;
+    file_info.file_path = path;
+    if (!display_name_str[i].empty())
+      file_info.display_name = display_name_str[i];
+    TENTA_LOG_NET(INFO) << "iotto " << __func__ << " new_file=" << path;
+    files.push_back(file_info);
+  }
+  FileChooserParams::Mode mode = static_cast<content::FileChooserParams::Mode>(mode_flags);
+//  if (mode_flags & kFileChooserModeOpenFolder) {
+//    mode = FileChooserParams::UploadFolder;
+//  } else if (mode_flags & kFileChooserModeOpenMultiple) {
+//    mode = FileChooserParams::OpenMultiple;
+//  } else {
+//    mode = FileChooserParams::Open;
+//  }
+  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " mode=" << mode << " files_cnt=" << files.size() << " file paths="
+                      << base::JoinString(file_path_str, ":");
+  rfh->FilesSelectedInChooser(files, mode);
 }
 
 void XWalkContentsClientBridge::DownloadIcon(JNIEnv* env, jobject obj, jstring url) {

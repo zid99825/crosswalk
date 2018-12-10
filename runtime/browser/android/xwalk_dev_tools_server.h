@@ -39,14 +39,13 @@ class XWalkDevToolsServer {
     const net::UnixDomainServerSocket::Credentials& credentials);
 
   std::string socket_name_;
+  bool is_started_;
   std::unique_ptr<content::DevToolsHttpHandler> devtools_http_handler_;
   bool allow_debug_permission_;
   bool allow_socket_access_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkDevToolsServer);
 };
-
-bool RegisterXWalkDevToolsServer(JNIEnv* env);
 
 }  // namespace xwalk
 

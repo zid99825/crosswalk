@@ -483,6 +483,7 @@ void XWalkContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
 
 content::DevToolsManagerDelegate* 
 XWalkContentBrowserClient::GetDevToolsManagerDelegate() {
+  // called from DevToolsManager::DevToolsManager and stored as uniqe_ptr
   return new XWalkDevToolsManagerDelegate(xwalk_runner_->browser_context());
 }
 
