@@ -216,7 +216,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
             @Override
             public void run() {
                 NetworkChangeNotifier.init();
-                NetworkChangeNotifier.setAutoDetectConnectivityState(true);
+                NetworkChangeNotifier.setAutoDetectConnectivityState(false);
             }
         });
 
