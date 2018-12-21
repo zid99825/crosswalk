@@ -108,6 +108,8 @@ class XWalkContent :
 
   /******** End Metafs **********/
 
+  void SetStoragePartition(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                           const JavaParamRef<jstring>& storagePartition);
 //  jboolean PushStateWitkKey(JNIEnv* env, jobject obj,
 //                            const JavaParamRef<jbyteArray>& state,
 //                            jstring id,

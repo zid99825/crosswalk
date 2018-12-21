@@ -225,13 +225,20 @@ XWalkBrowserContext::GetGuestManager() {
 }
 
 storage::SpecialStoragePolicy* XWalkBrowserContext::GetSpecialStoragePolicy() {
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-                                                        switches::kUnlimitedStorage)) {
-    if (!special_storage_policy_.get())
-      special_storage_policy_ = new XWalkSpecialStoragePolicy();
-    return special_storage_policy_.get();
-  }
-  return NULL;
+  if (!special_storage_policy_.get())
+    special_storage_policy_ = new XWalkSpecialStoragePolicy();
+  return special_storage_policy_.get();
+  // TODO(iotto): Use limited storage
+//  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+//                                                        switches::kUnlimitedStorage)) {
+//    LOG(INFO) << "iotto " << __func__ << " kUnlimitedStorage";
+//    if (!special_storage_policy_.get())
+//      special_storage_policy_ = new XWalkSpecialStoragePolicy();
+//    return special_storage_policy_.get();
+//  }
+//
+//  LOG(INFO) << "iotto " << __func__;
+//  return NULL;
 }
 
 content::PushMessagingService* XWalkBrowserContext::GetPushMessagingService() {
@@ -305,6 +312,10 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
   return url_request_getter_.get();
 }
 
+net::URLRequestContextGetter* XWalkBrowserContext::CreateMediaRequestContext() {
+  return url_request_getter_.get();
+}
+
 net::URLRequestContextGetter*
 XWalkBrowserContext::CreateRequestContextForStoragePartition(
     const base::FilePath& partition_path,
@@ -312,8 +323,33 @@ XWalkBrowserContext::CreateRequestContextForStoragePartition(
     content::ProtocolHandlerMap* protocol_handlers,
     content::URLRequestInterceptorScopedVector request_interceptors) {
 #if defined(OS_ANDROID)
-  return NULL;
+//  return CreateRequestContext(protocol_handlers, std::move(request_interceptors));
+  // TODO(iotto): Fix (maybe resource_context_)
+  PartitionPathContextGetterMap::iterator iter = context_getters_.find(partition_path.value());
+  if (iter != context_getters_.end())
+    return iter->second.get();
+
+  protocol_handlers->insert(
+      std::pair<std::string, linked_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
+          application::kApplicationScheme, application::CreateApplicationProtocolHandler(application_service_)));
+
+  scoped_refptr<RuntimeURLRequestContextGetter> context_getter = new RuntimeURLRequestContextGetter(
+      false, /* ignore_certificate_error = false */
+      partition_path, content::BrowserThread::GetTaskRunnerForThread(BrowserThread::IO),
+      content::BrowserThread::GetTaskRunnerForThread(BrowserThread::FILE), protocol_handlers,
+      std::move(request_interceptors));
+
+  context_getters_.insert(std::make_pair(partition_path.value(), context_getter));
+  // Make sure that the default url request getter has been initialized,
+  // please refer to https://crosswalk-project.org/jira/browse/XWALK-2890
+  // for more details.
+  if (!url_request_getter_)
+    CreateRequestContext(protocol_handlers, std::move(request_interceptors));
+
+  return context_getter.get();
+
 #else
+  // TODO(iotto): Check and fix, not using it
   PartitionPathContextGetterMap::iterator iter =
   context_getters_.find(partition_path.value());
   if (iter != context_getters_.end())
@@ -351,11 +387,11 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateMediaRequestContext() {
 }
 
 net::URLRequestContextGetter*
-XWalkBrowserContext::CreateMediaRequestContextForStoragePartition(
+XWalkBrowserContext::CreateMediaRequestContextForStoragePartition(const base::FilePath& partition_path,
     const base::FilePath& partition_path,
     bool in_memory) {
 #if defined(OS_ANDROID)
-  return url_request_getter_.get();
+  PartitionPathContextGetterMap::iterator iter = context_getters_.find(partition_path.value());
 #else
   PartitionPathContextGetterMap::iterator iter =
   context_getters_.find(partition_path.value());

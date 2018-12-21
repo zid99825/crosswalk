@@ -12,12 +12,16 @@ XWalkSpecialStoragePolicy::~XWalkSpecialStoragePolicy() {}
 
 bool XWalkSpecialStoragePolicy::IsStorageProtected(const GURL& origin) {
   // Prevent data being removed by the browsing data remover.
-  return true;
+  // TODO(iotto)
+//  return true;
+  return false;
 }
 
 bool XWalkSpecialStoragePolicy::IsStorageUnlimited(const GURL& origin) {
   // Prevent data being affected by quota or storage pressure eviction.
-  return true;
+  // TODO(iotto)
+//  return true;
+  return false;
 }
 
 bool XWalkSpecialStoragePolicy::IsStorageDurable(const GURL& origin) {
@@ -29,7 +33,9 @@ bool XWalkSpecialStoragePolicy::HasIsolatedStorage(const GURL& origin) {
   // I don't actually know if Crosswalk can guarantee if there is isolated
   // storage or not.  Chrome seems to implement this through a special plugin,
   // so it seems safe to say that we can't guarantee that storage is isolated.
-  return false;
+  // TODO(iotto)
+//  return false;
+  return true;
 }
 
 bool XWalkSpecialStoragePolicy::IsStorageSessionOnly(const GURL& origin) {

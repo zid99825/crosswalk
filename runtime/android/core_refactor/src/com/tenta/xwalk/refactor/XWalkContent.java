@@ -1529,6 +1529,12 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
     }
     
+    public void setStoragePartition(final String newPartition) {
+        if (mNativeContent == 0)
+            return;
+        nativeSetStoragePartition(mNativeContent, newPartition);
+    }
+    
     private native long nativeInit();
 
     private static native void nativeDestroy(long nativeXWalkContent);
@@ -1601,4 +1607,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private native void nativeFindNext(long nativeXWalkContent, boolean forward);
 
     private native void nativeClearMatches(long nativeXWalkContent);
+    
+    private native void nativeSetStoragePartition(long nativeXWalkContent, String storagePartition);
 }

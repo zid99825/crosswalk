@@ -92,6 +92,9 @@
 #include "xwalk/runtime/browser/xwalk_presentation_service_delegate_win.h"
 #endif
 
+using content::BrowserContext;
+using content::StoragePartition;
+
 namespace xwalk {
 
 namespace {
@@ -457,21 +460,61 @@ bool XWalkContentBrowserClient::CanCreateWindow(const GURL& opener_url,
 }
 #endif
 
-void XWalkContentBrowserClient::GetStoragePartitionConfigForSite(
-    content::BrowserContext* browser_context,
+void XWalkContentBrowserClient::GetStoragePartitionConfigForSite(content::BrowserContext* browser_context,
+                                                                 const GURL& site, bool can_be_default,
     const GURL& site,
     bool can_be_default,
     std::string* partition_domain,
-    std::string* partition_name,
+                                                                 std::string* partition_name, bool* in_memory) {
     bool* in_memory) {
   *in_memory = false;
   partition_domain->clear();
   partition_name->clear();
+  partition_domain->clear();
 
 #if !defined(OS_ANDROID)
   if (site.SchemeIs(application::kApplicationScheme))
     *partition_domain = site.host();
 #endif
+}
+
+std::string XWalkContentBrowserClient::GetStoragePartitionIdForSite(
+    content::BrowserContext* browser_context,
+    const GURL& site) {
+  std::string partition_id;
+//#if BUILDFLAG(ENABLE_EXTENSIONS)
+//  // The partition ID for extensions with isolated storage is treated similarly
+//  // to the above.
+//  else if (site.SchemeIs(extensions::kExtensionScheme) &&
+//           extensions::util::SiteHasIsolatedStorage(site, browser_context))
+//    partition_id = site.spec();
+//#endif
+  return partition_id;
+}
+
+bool XWalkContentBrowserClient::IsValidStoragePartitionId(content::BrowserContext* browser_context,
+    const std::string& partition_id) {
+  // The default ID is empty and is always valid.
+  if (partition_id.empty())
+    return true;
+
+  return GURL(partition_id).is_valid();
+}
+
+bool XWalkContentBrowserClient::ShouldUseProcessPerSite(
+    BrowserContext* browser_context, const GURL& effective_url) {
+  return false;
+}
+
+bool XWalkContentBrowserClient::DoesSiteRequireDedicatedProcess(
+    BrowserContext* browser_context,
+    const GURL& effective_site_url) {
+  return false;
+}
+
+void XWalkContentBrowserClient::GetQuotaSettings( content::BrowserContext* context, content::StoragePartition* partition,
+    storage::OptionalQuotaSettingsCallback callback) {
+  storage::GetNominalDynamicSettings( partition->GetPath(), context->IsOffTheRecord(), std::move(callback));
 }
 
 void XWalkContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
@@ -533,7 +576,7 @@ void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
     const std::string& interface_name,
     mojo::ScopedMessagePipeHandle interface_pipe) {
   if (!frame_interfaces_) {
-    frame_interfaces_ = std::make_unique<
+    frame_interfaces_ = std::make_unique<service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();
     service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();
     ExposeInterfacesToFrame(frame_interfaces_.get());
   }

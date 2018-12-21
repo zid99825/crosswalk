@@ -136,7 +136,6 @@ XWalkContentClient::XWalkContentClient() {
 }
 
 XWalkContentClient::~XWalkContentClient() {
-  xwalk::GetUserAgent();
 }
 
 void XWalkContentClient::AddPepperPlugins(
@@ -254,6 +253,14 @@ void XWalkContentClient::AddSecureSchemesAndOrigins(
 }
 */
 
+// TODO(iotto) : Implement
+//bool AwContentClient::CanSendWhileSwappedOut(const IPC::Message* message) {
+//  // For legacy API support we perform a few browser -> renderer synchronous IPC
+//  // messages that block the browser. However, the synchronous IPC replies might
+//  // be dropped by the renderer during a swap out, deadlocking the browser.
+//  // Because of this we should never drop any synchronous IPC replies.
+//  return message->type() == IPC_REPLY_ID;
+//}
 
 std::string XWalkContentClient::GetProcessTypeNameInEnglish(int type) {
   switch (type) {

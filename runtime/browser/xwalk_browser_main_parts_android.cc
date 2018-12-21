@@ -157,6 +157,10 @@ void XWalkBrowserMainPartsAndroid::PreEarlyInitialization() {
 
 void XWalkBrowserMainPartsAndroid::PreMainMessageLoopStart() {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+
+  //TODO(iotto): experimental
+//  command_line->AppendSwitch(switches::kDisableMojoLocalStorage);
+
   // Disable ExtensionProcess for Android.
   // External extensions will run in the BrowserProcess (in process mode).
   command_line->AppendSwitch(switches::kXWalkDisableExtensionProcess);

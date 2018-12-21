@@ -55,11 +55,12 @@ void XWalkRenderViewHostExt::ClearCache() {
   web_contents()->GetRenderViewHost()->Send(new XWalkViewMsg_ClearCache);
 }
 
-// TODO(iotto) : Implement!!!
-//void AwRenderViewHostExt::KillRenderProcess() {
-//  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-//  web_contents()->GetRenderViewHost()->Send(new AwViewMsg_KillProcess);
-//}
+#ifdef TENTA_CHROMIUM_BUILD
+void XWalkRenderViewHostExt::PurgeLocalStorage() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  web_contents()->GetRenderViewHost()->Send(new XWalkViewMsg_PurgeLocalStorage);
+}
+#endif
 
 bool XWalkRenderViewHostExt::HasNewHitTestData() const {
   return has_new_hit_test_data_;

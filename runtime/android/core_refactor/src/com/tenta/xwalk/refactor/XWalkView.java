@@ -2070,4 +2070,21 @@ public class XWalkView extends android.widget.FrameLayout {
             return null;
         return mContent.getCompositingSurfaceType();
     }
+    
+    // tenta
+    private String storagePartition;
+    
+    public String getStoragePartition() {
+        return storagePartition;
+    }
+    
+    public void setStoragePartition(final String newPartition) {
+        if (mContent == null)
+            return;
+        checkThreadSafety();
+        
+        storagePartition = newPartition;
+        mContent.setStoragePartition(storagePartition);
+        
+    }
 }

@@ -26,6 +26,9 @@ class XWalkRenderThreadObserver : public content::RenderThreadObserver {
  private:
   void OnSetJsOnlineProperty(bool network_up);
   void OnClearCache();
+#ifdef TENTA_CHROMIUM_BUILD
+  void OnPurgeLocalStorage();
+#endif
   void OnSetOriginAccessWhitelist(std::string base_url,
                                   std::string match_patterns);
 };

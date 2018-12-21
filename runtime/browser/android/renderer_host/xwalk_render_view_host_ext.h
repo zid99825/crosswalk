@@ -44,6 +44,11 @@ class XWalkRenderViewHostExt : public content::WebContentsObserver
   // Clear all WebCore memory cache (not only for this view).
   void ClearCache();
 
+#ifdef TENTA_CHROMIUM_BUILD
+  // Clear local storage cached areas in renderer
+  void PurgeLocalStorage();
+#endif
+
   // Do a hit test at the view port coordinates and asynchronously update
   // test_data_|. Width and height in |touch_area| are in density independent
   // pixels used by WebKit::WebView.

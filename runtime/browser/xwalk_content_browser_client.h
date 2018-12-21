@@ -131,13 +131,17 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   void ResourceDispatcherHostCreated() override;
 #endif
 
-  void GetStoragePartitionConfigForSite(
-      content::BrowserContext* browser_context,
-      const GURL& site,
-      bool can_be_default,
-      std::string* partition_domain,
-      std::string* partition_name,
-      bool* in_memory) override;
+  void GetStoragePartitionConfigForSite(content::BrowserContext* browser_context, const GURL& site, bool can_be_default,
+                                        std::string* partition_domain, std::string* partition_name, bool* in_memory)
+                                            override;
+  std::string GetStoragePartitionIdForSite(content::BrowserContext* browser_context, const GURL& site) override;
+  bool IsValidStoragePartitionId(content::BrowserContext* browser_context, const std::string& partition_id) override;
+  bool ShouldUseProcessPerSite(content::BrowserContext* browser_context, const GURL& effective_url) override;
+  bool DoesSiteRequireDedicatedProcess(content::BrowserContext* browser_context, const GURL& effective_site_url)
+      override;
+
+  void GetQuotaSettings(content::BrowserContext* context, content::StoragePartition* partition,
+                        storage::OptionalQuotaSettingsCallback callback) override;
 
   void GetAdditionalAllowedSchemesForFileSystem(
       std::vector<std::string>* additional_schemes) override;

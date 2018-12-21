@@ -27,11 +27,13 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/browsing_data_remover.h"
 #include "content/public/browser/devtools_agent_host.h"
+#include "content/public/browser/dom_storage_context.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/ssl_status.h"
+#include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/renderer_preferences.h"
 //#include "content/public/common/ssl_status.h"
@@ -54,6 +56,8 @@
 #include "jni/XWalkContent_jni.h"
 
 #ifdef TENTA_CHROMIUM_BUILD
+#include "xwalk/runtime/browser/xwalk_content_browser_client.h"
+// tenta
 #include "xwalk/third_party/tenta/meta_fs/meta_errors.h"
 #include "xwalk/third_party/tenta/meta_fs/meta_db.h"
 #include "xwalk/third_party/tenta/meta_fs/meta_file.h"
@@ -66,6 +70,9 @@
 
 #include "tenta_history_store.h"
 #include "browser/tenta_tab_model.h"
+
+using content::BrowserContext;
+using content::RenderProcessHost;
 
 using namespace tenta::ext;
 namespace metafs = ::tenta::fs;
@@ -324,6 +331,8 @@ void XWalkContent::SetJavaPeers(
 #ifdef TENTA_CHROMIUM_BUILD
   TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
   h_store->SetController(reinterpret_cast<intptr_t>(this), &(web_contents_->GetController()));
+
+  // TODO(iotto): Create tentaSessionStore
 #endif
 }
 
@@ -880,6 +889,23 @@ jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, c
 }
 
 /************ End MetaFS ****************/
+
+void XWalkContent::SetStoragePartition(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                                       const JavaParamRef<jstring>& storagePartition) {
+#ifdef TENTA_CHROMIUM_BUILD
+  std::string storage_partition = base::android::ConvertJavaStringToUTF8(env, storagePartition);
+
+  render_view_host_ext_->PurgeLocalStorage();
+
+  content::BrowserContext* browser_context = web_contents_->GetBrowserContext();
+  storage::SpecialStoragePolicy* ss_policy = browser_context->GetSpecialStoragePolicy();
+
+  if (ss_policy != nullptr) {
+    ss_policy->SetEmbedderPrefix(storage_partition);
+  }
+#endif
+}
+
 static jlong JNI_XWalkContent_Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   std::unique_ptr<WebContents> web_contents(
       content::WebContents::Create(content::WebContents::CreateParams(XWalkRunner::GetInstance()->browser_context())));

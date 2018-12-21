@@ -45,6 +45,11 @@ IPC_STRUCT_TRAITS_END()
 // Tells the renderer to drop all WebCore memory cache.
 IPC_MESSAGE_CONTROL0(XWalkViewMsg_ClearCache) // NOLINT(*)
 
+#ifdef TENTA_CHROMIUM_BUILD
+// Tells the renderer to drop all localstorage memory cache.
+IPC_MESSAGE_CONTROL0(XWalkViewMsg_PurgeLocalStorage) // NOLINT(*)
+#endif
+
 // Request for the renderer to determine if the document contains any image
 // elements.  The id should be passed in the response message so the response
 // can be associated with the request.

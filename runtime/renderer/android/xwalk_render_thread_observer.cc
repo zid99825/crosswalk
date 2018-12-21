@@ -7,8 +7,10 @@
 #include "base/json/json_reader.h"
 #include "base/values.h"
 #include "content/public/common/url_constants.h"
+#include "content/renderer/render_thread_impl.h"
 #include "extensions/common/url_pattern.h"
 #include "ipc/ipc_message_macros.h"
+#include "third_party/WebKit/public/platform/Platform.h"
 #include "third_party/WebKit/public/platform/WebCache.h"
 #include "third_party/WebKit/public/platform/WebNetworkStateNotifier.h"
 #include "third_party/WebKit/public/web/WebSecurityPolicy.h"
@@ -29,6 +31,9 @@ bool XWalkRenderThreadObserver::OnControlMessageReceived(
   IPC_BEGIN_MESSAGE_MAP(XWalkRenderThreadObserver, message)
     IPC_MESSAGE_HANDLER(XWalkViewMsg_SetJsOnlineProperty, OnSetJsOnlineProperty)
     IPC_MESSAGE_HANDLER(XWalkViewMsg_ClearCache, OnClearCache);
+#ifdef TENTA_CHROMIUM_BUILD
+  IPC_MESSAGE_HANDLER(XWalkViewMsg_PurgeLocalStorage, OnPurgeLocalStorage);
+#endif
     IPC_MESSAGE_HANDLER(XWalkViewMsg_SetOriginAccessWhitelist,
                         OnSetOriginAccessWhitelist)
     IPC_MESSAGE_UNHANDLED(handled = false)
@@ -42,7 +47,17 @@ void XWalkRenderThreadObserver::OnSetJsOnlineProperty(bool network_up) {
 
 void XWalkRenderThreadObserver::OnClearCache() {
   blink::WebCache::Clear();
+
+//  content::RenderThreadImpl::current()->current_blink_platform_impl()->PurgeLocalStorage();
+  blink::Platform::Current()->PurgeLocalStorage();
 }
+
+#ifdef TENTA_CHROMIUM_BUILD
+void XWalkRenderThreadObserver::OnPurgeLocalStorage() {
+//  content::RenderThreadImpl::current()->current_blink_platform_impl()->PurgeLocalStorage();
+  blink::Platform::Current()->PurgeLocalStorage();
+}
+#endif
 
 void XWalkRenderThreadObserver::OnSetOriginAccessWhitelist(
     std::string base_url,
