@@ -382,16 +382,12 @@ XWalkBrowserContext::CreateRequestContextForStoragePartition(
 #endif
 }
 
-net::URLRequestContextGetter* XWalkBrowserContext::CreateMediaRequestContext() {
-  return url_request_getter_.get();
-}
-
 net::URLRequestContextGetter*
 XWalkBrowserContext::CreateMediaRequestContextForStoragePartition(const base::FilePath& partition_path,
-    const base::FilePath& partition_path,
-    bool in_memory) {
+                                                                  bool in_memory) {
 #if defined(OS_ANDROID)
   PartitionPathContextGetterMap::iterator iter = context_getters_.find(partition_path.value());
+  return iter->second.get();
 #else
   PartitionPathContextGetterMap::iterator iter =
   context_getters_.find(partition_path.value());

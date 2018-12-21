@@ -462,19 +462,15 @@ bool XWalkContentBrowserClient::CanCreateWindow(const GURL& opener_url,
 
 void XWalkContentBrowserClient::GetStoragePartitionConfigForSite(content::BrowserContext* browser_context,
                                                                  const GURL& site, bool can_be_default,
-    const GURL& site,
-    bool can_be_default,
-    std::string* partition_domain,
+                                                                 std::string* partition_domain,
                                                                  std::string* partition_name, bool* in_memory) {
-    bool* in_memory) {
   *in_memory = false;
   partition_domain->clear();
   partition_name->clear();
-  partition_domain->clear();
 
 #if !defined(OS_ANDROID)
   if (site.SchemeIs(application::kApplicationScheme))
-    *partition_domain = site.host();
+  *partition_domain = site.host();
 #endif
 }
 
@@ -577,7 +573,6 @@ void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
     mojo::ScopedMessagePipeHandle interface_pipe) {
   if (!frame_interfaces_) {
     frame_interfaces_ = std::make_unique<service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();
-    service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();
     ExposeInterfacesToFrame(frame_interfaces_.get());
   }
 
