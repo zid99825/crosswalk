@@ -10,3 +10,6 @@
 [submodule "third_party/tenta/crosswalk_extensions"]
 	path = third_party/tenta/crosswalk_extensions
 	url = git@bitbucket.org:mikandi/crosswalk-extensions.git
+[submodule "third_party/tenta/mimicvpn"]
+	path = third_party/tenta/mimicvpn
+	url = git@bitbucket.org:mikandi/chromium-mimicvpn.git

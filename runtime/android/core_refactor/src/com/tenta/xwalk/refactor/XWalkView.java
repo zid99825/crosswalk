@@ -33,6 +33,7 @@ import android.net.http.SslCertificate;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -67,6 +68,7 @@ import org.chromium.base.CommandLine;
 import org.chromium.content.browser.ContentViewCore;
 //TODO(iotto) : Maybe fix!
 //import org.xwalk.core.internal.extension.BuiltinXWalkExtensions;
+import org.chromium.net.NetworkChangeNotifier;
 
 /**
  * <p>
@@ -2086,5 +2088,24 @@ public class XWalkView extends android.widget.FrameLayout {
         storagePartition = newPartition;
         mContent.setStoragePartition(storagePartition);
         
+    }
+    
+    // Notify network change
+    public static void forceConnectivityState(boolean networkAvailable) {
+        org.chromium.base.Log.d("iotto", "forceConnectivityState %b, isInitialized=%b", networkAvailable,
+                NetworkChangeNotifier.isInitialized());
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            if (NetworkChangeNotifier.isInitialized())
+                NetworkChangeNotifier.forceConnectivityState(networkAvailable);
+        } else {
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    if (NetworkChangeNotifier.isInitialized()) {
+                        NetworkChangeNotifier.forceConnectivityState(networkAvailable);
+                    }
+                }
+            });
+        }
     }
 }

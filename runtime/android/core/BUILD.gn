@@ -34,6 +34,7 @@ android_library("xwalk_core_java") {
       "//xwalk/third_party/tenta/meta_fs/java:meta_fs_java",
       "//xwalk/third_party/tenta/chromium_cache:chromium_cache_java",
       "//xwalk/third_party/tenta/crosswalk_extensions/java:crosswalk_extensions_java",
+      "//xwalk/third_party/tenta/mimicvpn/java:mimicvpn_java",
     ]
   } else {
     deps += [
