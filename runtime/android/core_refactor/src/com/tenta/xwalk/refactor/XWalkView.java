@@ -995,6 +995,7 @@ public class XWalkView extends android.widget.FrameLayout {
     }
 
     /**
+     * TODO(iotto): Remove, not used!
      * Save navigation history for ID to db
      * 
      * @param id Id for history (zone/location/tab)
@@ -1011,6 +1012,7 @@ public class XWalkView extends android.widget.FrameLayout {
     }
 
     /**
+     * TODO(iotto): Remove, not used!
      * Restore navigation history for Id from sqlite db
      * 
      * @param id Id for history (zone/location/tab)
@@ -1041,6 +1043,7 @@ public class XWalkView extends android.widget.FrameLayout {
     }
 
     /**
+     * TODO(iotto): Remove, not used!
      * Push old style (stored on Java side) navigation history to new encrypted db
      * 
      * @param state Old state returned by @see saveState
@@ -1059,6 +1062,7 @@ public class XWalkView extends android.widget.FrameLayout {
     }
 
     /**
+     * TODO(iotto): Remove, not used!
      * Delete navigation history for Id
      * 
      * @param id Id for history (zone/location/tab)
@@ -1075,6 +1079,7 @@ public class XWalkView extends android.widget.FrameLayout {
     }
 
     /**
+     * TODO(iotto): Remove, not used!
      * Rekey navigation history database. Change encryption key
      * 
      * @param oldKey Old Sqlite db encryption key

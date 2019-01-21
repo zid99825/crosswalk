@@ -71,6 +71,8 @@ class XWalkBrowserContext
   content::ResourceContext* GetResourceContext() override;
   content::BrowserPluginGuestManager* GetGuestManager() override;
   storage::SpecialStoragePolicy* GetSpecialStoragePolicy() override;
+  // Returns dom storage embedder or null
+  content::DOMStorageEmbedder* GetDomStorageEmbedder() override;
   content::PushMessagingService* GetPushMessagingService() override;
   content::SSLHostStateDelegate* GetSSLHostStateDelegate() override;
   content::PermissionManager* GetPermissionManager() override;
@@ -153,6 +155,7 @@ class XWalkBrowserContext
   std::unique_ptr<XWalkSSLHostStateDelegate> ssl_host_state_delegate_;
   std::unique_ptr<content::PermissionManager> permission_manager_;
   scoped_refptr<XWalkSpecialStoragePolicy> special_storage_policy_;
+  scoped_refptr<content::DOMStorageEmbedder> _dom_storage_embedder;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkBrowserContext);
 };

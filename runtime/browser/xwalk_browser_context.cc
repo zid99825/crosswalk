@@ -21,7 +21,9 @@
 #include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "components/user_prefs/user_prefs.h"
 #include "components/visitedlink/browser/visitedlink_master.h"
+#include "content/browser/dom_storage/dom_storage_embedder.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/dom_storage_context.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/resource_context.h"
 #include "content/public/browser/storage_partition.h"
@@ -42,6 +44,8 @@
 #include "xwalk/runtime/common/xwalk_paths.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 
+#include "meta_logging.h"
+
 #if defined(OS_ANDROID)
 #include "base/strings/string_split.h"
 #elif defined(OS_WIN)
@@ -50,6 +54,12 @@
 #include "base/nix/xdg_util.h"
 #elif defined(OS_MACOSX)
 #include "base/base_paths_mac.h"
+#endif
+
+#ifdef TENTA_CHROMIUM_BUILD
+#include "tenta_local_storage.h"
+
+using tenta::ext::TentaLocalStorage;
 #endif
 
 using content::BrowserThread;
@@ -172,6 +182,7 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
 #if !defined(OS_ANDROID)
   XWalkContentSettings::GetInstance()->Init();
 #endif
+
 }
 
 #if !defined(OS_ANDROID)
@@ -239,6 +250,18 @@ storage::SpecialStoragePolicy* XWalkBrowserContext::GetSpecialStoragePolicy() {
 //
 //  LOG(INFO) << "iotto " << __func__;
 //  return NULL;
+}
+
+content::DOMStorageEmbedder* XWalkBrowserContext::GetDomStorageEmbedder() {
+  if (!_dom_storage_embedder) {
+#ifdef TENTA_CHROMIUM_BUILD
+    TentaLocalStorage* instance = TentaLocalStorage::GetInstance();
+    _dom_storage_embedder = instance->GetDOMStorageEmbedder();
+#else
+    _dom_storage_embedder = new content::DOMStorageEmbedder();
+#endif
+  }
+  return _dom_storage_embedder.get();
 }
 
 content::PushMessagingService* XWalkBrowserContext::GetPushMessagingService() {
@@ -309,6 +332,10 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
       protocol_handlers,
       std::move(request_interceptors));
   resource_context_->set_url_request_context_getter(url_request_getter_.get());
+
+  TENTA_LOG_NET(ERROR) << "iotto " << __func__ << " SetSaveSessionStorageOnDisk";
+//  content::BrowserContext::GetDefaultStoragePartition(this)->GetDOMStorageContext()->SetSaveSessionStorageOnDisk();
+
   return url_request_getter_.get();
 }
 

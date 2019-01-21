@@ -69,6 +69,7 @@
 #include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
 
 #include "tenta_history_store.h"
+#include "tenta_local_storage.h"
 #include "browser/tenta_tab_model.h"
 
 using content::BrowserContext;
@@ -76,6 +77,7 @@ using content::RenderProcessHost;
 
 using namespace tenta::ext;
 namespace metafs = ::tenta::fs;
+
 #endif  // #ifdef TENTA_CHROMIUM_BUILD
 
 #include "meta_logging.h"
@@ -265,8 +267,9 @@ void XWalkContent::SetSaveFormData(bool enabled) {
 XWalkContent::~XWalkContent() {
   XWalkContentLifecycleNotifier::OnXWalkViewDestroyed();
 #ifdef TENTA_CHROMIUM_BUILD
+  // TODO(iotto): Ugly as f.., refactor this!
   TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
-  h_store->SetController(reinterpret_cast<intptr_t>(this), nullptr);
+  h_store->SetWebContents(reinterpret_cast<intptr_t>(this), nullptr);
 
   TentaTabModel * tab_model = TentaTabModelFactory::GetForContext(web_contents_->GetBrowserContext());
   if ( tab_model ) {
@@ -330,7 +333,7 @@ void XWalkContent::SetJavaPeers(
   render_view_host_ext_.reset(new XWalkRenderViewHostExt(web_contents_.get()));
 #ifdef TENTA_CHROMIUM_BUILD
   TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
-  h_store->SetController(reinterpret_cast<intptr_t>(this), &(web_contents_->GetController()));
+  h_store->SetWebContents(reinterpret_cast<intptr_t>(this), web_contents_.get());
 
   // TODO(iotto): Create tentaSessionStore
 #endif
@@ -395,6 +398,7 @@ ScopedJavaLocalRef<jstring> XWalkContent::DevToolsAgentId(JNIEnv* env, jobject o
 }
 
 void XWalkContent::Destroy(JNIEnv* env, jobject obj) {
+  TENTA_LOG_NET(INFO) << "iotto  !! " << __func__;
 #if defined(TENTA_CHROMIUM_BUILD)
   ::tenta::fs::cache::MetaCacheBackend* backend = ::tenta::fs::cache::MetaCacheBackend::GetInstance();
   backend->FlushBuffer();
@@ -742,6 +746,7 @@ jint XWalkContent::SaveHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
     return ERR_OUT_MEMORY;
   }
 
+
   WriteToPickle(*web_contents_, pickle.get());
 
   scoped_refptr<MetaDb> db;
@@ -897,12 +902,8 @@ void XWalkContent::SetStoragePartition(JNIEnv* env, const JavaParamRef<jobject>&
 
   render_view_host_ext_->PurgeLocalStorage();
 
-  content::BrowserContext* browser_context = web_contents_->GetBrowserContext();
-  storage::SpecialStoragePolicy* ss_policy = browser_context->GetSpecialStoragePolicy();
-
-  if (ss_policy != nullptr) {
-    ss_policy->SetEmbedderPrefix(storage_partition);
-  }
+  TentaLocalStorage* instance = TentaLocalStorage::GetInstance();
+  instance->SetDOMPrefix(storage_partition);
 #endif
 }
 
