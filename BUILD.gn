@@ -436,7 +436,9 @@ source_set("xwalk_runtime") {
       "//xwalk/third_party/tenta/meta_fs",
       "//xwalk/third_party/tenta/chromium_cache",
       "//xwalk/third_party/tenta/crosswalk_extensions",
+      "//xwalk/third_party/tenta/mimicvpn",
     ]
+    public_deps = [ "//xwalk/third_party/tenta/mimicvpn:mimicvpn_src" ]
   } else {
     deps += [
 #       "//xwalk/runtime/android/empty_tenta",
