@@ -145,8 +145,20 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     // Reference to the active mNativeContent pointer while it is active use
     // (ie before it is destroyed).
     private XWalkCleanupReference mXWalkCleanupReference;
+    
+    private final int zoneId;
+    private final int tabId;
 
+    // orig xwalk
     public XWalkContent(Context context, XWalkView xwView) {
+        this(context, xwView, 0, 0);
+    }
+    
+    // Tenta tailored
+    public XWalkContent(Context context, XWalkView xwView,final int zoneId, final int tabId) {
+        this.zoneId = zoneId;
+        this.tabId = tabId;
+
         // Initialize the WebContensDelegate.
         mXWalkView = xwView;
         mViewContext = mXWalkView.getContext();
@@ -1527,6 +1539,16 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
             }
         };
 
+    }
+    
+    @CalledByNative
+    public int getZoneId() { 
+        return zoneId;
+    }
+    
+    @CalledByNative
+    public int getTabId() {
+        return tabId;
     }
     
     private native long nativeInit();

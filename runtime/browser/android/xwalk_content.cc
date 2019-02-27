@@ -66,6 +66,8 @@
 
 #include "tenta_history_store.h"
 #include "browser/tenta_tab_model.h"
+#include "browser/tenta_tab_history.h"
+#include "common/tenta_zone_tab_id.h"
 
 using namespace tenta::ext;
 namespace metafs = ::tenta::fs;
@@ -230,7 +232,8 @@ XWalkContent* XWalkContent::FromWebContents(content::WebContents* web_contents) 
 
 XWalkContent::XWalkContent(std::unique_ptr<content::WebContents> web_contents)
     : web_contents_(std::move(web_contents)),
-      tab_id(base::Time::Now().ToInternalValue()) {
+      _zone_id(0),
+      _tab_id(0) {
   xwalk_autofill_manager_.reset(new XWalkAutofillManager(web_contents_.get()));
   XWalkContentLifecycleNotifier::OnXWalkViewCreated();
 }
@@ -258,15 +261,10 @@ void XWalkContent::SetSaveFormData(bool enabled) {
 XWalkContent::~XWalkContent() {
   XWalkContentLifecycleNotifier::OnXWalkViewDestroyed();
 #ifdef TENTA_CHROMIUM_BUILD
+  // TODO(iotto): Remove this, deprecated
   TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
   h_store->SetController(reinterpret_cast<intptr_t>(this), nullptr);
 
-  TentaTabModel * tab_model = TentaTabModelFactory::GetForContext(web_contents_->GetBrowserContext());
-  if ( tab_model ) {
-    tab_model->RemoveTab(tab_id);
-  } else {
-    TENTA_LOG_NET(ERROR) << __func__ << " NULL_tab_model";
-  }
 #endif
 }
 
@@ -288,18 +286,21 @@ void XWalkContent::SetJavaPeers(
   XWalkContentsIoThreadClientImpl::RegisterPendingContents(web_contents_.get());
 
 #ifdef TENTA_CHROMIUM_BUILD
+  _zone_id = Java_XWalkContent_getZoneId(env, obj);
+  _tab_id = Java_XWalkContent_getTabId(env, obj);
+
+  TentaTabModel::NewTabForWebContents(web_contents_.get(), TentaZoneTabID(_zone_id, _tab_id));
+
   // Net Error handler on client side
   TentaNetErrorClient::CreateForWebContents(web_contents_.get());
   TentaNetErrorClient::FromWebContents(web_contents_.get())->SetListener(this);
 
-  // new tab created notify tabModel
-  // TODO(iotto) : Have a TabId
-  TentaTabModel * tab_model = TentaTabModelFactory::GetForContext(web_contents_->GetBrowserContext());
-  if ( tab_model ) {
-    tab_model->AddTab(tab_id, web_contents_.get());
-  } else {
-    TENTA_LOG_NET(ERROR) << __func__ << " NULL_tab_model";
-  }
+  TentaTabHistory::CreateForWebContents(web_contents_.get());
+
+#else
+  // dummy call to avoid compiler warning
+  Java_XWalkContent_getZoneId(env, obj);
+  Java_XWalkContent_getTabId(env, obj);
 #endif // TENTA_CHROMIUM_BUILD
 
   // XWalk does not use disambiguation popup for multiple targets.

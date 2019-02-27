@@ -74,6 +74,7 @@ android_library("xwalk_refactor_java") {
     "src/com/tenta/xwalk/refactor/XWalkView.java",
     "src/com/tenta/xwalk/refactor/XWalkViewDatabase.java",
     "src/com/tenta/xwalk/refactor/XWalkViewDelegate.java",
+    "src/com/tenta/xwalk/refactor/XWalkViewInitializer.java",
     "src/com/tenta/xwalk/refactor/XWalkWebChromeClient.java",
     "src/com/tenta/xwalk/refactor/XWalkWebContentsDelegate.java",
     "src/com/tenta/xwalk/refactor/XWalkWebContentsDelegateAdapter.java",

@@ -47,6 +47,9 @@
 
 // tenta
 #include "browser/tenta_tab_model.h"
+#include "browser/tenta_tab.h"
+#include "common/tenta_zone_tab_id.h"
+
 using namespace tenta::ext;
 using content::DevToolsAgentHost;
 using content::WebContents;
@@ -206,11 +209,11 @@ class ClientProxy :
 class TabProxyDelegate :
     public content::DevToolsExternalAgentProxyDelegate {
  public:
-  explicit TabProxyDelegate(TentaTabModel::TabItem* tab)
-      : tab_id_(tab->tab_id()),
+  explicit TabProxyDelegate(TentaTab* tab, content::BrowserContext* context)
+      : _tab_id(tab->zone_tab_id()),
         title_(tab->GetTitle()),
         url_(tab->GetURL()),
-        _tab_model(tab->GetParent()),
+        _browser_context(context),
         agent_host_(tab->web_contents() ? DevToolsAgentHost::GetOrCreateFor(tab->web_contents()) : nullptr) {
   }
 
@@ -260,6 +263,7 @@ class TabProxyDelegate :
   }
 
   bool Activate() override {
+    TENTA_LOG_NET(WARNING) << __func__ << " TODO Implement!";
 //    TabModel* model;
 //    int index;
 //    if (!FindTab(&model, &index))
@@ -275,6 +279,7 @@ class TabProxyDelegate :
   }
 
   bool Close() override {
+    TENTA_LOG_NET(WARNING) << __func__ << " TODO Implement!";
 //    TabModel* model;
 //    int index;
 //    if (!FindTab(&model, &index))
@@ -304,7 +309,7 @@ class TabProxyDelegate :
   void MaterializeAgentHost() {
     if (agent_host_)
       return;
-    TentaTabModel::TabItem* tab;
+    TentaTab* tab;
     if (!FindTab(&tab))
       return;
     WebContents* web_contents = tab->web_contents();
@@ -313,12 +318,13 @@ class TabProxyDelegate :
     agent_host_ = DevToolsAgentHost::GetOrCreateFor(web_contents);
   }
 
-  bool FindTab(TentaTabModel::TabItem** tab_out) const {
-    if ( _tab_model ) {
-      for (TentaTabModel::const_iterator iter = _tab_model->begin(); iter != _tab_model->end(); ++iter) {
-        TentaTabModel::TabItem* tab = iter->get();
+  bool FindTab(TentaTab** tab_out) const {
+    TentaTabModel* tab_model = TentaTabModelFactory::GetForContext(_browser_context);
+    if (tab_model) {
+      for (TentaTabModel::const_iterator iter = tab_model->begin(); iter != tab_model->end(); ++iter) {
+        TentaTab* tab = iter->second;
 
-        if ( tab->tab_id() == tab_id_ ) {
+        if (tab->zone_tab_id() == _tab_id) {
           *tab_out = tab;
           return true;
         }
@@ -327,24 +333,24 @@ class TabProxyDelegate :
     return false;
   }
 
-  const int tab_id_;
+  TentaZoneTabID _tab_id;
   const std::string title_;
   const GURL url_;
-  base::WeakPtr<TentaTabModel> _tab_model;
+  content::BrowserContext* _browser_context;
   scoped_refptr<DevToolsAgentHost> agent_host_;
-  std::map<content::DevToolsExternalAgentProxy*, std::unique_ptr<ClientProxy>> proxies_;DISALLOW_COPY_AND_ASSIGN(TabProxyDelegate)
-  ;
+  std::map<content::DevToolsExternalAgentProxy*, std::unique_ptr<ClientProxy>> proxies_;
+  DISALLOW_COPY_AND_ASSIGN(TabProxyDelegate);
 };
 
 /**
  *
  */
-scoped_refptr<DevToolsAgentHost> DevToolsAgentHostForTab(TentaTabModel::TabItem* tab) {
+scoped_refptr<DevToolsAgentHost> DevToolsAgentHostForTab(TentaTab* tab, content::BrowserContext* context) {
   scoped_refptr<DevToolsAgentHost> result = tab->GetDevToolsAgentHost();
   if (result)
     return result;
 
-  result = DevToolsAgentHost::Forward(base::IntToString(tab->tab_id()), base::MakeUnique<TabProxyDelegate>(tab));
+  result = DevToolsAgentHost::Forward(tab->zone_tab_id().ToString(), base::MakeUnique<TabProxyDelegate>(tab, context));
   tab->SetDevToolsAgentHost(result);
   return result;
 }
@@ -392,12 +398,12 @@ content::DevToolsAgentHost::List XWalkDevToolsManagerDelegate::RemoteDebuggingTa
   TentaTabModel* tab_model = TentaTabModelFactory::GetForContext(_browser_context);
   if (tab_model) {
     for (TentaTabModel::const_iterator iter = tab_model->begin(); iter != tab_model->end(); ++iter) {
-      TentaTabModel::TabItem* tab = iter->get();
+      TentaTab* tab = iter->second;
 
       if (tab->web_contents()) {
         tab_web_contents.insert(tab->web_contents());
       }
-      result.push_back(DevToolsAgentHostForTab(tab));
+      result.push_back(DevToolsAgentHostForTab(tab, _browser_context));
     }
   } else {
     TENTA_LOG_NET(ERROR) << __func__ << " NULL_tab_model";

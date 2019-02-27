@@ -248,9 +248,9 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
             }
         } else {
 */
-            for (String library : MANDATORY_LIBRARIES) {
-                System.loadLibrary(library);
-            }
+//            for (String library : MANDATORY_LIBRARIES) {
+//                System.loadLibrary(library);
+//            }
 //        }
 
         // Load libraries what is wrote in NativeLibraries.java at compile time. It may duplicate

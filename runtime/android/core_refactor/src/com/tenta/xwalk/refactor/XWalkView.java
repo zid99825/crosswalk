@@ -327,6 +327,17 @@ public class XWalkView extends android.widget.FrameLayout {
         initXWalkContent();
     }
 
+    // Tenta specific constructor
+    public XWalkView(Context context, final int zoneId, final int tabId) {
+        super(context, null);
+
+        checkThreadSafety();
+        mContext = getContext();
+
+        mXWalkHitTestResult = new XWalkHitTestResult();
+        initXWalkContent(zoneId, tabId);
+    }
+    
     // A View is usually in edit mode when displayed within a developer tool, like Android Studio.
     // So isInEditMode() should be used inside the corresponding XWalkView constructor.
     /**
@@ -405,19 +416,45 @@ public class XWalkView extends android.widget.FrameLayout {
         mContent.supplyContentsForPopup(newXWalkView == null ? null : newXWalkView.mContent);
     }
 
+    protected void initXWalkContent(final int zoneId, final int tabId) {
+        mIsHidden = false;
+        mContent = new XWalkContent(mContext, this, zoneId, tabId);
+
+        // If XWalkView was created in onXWalkReady(), and the activity which owns
+        // XWalkView was destroyed, pauseTimers() will be invoked. Reentry the activity,
+        // resumeTimers() will not be invoked since onResume() was invoked before
+        // XWalkView creation. So to invoke resumeTimers() explicitly here.
+        mContent.resumeTimers();
+        // Set default XWalkClientImpl.
+        setXWalkClient(new XWalkClient(this));
+        // Set default XWalkWebChromeClient and DownloadListener. The default actions
+        // are provided via the following clients if special actions are not needed.
+        setXWalkWebChromeClient(new XWalkWebChromeClient());
+
+        // Set with internal implementation. Could be overwritten by embedders'
+        // setting.
+        setUIClient(new XWalkUIClient(this));
+        setResourceClient(new XWalkResourceClient());
+
+        setDownloadListener(new com.tenta.xwalk.refactor.XWalkDownloadListenerImpl(mContext));
+        setNavigationHandler(new XWalkNavigationHandlerImpl(mContext));
+        setNotificationService(new XWalkNotificationServiceImpl(mContext, this));
+
+    }
+    
     protected void initXWalkContent() {
-        XWalkViewDelegate.init(null, mContext);
-
-        if (mContext instanceof Activity) {
-            ApplicationStatusManager.informActivityStarted((Activity) mContext);
-        }
-
-        // TODO(iotto) : Fix or drop extensions
-//        if (!CommandLine.getInstance().hasSwitch("disable-xwalk-extensions")) {
-//            BuiltinXWalkExtensions.load(mContext);
-//        } else {
-            XWalkPreferences.setValue(XWalkPreferences.ENABLE_EXTENSIONS, false);
+//        XWalkViewDelegate.init(null, mContext);
+//
+//        if (mContext instanceof Activity) {
+//            ApplicationStatusManager.informActivityStarted((Activity) mContext);
 //        }
+
+//        // TODO(iotto) : Fix or drop extensions
+////        if (!CommandLine.getInstance().hasSwitch("disable-xwalk-extensions")) {
+////            BuiltinXWalkExtensions.load(mContext);
+////        } else {
+//            XWalkPreferences.setValue(XWalkPreferences.ENABLE_EXTENSIONS, false);
+////        }
 
         mIsHidden = false;
         mContent = new XWalkContent(mContext, this);
@@ -443,17 +480,17 @@ public class XWalkView extends android.widget.FrameLayout {
         setNavigationHandler(new XWalkNavigationHandlerImpl(mContext));
         setNotificationService(new XWalkNotificationServiceImpl(mContext, this));
 
-        XWalkPathHelper.initialize();
-        XWalkPathHelper.setCacheDirectory(mContext.getApplicationContext().getCacheDir().getPath());
-
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)
-                || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            File extCacheDir = mContext.getApplicationContext().getExternalCacheDir();
-            if (null != extCacheDir) {
-                XWalkPathHelper.setExternalCacheDirectory(extCacheDir.getPath());
-            }
-        }
+//        XWalkPathHelper.initialize();
+//        XWalkPathHelper.setCacheDirectory(mContext.getApplicationContext().getCacheDir().getPath());
+//
+//        String state = Environment.getExternalStorageState();
+//        if (Environment.MEDIA_MOUNTED.equals(state)
+//                || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+//            File extCacheDir = mContext.getApplicationContext().getExternalCacheDir();
+//            if (null != extCacheDir) {
+//                XWalkPathHelper.setExternalCacheDirectory(extCacheDir.getPath());
+//            }
+//        }
     }
 
     /**
