@@ -260,12 +260,6 @@ void XWalkContent::SetSaveFormData(bool enabled) {
 
 XWalkContent::~XWalkContent() {
   XWalkContentLifecycleNotifier::OnXWalkViewDestroyed();
-#ifdef TENTA_CHROMIUM_BUILD
-  // TODO(iotto): Remove this, deprecated
-  TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
-  h_store->SetController(reinterpret_cast<intptr_t>(this), nullptr);
-
-#endif
 }
 
 void XWalkContent::SetJavaPeers(
@@ -322,10 +316,6 @@ void XWalkContent::SetJavaPeers(
   web_contents_->SetDelegate(web_contents_delegate_.get());
 
   render_view_host_ext_.reset(new XWalkRenderViewHostExt(web_contents_.get()));
-#ifdef TENTA_CHROMIUM_BUILD
-  TentaHistoryStore* h_store = TentaHistoryStore::GetInstance();
-  h_store->SetController(reinterpret_cast<intptr_t>(this), &(web_contents_->GetController()));
-#endif
 }
 
 base::android::ScopedJavaLocalRef<jobject> XWalkContent::GetWebContents(JNIEnv* env, jobject obj) {
