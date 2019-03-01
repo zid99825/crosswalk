@@ -576,7 +576,7 @@ static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, const Jav
   for (size_t i = 0; i < file_path_str.size(); ++i) {
     GURL url(file_path_str[i]);
     if (!url.is_valid()) {
-      TENTA_LOG_NET(WARNING) << "iotto " << __func__ << " invalid_url=" << file_path_str[i];
+      TENTA_LOG_NET(WARNING) << __func__ << " invalid_url=" << file_path_str[i];
       continue;
     }
     base::FilePath path(
@@ -588,7 +588,7 @@ static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, const Jav
     file_info.file_path = path;
     if (!display_name_str[i].empty())
       file_info.display_name = display_name_str[i];
-    TENTA_LOG_NET(INFO) << "iotto " << __func__ << " new_file=" << path;
+    TENTA_LOG_NET(INFO) << __func__ << " new_file=" << path;
     files.push_back(file_info);
   }
   FileChooserParams::Mode mode = static_cast<content::FileChooserParams::Mode>(mode_flags);
@@ -599,7 +599,7 @@ static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, const Jav
 //  } else {
 //    mode = FileChooserParams::Open;
 //  }
-  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " mode=" << mode << " files_cnt=" << files.size() << " file paths="
+  TENTA_LOG_NET(INFO) << __func__ << " mode=" << mode << " files_cnt=" << files.size() << " file paths="
                       << base::JoinString(file_path_str, ":");
   rfh->FilesSelectedInChooser(files, mode);
 }
