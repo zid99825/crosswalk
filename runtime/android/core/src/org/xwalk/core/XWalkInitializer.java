@@ -254,7 +254,6 @@ public class XWalkInitializer {
 
         @Override
         public void onActivateFailed() {
-            org.chromium.base.Log.d("iotto", "onActivateFailed");
             mInitListener.onXWalkInitFailed();
         }
 

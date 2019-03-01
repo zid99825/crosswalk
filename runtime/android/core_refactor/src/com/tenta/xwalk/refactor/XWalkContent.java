@@ -1512,18 +1512,15 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
     
     public void setOverlayVideoMode(boolean enabled) {
-//        org.chromium.base.Log.d("iotto", "setOverlayVideoMode");
         if (mContentViewRenderView != null) {
             mContentViewRenderView.setOverlayVideoMode(enabled);
         }
     }
     
     public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
-//        org.chromium.base.Log.d("iotto", "getContentVideoViewEmbedder");
         return new ActivityContentVideoViewEmbedder((Activity) mViewContext) {
             @Override
             public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
-//                org.chromium.base.Log.d("iotto", "enterFullscreenVideo");
                 super.enterFullscreenVideo(view, isVideoLoaded);
                 if (mContentViewRenderView != null) {
                     mContentViewRenderView.setOverlayVideoMode(true);
@@ -1532,7 +1529,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
             @Override
             public void exitFullscreenVideo() {
-//                org.chromium.base.Log.d("iotto", "exitFullscreenVideo");
                 super.exitFullscreenVideo();
                 if (mContentViewRenderView != null) {
                     mContentViewRenderView.setOverlayVideoMode(false);
