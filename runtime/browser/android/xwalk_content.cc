@@ -611,7 +611,7 @@ int XWalkContent::OpenHistoryFile(JNIEnv* env, const JavaParamRef<jstring>& id, 
 #if TENTA_LOG_ENABLE == 1
     LOG(ERROR) << "OpenDb failed";
 #endif
-    return mng->error();
+    return result;
   }
 
   if (dbOut.get() == nullptr) {
