@@ -2112,7 +2112,6 @@ public class XWalkView extends android.widget.FrameLayout {
     
     // Notify network change
     public static void forceConnectivityState(boolean networkAvailable) {
-                NetworkChangeNotifier.isInitialized());
         if (Looper.myLooper() == Looper.getMainLooper()) {
             if (NetworkChangeNotifier.isInitialized())
                 NetworkChangeNotifier.forceConnectivityState(networkAvailable);
