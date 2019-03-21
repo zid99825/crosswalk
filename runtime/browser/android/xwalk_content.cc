@@ -96,7 +96,7 @@ const void* kXWalkContentUserDataKey = &kXWalkContentUserDataKey;
 #ifdef TENTA_CHROMIUM_BUILD
 // database name for history
 static const std::string cHistoryDb = "c22b0c42-90d5-4a1e-9565-79cbab3b22dd";
-static const int cHistoryBlockSize = ::tenta::fs::MetaDb::BLOCK_64K;
+static const int cHistoryBlockSize = ::tenta::fs::MetaBlockInfo::BLOCK_64K;
 
 
 // TODO make a template AutoCallClose
