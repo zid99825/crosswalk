@@ -13,6 +13,8 @@
 namespace tenta {
 
 #if TENTA_LOG_ENABLE
+#define TENTA_OK_TO_LOG() true
+
 #if TENTA_LOG_DB_ENABLE == 1
 #define TENTA_DB_OK_TO_LOG() true
 #else
@@ -50,6 +52,7 @@ namespace tenta {
 #endif
 
 #else // TENTA_LOG_ENABLE
+#define TENTA_OK_TO_LOG() false
 #define TENTA_DB_OK_TO_LOG() false
 #define TENTA_NET_OK_TO_LOG() false
 #define TENTA_CACHE_OK_TO_LOG() false
@@ -57,6 +60,9 @@ namespace tenta {
 #define TENTA_HISTORY_OK_TO_LOG() false
 #define TENTA_GUI_OK_TO_LOG() false
 #endif // TENTA_LOG_ENABLE
+
+#define TENTA_LOG(severity) \
+    LAZY_STREAM(LOG_STREAM(severity), TENTA_OK_TO_LOG())
 
 #define TENTA_LOG_DB(severity) \
     LAZY_STREAM(LOG_STREAM(severity), TENTA_DB_OK_TO_LOG())
