@@ -190,12 +190,13 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 
     std::unique_ptr<net::ExternalEstimateProvider> external_estimate_provider;
     std::map<std::string, std::string> network_quality_estimator_params;
-    variations::GetVariationParams(kNetworkQualityEstimatorFieldTrialName,
-                                   &network_quality_estimator_params);
-
-    LOG(INFO) << "iotto " << __func__ << " params_size=" << network_quality_estimator_params.size();
-
-    network_quality_estimator_params["effective_connection_type_algorithm"] = "TransportRTTOrDownstreamThroughput";
+    // TODO(iotto): Setup estimator network params
+//    variations::GetVariationParams(kNetworkQualityEstimatorFieldTrialName,
+//                                   &network_quality_estimator_params);
+//
+//    LOG(INFO) << "iotto " << __func__ << " params_size=" << network_quality_estimator_params.size();
+//
+//    network_quality_estimator_params["effective_connection_type_algorithm"] = "TransportRTTOrDownstreamThroughput";
 
     _network_quality_estimator.reset(
         new net::NetworkQualityEstimator(
