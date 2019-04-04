@@ -69,11 +69,22 @@ namespace tenta_cache = tenta::fs::cache;
 #include "xwalk/runtime/browser/android/xwalk_request_interceptor.h"
 #endif
 
+#include "net/nqe/network_quality_estimator.h"
+#include "net/nqe/network_quality_estimator_params.h"
+#include "net/nqe/rtt_throughput_estimates_observer.h"
+#include "components/variations/variations_associated_data.h"
+#include "content/public/browser/network_quality_observer_factory.h"
+
 using content::BrowserThread;
 
 namespace xwalk {
 
 namespace {
+
+// Field trial for network quality estimator. Seeds RTT and downstream
+// throughput observations with values that correspond to the connection type
+// determined by the operating system.
+const char kNetworkQualityEstimatorFieldTrialName[] = "NetworkQualityEstimator";
 
 // TODO(rakuco): should Crosswalk's release cycle ever align with Chromium's,
 // we should use Chromium's Certificate Transparency policy and stop ignoring
@@ -176,10 +187,28 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     url_request_context_.reset(new net::URLRequestContext());
     network_delegate_.reset(new RuntimeNetworkDelegate);
     url_request_context_->set_network_delegate(network_delegate_.get());
+
+    std::unique_ptr<net::ExternalEstimateProvider> external_estimate_provider;
+    std::map<std::string, std::string> network_quality_estimator_params;
+    variations::GetVariationParams(kNetworkQualityEstimatorFieldTrialName,
+                                   &network_quality_estimator_params);
+
+    LOG(INFO) << "iotto " << __func__ << " params_size=" << network_quality_estimator_params.size();
+
+    network_quality_estimator_params["effective_connection_type_algorithm"] = "TransportRTTOrDownstreamThroughput";
+
+    _network_quality_estimator.reset(
+        new net::NetworkQualityEstimator(
+            std::move(external_estimate_provider),
+            base::MakeUnique<net::NetworkQualityEstimatorParams>(network_quality_estimator_params), nullptr));
+
+    _network_quality_observer = content::CreateNetworkQualityObserver(_network_quality_estimator.get());
+
     storage_.reset(
         new net::URLRequestContextStorage(url_request_context_.get()));
 #if defined(OS_ANDROID)
     storage_->set_cookie_store(base::WrapUnique(new XWalkCookieStoreWrapper));
+    url_request_context_->set_network_quality_estimator(_network_quality_estimator.get());
 #else
     content::CookieStoreConfig cookie_config(base_path_.Append(
             application::kCookieDatabaseFilename),
@@ -207,7 +236,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
                                                  xwalk::GetUserAgent())));
 
 #ifdef TENTA_CHROMIUM_BUILD
-    std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(new tenta_cache::ChromiumCacheFactory());
+    std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(
+        new tenta_cache::ChromiumCacheFactory(_network_quality_estimator.get()));
 
     //TODO (iotto): Remove backup, needed for speed comparison
     // or use when we'll have option for native host resolver
@@ -291,6 +321,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
         ->http_auth_handler_factory();
     network_session_context.http_server_properties = url_request_context_
         ->http_server_properties();
+    network_session_context.network_quality_provider = url_request_context_->network_quality_estimator();
     network_session_params.ignore_certificate_errors =
         ignore_certificate_errors_;
 
