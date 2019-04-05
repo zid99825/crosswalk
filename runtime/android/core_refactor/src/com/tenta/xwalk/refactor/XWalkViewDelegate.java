@@ -8,16 +8,34 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
-import java.lang.StringBuilder;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
+
+import org.chromium.base.ApplicationStatus;
+import org.chromium.base.ApplicationStatusManager;
+import org.chromium.base.BuildConfig;
+import org.chromium.base.CommandLine;
+import org.chromium.base.ContextUtils;
+import org.chromium.base.LocaleUtils;
+import org.chromium.base.PathUtils;
+import org.chromium.base.ResourceExtractor;
+//import org.chromium.base.ResourceExtractor.ResourceEntry;
+import org.chromium.base.ResourceExtractor.ResourceInterceptor;
+import org.chromium.base.ThreadUtils;
+import org.chromium.base.annotations.JNINamespace;
+import org.chromium.base.library_loader.LibraryLoader;
+import org.chromium.base.library_loader.LibraryProcessType;
+import org.chromium.base.library_loader.ProcessInitException;
+import org.chromium.content.browser.BrowserStartupController;
+import org.chromium.content.browser.DeviceUtils;
+//import org.xwalk.core.internal.ResourceRewriter;
+import org.chromium.net.NetworkChangeNotifier;
+import org.chromium.net.NetworkChangeNotifierAutoDetect;
 
 import android.app.Activity;
 import android.app.Application;
@@ -27,35 +45,31 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
-import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
 import android.os.Build;
 import android.util.Log;
-import android.util.SparseArray;
-
-import org.chromium.base.ApplicationStatus;
-import org.chromium.base.ApplicationStatusManager;
-import org.chromium.base.BaseChromiumApplication;
-import org.chromium.base.CommandLine;
-import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.PathUtils;
-import org.chromium.base.ResourceExtractor;
-import org.chromium.base.LocaleUtils;
-import org.chromium.base.BuildConfig;
-//import org.chromium.base.ResourceExtractor.ResourceEntry;
-import org.chromium.base.ResourceExtractor.ResourceInterceptor;
-import org.chromium.base.ContextUtils;
-import org.chromium.base.ThreadUtils;
-import org.chromium.base.library_loader.LibraryLoader;
-import org.chromium.base.library_loader.LibraryProcessType;
-import org.chromium.base.library_loader.ProcessInitException;
-import org.chromium.content.browser.BrowserStartupController;
-import org.chromium.content.browser.DeviceUtils;
-//import org.xwalk.core.internal.ResourceRewriter;
-import org.chromium.net.NetworkChangeNotifier;
 
 @JNINamespace("xwalk")
 public class XWalkViewDelegate {
+
+    private static class XwalkRegistrationPolicy extends NetworkChangeNotifierAutoDetect.RegistrationPolicy {
+
+        public void setNetworkUsable(boolean usable) {
+            mNotifier.setNetworkUsability(usable);
+        }
+        
+        @Override
+        protected void init(NetworkChangeNotifierAutoDetect notifier) {
+            super.init(notifier);
+            // AwContentsLifecycleNotifier.addObserver(this);
+        }
+
+        @Override
+        protected void destroy() {
+        }
+
+    }
+
     private static boolean sInitialized = false;
     private static boolean sLibraryLoaded = false;
     private static boolean sLoadedByHoudini = false;
@@ -64,16 +78,15 @@ public class XWalkViewDelegate {
     private static final String XWALK_CORE_EXTRACTED_DIR = "extracted_xwalkcore";
     private static final String META_XWALK_ENABLE_DOWNLOAD_MODE = "xwalk_enable_download_mode";
     private static final String META_XWALK_DOWNLOAD_MODE = "xwalk_download_mode";
-//    private static final Method mGetAssignedPackageIdentifiersMethod;
+    // private static final Method mGetAssignedPackageIdentifiersMethod;
+    private static final XwalkRegistrationPolicy sRegistrationPolicy = new XwalkRegistrationPolicy();
 
     static {
-/*        try {
-            mGetAssignedPackageIdentifiersMethod =
-                        AssetManager.class.getMethod("getAssignedPackageIdentifiers");
-        } catch (Exception e) {
-            throw new RuntimeException("Invalid reflection", e);
-        }
-*/
+        /*
+         * try { mGetAssignedPackageIdentifiersMethod =
+         * AssetManager.class.getMethod("getAssignedPackageIdentifiers"); } catch (Exception e) {
+         * throw new RuntimeException("Invalid reflection", e); }
+         */
     }
 
     // TODO(rakuco,lincsoon): This list is also in generate_xwalk_core_library.py.
@@ -130,27 +143,28 @@ public class XWalkViewDelegate {
             }
         }
     }
-private static void displayFiles (AssetManager mgr, String path, int level) {
 
-     Log.v(TAG,"enter displayFiles("+path+")");
-    try {
-        String list[] = mgr.list(path);
-         Log.v(TAG,"L"+level+": list:"+ Arrays.asList(list));
+    private static void displayFiles(AssetManager mgr, String path, int level) {
 
-        if (list != null)
-            for (int i=0; i<list.length; ++i)
-                {
-                    if(level>=1){
-                      displayFiles(mgr, path + "/" + list[i], level+1);
-                    }else{
-                         displayFiles(mgr, list[i], level+1);
+        Log.v(TAG, "enter displayFiles(" + path + ")");
+        try {
+            String list[] = mgr.list(path);
+            Log.v(TAG, "L" + level + ": list:" + Arrays.asList(list));
+
+            if (list != null)
+                for (int i = 0; i < list.length; ++i) {
+                    if (level >= 1) {
+                        displayFiles(mgr, path + "/" + list[i], level + 1);
+                    } else {
+                        displayFiles(mgr, list[i], level + 1);
                     }
                 }
-    } catch (IOException e) {
-        Log.v(TAG,"List error: can't list" + path);
+        } catch (IOException e) {
+            Log.v(TAG, "List error: can't list" + path);
+        }
+
     }
 
-}
     public static void init(Context libContext, Context appContext) {
         if (!loadXWalkLibrary(libContext, null)) {
             throw new RuntimeException("Failed to load native library");
@@ -167,10 +181,10 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         ApplicationStatus.initialize((Application) context.getApplicationContext());
 
         // Initialize chromium resources. Assign them the correct ids in xwalk core.
-//        XWalkInternalResources.resetIds(context);
-//        ResourceRewriter.rewriteRValues(
-//            getPackageId(context.getResources(), ContextUtils.getApplicationContext().getPackageName()));
-        
+        // XWalkInternalResources.resetIds(context);
+        // ResourceRewriter.rewriteRValues(
+        // getPackageId(context.getResources(),
+        // ContextUtils.getApplicationContext().getPackageName()));
 
         // Last place to initialize CommandLine object. If you haven't initialize
         // the CommandLine object before XWalkViewContent is created, here will create
@@ -188,15 +202,15 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
 
         // Use MixedContext to initialize the ResourceExtractor, as the pak file
         // is in the library apk if in shared apk mode.
-//        ResourceExtractor.get();
+        // ResourceExtractor.get();
         ResourceExtractor.get().startExtractingResources();
 
-//        resourceExtractor.waitForCompletion();
+        // resourceExtractor.waitForCompletion();
 
-//        final AssetManager mgr = context.getApplicationContext().getAssets();
-//        displayFiles(mgr, "",0);
+        // final AssetManager mgr = context.getApplicationContext().getAssets();
+        // displayFiles(mgr, "",0);
 
-//        XWalkInternalResources.resetIds(appContext);
+        // XWalkInternalResources.resetIds(appContext);
 
         startBrowserProcess(context);
 
@@ -211,18 +225,25 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
 
         ResourceExtractor.get().waitForCompletion();
         XWalkInternalResources.resetIds(context.getApplicationContext());
-        
+
+        // TODO(iotto): See AwContentsLifecycleNotifier.java
         ThreadUtils.runOnUiThreadBlocking(new Runnable() {
             @Override
             public void run() {
                 NetworkChangeNotifier.init();
-                NetworkChangeNotifier.setAutoDetectConnectivityState(false);
+                NetworkChangeNotifier.setAutoDetectConnectivityState(sRegistrationPolicy);
             }
         });
 
         sInitialized = true;
     }
 
+    public static void setNetworkUsable(boolean usable) {
+        if ( NetworkChangeNotifier.isInitialized() ) {
+            sRegistrationPolicy.setNetworkUsable(usable);
+        }
+    }
+    
     // Keep this function to preserve backward compatibility.
     public static boolean loadXWalkLibrary(Context context) {
         return loadXWalkLibrary(context, null);
@@ -236,29 +257,28 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
 
         try {
             LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
-//            libraryLoader.ensureInitialized();
+            // libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {
         }
 
-//TODO(iotto) workarround for lint error using System.load
+        // TODO(iotto) workarround for lint error using System.load
 
-/*        if (libDir != null && sLoadedByHoudini == false) {
-            for (String library : MANDATORY_LIBRARIES) {
-                System.load(libDir + File.separator + "lib" + library + ".so");
-            }
-        } else {
-*/
-//            for (String library : MANDATORY_LIBRARIES) {
-//                System.loadLibrary(library);
-//            }
-//        }
+        /*
+         * if (libDir != null && sLoadedByHoudini == false) { for (String library :
+         * MANDATORY_LIBRARIES) { System.load(libDir + File.separator + "lib" + library + ".so"); }
+         * } else {
+         */
+        // for (String library : MANDATORY_LIBRARIES) {
+        // System.loadLibrary(library);
+        // }
+        // }
 
         // Load libraries what is wrote in NativeLibraries.java at compile time. It may duplicate
         // with System.loadLibrary("xwalkcore") above, but same library won't be loaded repeatedly.
         try {
             LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
             libraryLoader.loadNow();
-//            libraryLoader.ensureInitialized();
+            // libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {
         }
 
@@ -334,7 +354,7 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
                 && Arrays.asList(context.getAssets().list("")).contains(XWALK_PAK_NAME);
 
         ArrayList<String> resourceList = new ArrayList<String>();
-//        HashMap<String, ResourceEntry> resourceList = new HashMap<String, ResourceEntry>();
+        // HashMap<String, ResourceEntry> resourceList = new HashMap<String, ResourceEntry>();
         // code fragment from ResourceExtractor
         Locale defaultLocale = Locale.getDefault();
         String language = LocaleUtils.getUpdatedLanguageForChromium(defaultLocale.getLanguage());
@@ -446,7 +466,6 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
                     sDeviceAbi = Build.CPU_ABI;
                 }
 
-                
             } catch (NoSuchFieldError e) {
                 try {
                     Process process = Runtime.getRuntime().exec("getprop ro.product.cpu.abi");
@@ -463,24 +482,15 @@ private static void displayFiles (AssetManager mgr, String path, int level) {
         }
         return sDeviceAbi;
     }
-/*
-        public static int getPackageId(Resources resources, String packageName) {
-            try {
-                SparseArray packageIdentifiers =
-                        (SparseArray) mGetAssignedPackageIdentifiersMethod.invoke(
-                                resources.getAssets());
-                for (int i = 0; i < packageIdentifiers.size(); i++) {
-                    final String name = (String) packageIdentifiers.valueAt(i);
 
-                    if (packageName.equals(name)) {
-                        return packageIdentifiers.keyAt(i);
-                    }
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Invalid reflection", e);
-            }
-            throw new RuntimeException("Package not found: " + packageName);
-        }
-*/
+    /*
+     * public static int getPackageId(Resources resources, String packageName) { try { SparseArray
+     * packageIdentifiers = (SparseArray) mGetAssignedPackageIdentifiersMethod.invoke(
+     * resources.getAssets()); for (int i = 0; i < packageIdentifiers.size(); i++) { final String
+     * name = (String) packageIdentifiers.valueAt(i); if (packageName.equals(name)) { return
+     * packageIdentifiers.keyAt(i); } } } catch (Exception e) { throw new
+     * RuntimeException("Invalid reflection", e); } throw new RuntimeException("Package not found: "
+     * + packageName); }
+     */
     private static native boolean nativeIsLibraryBuiltForIA();
 }
