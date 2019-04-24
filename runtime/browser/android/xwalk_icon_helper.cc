@@ -8,6 +8,7 @@
 #include "base/bind.h"
 #include "base/callback.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/favicon_url.h"
 #include "third_party/skia/include/core/SkBitmap.h"
@@ -21,6 +22,7 @@ namespace xwalk {
 XWalkIconHelper::XWalkIconHelper(WebContents* web_contents)
     : content::WebContentsObserver(web_contents),
       listener_(NULL),
+      _got_first_icon(false),
       _this_weak(this) {
 }
 
@@ -48,12 +50,16 @@ void XWalkIconHelper::DidUpdateFaviconURL(
 
     switch (i->icon_type) {
       case content::FaviconURL::IconType::kFavicon:
+        if ( !_got_first_icon) {
+          // download only the first favicon
+          _got_first_icon = true;
 //        if (listener_) listener_->OnIconAvailable(i->icon_url);
         // TODO(iotto) : Ask Clinet if favicons should be downloaded
         web_contents()->DownloadImage(i->icon_url, true,  // Is a favicon
                                       0,  // No maximum size
                                       false,  // Normal cache policy
                                       base::Bind(&XWalkIconHelper::DownloadFaviconCallback, _this_weak.GetWeakPtr()));
+        }
         break;
       case content::FaviconURL::IconType::kTouchIcon:
         break;
@@ -66,6 +72,12 @@ void XWalkIconHelper::DidUpdateFaviconURL(
         break;
     }
   }
+}
+
+void XWalkIconHelper::DidFinishNavigation(content::NavigationHandle* navigation_handle) {
+  if (!navigation_handle->IsInMainFrame() || !navigation_handle->HasCommitted())
+    return;
+  _got_first_icon = false;
 }
 
 void XWalkIconHelper::DownloadFaviconCallback(

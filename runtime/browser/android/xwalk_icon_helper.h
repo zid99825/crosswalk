@@ -44,6 +44,7 @@ class XWalkIconHelper : public content::WebContentsObserver {
   // From WebContentsObserver
   void DidUpdateFaviconURL(
       const std::vector<content::FaviconURL>& candidates) override;
+  void DidFinishNavigation(content::NavigationHandle* navigation_handle) override;
 
   void DownloadFaviconCallback(
       int id,
@@ -55,6 +56,7 @@ class XWalkIconHelper : public content::WebContentsObserver {
  private:
   Listener* listener_;
 
+  bool _got_first_icon;
   base::WeakPtrFactory<XWalkIconHelper> _this_weak;
   DISALLOW_COPY_AND_ASSIGN(XWalkIconHelper);
 };
