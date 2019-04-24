@@ -62,7 +62,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     private XWalkResourceClient mXWalkResourceClient;
     private XWalkClient mXWalkClient;
     private XWalkWebChromeClient mXWalkWebChromeClient;
-    private Bitmap mFavicon;
+//    private Bitmap mFavicon;
     private XWalkDownloadListener mDownloadListener;
     private XWalkFindListener mFindListener;
     private InterceptNavigationDelegate mInterceptNavigationDelegate;
@@ -740,9 +740,9 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
                 privateKey);
     }
 
-    public Bitmap getFavicon() {
-        return mFavicon;
-    }
+//    public Bitmap getFavicon() {
+//        return mFavicon;
+//    }
 
     // Used by the native peer to set/reset a weak ref to the native peer.
     @CalledByNative
@@ -975,7 +975,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     @CalledByNative
     public void onReceivedIcon(String url, Bitmap icon) {
         mXWalkUIClient.onReceivedIcon(mXWalkView, url, icon);
-        mFavicon = icon;
+//        mFavicon = icon;
     }
 
     // --------------------------------------------------------------------------------------------

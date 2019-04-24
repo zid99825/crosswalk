@@ -645,11 +645,11 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mContentsClientBridge.onStopLoading();
     }
 
-    public Bitmap getFavicon() {
-        if (mNativeContent == 0)
-            return null;
-        return mContentsClientBridge.getFavicon();
-    }
+//    public Bitmap getFavicon() {
+//        if (mNativeContent == 0)
+//            return null;
+//        return mContentsClientBridge.getFavicon();
+//    }
 
     // Currently, timer pause/resume is actually
     // a global setting. And multiple pause will fail the

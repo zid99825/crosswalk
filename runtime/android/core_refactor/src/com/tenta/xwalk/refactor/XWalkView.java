@@ -1565,19 +1565,19 @@ public class XWalkView extends android.widget.FrameLayout {
         mContent.setOverlayVideoMode(enabled);
     }
 
-    /**
-     * Return the icon which current page has.
-     * 
-     * @return the favicon of current web page/app.
-     * @since 6.0
-     */
-//    @XWalkAPI
-    public Bitmap getFavicon() {
-        if (mContent == null)
-            return null;
-        checkThreadSafety();
-        return mContent.getFavicon();
-    }
+//    /**
+//     * Return the icon which current page has.
+//     * 
+//     * @return the favicon of current web page/app.
+//     * @since 6.0
+//     */
+////    @XWalkAPI
+//    public Bitmap getFavicon() {
+//        if (mContent == null)
+//            return null;
+//        checkThreadSafety();
+//        return mContent.getFavicon();
+//    }
 
     /**
      * Control whether the XWalkView's surface is placed on top of its window. Note this only works
@@ -2122,5 +2122,19 @@ public class XWalkView extends android.widget.FrameLayout {
                 }
             });
         }
+    }
+    
+    public int getZoneId() {
+        if (mContent == null) {
+            return -1;
+        }
+        return mContent.getZoneId();
+    }
+    
+    public int getTabId() {
+        if (mContent == null) {
+            return -1;
+        }
+        return mContent.getTabId();
     }
 }
