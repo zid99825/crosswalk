@@ -13,6 +13,8 @@
 #include "base/callback_helpers.h"
 #include "base/guid.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/favicon_status.h"
+#include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
@@ -628,6 +630,17 @@ void XWalkContentsClientBridge::OnReceivedIcon(const GURL& icon_url,
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
+  if (obj.is_null())
+    return;
+
+  content::NavigationEntry* entry =
+      icon_helper_->web_contents()->GetController().GetLastCommittedEntry();
+
+  if (entry) {
+    entry->GetFavicon().valid = true;
+    entry->GetFavicon().url = icon_url;
+    entry->GetFavicon().image = gfx::Image::CreateFrom1xBitmap(bitmap);
+  }
 
   ScopedJavaLocalRef<jstring> jurl(
       ConvertUTF8ToJavaString(env, icon_url.spec()));
