@@ -233,7 +233,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
             new net::ChannelIDService(new net::DefaultChannelIDStore(NULL))));
     storage_->set_http_user_agent_settings(
         base::WrapUnique(
-            new net::StaticHttpUserAgentSettings("en-us,en",
+            new net::StaticHttpUserAgentSettings("en-US,en",
                                                  xwalk::GetUserAgent())));
 
 #ifdef TENTA_CHROMIUM_BUILD
