@@ -59,6 +59,9 @@ config("tenta_public") {
       if ( enable_tenta_log_gui ) {
         defines += [ "TENTA_LOG_GUI_ENABLE=1" ]
       }
+      if ( enable_tenta_log_ff ) {
+        defines += [ "TENTA_LOG_FF_ENABLE=1" ]
+      }
     } else {
       defines += [ "TENTA_LOG_ENABLE=0" ]
     }
