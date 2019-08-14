@@ -36,7 +36,7 @@ public class UrlUtilities {
      * URI schemes that ContentView can handle.
      */
     private static final HashSet<String> ACCEPTED_SCHEMES = CollectionUtil.newHashSet(
-            "about", "app", "content", "data", "file", "http", "https", "javascript");
+            "about", "app", "content", "data", "file", "http", "https", "javascript", "tenta");
 
     /**
      * URI schemes that can be handled in Intent fallback navigation.
