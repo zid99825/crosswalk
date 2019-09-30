@@ -55,7 +55,9 @@ public class XWalkViewDelegate {
     private static class XwalkRegistrationPolicy extends NetworkChangeNotifierAutoDetect.RegistrationPolicy {
 
         public void setNetworkUsable(boolean usable) {
-            mNotifier.setNetworkUsability(usable);
+            if ( mNotifier != null ) {
+                mNotifier.setNetworkUsability(usable);
+            }
         }
         
         @Override
