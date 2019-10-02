@@ -61,10 +61,10 @@ hooks = [
 #    'name':
 #      'sdkextras'
 #  },
-  {
-    # A change to a .gyp, .gypi, or to GYP itself should run the generator.
-    "name": "gyp-xwalk",
-    "pattern": ".",
-    "action": ["python", "src/xwalk/gyp_xwalk"],
-  }
+#  {
+#    # A change to a .gyp, .gypi, or to GYP itself should run the generator.
+#    "name": "gyp-xwalk",
+#    "pattern": ".",
+#    "action": ["python", "src/xwalk/gyp_xwalk"],
+#  }
 ]
