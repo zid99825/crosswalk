@@ -51,7 +51,7 @@ class DepsFetcher(object):
     gclient_cmd.append('--gclientfile=%s' %
                        os.path.basename(self._new_gclient_file))
     gclient_utils.CheckCallAndFilter(gclient_cmd,
-        always=self._options.verbose, cwd=self._root_dir)
+        always_show_header=self._options.verbose, cwd=self._root_dir)
 
 
 def main():
