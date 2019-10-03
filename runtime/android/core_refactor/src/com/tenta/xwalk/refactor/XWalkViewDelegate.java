@@ -241,7 +241,7 @@ public class XWalkViewDelegate {
     }
 
     public static void setNetworkUsable(boolean usable) {
-        if ( NetworkChangeNotifier.isInitialized() ) {
+        if ( sInitialized && NetworkChangeNotifier.isInitialized() ) {
             sRegistrationPolicy.setNetworkUsable(usable);
         }
     }
