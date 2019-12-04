@@ -8,7 +8,7 @@ package com.tenta.xwalk.refactor;
 import java.security.PrivateKey;
 import java.util.HashMap;
 
-import org.chromium.content.browser.ContentVideoViewEmbedder;
+import org.chromium.content_public.browser.NavigationHandle;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.WebContentsObserver;
 import org.chromium.net.NetError;
@@ -80,9 +80,9 @@ abstract class XWalkContentsClient {
         }
 
         @Override
-        public void didStartNavigation(String url, boolean isInMainFrame, boolean isSameDocument,
-                boolean isErrorPage) {
-            onNavigationStart(url, isInMainFrame, isSameDocument, isErrorPage);
+        public void didStartNavigation(NavigationHandle navigationHandle) {
+            onNavigationStart(navigationHandle.getUrl(), navigationHandle.isInMainFrame(),
+                    navigationHandle.isSameDocument(), navigationHandle.isErrorPage());
         }
 
         @Override

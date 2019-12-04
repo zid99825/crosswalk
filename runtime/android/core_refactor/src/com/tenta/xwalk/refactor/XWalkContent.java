@@ -36,23 +36,30 @@ import com.tenta.xwalk.refactor.AndroidProtocolHandler;
 
 import com.tenta.metafs.MetaError;
 
+import org.chromium.android_webview.AwContents.WebContentsInternalsHolder;
 import org.chromium.base.ThreadUtils;
+import org.chromium.base.UserDataHost;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
+import org.chromium.chrome.R;
+import org.chromium.components.embedder_support.view.ContentView;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
-import org.chromium.content.browser.ActivityContentVideoViewEmbedder;
-import org.chromium.content.browser.ContentVideoViewEmbedder;
+//TODO(iotto): Check and use if needed
+//import org.chromium.content.browser.ActivityContentVideoViewEmbedder;
+//import org.chromium.components.embedder_support.media.ActivityContentVideoViewEmbedder;
 import org.chromium.content.browser.ContentViewCore;
 import org.chromium.content.browser.ContentViewCoreImpl;
 import org.chromium.content.browser.ContentViewRenderView;
 import org.chromium.content.browser.ContentViewStatics;
 import org.chromium.content_public.browser.ContentBitmapCallback;
+import org.chromium.content_public.browser.GestureStateListener;
 import org.chromium.content_public.browser.JavaScriptCallback;
 import org.chromium.content_public.browser.LoadUrlParams;
 import org.chromium.content_public.browser.NavigationController;
 import org.chromium.content_public.browser.NavigationEntry;
 import org.chromium.content_public.browser.NavigationHistory;
 import org.chromium.content_public.browser.WebContents;
+import org.chromium.content_public.browser.WebContentsInternals;
 import org.chromium.content_public.browser.navigation_controller.UserAgentOverrideOption;
 import org.chromium.media.MediaPlayerBridge;
 import org.chromium.ui.base.ActivityWindowAndroid;
@@ -61,8 +68,11 @@ import org.chromium.ui.base.ViewAndroidDelegate;
 import org.chromium.ui.base.WindowAndroid;
 import org.json.JSONArray;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
@@ -75,6 +85,15 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private static String TAG = "XWalkContent";
     private static Class<? extends Annotation> javascriptInterfaceClass = null;
 
+    // A holder of objects passed from WebContents and should be owned by AwContents that may
+    // have direct or indirect reference back to WebView. They are used internally by
+    // WebContents but all the references can create a new gc root that can keep WebView
+    // instances from being freed when they are detached from view tree, hence lead to
+    // memory leak. To avoid the issue, it is possible to use |WebContents.setInternalHolder|
+    // to move the holder of those internal objects to AwContents. Note that they are still
+    // used by WebContents, and AwContents doesn't have to know what's inside the holder.
+    private WebContentsInternals mWebContentsInternals;
+    private WebContentsInternalsHolder mWebContentsInternalsHolder;
     private ContentViewCoreImpl mContentViewCore;
     private Context mViewContext;
     private XWalkContentView mContentView;
@@ -100,6 +119,8 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private SwipeRefreshHandler mSwipeRefreshHandler;
     private int metaFsError = 0;
     long mNativeContent;
+    
+    private final UserDataHost mUserDataHost = new UserDataHost();
     
     // ch64
     // These come from the compositor and are updated synchronously (in contrast to the values in
@@ -187,44 +208,51 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         initCaptureBitmapAsync();
     }
 
+    public UserDataHost getUserDataHost() {
+        return mUserDataHost;
+    }
+    
     private void initCaptureBitmapAsync() {
-        mGetBitmapCallback = new ContentBitmapCallback() {
-            @Override
-            public void onFinishGetBitmap(Bitmap bitmap, int response) {
-                if (mXWalkGetBitmapCallback == null)
-                    return;
-                mXWalkGetBitmapCallback.onFinishGetBitmap(bitmap, response);
-            }
-        };
+        assertTrue("TODO(iotto): implement", false);
+//        mGetBitmapCallback = new ContentBitmapCallback() {
+//            @Override
+//            public void onFinishGetBitmap(Bitmap bitmap, int response) {
+//                if (mXWalkGetBitmapCallback == null)
+//                    return;
+//                mXWalkGetBitmapCallback.onFinishGetBitmap(bitmap, response);
+//            }
+//        };
     }
 
     public void captureBitmapAsync(XWalkGetBitmapCallback callback) {
         if (mNativeContent == 0)
             return;
-        mXWalkGetBitmapCallback = callback;
-        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
-        // mWebContents.getContentBitmapAsync(Bitmap.Config.ARGB_8888, 1.0f, new Rect(),
-        // mGetBitmapCallback);
+        assertTrue("TODO(iotto): implement", false);
+//        mXWalkGetBitmapCallback = callback;
+//        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
+//        // mWebContents.getContentBitmapAsync(Bitmap.Config.ARGB_8888, 1.0f, new Rect(),
+//        // mGetBitmapCallback);
     }
 
     public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
             XWalkGetBitmapCallback callback) {
         if (mNativeContent == 0)
             return;
-        mXWalkGetBitmapCallback = callback;
-        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
-        // mWebContents.getContentBitmapAsync(config, scale, srcRect,
-        // mGetBitmapCallback);
+        assertTrue("TODO(iotto): implement", false);
+//        mXWalkGetBitmapCallback = callback;
+//        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
+//        // mWebContents.getContentBitmapAsync(config, scale, srcRect,
+//        // mGetBitmapCallback);
     }
 
     private void setNativeContent(long newNativeContent) {
         if (mNativeContent != 0) {
             destroy();
-            mContentViewCore = null;
         }
 
         assert mNativeContent == 0 && mXWalkCleanupReference == null && mContentViewCore == null;
 
+        
         mContentViewRenderView = new ContentViewRenderView(mViewContext);
         mContentViewRenderView.onNativeLibraryLoaded(mWindow);
         
@@ -246,10 +274,22 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
         mWebContents = nativeGetWebContents(mNativeContent);
 
+        mContentView = XWalkContentView.createContentView(mViewContext, mWebContents,
+                mXWalkView);
+        
+        // Chromium 77
+        mWebContentsInternalsHolder = new WebContentsInternalsHolder(this);
+        mWebContents.initialize(getChromeVersion(),
+                ViewAndroidDelegate.createBasicDelegate(mContentView), mContentView, mWindow,
+                mWebContentsInternalsHolder);        
+        
+        
+        
+        
         // Initialize ContentView.
         mContentViewCore = (ContentViewCoreImpl) ContentViewCore.create(mViewContext, getChromeVersion());
                 //new ContentViewCore(mViewContext, "Crosswalk");
-        mContentView = XWalkContentView.createContentView(mViewContext, mContentViewCore,
+        mContentView = XWalkContentView.createContentView(mViewContext, mWebContents,
                 mXWalkView);
         // TODO(iotto) create propper delegate
         mContentViewCore.initialize(ViewAndroidDelegate.createBasicDelegate(mContentView),
@@ -1517,26 +1557,27 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         }
     }
     
-    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
-        return new ActivityContentVideoViewEmbedder((Activity) mViewContext) {
-            @Override
-            public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
-                super.enterFullscreenVideo(view, isVideoLoaded);
-                if (mContentViewRenderView != null) {
-                    mContentViewRenderView.setOverlayVideoMode(true);
-                }
-            }
-
-            @Override
-            public void exitFullscreenVideo() {
-                super.exitFullscreenVideo();
-                if (mContentViewRenderView != null) {
-                    mContentViewRenderView.setOverlayVideoMode(false);
-                }
-            }
-        };
-
-    }
+    //TODO(iotto): removed; checkout ActivityContentVideoViewEmbedder
+//    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
+//        return new ActivityContentVideoViewEmbedder((Activity) mViewContext) {
+//            @Override
+//            public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
+//                super.enterFullscreenVideo(view, isVideoLoaded);
+//                if (mContentViewRenderView != null) {
+//                    mContentViewRenderView.setOverlayVideoMode(true);
+//                }
+//            }
+//
+//            @Override
+//            public void exitFullscreenVideo() {
+//                super.exitFullscreenVideo();
+//                if (mContentViewRenderView != null) {
+//                    mContentViewRenderView.setOverlayVideoMode(false);
+//                }
+//            }
+//        };
+//
+//    }
     
     @CalledByNative
     public int getZoneId() { 
@@ -1620,4 +1661,72 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private native void nativeFindNext(long nativeXWalkContent, boolean forward);
 
     private native void nativeClearMatches(long nativeXWalkContent);
+    
+    // inner classes
+    private static class WebContentsInternalsHolder implements WebContents.InternalsHolder {
+        private final WeakReference<XWalkContent> mXwalkContentsRef;
+
+        private WebContentsInternalsHolder(XWalkContent xwalkContents) {
+            mXwalkContentsRef = new WeakReference<>(xwalkContents);
+        }
+
+        @Override
+        public void set(WebContentsInternals internals) {
+            XWalkContent awContents = mXwalkContentsRef.get();
+            if (awContents == null) {
+                throw new IllegalStateException("AwContents should be available at this time");
+            }
+            awContents.mWebContentsInternals = internals;
+        }
+
+        @Override
+        public WebContentsInternals get() {
+            XWalkContent awContents = mXwalkContentsRef.get();
+            return awContents == null ? null : awContents.mWebContentsInternals;
+        }
+
+        public boolean weakRefCleared() {
+            return mXwalkContentsRef.get() == null;
+        }
+    }
+    
+  //--------------------------------------------------------------------------------------------
+    private class XWalkGestureStateListener implements GestureStateListener {
+        @Override
+        public void onPinchStarted() {
+            // While it's possible to re-layout the view during a pinch gesture, the effect is very
+            // janky (especially that the page scale update notification comes from the renderer
+            // main thread, not from the impl thread, so it's usually out of sync with what's on
+            // screen). It's also quite expensive to do a re-layout, so we simply postpone
+            // re-layout for the duration of the gesture. This is compatible with what
+            // WebViewClassic does.
+            mLayoutSizer.freezeLayoutRequests();
+        }
+
+        @Override
+        public void onPinchEnded() {
+            mLayoutSizer.unfreezeLayoutRequests();
+        }
+
+        @Override
+        public void onScrollUpdateGestureConsumed() {
+            mScrollAccessibilityHelper.postViewScrolledAccessibilityEventCallback();
+            mZoomControls.invokeZoomPicker();
+        }
+
+        @Override
+        public void onScrollStarted(int scrollOffsetY, int scrollExtentY) {
+            mZoomControls.invokeZoomPicker();
+        }
+
+        @Override
+        public void onScaleLimitsChanged(float minPageScaleFactor, float maxPageScaleFactor) {
+            mZoomControls.updateZoomControls();
+        }
+
+        @Override
+        public void onScrollOffsetOrExtentChanged(int scrollOffsetY, int scrollExtentY) {
+            mZoomControls.updateZoomControls();
+        }
+    }
 }

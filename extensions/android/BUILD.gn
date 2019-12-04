@@ -16,7 +16,7 @@ android_library("xwalk_core_extensions_java") {
 }
 
 generate_jni("xwalk_core_extensions_native_jni") {
-  jni_package = "xwalk"
+#todo(iotto)  jni_package = "xwalk"
   sources = [
     "java/src/org/xwalk/core/internal/extensions/XWalkExtensionAndroid.java",
     "java/src/org/xwalk/core/internal/extensions/XWalkNativeExtensionLoaderAndroid.java",

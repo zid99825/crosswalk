@@ -32,7 +32,7 @@ android_library("xwalk_core_shell_apk_java") {
     ":xwalk_core_shell_apk_resources",
     "//base:base_java",
     "//content/public/android:content_java",
-    "//third_party/android_tools:android_support_v13_java",
+    "//third_party/android_deps:com_android_support_support_v13_java",
     "//xwalk/runtime/android/core:xwalk_core_java",
   ]
 }

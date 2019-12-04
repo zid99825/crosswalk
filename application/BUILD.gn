@@ -32,7 +32,7 @@ source_set("xwalk_application_lib") {
     "//base",
     "//crypto",
     "//ipc",
-    "//third_party/WebKit/public:blink",
+    "//third_party/blink/public:blink",
     "//third_party/libxml",
     "//third_party/zlib/google:zip",
     "//ui/base",
@@ -52,8 +52,8 @@ grit("xwalk_application_resources") {
   outputs = [
     "$root_gen_dir/xwalk/application/grit/xwalk_application_resources.h",
     "$root_gen_dir/xwalk/application/xwalk_application_resources.pak",
-    "$root_gen_dir/xwalk/application/xwalk_application_resources.rc",
+    # "$root_gen_dir/xwalk/application/xwalk_application_resources.rc",
   ]
-  public_configs = [ ":xwalk_application_resources_include_dir" ]
+  # public_configs = [ ":xwalk_application_resources_include_dir" ]
   resource_ids = "//xwalk/resources/resource_ids"
 }

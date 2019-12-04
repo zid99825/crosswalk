@@ -11,7 +11,8 @@ import android.view.WindowManager;
 
 import org.chromium.base.CommandLine;
 import org.chromium.content.browser.ContentVideoView;
-import org.chromium.content.browser.ContentVideoViewEmbedder;
+//import org.chromium.content.browser.ContentVideoViewEmbedder;
+import org.chromium.content_public.browser.ContentVideoViewEmbedder;
 import org.chromium.content.common.ContentSwitches;
 
 import com.tenta.xwalk.refactor.CustomViewCallbackHandler;

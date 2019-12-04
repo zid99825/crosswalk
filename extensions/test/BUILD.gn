@@ -39,7 +39,7 @@ executable("xwalk_extensions_browsertest") {
     "internal_extension_browsertest.h",
     "namespace_read_only.cc",
     "nested_namespace.cc",
-    "test.idl",
+#todo(iotto)    "test.idl",
     "v8tools_module.cc",
     "xwalk_extensions_browsertest.cc",
     "xwalk_extensions_test_base.cc",

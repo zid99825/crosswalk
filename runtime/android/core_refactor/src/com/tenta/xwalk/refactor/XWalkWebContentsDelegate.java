@@ -8,7 +8,8 @@ import android.view.KeyEvent;
 
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
-import org.chromium.components.web_contents_delegate_android.WebContentsDelegateAndroid;
+import org.chromium.components.embedder_support.delegate.WebContentsDelegateAndroid;
+
 
 @JNINamespace("xwalk")
 abstract class XWalkWebContentsDelegate extends WebContentsDelegateAndroid {

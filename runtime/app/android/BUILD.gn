@@ -16,7 +16,7 @@ shared_library("libxwalkcore") {
     "//components/navigation_interception",
     "//components/visitedlink/browser",
     "//components/visitedlink/renderer",
-    "//components/web_contents_delegate_android",
+    "//components/embedder_support/android:web_contents_delegate",
     "//mojo/public/cpp/bindings",
     "//skia",
     "//xwalk:xwalk_runtime",

@@ -5,7 +5,7 @@
       <emit emit_type='prepend'></emit>
     </output>
     <output filename="xwalk_application_resources.pak" type="data_package" />
-    <output filename="xwalk_application_resources.rc" type="rc_all" />
+    <!-- <output filename="xwalk_application_resources.rc" type="rc_all" /> -->
   </outputs>
   <translations />
   <release seq="1">

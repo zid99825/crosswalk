@@ -8,11 +8,12 @@
 #include <jni.h>
 #include <string>
 
-#include "components/web_contents_delegate_android/web_contents_delegate_android.h"
+//#include "components/web_contents_delegate_android/web_contents_delegate_android.h"
+#include "android_webview/browser/aw_web_contents_delegate.h"
 
 namespace xwalk {
 
-class XWalkWebContentsDelegate : public web_contents_delegate_android::WebContentsDelegateAndroid {
+class XWalkWebContentsDelegate : public android_webview::AwWebContentsDelegate {
  public:
   XWalkWebContentsDelegate(JNIEnv* env, jobject obj);
   ~XWalkWebContentsDelegate() override;
@@ -32,8 +33,12 @@ class XWalkWebContentsDelegate : public web_contents_delegate_android::WebConten
 
   void RendererUnresponsive(content::WebContents* source,
                             const content::WebContentsUnresponsiveState& unresponsive_state) override;
+//        content::WebContents* source,
+//        content::RenderWidgetHost* render_widget_host,
+//        base::RepeatingClosure hang_monitor_restarter) override;
   void RendererResponsive(content::WebContents* source) override;
-
+//  content::WebContents* source,
+//  content::RenderWidgetHost* render_widget_host) override;
   bool DidAddMessageToConsole(content::WebContents* source, int32_t level, const base::string16& message,
                               int32_t line_no, const base::string16& source_id) override;
   void HandleKeyboardEvent(content::WebContents* source, const content::NativeWebKeyboardEvent& event) override;

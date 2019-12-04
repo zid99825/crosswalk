@@ -117,11 +117,10 @@ template("generate_android_project") {
   _resource_jar_path = "${_base_path}_resources.jar"
   _target_name = target_name
 
-#     _use_chromium_linker =
-#         defined(invoker.use_chromium_linker) && invoker.use_chromium_linker
-#     _load_library_from_apk =
-#         defined(invoker.load_library_from_apk) && invoker.load_library_from_apk
-
+  # TODO(iotto): if invoker defined versions
+#  _min_sdk_version = 19
+#  _target_sdk_version = 23
+  
   _native_libs_deps = []
   _shared_libraries_is_valid =
       defined(invoker.shared_libraries) && invoker.shared_libraries != []
@@ -152,42 +151,13 @@ template("generate_android_project") {
     }
   }
 
-#     _rebased_build_config = rebase_path(_build_config, root_build_dir)
-#     _create_abi_split =
-#         defined(invoker.create_abi_split) && invoker.create_abi_split
-#     _create_density_splits =
-#         defined(invoker.create_density_splits) && invoker.create_density_splits
-#     _create_language_splits =
-#         defined(invoker.language_splits) && invoker.language_splits != []
-# 
-#     _density_splits = []
-#     if (_create_density_splits) {
-#       _density_splits = [
-#         "hdpi",
-#         "xhdpi",
-#         "xxhdpi",
-#         "xxxhdpi",
-#         "tvdpi",
-#       ]
-#     }
-# 
-#     _language_splits = []
-#     if (_create_language_splits) {
-#       _language_splits = invoker.language_splits
-#     }
-
-#     _proguard_enabled =
-#         defined(invoker.proguard_enabled) && invoker.proguard_enabled
-#     if (_proguard_enabled) {
-#       _proguard_output_jar_path = "$_base_path.proguard.jar"
-#     }
-
   # Write a build_config file. Its contents are used by several other targets
   # within this template via the "@FileArg" expansion. We are not really
   # building an APK here, but the "android_apk" type generates a build config
   # with all the information we need about dependencies (JARs and resource
   # files).
-  _build_config_target = "${target_name}__build_config"
+#todo(iotto)  _build_config_target = "${target_name}__build_config"
+  _build_config_target = "${target_name}${build_config_target_suffix}"
   _build_config = _base_path + ".build_config"
   _rebased_build_config = rebase_path(_build_config, root_build_dir)
   
@@ -224,20 +194,31 @@ template("generate_android_project") {
   # file) and generate a .srcjar file with all the generated R.java files, as
   # well as an R.txt for the AAR.
   _process_resources_target = "${target_name}__process_resources"
-  process_resources(_process_resources_target) {
+  android_resources(_process_resources_target) {
+    forward_variables_from(invoker,
+                               [
+                                 "create_srcjar",
+#                                 "deps",
+                                 "testonly",
+                                 "strip_drawables",
+                               ])
+#todo(iotto):    create_srcjar = true
+#    min_sdk_version = _min_sdk_version
+#    target_sdk_version = _target_sdk_version
     android_manifest = invoker.android_manifest
-    build_config = _build_config
+#    build_config = _build_config
     deps = [
       ":$_build_config_target",
     ]
-    generate_constant_ids = true
-    r_text_out_path = _r_file_path
+#    generate_constant_ids = true
+#    r_text_out_path = _r_file_path
     resource_dirs = [ "//build/android/empty" ]
-    srcjar_path = "$target_gen_dir/$target_name.srcjar"
+
+    #srcjar_path = "$target_gen_dir/$target_name.srcjar"
 
     # Unused, but required.
-    zip_path = _base_path + "_reszip__unused.zip"
-    all_resources_zip_path = _base_path + "_reszip__unused.all.zip"
+    # zip_path = _base_path + "_reszip__unused.zip"
+    # all_resources_zip_path = _base_path + "_reszip__unused.all.zip"
 #    shared_resources = true
 
     if (defined(invoker.include_all_resources) ) {
@@ -331,6 +312,7 @@ template("generate_android_project") {
   # Compile the files we have generated (the .srcjar containing the R.java's
   # and the wrappers).
   _java_target = "${target_name}__java"
+#todo(iotto)  java_library(_java_target) {
   java_library_impl(_java_target) {
     forward_variables_from(invoker,
                        [
@@ -339,9 +321,10 @@ template("generate_android_project") {
                          "no_build_hooks",
                          "javac_args",
                        ])
+    type = "android_apk"
     supports_android = true
     requires_android = true
-    override_build_config = _build_config
+#todo(iotto)    override_build_config = _build_config
     srcjar_deps = _srcjar_deps
     
     android_manifest = "//build/android/AndroidManifest.xml"
@@ -349,7 +332,7 @@ template("generate_android_project") {
       ":$_build_config_target",
     ]
     dex_path = _base_path + "__unused.dex.jar"
-    emma_never_instrument = true
+#todo(iotto)    emma_never_instrument = true
 #    chromium_code = true
     jar_excluded_patterns = []
     if (defined(invoker.resource_excluded_patterns)) {
@@ -359,8 +342,8 @@ template("generate_android_project") {
     if (defined(invoker.jar_excluded_patterns)) {
       jar_excluded_patterns += invoker.jar_excluded_patterns
     }
-                                   
-    jar_path = _resource_jar_path
+#todo(iotto)    include_java_resources = true
+#todo(iotto)    jar_path = _resource_jar_path
     if (defined(invoker.java_files)) {
         java_files = invoker.java_files
     }

@@ -5,6 +5,9 @@
 
 package com.tenta.xwalk.refactor;
 
+import org.chromium.components.embedder_support.view.ContentView;
+import org.chromium.content_public.browser.WebContents;
+
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
@@ -17,25 +20,23 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewStructure;
 
-import org.chromium.content.browser.ContentView;
-import org.chromium.content.browser.ContentViewCore;
 
 public class XWalkContentView extends ContentView {
     private static final String TAG = "XWalkContentView";
     private XWalkView mXWalkView;
 
-    public static XWalkContentView createContentView(Context context, ContentViewCore cvc,
+    public static XWalkContentView createContentView(Context context, WebContents webContents,
             XWalkView xwView) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return new XWalkContentViewApi23(context, cvc, xwView);
+            return new XWalkContentViewApi23(context, webContents, xwView);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            return new XWalkContentViewApi16(context, cvc, xwView);
+            return new XWalkContentViewApi16(context, webContents, xwView);
         }
-        return new XWalkContentView(context, cvc, xwView);
+        return new XWalkContentView(context, webContents, xwView);
     }
 
-    private XWalkContentView(Context context, ContentViewCore cvc, XWalkView xwView) {
-        super(context, cvc);
+    private XWalkContentView(Context context, WebContents webContents, XWalkView xwView) {
+        super(context, webContents);
         mXWalkView = xwView;
     }
 
@@ -103,9 +104,9 @@ public class XWalkContentView extends ContentView {
 
     // Imitate JellyBeanContentView
     private static class XWalkContentViewApi16 extends XWalkContentView {
-        public XWalkContentViewApi16(Context context, ContentViewCore cvc,
+        public XWalkContentViewApi16(Context context, WebContents webContents,
                 XWalkView xwView) {
-            super(context, cvc, xwView);
+            super(context, webContents, xwView);
         }
 
         @Override

@@ -26,17 +26,22 @@ android_library("xwalk_refactor_java") {
     "src/com/tenta/xwalk/refactor/SslUtil.java",
     "src/com/tenta/xwalk/refactor/SwipeRefreshHandler.java",
     "src/com/tenta/xwalk/refactor/UrlUtilities.java",
-    "src/com/tenta/xwalk/refactor/XWalkActionModeCallback.java",
-    "src/com/tenta/xwalk/refactor/XWalkAutofillClientAndroid.java",
+#    "src/com/tenta/xwalk/refactor/XWalkActionModeCallback.java",
+    "src/com/tenta/xwalk/refactor/AwXWalkActionModeCallback.java",
+#    "src/com/tenta/xwalk/refactor/XWalkAutofillClientAndroid.java",
+    "src/com/tenta/xwalk/refactor/AwXWalkAutofillClient.java",
     "src/com/tenta/xwalk/refactor/XWalkCleanupReference.java",
     "src/com/tenta/xwalk/refactor/XWalkClient.java",
-    "src/com/tenta/xwalk/refactor/XWalkContent.java",
+#    "src/com/tenta/xwalk/refactor/XWalkContent.java",
+    "src/com/tenta/xwalk/refactor/AwXWalkContents.java",
     "src/com/tenta/xwalk/refactor/XWalkContentLifecycleNotifier.java",
-    "src/com/tenta/xwalk/refactor/XWalkContentsClient.java",
+#    "src/com/tenta/xwalk/refactor/XWalkContentsClient.java",
+    "src/com/tenta/xwalk/refactor/AwXWalkContentsClient.java",
     "src/com/tenta/xwalk/refactor/XWalkContentsClientBridge.java",
-    "src/com/tenta/xwalk/refactor/XWalkContentsClientCallbackHelper.java",
+#    "src/com/tenta/xwalk/refactor/XWalkContentsClientCallbackHelper.java",
+    "src/com/tenta/xwalk/refactor/AwXWalkContentsClientCallbackHelper.java",
     "src/com/tenta/xwalk/refactor/XWalkContentsIoThreadClient.java",
-    "src/com/tenta/xwalk/refactor/XWalkContentVideoViewClient.java",
+#    "src/com/tenta/xwalk/refactor/XWalkContentVideoViewClient.java",
     "src/com/tenta/xwalk/refactor/XWalkContentView.java",
     "src/com/tenta/xwalk/refactor/XWalkCookieManager.java",
     "src/com/tenta/xwalk/refactor/XWalkCoreBridge.java",
@@ -90,10 +95,11 @@ android_library("xwalk_refactor_java") {
     ":xwalk_refactor_java_resources",
     ":xwalk_core_version_gen",
     ":xwalk_app_version_gen",
+    "//android_webview:android_webview_java",
     "//base:base_java",
     "//components/autofill/android:autofill_java",
     "//components/navigation_interception/android:navigation_interception_java",
-    "//components/web_contents_delegate_android:web_contents_delegate_android_java",
+    "//components/embedder_support/android:web_contents_delegate_java",
     "//content/public/android:content_java",
     "//media/base/android:media_java",
     "//net/android:net_java",
@@ -112,14 +118,16 @@ android_library("xwalk_refactor_java") {
       "//xwalk/runtime/android/empty_tenta:tenta_empty_java",
     ]
   }
-  srcjars = [ 
-    "$root_gen_dir/xwalk/runtime/android/core_refactor/xwalk_core_version_gen.srcjar",
-    "$root_gen_dir/xwalk/runtime/android/core_refactor/xwalk_app_version_gen.srcjar",
+  srcjar_deps = [ 
+#todo(iotto)    "$root_gen_dir/xwalk/runtime/android/core_refactor/xwalk_core_version_gen.srcjar",
+#todo(iotto)    "$root_gen_dir/xwalk/runtime/android/core_refactor/xwalk_app_version_gen.srcjar",
+    ":xwalk_core_version_gen",
+    ":xwalk_app_version_gen",
   ]
 }
 
 generate_jni("xwalk_refactor_native_jni") {
-  jni_package = "xwalk"
+#todo(iotto)  jni_package = "xwalk"
   sources = [
     "src/com/tenta/xwalk/refactor/AndroidProtocolHandler.java",
     "src/com/tenta/xwalk/refactor/XWalkAutofillClientAndroid.java",
@@ -180,6 +188,6 @@ java_cpp_template("xwalk_app_version_gen") {
 }
 
 generate_jar_jni("xwalk_core_jar_jni") {
-  jni_package = "xwalk"
+#todo(iotto)  jni_package = "xwalk"
   classes = [ "java/io/InputStream.class" ]
 }

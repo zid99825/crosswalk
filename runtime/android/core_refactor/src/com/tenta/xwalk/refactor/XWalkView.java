@@ -63,9 +63,7 @@ import java.io.StringWriter;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 
-import org.chromium.base.ApplicationStatusManager;
 import org.chromium.base.CommandLine;
-import org.chromium.content.browser.ContentViewCore;
 //TODO(iotto) : Maybe fix!
 //import org.xwalk.core.internal.extension.BuiltinXWalkExtensions;
 import org.chromium.net.NetworkChangeNotifier;
@@ -255,7 +253,8 @@ public class XWalkView extends android.widget.FrameLayout {
     static final String PLAYSTORE_DETAIL_URI = "market://details?id=";
     private static final String TAG = XWalkView.class.getSimpleName();
 
-    private XWalkContent mContent;
+//    private XWalkContent mContent;
+    private AwXWalkContents mContent;
     private Context mContext;
     private final XWalkHitTestResult mXWalkHitTestResult;
     private boolean mIsHidden;
@@ -1731,11 +1730,6 @@ public class XWalkView extends android.widget.FrameLayout {
             }
         }
         return super.dispatchKeyEvent(event);
-    }
-
-    // For instrumentation test.
-    public ContentViewCore getXWalkContentForTest() {
-        return mContent.getContentViewCoreForTest();
     }
 
     // This is used to call back to XWalkView's performLongClick() so that developer can

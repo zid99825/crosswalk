@@ -20,5 +20,6 @@ core_internal_java_chromium_deps = [
   "//ui/android:ui_java",
 #   "//third_party/android_swipe_refresh:android_swipe_refresh_java",
 #   "//components/autofill/android:autofill_java",
-  "//device/geolocation:geolocation_java",
+#todo(iotto)  "//device/geolocation:geolocation_java",
+  "//services/device/geolocation:geolocation_java",
 ]

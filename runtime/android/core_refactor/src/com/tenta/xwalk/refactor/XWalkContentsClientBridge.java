@@ -32,7 +32,6 @@ import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
 import org.chromium.components.navigation_interception.NavigationParams;
-import org.chromium.content.browser.ContentVideoViewEmbedder;
 
 import com.tenta.xwalk.refactor.CustomViewCallback;
 import com.tenta.xwalk.refactor.RewriteUrlValue;
@@ -728,11 +727,12 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
         mXWalkView.stopSwipeRefreshHandler();
     }
 
-    // TODO(iotto) see if get's called
-    @Override
-    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
-        return new XWalkContentVideoViewClient(this, mXWalkView);
-    }
+    //TODO(iotto): Removed
+//    // TODO(iotto) see if get's called
+//    @Override
+//    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
+//        return new XWalkContentVideoViewClient(this, mXWalkView);
+//    }
 
     public void provideClientCertificateResponse(int id, byte[][] certChain,
             PrivateKey privateKey) {

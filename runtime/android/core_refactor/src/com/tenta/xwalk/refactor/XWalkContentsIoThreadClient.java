@@ -32,10 +32,10 @@ public abstract class XWalkContentsIoThreadClient {
     public abstract boolean shouldBlockNetworkLoads();
 
     public abstract XWalkWebResourceResponse shouldInterceptRequest(
-        XWalkContentsClient.WebResourceRequestInner request);
+        AwXWalkContentsClient.WebResourceRequestInner request);
 
     public abstract void onReceivedResponseHeaders(
-            XWalkContentsClient.WebResourceRequestInner request,
+            AwXWalkContentsClient.WebResourceRequestInner request,
             XWalkWebResourceResponse response);
 
     // Protected methods ---------------------------------------------------------------------------

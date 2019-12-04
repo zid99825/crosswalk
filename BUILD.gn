@@ -8,7 +8,7 @@ import("//third_party/ffmpeg/ffmpeg_options.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/build/xwalk.gni")
 import("//xwalk/build/tenta.gni")
-import("//ppapi/features/features.gni") 
+#import("//ppapi/features/features.gni") 
 import("//components/nacl/features.gni")
 
 group("xwalk_builder") {
@@ -385,7 +385,7 @@ source_set("xwalk_runtime") {
 #    "//components/devtools_http_handler",
     "//components/error_page/common",
     "//components/keyed_service/content",
-    "//components/nacl/common:features",
+    "//components/nacl/common:buildflags",
     "//components/resources:components_resources",
     "//components/strings",
     "//components/url_formatter",
@@ -398,18 +398,18 @@ source_set("xwalk_runtime") {
     "//content/public/child",
     "//content/public/common",
     "//content/public/utility",
-    "//device/geolocation",
-    "//device/geolocation/public/interfaces",
+    "//services/device/public/cpp/geolocation",
+#    "//device/geolocation/public/interfaces",
     "//gin",
     "//ipc",
     "//media",
     "//net",
     "//net:net_resources",
-    "//ppapi/features",
+    # "//ppapi/features",
     "//skia",
     "//storage/browser",
     "//storage/common",
-    "//third_party/WebKit/public:blink",
+    # "//third_party/WebKit/public:blink",
     "//third_party/boringssl",
     "//ui/base",
     "//ui/gl",
@@ -426,8 +426,8 @@ source_set("xwalk_runtime") {
     "//xwalk/resources:xwalk_resources_100_percent_pak",
     "//xwalk/resources:xwalk_resources_200_percent_pak",
     "//xwalk/resources:xwalk_resources_300_percent_pak",
-    "//xwalk/sysapps",
-    "//xwalk/sysapps:xwalk_sysapps_resources",
+#todo(iotto)    "//xwalk/sysapps",
+#todo(iotto)    "//xwalk/sysapps:xwalk_sysapps_resources",
     "//xwalk/runtime/android/empty_tenta",
   ]
 
@@ -494,35 +494,35 @@ source_set("xwalk_runtime") {
     ]
   }
 
-  if (enable_plugins) {
-    sources += [
-      "//chrome/renderer/pepper/pepper_flash_drm_renderer_host.cc",
-      "//chrome/renderer/pepper/pepper_flash_drm_renderer_host.h",
-      "//chrome/renderer/pepper/pepper_flash_font_file_host.cc",
-      "//chrome/renderer/pepper/pepper_flash_font_file_host.h",
-      "//chrome/renderer/pepper/pepper_flash_fullscreen_host.cc",
-      "//chrome/renderer/pepper/pepper_flash_fullscreen_host.h",
-      "//chrome/renderer/pepper/pepper_flash_menu_host.cc",
-      "//chrome/renderer/pepper/pepper_flash_menu_host.h",
-      "//chrome/renderer/pepper/pepper_flash_renderer_host.cc",
-      "//chrome/renderer/pepper/pepper_flash_renderer_host.h",
-      "runtime/browser/renderer_host/pepper/xwalk_browser_pepper_host_factory.cc",
-      "runtime/browser/renderer_host/pepper/xwalk_browser_pepper_host_factory.h",
-      "runtime/renderer/pepper/pepper_helper.cc",
-      "runtime/renderer/pepper/pepper_helper.h",
-      "runtime/renderer/pepper/pepper_uma_host.cc",
-      "runtime/renderer/pepper/pepper_uma_host.h",
-      "runtime/renderer/pepper/xwalk_renderer_pepper_host_factory.cc",
-      "runtime/renderer/pepper/xwalk_renderer_pepper_host_factory.h",
-    ]
-    deps += [
-      "//components/pdf/renderer",
-      "//ppapi/host",
-      "//ppapi/proxy",
-      "//ppapi/proxy:ipc",
-      "//ppapi/shared_impl",
-    ]
-  }
+  # if (enable_plugins) {
+  #   sources += [
+  #     "//chrome/renderer/pepper/pepper_flash_drm_renderer_host.cc",
+  #     "//chrome/renderer/pepper/pepper_flash_drm_renderer_host.h",
+  #     "//chrome/renderer/pepper/pepper_flash_font_file_host.cc",
+  #     "//chrome/renderer/pepper/pepper_flash_font_file_host.h",
+  #     "//chrome/renderer/pepper/pepper_flash_fullscreen_host.cc",
+  #     "//chrome/renderer/pepper/pepper_flash_fullscreen_host.h",
+  #     "//chrome/renderer/pepper/pepper_flash_menu_host.cc",
+  #     "//chrome/renderer/pepper/pepper_flash_menu_host.h",
+  #     "//chrome/renderer/pepper/pepper_flash_renderer_host.cc",
+  #     "//chrome/renderer/pepper/pepper_flash_renderer_host.h",
+  #     "runtime/browser/renderer_host/pepper/xwalk_browser_pepper_host_factory.cc",
+  #     "runtime/browser/renderer_host/pepper/xwalk_browser_pepper_host_factory.h",
+  #     "runtime/renderer/pepper/pepper_helper.cc",
+  #     "runtime/renderer/pepper/pepper_helper.h",
+  #     "runtime/renderer/pepper/pepper_uma_host.cc",
+  #     "runtime/renderer/pepper/pepper_uma_host.h",
+  #     "runtime/renderer/pepper/xwalk_renderer_pepper_host_factory.cc",
+  #     "runtime/renderer/pepper/xwalk_renderer_pepper_host_factory.h",
+  #   ]
+  #   deps += [
+  #     "//components/pdf/renderer",
+  #     "//ppapi/host",
+  #     "//ppapi/proxy",
+  #     "//ppapi/proxy:ipc",
+  #     "//ppapi/shared_impl",
+  #   ]
+  # }
 
   if (toolkit_views) {
     sources += [
@@ -587,24 +587,24 @@ action("generate_upstream_blink_version") {
   ]
 }
 
-group("xwalk_all_tests") {
-  testonly = true
-  deps = [
-    "//xwalk/extensions/test:xwalk_extensions_browsertest",
-    "//xwalk/extensions/test:xwalk_extensions_unittest",
-    "//xwalk/sysapps:xwalk_sysapps_browsertest",
-    "//xwalk/sysapps:xwalk_sysapps_unittest",
-    "//xwalk/test:xwalk_browsertest",
-    "//xwalk/test:xwalk_unittest",
-  ]
+# group("xwalk_all_tests") {
+#   testonly = true
+#   deps = [
+#     "//xwalk/extensions/test:xwalk_extensions_browsertest",
+#     "//xwalk/extensions/test:xwalk_extensions_unittest",
+#     "//xwalk/sysapps:xwalk_sysapps_browsertest",
+#     "//xwalk/sysapps:xwalk_sysapps_unittest",
+#     "//xwalk/test:xwalk_browsertest",
+#     "//xwalk/test:xwalk_unittest",
+#   ]
 
-  if (is_win) {
-    deps += [
-      "//xwalk/extensions/test/win:xwalk_dotnet_extensions_browsertest",
-      "//xwalk/extensions/test/win:xwalk_dotnet_extensions_unittest",
-    ]
-  }
-}
+#   if (is_win) {
+#     deps += [
+#       "//xwalk/extensions/test/win:xwalk_dotnet_extensions_browsertest",
+#       "//xwalk/extensions/test/win:xwalk_dotnet_extensions_unittest",
+#     ]
+#   }
+# }
 
 # Copy xwalk/VERSION to the build directory for tools (such as
 # generate_crosswalk_zip.py) that assume all paths are under $root_out_dir.

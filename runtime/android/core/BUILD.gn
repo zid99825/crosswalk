@@ -9,7 +9,7 @@ import("//xwalk/build/android/generate_android_project.gni")
 import("//xwalk/build/android/maven_pom.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/runtime/android/core_internal/chromium_java_deps.gni")
-import("//base/android/jni_generator/jni_exception_list.gni")
+# import("//base/android/jni_generator/jni_exception_list.gni")
 import("//xwalk/build/tenta.gni") 
 
 declare_args() {
@@ -27,7 +27,8 @@ android_library("xwalk_core_java") {
     "//xwalk/runtime/android/core_refactor:xwalk_refactor_java",
     "//xwalk/third_party/lzma_sdk:lzma_sdk_java",
     "//xwalk/extensions/android:xwalk_core_extensions_java",
-    "//device/geolocation:geolocation_java",
+#todo(iotto)    "//device/geolocation:geolocation_java",
+    "//services/device/geolocation:geolocation_java",
   ]
   if (tenta_chromium_build) {
     deps += [
@@ -41,9 +42,9 @@ android_library("xwalk_core_java") {
       "//xwalk/runtime/android/empty_tenta:tenta_empty_java",
     ]
   }
-  srcjars =[ 
-#     "$root_gen_dir/xwalk_core_reflection_layer/wrapper/wrapper.srcjar"
-  ]
+#   srcjars =[ 
+# #     "$root_gen_dir/xwalk_core_reflection_layer/wrapper/wrapper.srcjar"
+#   ]
   java_files = [
     "src/org/xwalk/core/extension/BindingObject.java",
     "src/org/xwalk/core/extension/BindingObjectAutoJS.java",
@@ -106,7 +107,9 @@ java_strings_grd("xwalk_app_strings_grd") {
   ]
 }
 
-generate_android_project("xwalk_core_library") {
+#generate_android_project("xwalk_core_library") {
+dist_aar("xwalk_core_library") {
+  output= "$root_out_dir/xwalk_core_library.aar"
   android_manifest =
       "//xwalk/runtime/android/core_internal_empty/AndroidManifest.xml"
   deps = [
@@ -117,17 +120,17 @@ generate_android_project("xwalk_core_library") {
     "//third_party/icu:icudata",
     "//xwalk/resources:xwalk_pak",
     "//xwalk/resources:xwalk_resources_100_percent_pak",
-#     "//xwalk/runtime/android/core_internal:xwalk_core_internal_java",
-     "//xwalk/runtime/android/core_refactor:xwalk_refactor_java",
+    "//xwalk/runtime/android/core_refactor:xwalk_refactor_java",
   ]
   binary_files = [
     "$root_out_dir/xwalk.pak",
     "$root_out_dir/xwalk_100_percent.pak",
   ]
-  js_bindings = [
-    "//xwalk/experimental/launch_screen/launch_screen_api.js",
-    "//xwalk/experimental/wifidirect/wifidirect_api.js",
-  ]
+  #TODO(iotto): removed
+#  js_bindings = [
+#    "//xwalk/experimental/launch_screen/launch_screen_api.js",
+#    "//xwalk/experimental/wifidirect/wifidirect_api.js",
+#  ]
 
   # We only need to exclude those classes because invoker.android_manifest
   # usually points to a manifest with the same package name (org.xwalk.core),
@@ -135,31 +138,34 @@ generate_android_project("xwalk_core_library") {
   # app-tools and dex complaining of multiple definitions of
   # org.xwalk.core.R.
   # TODO(rakuco): Check if we should fix the manifest instead.
-  resource_excluded_patterns = [
-    "*/org/xwalk/core/R.class",
-    "*/org/xwalk/core/R\$*.class",
-    "*/org/xwalk/core/Manifest.class",
-    "*/org/xwalk/core/Manifest\$*.class",
-    "*/android/support/*/R.class",
-    "*/android/support/*/R\$*.class",
-    "*/android/support/*/Manifest.class",
-    "*/android/support/*/Manifest\$*.class",
-    "*/com/google/android/*/R.class",
-    "*/com/google/android/*/R\$*.class",
-    "*/android/arch/*/R.class",
-    "*/android/arch/*/R\$*.class",
-  ]
+  #TODO(iotto): removed
+#  resource_excluded_patterns = [
+#    "*/org/xwalk/core/R.class",
+#    "*/org/xwalk/core/R\$*.class",
+#    "*/org/xwalk/core/Manifest.class",
+#    "*/org/xwalk/core/Manifest\$*.class",
+#    "*/android/support/*/R.class",
+#    "*/android/support/*/R\$*.class",
+#    "*/android/support/*/Manifest.class",
+#    "*/android/support/*/Manifest\$*.class",
+#    "*/com/google/android/*/R.class",
+#    "*/com/google/android/*/R\$*.class",
+#    "*/android/arch/*/R.class",
+#    "*/android/arch/*/R\$*.class",
+#  ]
+  
 #   resource_excluded_patterns = [
 #     "*/R.class",
 #     "*/R\$*.class",
 #     "*/Manifest.class",
 #     "*/Manifest\$*.class",
 #   ]
-  
-  shared_libraries = [
-    "//xwalk/runtime/app/android:libxwalkcore",
-  ]
-  template_dir = "//xwalk/build/android/xwalkcore_library_template"
+  #TODO(iotto): removed
+#  shared_libraries = [
+#    "//xwalk/runtime/app/android:libxwalkcore",
+#  ]
+  #TODO(iotto): removed
+  #template_dir = "//xwalk/build/android/xwalkcore_library_template"
 
   if (icu_use_data_file) {
     binary_files += [ "$root_out_dir/icudtl.dat" ]
@@ -195,18 +201,21 @@ java_cpp_template("xwalk_build_config_gen") {
   }
 }
 
-java_cpp_template("xwalk_native_libraries_gen") {
-  sources = [
-    "//base/android/java/templates/NativeLibraries.template",
-  ]
-  package_path = "org/chromium/base/library_loader"
+#java_cpp_template("xwalk_native_libraries_gen") {
+#  sources = [
+#    "//base/android/java/templates/NativeLibraries.template",
+#  ]
+#  package_path = "org/chromium/base/library_loader"
+write_native_libraries_java("xwalk_native_libraries_gen") {
+  use_final_fields = false
 }
 
 generate_jni_registration("xwalk_jni_registration") {
   target = ":xwalk_core_library"
-  output = "$target_gen_dir/${target_name}.h"
-  exception_files = jni_exception_files
-  print("ohoooooooooo register natives! out=", output)
+#todo(iotto)  output = "$target_gen_dir/${target_name}.h"
+  header_output = "$target_gen_dir/${target_name}.h"
+#todo(iotto)  exception_files = jni_exception_files
+  print("ohoooooooooo register natives! out=", header_output)
 }
 
 generate_android_project("xwalk_shared_library") {

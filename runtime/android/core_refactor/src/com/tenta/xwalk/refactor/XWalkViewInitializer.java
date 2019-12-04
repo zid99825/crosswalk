@@ -3,8 +3,6 @@ package com.tenta.xwalk.refactor;
 
 import java.io.File;
 
-import org.chromium.base.ApplicationStatusManager;
-
 import android.app.Activity;
 import android.content.Context;
 import android.os.Environment;
@@ -14,9 +12,6 @@ public class XWalkViewInitializer {
     public static void DoInit(Context context) {
         XWalkViewDelegate.init(null, context);
 
-        if (context instanceof Activity) {
-            ApplicationStatusManager.informActivityStarted((Activity) context);
-        }
         // TODO(iotto) : Fix or drop extensions
         // if (!CommandLine.getInstance().hasSwitch("disable-xwalk-extensions")) {
         // BuiltinXWalkExtensions.load(mContext);

@@ -17,13 +17,12 @@ import java.util.HashSet;
 import java.util.Locale;
 
 import org.chromium.base.ApplicationStatus;
-import org.chromium.base.ApplicationStatusManager;
 import org.chromium.base.BuildConfig;
 import org.chromium.base.CommandLine;
 import org.chromium.base.ContextUtils;
 import org.chromium.base.LocaleUtils;
 import org.chromium.base.PathUtils;
-import org.chromium.base.ResourceExtractor;
+import org.chromium.ui.resources.ResourceExtractor;
 //import org.chromium.base.ResourceExtractor.ResourceEntry;
 import org.chromium.base.ResourceExtractor.ResourceInterceptor;
 import org.chromium.base.ThreadUtils;
@@ -31,8 +30,8 @@ import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.library_loader.LibraryLoader;
 import org.chromium.base.library_loader.LibraryProcessType;
 import org.chromium.base.library_loader.ProcessInitException;
-import org.chromium.content.browser.BrowserStartupController;
-import org.chromium.content.browser.DeviceUtils;
+import org.chromium.content_public.browser.BrowserStartupController;
+import org.chromium.content_public.browser.DeviceUtils;
 //import org.xwalk.core.internal.ResourceRewriter;
 import org.chromium.net.NetworkChangeNotifier;
 import org.chromium.net.NetworkChangeNotifierAutoDetect;
@@ -215,12 +214,6 @@ public class XWalkViewDelegate {
         // XWalkInternalResources.resetIds(appContext);
 
         startBrowserProcess(context);
-
-        if (appContext instanceof Activity) {
-            ApplicationStatusManager.init(((Activity) appContext).getApplication());
-        } else if (appContext instanceof Service) {
-            ApplicationStatusManager.init(((Service) appContext).getApplication());
-        }
 
         XWalkPresentationHost.createInstanceOnce(context);
         // ContextUtils.initApplicationContextForNative();
