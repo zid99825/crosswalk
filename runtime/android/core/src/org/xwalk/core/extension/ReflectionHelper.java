@@ -25,8 +25,8 @@ class ReflectionHelper {
     private Map<String, String> bindingClasses = new HashMap<String, String>();
     // The map for constructors, (jsName, ReflectionHelper).
     private Map<String, ReflectionHelper> constructorReflections = new HashMap<String, ReflectionHelper>();
-    private String[] eventList = null;
-    private MemberInfo entryPoint = null;
+    private String[] eventList;// = null;
+    private MemberInfo entryPoint;// = null;
     static Set<Class<?>> primitives = new HashSet<>();
 
     public enum MemberType {

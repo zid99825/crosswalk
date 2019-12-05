@@ -9,7 +9,6 @@ import android.app.DownloadManager.Request;
 import android.content.pm.PackageManager;
 import android.content.Context;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Environment;
 import android.webkit.MimeTypeMap;
 import android.webkit.URLUtil;
@@ -21,6 +20,9 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
+import org.chromium.base.task.AsyncTask;
+import org.chromium.base.task.TaskTraits;
 
 public class XWalkDownloadListenerImpl extends XWalkDownloadListener {
     private Context mContext;
@@ -54,7 +56,7 @@ public class XWalkDownloadListenerImpl extends XWalkDownloadListener {
             getDownloadManager().enqueue(request);
             popupMessages(mContext.getString(R.string.download_start_toast) + fileName);
         } else {
-            new FileTransfer(url, fileName).execute();
+            new FileTransfer(url, fileName).executeWithTaskTraits(TaskTraits.THREAD_POOL);
         }
     }
 
@@ -93,7 +95,7 @@ public class XWalkDownloadListenerImpl extends XWalkDownloadListener {
         Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
     }
 
-    private class FileTransfer extends AsyncTask<Void, Void, String> {
+    private class FileTransfer extends AsyncTask<String> {
         String url;
         String fileName;
 
@@ -103,7 +105,7 @@ public class XWalkDownloadListenerImpl extends XWalkDownloadListener {
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected String doInBackground() {
             OutputStream dstStream = null;
             InputStream srcStream = null;
             File dir = Environment.getExternalStoragePublicDirectory(

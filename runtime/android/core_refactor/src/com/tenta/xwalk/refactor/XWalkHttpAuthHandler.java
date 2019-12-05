@@ -17,6 +17,7 @@ public class XWalkHttpAuthHandler implements XWalkHttpAuth {
     private long mNativeXWalkHttpAuthHandler;
     private final boolean mFirstAttempt;
 
+    @Override
     public void proceed(String username, String password) {
         if (mNativeXWalkHttpAuthHandler != 0) {
             nativeProceed(mNativeXWalkHttpAuthHandler, username, password);
@@ -24,6 +25,7 @@ public class XWalkHttpAuthHandler implements XWalkHttpAuth {
         }
     }
 
+    @Override
     public void cancel() {
         if (mNativeXWalkHttpAuthHandler != 0) {
             nativeCancel(mNativeXWalkHttpAuthHandler);
@@ -31,6 +33,7 @@ public class XWalkHttpAuthHandler implements XWalkHttpAuth {
         }
     }
 
+    @Override
     public boolean isFirstAttempt() {
          return mFirstAttempt;
     }

@@ -41,14 +41,13 @@ import android.widget.ImageView.ScaleType;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-import org.chromium.content.browser.ContentViewRenderView.FirstRenderedFrameListener;
-
+import org.chromium.components.embedder_support.view.ContentViewRenderView;
 /**
  * Provisionally set it as public due to the use of launch screen extension.
  * @hide
  */
 public class XWalkLaunchScreenManager
-        implements FirstRenderedFrameListener, DialogInterface.OnShowListener,
+        implements ContentViewRenderView.FirstRenderedFrameListener, DialogInterface.OnShowListener,
                 DialogInterface.OnDismissListener, PageLoadListener {
     // This string will be initialized before extension initialized,
     // and used by LaunchScreenExtension.

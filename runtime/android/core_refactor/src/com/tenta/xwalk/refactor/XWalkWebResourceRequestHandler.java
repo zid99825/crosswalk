@@ -23,27 +23,27 @@ public class XWalkWebResourceRequestHandler implements XWalkWebResourceRequest {
         mRequest = request;
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public Uri getUrl() {
         return Uri.parse(mRequest.url);
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public boolean isForMainFrame() {
         return mRequest.isMainFrame;
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public boolean hasGesture() {
         return mRequest.hasUserGesture;
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public String getMethod() {
         return mRequest.method;
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public Map<String, String> getRequestHeaders() {
         return mRequest.requestHeaders;
     }

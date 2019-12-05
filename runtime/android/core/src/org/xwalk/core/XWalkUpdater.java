@@ -4,6 +4,7 @@
 
 package org.xwalk.core;
 
+import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -587,6 +588,7 @@ public class XWalkUpdater {
         }
     }
 
+    @SuppressLint("PackageManagerGetSignatures")
     private boolean verifyDownloadedXWalkRuntime(String libFile) {
         // getPackageArchiveInfo also check the integrity of the downloaded runtime APK
         // besides returning the PackageInfo with signatures.

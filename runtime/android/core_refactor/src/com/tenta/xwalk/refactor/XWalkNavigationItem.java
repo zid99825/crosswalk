@@ -32,7 +32,6 @@ public class XWalkNavigationItem implements Cloneable {
      * @return the string of the url.
      * @since 1.0
      */
-//TODO(iotto) :     @XWalkAPI
     public String getUrl() {
         return mEntry.getUrl();
     }
@@ -42,7 +41,6 @@ public class XWalkNavigationItem implements Cloneable {
      * @return the string of the original url.
      * @since 1.0
      */
-//TODO(iotto) :     @XWalkAPI
     public String getOriginalUrl() {
         return mEntry.getOriginalUrl();
     }
@@ -52,11 +50,11 @@ public class XWalkNavigationItem implements Cloneable {
      * @return the string of the title.
      * @since 1.0
      */
-//TODO(iotto) :     @XWalkAPI
     public String getTitle() {
         return mEntry.getTitle();
     }
 
+    @Override
     protected synchronized XWalkNavigationItem clone() {
         return new XWalkNavigationItem(this);
     }

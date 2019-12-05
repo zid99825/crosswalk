@@ -6,9 +6,11 @@ package com.tenta.xwalk.refactor;
 
 import java.lang.annotation.Annotation;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Log;
 
+@SuppressLint("StaticFieldLeak")
 public class XWalkCoreBridge {
     private static final String WRAPPER_PACKAGE = "org.xwalk.core";
     private static final String BRIDGE_PACKAGE = "org.xwalk.core.internal";

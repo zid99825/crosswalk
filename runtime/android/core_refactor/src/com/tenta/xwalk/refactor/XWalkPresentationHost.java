@@ -22,6 +22,7 @@ import org.chromium.base.annotations.JNINamespace;
 
 import com.tenta.xwalk.refactor.extension.api.XWalkDisplayManager;
 
+@SuppressLint("StaticFieldLeak")
 @JNINamespace("xwalk")
 class XWalkPresentationHost implements XWalkDisplayManager.DisplayListener {
     private static String TAG = "XWalkPresentationHost";

@@ -132,14 +132,14 @@ public class XWalkContentView extends ContentView {
 
     // Imitate ContentView.ContentViewApi23
     private static class XWalkContentViewApi23 extends XWalkContentViewApi16 {
-        public XWalkContentViewApi23(Context context, ContentViewCore cvc,
+        public XWalkContentViewApi23(Context context, WebContents webContents,
                 XWalkView xwView) {
-            super(context, cvc, xwView);
+            super(context, webContents, xwView);
         }
 
         @Override
         public void onProvideVirtualStructure(final ViewStructure structure) {
-            mContentViewCore.onProvideVirtualStructure(structure, false);
+            super.onProvideVirtualStructure(structure);
         }
     }
 }

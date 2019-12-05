@@ -39,6 +39,7 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
     /**
      * Destroy an extension.
      */
+    @Override
     protected void destroyExtension() {
         super.destroyExtension();
     }
@@ -49,7 +50,7 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
      * @param message the message.
      * @since 2.1
      */
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void postMessage(int instanceID, String message) {
         super.postMessage(instanceID, message);
     }
@@ -60,7 +61,7 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
      * @param message the binary message.
      * @since 6.0
      */
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void postBinaryMessage(int instanceID, byte[] message) {
         super.postBinaryMessage(instanceID, message);
     }
@@ -70,7 +71,7 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
      * @param message the message.
      * @since 2.1
      */
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void broadcastMessage(String message) {
         super.broadcastMessage(message);
     }
@@ -80,7 +81,7 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
      * @param instanceID the id of instance.
      * @since 15.45
      */
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void onInstanceCreated(int instanceID) {}
 
     /**
@@ -88,7 +89,7 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
      * @param instanceID the id of instance.
      * @since 15.45
      */
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void onInstanceDestroyed(int instanceID) {}
 
     /**
@@ -97,7 +98,7 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
      * @param message the received message.
      * @since 2.1
      */
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public abstract void onMessage(int instanceID, String message);
 
     /**
@@ -106,7 +107,7 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
      * @param message the received binar message.
      * @since 6.0
      */
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void onBinaryMessage(int instanceID, byte[] message) {}
 
     /**
@@ -115,6 +116,6 @@ public abstract class XWalkExtension extends XWalkExtensionAndroid {
      * @param message the received message.
      * @since 2.1
      */
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public abstract String onSyncMessage(int instanceID, String message);
 }

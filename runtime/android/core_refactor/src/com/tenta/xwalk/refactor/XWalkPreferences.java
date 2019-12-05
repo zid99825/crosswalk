@@ -194,9 +194,9 @@ public class XWalkPreferences {
             checkKey(key);
             // If the listener list is not empty, we consider the preference is
             // loaded by Crosswalk and taken effect already.
-            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
-                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
-            }
+//            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
+//                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
+//            }
             if (sPrefMap.get(key).getBooleanValue() != enabled) {
                 PreferenceValue v = new PreferenceValue(enabled);
                 sPrefMap.put(key, v);
@@ -217,9 +217,9 @@ public class XWalkPreferences {
             checkKey(key);
             // If the listener list is not empty, we consider the preference is
             // loaded by Crosswalk and taken effect already.
-            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
-                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
-            }
+//            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
+//                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
+//            }
             if (sPrefMap.get(key).getIntegerValue() != value) {
                 PreferenceValue v = new PreferenceValue(value);
                 sPrefMap.put(key, v);
@@ -240,9 +240,9 @@ public class XWalkPreferences {
             checkKey(key);
             // If the listener list is not empty, we consider the preference is
             // loaded by Crosswalk and taken effect already.
-            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
-                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
-            }
+//            if (key == ANIMATABLE_XWALK_VIEW && !sListeners.isEmpty()) {
+//                Log.d(TAG, "ANIMATABLE_XWALK_VIEW is not effective to existing XWalkView objects");
+//            }
             if (value != null && !value.equals(sPrefMap.get(key).getStringValue())) {
                 PreferenceValue v = new PreferenceValue(value);
                 sPrefMap.put(key, v);

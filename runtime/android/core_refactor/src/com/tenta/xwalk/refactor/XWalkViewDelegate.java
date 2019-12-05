@@ -1,7 +1,7 @@
 // Copyright (c) 2013 Intel Corporation. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
+ 
 package com.tenta.xwalk.refactor;
 
 import java.io.BufferedReader;
@@ -24,7 +24,7 @@ import org.chromium.base.LocaleUtils;
 import org.chromium.base.PathUtils;
 import org.chromium.ui.resources.ResourceExtractor;
 //import org.chromium.base.ResourceExtractor.ResourceEntry;
-import org.chromium.base.ResourceExtractor.ResourceInterceptor;
+//import org.chromium.base.ResourceExtractor.ResourceInterceptor;
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.library_loader.LibraryLoader;
@@ -32,6 +32,7 @@ import org.chromium.base.library_loader.LibraryProcessType;
 import org.chromium.base.library_loader.ProcessInitException;
 import org.chromium.content_public.browser.BrowserStartupController;
 import org.chromium.content_public.browser.DeviceUtils;
+import org.chromium.content_public.browser.UiThreadTaskTraits;
 //import org.xwalk.core.internal.ResourceRewriter;
 import org.chromium.net.NetworkChangeNotifier;
 import org.chromium.net.NetworkChangeNotifierAutoDetect;
@@ -71,9 +72,9 @@ public class XWalkViewDelegate {
 
     }
 
-    private static boolean sInitialized = false;
-    private static boolean sLibraryLoaded = false;
-    private static boolean sLoadedByHoudini = false;
+    private static boolean sInitialized;// = false;
+    private static boolean sLibraryLoaded;// = false;
+    private static boolean sLoadedByHoudini;// = false;
     private static String sDeviceAbi;
     private static final String PRIVATE_DATA_DIRECTORY_SUFFIX = "xwalkcore";
     private static final String XWALK_CORE_EXTRACTED_DIR = "extracted_xwalkcore";
@@ -204,7 +205,11 @@ public class XWalkViewDelegate {
         // Use MixedContext to initialize the ResourceExtractor, as the pak file
         // is in the library apk if in shared apk mode.
         // ResourceExtractor.get();
-        ResourceExtractor.get().startExtractingResources();
+        ResourceExtractor.get().setResultTraits(UiThreadTaskTraits.BOOTSTRAP);
+        org.chromium.base.Log.w("iotto", "getUiLocaleStringForCompressedPak");
+        //ResourceExtractor.get().startExtractingResources(LocaleUtils.toLanguage(
+//        ChromeLocalizationUtils.getUiLocaleStringForCompressedPak()));
+        ResourceExtractor.get().startExtractingResources("en");
 
         // resourceExtractor.waitForCompletion();
 
@@ -250,12 +255,6 @@ public class XWalkViewDelegate {
         if (sLibraryLoaded)
             return true;
 
-        try {
-            LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
-            // libraryLoader.ensureInitialized();
-        } catch (ProcessInitException e) {
-        }
-
         // TODO(iotto) workarround for lint error using System.load
 
         /*
@@ -271,8 +270,9 @@ public class XWalkViewDelegate {
         // Load libraries what is wrote in NativeLibraries.java at compile time. It may duplicate
         // with System.loadLibrary("xwalkcore") above, but same library won't be loaded repeatedly.
         try {
-            LibraryLoader libraryLoader = LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
-            libraryLoader.loadNow();
+            LibraryLoader libraryLoader = LibraryLoader.getInstance();
+                    //(LibraryProcessType.PROCESS_BROWSER);
+            libraryLoader.ensureInitialized(LibraryProcessType.PROCESS_BROWSER);
             // libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {
         }
@@ -297,11 +297,11 @@ public class XWalkViewDelegate {
             @Override
             public void run() {
                 try {
-                    LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER).ensureInitialized();
+                    LibraryLoader.getInstance().ensureInitialized(LibraryProcessType.PROCESS_BROWSER);
                 } catch (ProcessInitException e) {
                     throw new RuntimeException("Cannot initialize Crosswalk Core", e);
                 }
-                DeviceUtils.addDeviceSpecificUserAgentSwitch(context);
+                DeviceUtils.addDeviceSpecificUserAgentSwitch();
                 CommandLine.getInstance().appendSwitchWithValue(
                         XWalkSwitches.PROFILE_NAME,
                         XWalkPreferences
@@ -331,93 +331,94 @@ public class XWalkViewDelegate {
      * being used in shared or embedded mode.
      */
     private static void setupResourceInterceptor(final Context context) throws IOException {
-        final boolean isSharedMode = !context.getPackageName()
-                .equals(context.getApplicationContext().getPackageName());
-
-        String enable = getApplicationMetaData(context, META_XWALK_DOWNLOAD_MODE);
-        if (enable == null) {
-            enable = getApplicationMetaData(context, META_XWALK_ENABLE_DOWNLOAD_MODE);
-        }
-        final boolean isDownloadMode = enable != null
-                && (enable.equalsIgnoreCase("enable") || enable.equalsIgnoreCase("true"));
-
-        // The test APKs (XWalkCoreShell, XWalkCoreInternalShell etc) are different from normal
-        // Crosswalk apps: even though they use Crosswalk in embedded mode, the resources are stored
-        // in assets/ with the rest of the app's assets.
-        // XWalkRuntimeClientShell is the only exception, as it uses Crosswalk in shared mode.
-        final boolean isTestApk = !isSharedMode
-                && Arrays.asList(context.getAssets().list("")).contains(XWALK_PAK_NAME);
-
-        ArrayList<String> resourceList = new ArrayList<String>();
-        // HashMap<String, ResourceEntry> resourceList = new HashMap<String, ResourceEntry>();
-        // code fragment from ResourceExtractor
-        Locale defaultLocale = Locale.getDefault();
-        String language = LocaleUtils.getUpdatedLanguageForChromium(defaultLocale.getLanguage());
-        // Currenty (Oct 2016), this array can be as big as 4 entries, so using a capacity
-        // that allows a bit of growth, but is still in the right ballpark..
-        ArrayList<String> activeLocalePakFiles = new ArrayList<String>(6);
-        for (String locale : BuildConfig.COMPRESSED_LOCALES) {
-            if (locale.startsWith(language)) {
-                resourceList.add(locale + ".pak");
-            }
-        }
-        if (resourceList.isEmpty() && BuildConfig.COMPRESSED_LOCALES.length > 0) {
-            assert Arrays.asList(BuildConfig.COMPRESSED_LOCALES).contains(ResourceExtractor.FALLBACK_LOCALE);
-            resourceList.add(ResourceExtractor.FALLBACK_LOCALE + ".pak");
-        }
-
-        try {
-            int resourceListId = getResourceId(context, XWALK_RESOURCES_LIST_RES_NAME, "array");
-            String[] crosswalkResources = context.getResources().getStringArray(resourceListId);
-            for (String resource : crosswalkResources) {
-                resourceList.add(resource);
-            }
-        } catch (NotFoundException e) {
-            for (String resource : MANDATORY_PAKS) {
-                resourceList.add(resource);
-            }
-        }
-        ResourceExtractor.setResourcesToExtract(
-                resourceList.toArray(new String[resourceList.size()]));
-
-        // For shouldInterceptLoadRequest(), which needs a final value.
-        final HashSet<String> interceptableResources = new HashSet<String>(resourceList);
-
-        // For shared mode, assets are in library package.
-        // For embedded mode, assets are in res/raw.
-        ResourceExtractor.setResourceInterceptor(new ResourceInterceptor() {
-            @Override
-            public boolean shouldInterceptLoadRequest(String resource) {
-                return interceptableResources.contains(resource);
-            }
-
-            @Override
-            public InputStream openRawResource(String resource) {
-                if (isSharedMode || isTestApk) {
-                    try {
-                        return context.getAssets().open(resource);
-                    } catch (IOException e) {
-                        throw new RuntimeException(resource + " can't be found in assets.");
-                    }
-                } else if (isDownloadMode) {
-                    try {
-                        final String resDir = context.getApplicationContext().getDir(
-                                XWALK_CORE_EXTRACTED_DIR, Context.MODE_PRIVATE).getAbsolutePath();
-                        return new FileInputStream(new File(resDir, resource));
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(resource + " can't be found.");
-                    }
-                } else {
-                    String resourceName = resource.split("\\.")[0];
-                    int resourceId = getResourceId(context, resourceName, "raw");
-                    try {
-                        return context.getResources().openRawResource(resourceId);
-                    } catch (NotFoundException e) {
-                        throw new RuntimeException("R.raw." + resourceName + " can't be found.");
-                    }
-                }
-            }
-        });
+        org.chromium.base.Log.e("iotto", "Fix setupResourceInterceptor if needed");
+//        final boolean isSharedMode = !context.getPackageName()
+//                .equals(context.getApplicationContext().getPackageName());
+//
+//        String enable = getApplicationMetaData(context, META_XWALK_DOWNLOAD_MODE);
+//        if (enable == null) {
+//            enable = getApplicationMetaData(context, META_XWALK_ENABLE_DOWNLOAD_MODE);
+//        }
+//        final boolean isDownloadMode = enable != null
+//                && (enable.equalsIgnoreCase("enable") || enable.equalsIgnoreCase("true"));
+//
+//        // The test APKs (XWalkCoreShell, XWalkCoreInternalShell etc) are different from normal
+//        // Crosswalk apps: even though they use Crosswalk in embedded mode, the resources are stored
+//        // in assets/ with the rest of the app's assets.
+//        // XWalkRuntimeClientShell is the only exception, as it uses Crosswalk in shared mode.
+//        final boolean isTestApk = !isSharedMode
+//                && Arrays.asList(context.getAssets().list("")).contains(XWALK_PAK_NAME);
+//
+//        ArrayList<String> resourceList = new ArrayList<String>();
+//        // HashMap<String, ResourceEntry> resourceList = new HashMap<String, ResourceEntry>();
+//        // code fragment from ResourceExtractor
+//        Locale defaultLocale = Locale.getDefault();
+//        String language = LocaleUtils.getUpdatedLanguageForChromium(defaultLocale.getLanguage());
+//        // Currenty (Oct 2016), this array can be as big as 4 entries, so using a capacity
+//        // that allows a bit of growth, but is still in the right ballpark..
+//        ArrayList<String> activeLocalePakFiles = new ArrayList<String>(6);
+//        for (String locale : BuildConfig.COMPRESSED_LOCALES) {
+//            if (locale.startsWith(language)) {
+//                resourceList.add(locale + ".pak");
+//            }
+//        }
+//        if (resourceList.isEmpty() && BuildConfig.COMPRESSED_LOCALES.length > 0) {
+//            assert Arrays.asList(BuildConfig.COMPRESSED_LOCALES).contains(ResourceExtractor.FALLBACK_LOCALE);
+//            resourceList.add(ResourceExtractor.FALLBACK_LOCALE + ".pak");
+//        }
+//
+//        try {
+//            int resourceListId = getResourceId(context, XWALK_RESOURCES_LIST_RES_NAME, "array");
+//            String[] crosswalkResources = context.getResources().getStringArray(resourceListId);
+//            for (String resource : crosswalkResources) {
+//                resourceList.add(resource);
+//            }
+//        } catch (NotFoundException e) {
+//            for (String resource : MANDATORY_PAKS) {
+//                resourceList.add(resource);
+//            }
+//        }
+//        ResourceExtractor.setResourcesToExtract(
+//                resourceList.toArray(new String[resourceList.size()]));
+//
+//        // For shouldInterceptLoadRequest(), which needs a final value.
+//        final HashSet<String> interceptableResources = new HashSet<String>(resourceList);
+//
+//        // For shared mode, assets are in library package.
+//        // For embedded mode, assets are in res/raw.
+//        ResourceExtractor.setResourceInterceptor(new ResourceInterceptor() {
+//            @Override
+//            public boolean shouldInterceptLoadRequest(String resource) {
+//                return interceptableResources.contains(resource);
+//            }
+//
+//            @Override
+//            public InputStream openRawResource(String resource) {
+//                if (isSharedMode || isTestApk) {
+//                    try {
+//                        return context.getAssets().open(resource);
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(resource + " can't be found in assets.");
+//                    }
+//                } else if (isDownloadMode) {
+//                    try {
+//                        final String resDir = context.getApplicationContext().getDir(
+//                                XWALK_CORE_EXTRACTED_DIR, Context.MODE_PRIVATE).getAbsolutePath();
+//                        return new FileInputStream(new File(resDir, resource));
+//                    } catch (FileNotFoundException e) {
+//                        throw new RuntimeException(resource + " can't be found.");
+//                    }
+//                } else {
+//                    String resourceName = resource.split("\\.")[0];
+//                    int resourceId = getResourceId(context, resourceName, "raw");
+//                    try {
+//                        return context.getResources().openRawResource(resourceId);
+//                    } catch (NotFoundException e) {
+//                        throw new RuntimeException("R.raw." + resourceName + " can't be found.");
+//                    }
+//                }
+//            }
+//        });
     }
 
     /**

@@ -126,9 +126,8 @@ public class XWalkNavigationHandlerImpl implements XWalkNavigationHandler {
                     }
                 }
             }
-            intent.setData(Uri.parse(ACTION_SMS_PREFIX + address));
             intent.putExtra("address", address);
-            intent.setType("vnd.android-dir/mms-sms");
+            intent.setDataAndType(Uri.parse(ACTION_SMS_PREFIX + address), "vnd.android-dir/mms-sms");
         } else if (url.startsWith(ACTION_MARKET_PREFIX)) {
             // If Android Market.
             intent = new Intent(Intent.ACTION_VIEW);
@@ -161,7 +160,7 @@ public class XWalkNavigationHandlerImpl implements XWalkNavigationHandler {
         // by intent actions.
         if (mimeType != null && mimeType.startsWith("application/")) {
             // "application/xhtml+xml" should not be handled by intent actions. See XWALK-2912.
-            if (mimeType == "application/xhtml+xml" || mimeType == "application/xml")
+            if (mimeType.equals("application/xhtml+xml") || mimeType.equals("application/xml"))
                 return false;
             return true;
         }

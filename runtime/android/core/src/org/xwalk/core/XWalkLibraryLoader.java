@@ -4,6 +4,7 @@
 
 package org.xwalk.core;
 
+import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.app.DownloadManager.Request;
 import android.app.DownloadManager.Query;
@@ -30,6 +31,8 @@ import java.net.URLConnection;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Arrays;
+
+import com.tenta.xwalk.refactor.XWalkAppVersion;
 
 /**
  * XWalkLibraryLoader is a low level inteface to schedule decompressing, downloading, activating
@@ -353,6 +356,7 @@ class XWalkLibraryLoader {
         }
     }
 
+    @SuppressLint("StaticFieldLeak")
     private static class DownloadManagerTask extends AsyncTask<Void, Integer, Integer> {
         private static final int QUERY_INTERVAL_MS = 100;
         private static final int MAX_PAUSED_COUNT = 6000; // 10 minutes
@@ -503,6 +507,7 @@ class XWalkLibraryLoader {
 
     // This is used only in download mode where we want to save the downloaded file to application
     // private storage and it's also intended to solve the exception found in XWALK-5951
+    @SuppressLint("StaticFieldLeak")
     private static class HttpDownloadTask extends AsyncTask<Void, Integer, Integer> {
         private static final String XWALK_DOWNLOAD_DIR = "xwalk_download";
         private static final int UPDATE_INTERVAL_MS = 500;

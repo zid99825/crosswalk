@@ -4,9 +4,10 @@
 
 package org.xwalk.core;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.res.Resources;
-import org.chromium.base.BaseChromiumApplication;
+//import org.chromium.base.BaseChromiumApplication;
 
 /**
  * This class is deprecated.
@@ -14,7 +15,7 @@ import org.chromium.base.BaseChromiumApplication;
  * XWalkApplication is to support cross package resource loading.
  * It provides method to allow overriding getResources() behavior.
  */
-public class XWalkApplication extends BaseChromiumApplication {
+public class XWalkApplication extends Application/*extends BaseChromiumApplication */{
     private static XWalkApplication gApp = null;
     private Resources mRes = null;
 

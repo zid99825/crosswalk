@@ -140,7 +140,6 @@ public class XWalkNavigationHistory implements Cloneable, Serializable {
      * @return current index in the navigation history.
      * @since 1.0
      */
-//TODO(iotto) :     @XWalkAPI
     public int getCurrentIndex() {
         return mHistory.getCurrentEntryIndex();
     }
@@ -149,11 +148,11 @@ public class XWalkNavigationHistory implements Cloneable, Serializable {
      * Clear all history owned by this XWalkView.
      * @since 1.0
      */
-//TODO(iotto) :     @XWalkAPI
     public void clear() {
         mXWalkView.clearHistory();
     }
 
+    @Override
     protected synchronized XWalkNavigationHistory clone() {
         return new XWalkNavigationHistory(this);
     }

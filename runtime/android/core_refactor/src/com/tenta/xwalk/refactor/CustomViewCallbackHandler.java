@@ -15,6 +15,7 @@ public class CustomViewCallbackHandler implements CustomViewCallback {
      * custom view.
      * @since 7.0
      */
+    @Override
     public void onCustomViewHidden() {
     }
 }

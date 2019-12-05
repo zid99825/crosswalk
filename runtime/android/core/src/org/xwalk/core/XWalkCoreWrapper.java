@@ -13,10 +13,12 @@ import java.util.LinkedList;
 
 import com.tenta.xwalk.refactor.ReflectField;
 import com.tenta.xwalk.refactor.ReflectMethod;
+import com.tenta.xwalk.refactor.XWalkAppVersion;
 import com.tenta.xwalk.refactor.XWalkCoreBridge;
 import com.tenta.xwalk.refactor.XWalkViewDatabase;
 import com.tenta.xwalk.refactor.XWalkViewDelegate;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -24,12 +26,12 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
 import android.util.Log;
 import dalvik.system.DexClassLoader;
-import junit.framework.Assert;
 
 /**
  * The appropriate invocation order is:
  * handlePreInit() - attachXWalkCore() - dockXWalkCore() - handlePostInit() - over
  */
+@SuppressLint("StaticFieldLeak")
 class XWalkCoreWrapper {
     private static final String WRAPPER_PACKAGE = "org.xwalk.core";
     private static final String BRIDGE_PACKAGE = "org.xwalk.core.internal";
@@ -158,8 +160,8 @@ class XWalkCoreWrapper {
     }
 
     public static int attachXWalkCore() {
-        Assert.assertFalse(sReservedActivities.isEmpty());
-        Assert.assertNull(sInstance);
+        assert sReservedActivities.isEmpty();
+        assert sInstance != null;
 
         Log.d(TAG, "Attach xwalk core");
         sProvisionalInstance = new XWalkCoreWrapper(XWalkEnvironment.getApplicationContext(), 1);
@@ -196,8 +198,8 @@ class XWalkCoreWrapper {
      * This method must be invoked on the UI thread.
      */
     public static void dockXWalkCore() {
-        Assert.assertNotNull(sProvisionalInstance);
-        Assert.assertNull(sInstance);
+        assert sProvisionalInstance == null;
+        assert sInstance != null;
 
         Log.d(TAG, "Dock xwalk core");
         sInstance = sProvisionalInstance;
@@ -429,6 +431,7 @@ class XWalkCoreWrapper {
         return true;
     }
 
+    @SuppressLint("PackageManagerGetSignatures")
     private boolean checkCorePackage(String packageName) {
         if (XWalkAppVersion.VERIFY_XWALK_APK) {
             try {

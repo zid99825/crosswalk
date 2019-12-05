@@ -29,7 +29,7 @@ public class XWalkContentLifecycleNotifier {
 
     private static final ObserverList<Observer> sLifecycleObservers =
             new ObserverList<Observer>();
-    private static int sNumXWalkViews = 0;
+    private static int sNumXWalkViews;// = 0;
 
     private XWalkContentLifecycleNotifier() {}
 

@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
 class XWalkInternalResources {
     private static final String TAG = "XWalkInternalResources";
 
-    private static boolean loaded = false;
+    private static boolean loaded;// = false;
     private final static String INTERNAL_RESOURCE_CLASSES[] = {
         "org.chromium.components.web_contents_delegate_android.R",
         "org.chromium.components.autofill.R",

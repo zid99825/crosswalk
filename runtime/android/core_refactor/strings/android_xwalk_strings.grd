@@ -45,9 +45,11 @@
       <message desc="Title for the http authentication dialog [CHAR-LIMIT=32]" name="IDS_HTTP_AUTH_TITLE">
         Authentication Required
       </message>
+      <!-- 
       <message desc="Content description for the swipe refresh action." name="IDS_XWALK_ACCESSIBILITY_SWIPE_REFRESH">
          Refreshing page
       </message>
+       -->
 
 <!--      <message desc="Title for the Ssl Alert dialog [CHAR-LIMIT=32]" name="IDS_SSL_ALERT_TITLE">
         Ssl Certificate Error Alert

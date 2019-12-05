@@ -11,6 +11,7 @@ public class XWalkNativeExtensionLoader extends XWalkNativeExtensionLoaderAndroi
      * register path of native extensions.
      * @param path the path of the extension.
      */
+    @Override
     public void registerNativeExtensionsInPath(String path) {
         super.registerNativeExtensionsInPath(path);
     }

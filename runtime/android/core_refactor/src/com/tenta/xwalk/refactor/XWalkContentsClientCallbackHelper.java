@@ -9,8 +9,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import org.chromium.content.browser.ContentViewCore;
-
 /**
  * This class is responsible for calling certain client callbacks on the UI thread.
  *

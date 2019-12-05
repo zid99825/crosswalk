@@ -17,6 +17,7 @@ import com.tenta.xwalk.refactor.CustomViewCallback;
 import com.tenta.xwalk.refactor.RewriteUrlValue;
 import com.tenta.xwalk.refactor.XWalkHttpAuthHandler;
 
+import android.R.integer;
 import android.content.pm.ActivityInfo;
 import android.graphics.Picture;
 import android.net.http.SslError;
@@ -115,11 +116,20 @@ abstract class XWalkContentsClient {
             }
         }
 
-		@Override
-		public void didFinishNavigation(String url, boolean isInMainFrame, boolean isErrorPage, boolean hasCommitted,
-				boolean isSameDocument, boolean isFragmentNavigation, Integer pageTransition, int errorCode,
-				String errorDescription, int httpStatusCode) {
-			if (errorCode != 0) {
+        @Override
+        public void didFinishNavigation(NavigationHandle navigationHandle) {
+            final String url = navigationHandle.getUrl();
+            final boolean isInMainFrame = navigationHandle.isInMainFrame();
+            final boolean isErrorPage = navigationHandle.isErrorPage();
+            final int errorCode = navigationHandle.errorCode();
+            final String errorDescription = navigationHandle.errorDescription();
+            final boolean hasCommitted = navigationHandle.hasCommitted();
+            final boolean isSameDocument = navigationHandle.isSameDocument();
+            final Integer pageTransition = navigationHandle.pageTransition();
+            final int httpStatusCode = navigationHandle.httpStatusCode();
+            final boolean isFragmentNavigation = navigationHandle.isFragmentNavigation();
+            
+            if (errorCode != 0) {
 				didFailLoad(isInMainFrame, errorCode, errorDescription, url);
 			}
 
@@ -320,8 +330,6 @@ abstract class XWalkContentsClient {
 
     public abstract void provideClientCertificateResponse(int id, byte[][] certChain,
             PrivateKey privateKey);
-
-    public abstract ContentVideoViewEmbedder getContentVideoViewEmbedder();
 
     // --------------------------------------------------------------------------------------------
     // Other XWalkViewInternal-specific methods

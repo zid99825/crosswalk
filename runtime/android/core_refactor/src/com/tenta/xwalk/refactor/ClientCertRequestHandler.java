@@ -44,7 +44,7 @@ public class ClientCertRequestHandler implements ClientCertRequest {
         mContentsClient = null;
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void proceed(final PrivateKey privateKey, final List<X509Certificate> chain) {
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
@@ -58,7 +58,7 @@ public class ClientCertRequestHandler implements ClientCertRequest {
         });
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void ignore() {
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
@@ -68,7 +68,7 @@ public class ClientCertRequestHandler implements ClientCertRequest {
         });
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public void cancel() {
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
@@ -78,22 +78,22 @@ public class ClientCertRequestHandler implements ClientCertRequest {
         });
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public String getHost() {
         return mHost;
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public int getPort() {
         return mPort;
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public String[] getKeyTypes() {
         return mKeyTypes;
     }
 
-//TODO(iotto) :     @XWalkAPI
+    @Override
     public Principal[] getPrincipals() {
         return mPrincipals;
     }

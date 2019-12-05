@@ -18,8 +18,8 @@ import org.chromium.base.annotations.CalledByNative;
 class XWalkDevToolsServer {
     private static final String DEBUG_PERMISSION_SIFFIX = ".permission.DEBUG";
 
-    private long mNativeDevToolsServer = 0;
-    private String mSocketName = null;
+    private long mNativeDevToolsServer;// = 0;
+    private String mSocketName;// = null;
 
     // Defines what processes may access to the socket.
     public enum Security {

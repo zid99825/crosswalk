@@ -4,6 +4,7 @@
 
 package com.tenta.xwalk.refactor;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -80,19 +81,19 @@ public class XWalkSettings {
     private boolean mLoadsImagesAutomatically = true;
     private boolean mImagesEnabled = true;
     private boolean mJavaScriptEnabled = true;
-    private boolean mAllowUniversalAccessFromFileURLs = false;
-    private boolean mAllowFileAccessFromFileURLs = false;
+    private boolean mAllowUniversalAccessFromFileURLs;// = false;
+    private boolean mAllowFileAccessFromFileURLs;// = false;
     private boolean mJavaScriptCanOpenWindowsAutomatically = true;
     private int mCacheMode = WebSettings.LOAD_DEFAULT;
-    private boolean mSupportMultipleWindows = false;
+    private boolean mSupportMultipleWindows;// = false;
     private boolean mAppCacheEnabled = true;
     private boolean mDomStorageEnabled = true;
     private boolean mDatabaseEnabled = true;
-    private boolean mUseWideViewport = false;
+    private boolean mUseWideViewport;// = false;
     private boolean mZeroLayoutHeightDisablesViewportQuirk;
     private boolean mForceZeroLayoutHeight;
-    private boolean mLoadWithOverviewMode = false;
-    private boolean mMediaPlaybackRequiresUserGesture = false;
+    private boolean mLoadWithOverviewMode;// = false;
+    private boolean mMediaPlaybackRequiresUserGesture;// = false;
     private String mDefaultVideoPosterURL;
     private final boolean mPasswordEchoEnabled;
 
@@ -115,13 +116,13 @@ public class XWalkSettings {
     // For compatibility with the legacy WebView, we can only enable AppCache when the path is
     // provided. However, we don't use the path, so we just check if we have received it from the
     // client.
-    private static boolean sAppCachePathIsSet = false;
+    private static boolean sAppCachePathIsSet;// = false;
 
     // The native side of this object.
-    private long mNativeXWalkSettings = 0;
+    private long mNativeXWalkSettings;// = 0;
 
     // A flag to avoid sending superfluous synchronization messages.
-    private boolean mIsUpdateWebkitPrefsMessagePending = false;
+    private boolean mIsUpdateWebkitPrefsMessagePending;// = false;
     // Custom handler that queues messages to call native code on the UI thread.
     private final EventHandler mEventHandler;
 
@@ -132,18 +133,18 @@ public class XWalkSettings {
 
     private boolean mAutoCompleteEnabled = true;
 
-    private float mInitialPageScalePercent = 0;
+    private float mInitialPageScalePercent;// = 0;
     private double mDIPScale = 1.0;
     private int mTextSizePercent = 100;
     private ZoomSupportChangeListener mZoomChangeListener;
     private boolean mSupportZoom = true;
-    private boolean mBuiltInZoomControls = false;
+    private boolean mBuiltInZoomControls;// = false;
     private boolean mDisplayZoomControls = true;
 
     private boolean mSpatialNavigationEnabled;
     private boolean mEnableSupportedHardwareAcceleratedFeatures = true; // TODO(iotto): check and set
     private boolean mFullscreenSupported = true;
-    private boolean mQuirksModeEnabled = false;
+    private boolean mQuirksModeEnabled;// = false;
 
     private LayoutAlgorithmInternal mLayoutAlgorithm = LayoutAlgorithmInternal.NARROW_COLUMNS;
 
@@ -152,6 +153,7 @@ public class XWalkSettings {
     }
 
     // Class to handle messages to be processed on the UI thread.
+    @SuppressLint("HandlerLeak")
     private class EventHandler {
         // Message id for updating Webkit preferences
         private static final int UPDATE_WEBKIT_PREFERENCES = 0;
@@ -1105,7 +1107,7 @@ public class XWalkSettings {
      */
     public void setAcceptLanguages(final String acceptLanguages) {
         synchronized (mXWalkSettingsLock) {
-            if (mAcceptLanguages == acceptLanguages)
+            if (mAcceptLanguages != null && mAcceptLanguages.equals(acceptLanguages))
                 return;
             mAcceptLanguages = acceptLanguages;
             mEventHandler.maybeRunOnUiThreadBlocking(new Runnable() {

@@ -4,6 +4,7 @@
 
 package com.tenta.xwalk.refactor;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -39,9 +40,9 @@ public class XWalkUIClient {
     private XWalkView mXWalkView;
     private boolean mOriginalFullscreen;
     private boolean mOriginalForceNotFullscreen;
-    private boolean mIsFullscreen = false;
+    private boolean mIsFullscreen;
     private View mCustomXWalkView;
-    private final int INVALID_ORIENTATION = -2;
+    private static final int INVALID_ORIENTATION = -2;
     private int mPreOrientation = INVALID_ORIENTATION;
     private CustomViewCallback mCustomViewCallback;
     private XWalkContentsClient mContentsClient;
@@ -62,8 +63,8 @@ public class XWalkUIClient {
      * @param view the owner XWalkView instance.
      * @since 1.0
      */
-//TODO(iotto) :     @XWalkAPI
     public XWalkUIClient(XWalkView view) {
+        mIsFullscreen = false;
         mContext = view.getContext();
         if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
             mSystemUiFlag = View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
@@ -82,7 +83,6 @@ public class XWalkUIClient {
      * @return Return true if the host application will create a new window
      * @since 4.0
      */
-//TODO(iotto) :     @XWalkAPI
     public boolean onCreateWindowRequested(XWalkView view, InitiateByInternal initiator,
             ValueCallback<XWalkView> callback) {
         return false;
@@ -667,7 +667,7 @@ public class XWalkUIClient {
      * 
      * @since 7.0
      */
-//TODO(iotto) :     @XWalkAPI
+    @SuppressLint("WrongConstant")
     public void onHideCustomView() {
         if (mCustomXWalkView == null || !(mXWalkView.getContext() instanceof Activity))
             return;

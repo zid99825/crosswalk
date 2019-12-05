@@ -14,9 +14,6 @@ import android.webkit.ConsoleMessage;
 
 import org.chromium.base.ContextUtils;
 import org.chromium.base.annotations.CalledByNative;
-import org.chromium.content.browser.ActivityContentVideoViewEmbedder;
-import org.chromium.content.browser.ContentVideoView;
-import org.chromium.content.browser.ContentVideoViewEmbedder;
 import org.chromium.content_public.browser.InvalidateTypes;
 import org.chromium.content_public.common.ContentUrlConstants;
 
@@ -154,29 +151,6 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
         mXwalkContent.setOverlayVideoMode(useOverlayMode);
     }
     
-    @Override
-    public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
-        return mXwalkContent.getContentVideoViewEmbedder();
-    }
-    
-    @Override
-    public void toggleFullscreenModeForTab(boolean enterFullscreen) {
-//        if (enterFullscreen) {
-//            enterFullscreen();
-//        } else {
-//            exitFullscreen();
-//        }
-    }
-
-    @Override
-    public void toggleFullscreen(boolean enterFullscreen) {
-        if (!enterFullscreen) {
-            ContentVideoView videoView = ContentVideoView.getContentVideoView();
-            if (videoView != null) videoView.exitFullscreen(false);
-        }
-        if (mXWalkContentsClient != null) mXWalkContentsClient.onToggleFullscreen(enterFullscreen);
-    }
-
     @Override
     public boolean isFullscreen() {
         if (mXWalkContentsClient != null) return mXWalkContentsClient.hasEnteredFullscreen();

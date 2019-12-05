@@ -5,6 +5,7 @@
 package com.tenta.xwalk.refactor.extension.api;
 
 import android.os.Build;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.Display;
 import java.util.ArrayList;
@@ -12,10 +13,12 @@ import java.util.ArrayList;
 /**
  * A helper class to abstract the display manager for different Android build version.
  */
+@SuppressLint("StaticFieldLeak")
 public abstract class XWalkDisplayManager {
     protected final ArrayList<DisplayListener> mListeners = new ArrayList<DisplayListener>();
     private static XWalkDisplayManager mInstance;
     // Hold the context of single and global application object of the current process.
+    // TODO(iotto): Fix static Context!
     private static Context mContext;
 
     /**
