@@ -444,3 +444,23 @@ template("generate_android_project") {
     ]
   }
 }
+
+# Generates JNI and publishes include_dirs for it
+template("generate_jni_with_includes") {
+  target_name_jni = "${target_name}_"
+
+  group(target_name) {
+    deps = [":${target_name_jni}"]
+    public_configs = [":${target_name}_includes"]
+  }
+
+  generate_jni(target_name_jni) {
+    sources = invoker.sources
+  }
+
+  config("${target_name}_includes") {
+    include_dirs = [
+      "${target_gen_dir}/${target_name_jni}"
+    ]
+  }
+}

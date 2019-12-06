@@ -121,10 +121,14 @@ dist_aar("xwalk_core_library") {
     "//xwalk/resources:xwalk_pak",
     "//xwalk/resources:xwalk_resources_100_percent_pak",
     "//xwalk/runtime/android/core_refactor:xwalk_refactor_java",
+    "//xwalk/runtime/app/android:libxwalkcore",
   ]
   binary_files = [
     "$root_out_dir/xwalk.pak",
     "$root_out_dir/xwalk_100_percent.pak",
+  ]
+  native_libraries = [
+    "$root_out_dir/libxwalkcore.so"
   ]
   #TODO(iotto): removed
 #  js_bindings = [
