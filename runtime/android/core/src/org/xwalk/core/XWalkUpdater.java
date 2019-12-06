@@ -13,7 +13,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.util.Log;
 
 import java.io.File;
@@ -548,12 +547,13 @@ public class XWalkUpdater {
         }
 
         @Override
+        @SuppressLint("NoAndroidAsyncTaskCheck")
         public void onDownloadCompleted(Uri uri) {
             final String libFile = uri.getPath();
             final String destDir = XWalkEnvironment.getExtractedCoreDir();
             Log.d(TAG, "Download mode extract dir: " + destDir);
 
-            new AsyncTask<Void, Void, Boolean>() {
+            new android.os.AsyncTask<Void, Void, Boolean>() {
                 @Override
                 protected Boolean doInBackground(Void... params) {
                     if (XWalkEnvironment.isXWalkVerify()) {

@@ -12,6 +12,7 @@ import org.json.JSONObject;
 
 public class BindingObjectAutoJS extends BindingObject {
 
+    @Override
     public Object handleMessage(MessageInfo info) {
         Object result = null;
         ReflectionHelper extReflect = mInstanceHelper.getExtension().getReflection();

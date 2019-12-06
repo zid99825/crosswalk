@@ -4,6 +4,7 @@
 
 package org.xwalk.core.extension;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 
 import java.lang.Byte;
@@ -84,6 +85,7 @@ public class BindingObjectStore {
         return result;
     }
 
+    @SuppressLint("ByteBufferBackingArray")
     public Object onPostMessageToObject(MessageInfo info) {
         Object result = null;
         try {
@@ -97,6 +99,7 @@ public class BindingObjectStore {
                 newInfo.setJsName(objectMethodName);
                 newInfo.setArgs(objectMethodArgs);
             } else {
+                org.chromium.base.Log.e("iotto", "Fix: ByteBufferBackingArray");
                 ByteBuffer args = info.getBinaryArgs();
                 args.order(ByteOrder.LITTLE_ENDIAN);
                 int byteOffset = args.position();

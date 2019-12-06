@@ -23,14 +23,17 @@ class XWalkCoreExtensionBridge extends XWalkExtension implements XWalkExternalEx
     //------------------------------------------------
     // XWalkExtensionBridge implementations.
     //------------------------------------------------
+    @Override
     public void onMessage(int instanceID, String message) {
         mExtension.onMessage(instanceID, message);
     }
 
+    @Override
     public void onBinaryMessage(int instanceID, byte[] message) {
         mExtension.onBinaryMessage(instanceID, message);
     }
 
+    @Override
     public String onSyncMessage(int instanceID, String message) {
         return mExtension.onSyncMessage(instanceID, message);
     }
@@ -45,26 +48,32 @@ class XWalkCoreExtensionBridge extends XWalkExtension implements XWalkExternalEx
         mExtension.onInstanceDestroyed(instanceID);
     }
 
+    @Override
     public void onDestroy() {
         mExtension.onDestroy();
     }
 
+    @Override
     public void onResume() {
         mExtension.onResume();
     }
 
+    @Override
     public void onPause() {
         mExtension.onPause();
     }
 
+    @Override
     public void onStart() {
         mExtension.onStart();
     }
 
+    @Override
     public void onStop() {
         mExtension.onStop();
     }
 
+    @Override
     public void onNewIntent(Intent intent) {
         mExtension.onNewIntent(intent);
     }
