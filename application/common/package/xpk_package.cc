@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "base/containers/span.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_file.h"
 #include "base/numerics/safe_conversions.h"
@@ -73,15 +74,13 @@ bool XPKPackage::VerifySignature() {
     return false;
   crypto::SignatureVerifier verifier;
   if (!verifier.VerifyInit(crypto::SignatureVerifier::RSA_PKCS1_SHA1,
-                           &signature_.front(),
-                           base::checked_cast<int>(signature_.size()),
-                           &key_.front(),
-                           base::checked_cast<int>(key_.size())))
+                           base::make_span(signature_),
+                           base::make_span(key_)))
     return false;
   unsigned char buf[1 << 12];
   size_t len = 0;
   while ((len = fread(buf, 1, sizeof(buf), file_->get())) > 0)
-    verifier.VerifyUpdate(buf, base::checked_cast<int>(len));
+    verifier.VerifyUpdate(base::make_span(buf, base::checked_cast<int>(len)));
   if (!verifier.VerifyFinal())
     return false;
 

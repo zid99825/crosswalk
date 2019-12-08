@@ -30,12 +30,12 @@ class ApplicationService : public Application::Observer {
 
   // Client code may use this class (and register with AddObserver below) to
   // keep track of applications life cycle.
-  class Observer {
+  class Observer : public base::CheckedObserver {
    public:
     virtual void DidLaunchApplication(Application* app) {}
     virtual void WillDestroyApplication(Application* app) {}
    protected:
-    virtual ~Observer() {}
+    ~Observer() override {}
   };
 
   ~ApplicationService() override;

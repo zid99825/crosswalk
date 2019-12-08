@@ -163,8 +163,9 @@ void Runtime::LoadingStateChanged(content::WebContents* source,
                                   bool to_different_document) {
 }
 
-void Runtime::EnterFullscreenModeForTab(content::WebContents* web_contents,
-                                        const GURL&) {
+void Runtime::EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL&,
+                                        const blink::WebFullscreenOptions& options) {
+  // TODO(iotto): Check and fix
   fullscreen_options_ |= FULLSCREEN_FOR_TAB;
   if (ui_delegate_)
     ui_delegate_->SetFullscreen(true);
@@ -221,9 +222,12 @@ content::KeyboardEventProcessingResult Runtime::PreHandleKeyboardEvent(
   return content::KeyboardEventProcessingResult::NOT_HANDLED;
 }
 
-void Runtime::HandleKeyboardEvent(
+bool Runtime::HandleKeyboardEvent(
       content::WebContents* source,
       const content::NativeWebKeyboardEvent& event) {
+  //TODO(iotto): Implement
+
+  return false; // not handled
 }
 
 void Runtime::WebContentsCreated(
@@ -258,37 +262,33 @@ void Runtime::ActivateContents(content::WebContents* contents) {
   contents->GetRenderViewHost()->GetWidget()->Focus();
 }
 
-content::ColorChooser* Runtime::OpenColorChooser(
-    content::WebContents* web_contents,
-    SkColor initial_color,
-    const std::vector<content::ColorSuggestion>& suggestions) {
+content::ColorChooser* Runtime::OpenColorChooser(content::WebContents* web_contents, SkColor initial_color,
+                                                 const std::vector<blink::mojom::ColorSuggestionPtr>& suggestions) {
 #if defined(TOOLKIT_VIEWS)
   return xwalk::ShowColorChooser(web_contents, initial_color);
 #else
-  return WebContentsDelegate::OpenColorChooser(web_contents,
-                                               initial_color,
-                                               suggestions);
+  return WebContentsDelegate::OpenColorChooser(web_contents, initial_color, suggestions);
 #endif
 }
 
-void Runtime::RunFileChooser(
-    content::RenderFrameHost* render_frame_host,
-    const content::FileChooserParams& params) {
-#if defined(USE_AURA) && defined(OS_LINUX) && !defined(USE_GTK_UI)
-  NOTIMPLEMENTED();
-#else
-  RuntimeFileSelectHelper::RunFileChooser(render_frame_host, params);
-#endif
+void Runtime::RunFileChooser(content::RenderFrameHost* render_frame_host, std::unique_ptr<content::FileSelectListener> listener,
+                             const blink::mojom::FileChooserParams& params) {
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
+//#if defined(USE_AURA) && defined(OS_LINUX) && !defined(USE_GTK_UI)
+//  NOTIMPLEMENTED();
+//#else
+//  RuntimeFileSelectHelper::RunFileChooser(render_frame_host, params);
+//#endif
 }
 
 void Runtime::EnumerateDirectory(content::WebContents* web_contents,
-                                 int request_id,
-                                 const base::FilePath& path) {
-#if defined(USE_AURA) && defined(OS_LINUX)
-  NOTIMPLEMENTED();
-#else
-  RuntimeFileSelectHelper::EnumerateDirectory(web_contents, request_id, path);
-#endif
+                                 std::unique_ptr<content::FileSelectListener> listener, const base::FilePath& path) {
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
+//#if defined(USE_AURA) && defined(OS_LINUX)
+//  NOTIMPLEMENTED();
+//#else
+//  RuntimeFileSelectHelper::EnumerateDirectory(web_contents, request_id, path);
+//#endif
 }
 
 void Runtime::DidUpdateFaviconURL(const std::vector<FaviconURL>& candidates) {
@@ -341,7 +341,8 @@ void Runtime::DidDownloadFavicon(int id,
     ui_delegate_->UpdateIcon(app_icon_);
 }
 
-bool Runtime::HandleContextMenu(const content::ContextMenuParams& params) {
+bool Runtime::HandleContextMenu(content::RenderFrameHost* render_frame_host, const content::ContextMenuParams& params) {
+  LOG(ERROR) << "iotto " << __func__ << " CHECK/FIX/IMPLEMENT";
   if (ui_delegate_)
     return ui_delegate_->HandleContextMenu(params);
   return false;
@@ -352,41 +353,40 @@ void Runtime::Observe(int type,
                       const content::NotificationDetails& details) {
 }
 
-void Runtime::RequestMediaAccessPermission(
-    content::WebContents* web_contents,
-    const content::MediaStreamRequest& request,
-    const content::MediaResponseCallback& callback) {
+void Runtime::RequestMediaAccessPermission(content::WebContents* web_contents,
+                                           const content::MediaStreamRequest& request,
+                                           content::MediaResponseCallback callback) {
 
-  XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(
-      web_contents, request, callback);
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
+//  XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(
+//      web_contents, request, callback);
 }
 
-bool Runtime::CheckMediaAccessPermission(
-    content::WebContents* web_contents,
-    const GURL& security_origin,
-    content::MediaStreamType type) {
-
-  // Requested by Pepper Flash plugin and mediaDevices.enumerateDevices().
-#if defined (OS_ANDROID)
-  return false;
-#else
-  // This function may be called for a media request coming from
-  // from WebRTC/mediaDevices. These requests can't be made from HTTP.
-  if (security_origin.SchemeIs(url::kHttpScheme) &&
-      !net::IsLocalhost(security_origin.host()))
-    return false;
-
-  ContentSettingsType content_settings_type =
-      type == content::MEDIA_DEVICE_AUDIO_CAPTURE
-          ? CONTENT_SETTINGS_TYPE_MEDIASTREAM_MIC
-          : CONTENT_SETTINGS_TYPE_MEDIASTREAM_CAMERA;
-  ContentSetting content_setting =
-      XWalkContentSettings::GetInstance()->GetPermission(
-          content_settings_type,
-          security_origin,
-          web_contents_->GetLastCommittedURL().GetOrigin());
-  return content_setting == CONTENT_SETTING_ALLOW;
-#endif
+bool Runtime::CheckMediaAccessPermission(content::RenderFrameHost* render_frame_host, const GURL& security_origin,
+                                         blink::mojom::MediaStreamType type) {
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
+//  // Requested by Pepper Flash plugin and mediaDevices.enumerateDevices().
+//#if defined (OS_ANDROID)
+//  return false;
+//#else
+//  // This function may be called for a media request coming from
+//  // from WebRTC/mediaDevices. These requests can't be made from HTTP.
+//  if (security_origin.SchemeIs(url::kHttpScheme) &&
+//      !net::IsLocalhost(security_origin))
+//    return false;
+//
+//  ContentSettingsType content_settings_type =
+//      type == blink::mojom::MediaStreamType::DEVICE_AUDIO_CAPTURE
+//          ? CONTENT_SETTINGS_TYPE_MEDIASTREAM_MIC
+//          : CONTENT_SETTINGS_TYPE_MEDIASTREAM_CAMERA;
+//  ContentSetting content_setting =
+//      XWalkContentSettings::GetInstance()->GetPermission(
+//          content_settings_type,
+//          security_origin,
+//          web_contents_->GetLastCommittedURL().GetOrigin());
+//  return content_setting == CONTENT_SETTING_ALLOW;
+//#endif
+  return false; // deny access
 }
 
 void Runtime::LoadProgressChanged(content::WebContents* source,

@@ -22,11 +22,6 @@ class XWalkSpecialStoragePolicy : public storage::SpecialStoragePolicy {
   bool HasSessionOnlyOrigins() override;
   bool IsStorageDurable(const GURL& origin) override;
 
-  // Cookies should also be deleted if the origin is blocked because it is
-  // possible to e.g. create an .example.com cookie from www.example.com. If
-  // www.example.com is SESSION_ONLY and example.com is BLOCKED, this cookie
-  // could be created but not deleted.
-  bool IsStorageSessionOnlyOrBlocked(const GURL& origin) override;
  protected:
   ~XWalkSpecialStoragePolicy() override;
 };

@@ -245,7 +245,7 @@ content::SSLHostStateDelegate* XWalkBrowserContext::GetSSLHostStateDelegate() {
   return ssl_host_state_delegate_.get();
 }
 
-content::PermissionManager* XWalkBrowserContext::GetPermissionManager() {
+content::PermissionControllerDelegate* XWalkBrowserContext::GetPermissionControllerDelegate() {
   if (!permission_manager_.get())
     permission_manager_.reset(new XWalkPermissionManager(application_service_));
   return permission_manager_.get();
@@ -305,63 +305,8 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
   return url_request_getter_.get();
 }
 
-net::URLRequestContextGetter*
-XWalkBrowserContext::CreateRequestContextForStoragePartition(
-    const base::FilePath& partition_path,
-    bool in_memory,
-    content::ProtocolHandlerMap* protocol_handlers,
-    content::URLRequestInterceptorScopedVector request_interceptors) {
-#if defined(OS_ANDROID)
-  return NULL;
-#else
-  PartitionPathContextGetterMap::iterator iter =
-  context_getters_.find(partition_path.value());
-  if (iter != context_getters_.end())
-  return iter->second.get();
-
-  application::ApplicationService* service =
-  XWalkRunner::GetInstance()->app_system()->application_service();
-  protocol_handlers->insert(std::pair<std::string,
-      linked_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
-          application::kApplicationScheme,
-          application::CreateApplicationProtocolHandler(service)));
-
-  scoped_refptr<RuntimeURLRequestContextGetter>
-  context_getter = new RuntimeURLRequestContextGetter(
-      false, /* ignore_certificate_error = false */
-      partition_path,
-      BrowserThread::UnsafeGetMessageLoopForThread(BrowserThread::IO),
-      BrowserThread::UnsafeGetMessageLoopForThread(BrowserThread::FILE),
-      protocol_handlers, std::move(request_interceptors));
-
-  context_getters_.insert(
-      std::make_pair(partition_path.value(), context_getter));
-  // Make sure that the default url request getter has been initialized,
-  // please refer to https://crosswalk-project.org/jira/browse/XWALK-2890
-  // for more details.
-  if (!url_request_getter_)
-  CreateRequestContext(protocol_handlers, std::move(request_interceptors));
-
-  return context_getter.get();
-#endif
-}
-
 net::URLRequestContextGetter* XWalkBrowserContext::CreateMediaRequestContext() {
   return url_request_getter_.get();
-}
-
-net::URLRequestContextGetter*
-XWalkBrowserContext::CreateMediaRequestContextForStoragePartition(
-    const base::FilePath& partition_path,
-    bool in_memory) {
-#if defined(OS_ANDROID)
-  return url_request_getter_.get();
-#else
-  PartitionPathContextGetterMap::iterator iter =
-  context_getters_.find(partition_path.value());
-  CHECK(iter != context_getters_.end());
-  return iter->second.get();
-#endif
 }
 
 XWalkFormDatabaseService* XWalkBrowserContext::GetFormDatabaseService() {

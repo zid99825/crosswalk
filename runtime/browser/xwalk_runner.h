@@ -36,7 +36,7 @@ class ApplicationSystem;
 
 namespace extensions {
 class XWalkExtensionService;
-};
+}
 
 // Main object for the Browser Process execution in Crosswalk. It is created and
 // owned by XWalkMainDelegate. It's role is to own, setup and teardown all the

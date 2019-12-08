@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "base/files/file_path.h"
-#include "base/memory/linked_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/string_util.h"
 #include "base/synchronization/lock.h"
@@ -57,7 +56,7 @@ class ApplicationData : public base::RefCountedThreadSafe<ApplicationData> {
     }
   };
 
-  typedef std::map<const std::string, linked_ptr<ManifestData> >
+  typedef std::map<const std::string, std::unique_ptr<ManifestData> >
       ManifestDataMap;
   typedef std::map<std::string,
       scoped_refptr<ApplicationData>, ApplicationIdCompare>
@@ -94,7 +93,7 @@ class ApplicationData : public base::RefCountedThreadSafe<ApplicationData> {
   // Sets |data| to be associated with the key. Takes ownership of |data|.
   // Can only be called before InitValue is finished. Not thread-safe;
   // all SetManifestData calls should be on only one thread.
-  void SetManifestData(const std::string& key, ManifestData* data);
+  void SetManifestData(const std::string& key, std::unique_ptr<ManifestData> data);
 
   // Accessors:
   const base::FilePath& path() const { return path_; }

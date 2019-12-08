@@ -42,12 +42,5 @@ bool XWalkSpecialStoragePolicy::HasSessionOnlyOrigins() {
   return false;
 }
 
-bool XWalkSpecialStoragePolicy::IsStorageSessionOnlyOrBlocked(
-    const GURL& origin) {
-  // TODO(iotto) : Implement/connect with cookies
-  return false;
-//  if (cookie_settings_.get() == NULL)
-//    return false;
-//  return cookie_settings_->IsCookieSessionOnlyOrBlocked(origin);
 }
 

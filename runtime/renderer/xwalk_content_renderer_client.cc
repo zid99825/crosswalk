@@ -7,7 +7,6 @@
 
 #include "base/command_line.h"
 #include "base/strings/utf_string_conversions.h"
-#include "components/nacl/common/features.h"
 #include "components/visitedlink/renderer/visitedlink_slave.h"
 #include "content/public/renderer/render_frame.h"
 #include "content/public/renderer/render_frame_observer.h"
@@ -16,19 +15,19 @@
 #include "content/public/renderer/render_view.h"
 #include "components/error_page/common/error.h"
 #include "components/error_page/common/localized_error.h"
+#include "components/nacl/common/buildflags.h"
 #include "content/public/common/service_manager_connection.h"
 #include "content/public/common/simple_connection_filter.h"
 #include "content/public/common/url_loader_throttle.h"
-#include "grit/xwalk_application_resources.h"
-#include "grit/xwalk_sysapps_resources.h"
+#include "xwalk/application/grit/xwalk_application_resources.h"
 #include "net/base/net_errors.h"
-#include "ppapi/features/features.h"
-#include "third_party/WebKit/public/platform/WebString.h"
-#include "third_party/WebKit/public/platform/WebURLError.h"
-#include "third_party/WebKit/public/platform/WebURLRequest.h"
-#include "third_party/WebKit/public/web/WebDocument.h"
-#include "third_party/WebKit/public/web/WebSecurityPolicy.h"
-#include "third_party/WebKit/public/platform/modules/fetch/fetch_api_request.mojom-shared.h"
+#include "ppapi/buildflags/buildflags.h"
+#include "third_party/blink/public/platform/web_string.h"
+#include "third_party/blink/public/platform/web_url_error.h"
+#include "third_party/blink/public/platform/web_url_request.h"
+#include "third_party/blink/public/web/web_document.h"
+#include "third_party/blink/public/web/web_security_policy.h"
+#include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-shared.h"
 #include "xwalk/application/common/constants.h"
 #include "xwalk/application/renderer/application_native_module.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
@@ -47,7 +46,7 @@
 #include "xwalk/runtime/renderer/android/xwalk_permission_client.h"
 #include "xwalk/runtime/renderer/android/xwalk_render_thread_observer.h"
 #include "xwalk/runtime/renderer/android/xwalk_render_frame_ext.h"
-#include "third_party/WebKit/public/web/WebLocalFrame.h"
+#include "third_party/blink/public/web/web_local_frame.h"
 #endif
 
 #if BUILDFLAG(ENABLE_NACL)
@@ -284,123 +283,117 @@ bool XWalkContentRendererClient::IsExternalPepperPlugin(
   return module_name == "Native Client";
 }
 
-unsigned long long XWalkContentRendererClient::VisitedLinkHash(
+uint64_t XWalkContentRendererClient::VisitedLinkHash(
     const char* canonical_url, size_t length) {
   return visited_link_slave_->ComputeURLFingerprint(canonical_url, length);
 }
 
-bool XWalkContentRendererClient::IsLinkVisited(unsigned long long link_hash) {
+bool XWalkContentRendererClient::IsLinkVisited(uint64_t link_hash) {
   return visited_link_slave_->IsVisited(link_hash);
 }
 
-bool XWalkContentRendererClient::WillSendRequest(
-                       blink::WebLocalFrame* frame,
-                       ui::PageTransition transition_type,
-                       const blink::WebURL& url,
-                       std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
-                       GURL* new_url) {
-  TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
-               << frame->GetDocument().Url().GetString().Utf8() << " url="
-               << url.GetString().Utf8();
-#if defined(OS_ANDROID)
-  content::RenderView* render_view =
-      content::RenderView::FromWebView(frame->View());
-  if ( render_view == nullptr ) {
-    return false; // no overwrite
-  }
-
-  content::RenderFrame* render_frame = render_view->GetMainRenderFrame();
-  if ( render_frame == nullptr ) {
-    return false; // no overwrite
-  }
-
-  int render_frame_id = render_frame->GetRoutingID();
-
-  bool did_overwrite = false;
-  std::string url_str = url.GetString().Utf8();
-  std::string new_url_str;
-
-  RenderThread::Get()->Send(new XWalkViewHostMsg_WillSendRequest(render_frame_id,
-                                                                 url_str,
-                                                                 transition_type,
-                                                                 &new_url_str,
-                                                                 &did_overwrite));
-
-  if ( did_overwrite ) {
-    *new_url = GURL(new_url_str);
-    TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest did_overwrite";
-  }
-  return did_overwrite;
-#else
-  // TODO(iotto) for other than android implement
-/*  if (!xwalk_render_thread_observer_->IsWarpMode() &&
-      !xwalk_render_thread_observer_->IsCSPMode())
-    return false;
-
-  GURL origin_url(frame->document().url());
-  GURL app_url(xwalk_render_thread_observer_->app_url());
-  // if under CSP mode.
-  if (xwalk_render_thread_observer_->IsCSPMode()) {
-    if (!origin_url.is_empty() && origin_url != first_party_for_cookies &&
-        !xwalk_render_thread_observer_->CanRequest(app_url, url)) {
-      LOG(INFO) << "[BLOCK] allow-navigation: " << url.spec();
-      content::RenderThread::Get()->Send(new ViewMsg_OpenLinkExternal(url));
-      *new_url = GURL();
-      return true;
-    }
-    return false;
-  }
-
-  // if under WARP mode.
-  if (url.GetOrigin() == app_url.GetOrigin() ||
-      xwalk_render_thread_observer_->CanRequest(app_url, url)) {
-    DLOG(INFO) << "[PASS] " << origin_url.spec() << " request " << url.spec();
-    return false;
-  }
-
-  LOG(INFO) << "[BLOCK] " << origin_url.spec() << " request " << url.spec();
-  *new_url = GURL();
-  return true;
-*/
-#endif
+void XWalkContentRendererClient::WillSendRequest(blink::WebLocalFrame* frame, ui::PageTransition transition_type,
+                                                 const blink::WebURL& url, const url::Origin* initiator_origin,
+                                                 GURL* new_url,
+                                                 bool* attach_same_site_cookies) {
+  LOG(ERROR) << "iotto " << __func__ << " CEHCK/FIX/IMPLEMENT";
+//  TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
+//               << frame->GetDocument().Url().GetString().Utf8() << " url="
+//               << url.GetString().Utf8();
+//#if defined(OS_ANDROID)
+//  content::RenderView* render_view =
+//      content::RenderView::FromWebView(frame->View());
+//  if ( render_view == nullptr ) {
+//    return false; // no overwrite
+//  }
+//
+//  content::RenderFrame* render_frame = render_view->GetMainRenderFrame();
+//  if ( render_frame == nullptr ) {
+//    return false; // no overwrite
+//  }
+//
+//  int render_frame_id = render_frame->GetRoutingID();
+//
+//  bool did_overwrite = false;
+//  std::string url_str = url.GetString().Utf8();
+//  std::string new_url_str;
+//
+//  RenderThread::Get()->Send(new XWalkViewHostMsg_WillSendRequest(render_frame_id,
+//                                                                 url_str,
+//                                                                 transition_type,
+//                                                                 &new_url_str,
+//                                                                 &did_overwrite));
+//
+//  if ( did_overwrite ) {
+//    *new_url = GURL(new_url_str);
+//    TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest did_overwrite";
+//  }
+//  return did_overwrite;
+//#else
+//  // TODO(iotto) for other than android implement
+///*  if (!xwalk_render_thread_observer_->IsWarpMode() &&
+//      !xwalk_render_thread_observer_->IsCSPMode())
+//    return false;
+//
+//  GURL origin_url(frame->document().url());
+//  GURL app_url(xwalk_render_thread_observer_->app_url());
+//  // if under CSP mode.
+//  if (xwalk_render_thread_observer_->IsCSPMode()) {
+//    if (!origin_url.is_empty() && origin_url != first_party_for_cookies &&
+//        !xwalk_render_thread_observer_->CanRequest(app_url, url)) {
+//      LOG(INFO) << "[BLOCK] allow-navigation: " << url.spec();
+//      content::RenderThread::Get()->Send(new ViewMsg_OpenLinkExternal(url));
+//      *new_url = GURL();
+//      return true;
+//    }
+//    return false;
+//  }
+//
+//  // if under WARP mode.
+//  if (url.GetOrigin() == app_url.GetOrigin() ||
+//      xwalk_render_thread_observer_->CanRequest(app_url, url)) {
+//    DLOG(INFO) << "[PASS] " << origin_url.spec() << " request " << url.spec();
+//    return false;
+//  }
+//
+//  LOG(INFO) << "[BLOCK] " << origin_url.spec() << " request " << url.spec();
+//  *new_url = GURL();
+//  return true;
+//*/
+//#endif
 }
 
-void XWalkContentRendererClient::GetNavigationErrorStrings(
-    content::RenderFrame* render_frame,
-    const blink::WebURLRequest& failed_request,
-    const blink::WebURLError& web_error,
-    std::string* error_html,
-    base::string16* error_description) {
-  // TODO(guangzhen): Check whether error_html is needed in xwalk runtime.
-  bool is_post = failed_request.HttpMethod().Ascii() == "POST";
-
-  TENTA_LOG_NET(INFO) << __func__ << " http_method=" << failed_request.HttpMethod().Ascii() << " error_html="
-            << error_html << " error_description=" << error_description;
-
-  error_page::Error error = error_page::Error::NetError(web_error.url(), web_error.reason(),
-                                    web_error.has_copy_in_cache());
-
+void XWalkContentRendererClient::GetErrorDescription(const blink::WebURLError& web_error,
+                                                     const std::string& http_method,
+                                                     base::string16* error_description) {
+  error_page::Error error = error_page::Error::NetError(
+      web_error.url(), web_error.reason(), web_error.has_copy_in_cache());
   if (error_description) {
     *error_description = error_page::LocalizedError::GetErrorDetails(
-        error.domain(), error.reason(), is_post);
+        error.domain(), error.reason(), http_method == "POST");
   }
-#ifdef TENTA_CHROMIUM_BUILD
-  bool is_ignoring_cache = failed_request.GetCacheMode() == blink::mojom::FetchCacheMode::kBypassCache;
+}
 
-  if (error_html) {
-    ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(error, is_post, is_ignoring_cache, error_html);
-  }
+void XWalkContentRendererClient::PrepareErrorPage(content::RenderFrame* render_frame, const blink::WebURLError& web_error,
+                                                  const std::string& http_method,
+                                                  bool ignoring_cache,
+                                                  std::string* error_html) {
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(
+      error_page::Error::NetError(web_error.url(), web_error.reason(), web_error.has_copy_in_cache()),
+      http_method == "POST", ignoring_cache, error_html);
 #endif
 }
 
-void XWalkContentRendererClient::GetNavigationErrorStringsForHttpStatusError(content::RenderFrame* render_frame,
-                                                                             const blink::WebURLRequest& failed_request,
-                                                                             const GURL& unreachable_url,
-                                                                             int http_status, std::string* error_html,
-                                                                             base::string16* error_description) {
-
-  // TODO(iotto) : Implement
-  TENTA_LOG_NET(WARNING) << __func__ << " not_implemented";
+void XWalkContentRendererClient::PrepareErrorPageForHttpStatusError(content::RenderFrame* render_frame,
+                                                                    const GURL& unreachable_url,
+                                                                    const std::string& http_method,
+                                                                    bool ignoring_cache,
+                                                                    int http_status, std::string* error_html) {
+#ifdef TENTA_CHROMIUM_BUILD
+  ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(
+      error_page::Error::HttpError(unreachable_url, http_status), http_method == "POST", ignoring_cache, error_html);
+#endif
 }
 
 void XWalkContentRendererClient::AddSupportedKeySystems(

@@ -31,7 +31,6 @@
 
 namespace content {
 class DownloadManagerDelegate;
-class PermissionManager;
 }
 
 namespace visitedlink {
@@ -65,15 +64,15 @@ class XWalkBrowserContext
       content::WebContents* web_contents);
 
   // BrowserContext implementation.
-  base::FilePath GetPath() const override;
-  bool IsOffTheRecord() const override;
+  base::FilePath GetPath() override;
+  bool IsOffTheRecord() override;
   content::DownloadManagerDelegate* GetDownloadManagerDelegate() override;
   content::ResourceContext* GetResourceContext() override;
   content::BrowserPluginGuestManager* GetGuestManager() override;
   storage::SpecialStoragePolicy* GetSpecialStoragePolicy() override;
   content::PushMessagingService* GetPushMessagingService() override;
   content::SSLHostStateDelegate* GetSSLHostStateDelegate() override;
-  content::PermissionManager* GetPermissionManager() override;
+  content::PermissionControllerDelegate* GetPermissionControllerDelegate() override;
   // Returns the BackgroundFetchDelegate associated with that context if any,
   // nullptr otherwise.
   content::BackgroundFetchDelegate* GetBackgroundFetchDelegate() override;
@@ -85,16 +84,7 @@ class XWalkBrowserContext
   net::URLRequestContextGetter* CreateRequestContext(
       content::ProtocolHandlerMap* protocol_handlers,
       content::URLRequestInterceptorScopedVector request_interceptors) override;
-  net::URLRequestContextGetter* CreateRequestContextForStoragePartition(
-      const base::FilePath& partition_path,
-      bool in_memory,
-      content::ProtocolHandlerMap* protocol_handlers,
-      content::URLRequestInterceptorScopedVector request_interceptors) override;
   net::URLRequestContextGetter* CreateMediaRequestContext() override;
-  net::URLRequestContextGetter* CreateMediaRequestContextForStoragePartition(
-          const base::FilePath& partition_path,
-          bool in_memory) override;
-
   RuntimeURLRequestContextGetter* GetURLRequestContextGetterById(
       const std::string& pkg_id);
   void InitFormDatabaseService();
@@ -151,7 +141,7 @@ class XWalkBrowserContext
       PartitionPathContextGetterMap;
   PartitionPathContextGetterMap context_getters_;
   std::unique_ptr<XWalkSSLHostStateDelegate> ssl_host_state_delegate_;
-  std::unique_ptr<content::PermissionManager> permission_manager_;
+  std::unique_ptr<content::PermissionControllerDelegate> permission_manager_;
   scoped_refptr<XWalkSpecialStoragePolicy> special_storage_policy_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkBrowserContext);

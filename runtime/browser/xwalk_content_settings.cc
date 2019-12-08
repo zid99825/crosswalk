@@ -39,9 +39,9 @@ XWalkContentSettings::~XWalkContentSettings() {
 void XWalkContentSettings::Init() {
   ContentSettingsPattern::SetNonWildcardDomainNonPortSchemes(
       kWildcardDomainNonPortSchemes,
-      arraysize(kWildcardDomainNonPortSchemes));
+      base::size(kWildcardDomainNonPortSchemes));
   base::FilePath xwalk_data_dir;
-  CHECK(PathService::Get(xwalk::DIR_DATA_PATH, &xwalk_data_dir));
+  CHECK(base::PathService::Get(xwalk::DIR_DATA_PATH, &xwalk_data_dir));
 
   pref_store_ = new JsonPrefStore(GetPrefFilePathFromPath(xwalk_data_dir));
 

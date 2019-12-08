@@ -14,7 +14,7 @@
 // added in the public API, and and no new uses of this will be allowed.
 class ScopedAllowWaitForLegacyWebViewApi {
  private:
-  base::ThreadRestrictions::ScopedAllowWait wait;
+  base::ScopedAllowBaseSyncPrimitives wait;
 };
 
 #endif  // XWALK_RUNTIME_BROWSER_ANDROID_SCOPED_ALLOW_WAIT_FOR_LEGACY_WEB_VIEW_API_H_

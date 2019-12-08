@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "base/memory/linked_ptr.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/strings/string16.h"
 #include "xwalk/application/common/application_data.h"
 #include "xwalk/application/common/manifest.h"

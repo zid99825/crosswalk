@@ -28,7 +28,7 @@ PermissionsHandler::~PermissionsHandler() {
 bool PermissionsHandler::Parse(scoped_refptr<ApplicationData> application,
                                base::string16* error) {
   if (!application->GetManifest()->HasKey(keys::kPermissionsKey)) {
-    application->SetManifestData(keys::kPermissionsKey, new PermissionsInfo);
+    application->SetManifestData(keys::kPermissionsKey, std::make_unique<PermissionsInfo>());
     return true;
   }
 
@@ -57,7 +57,7 @@ bool PermissionsHandler::Parse(scoped_refptr<ApplicationData> application,
   }
   permissions_info->SetAPIPermissions(api_permissions);
   application->SetManifestData(keys::kPermissionsKey,
-                               permissions_info.release());
+                               std::move(permissions_info));
 
   return true;
 }

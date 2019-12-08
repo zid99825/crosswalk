@@ -215,10 +215,10 @@ void Manifest::ParseWGTI18nEachPath(const std::string& path) {
   if (!data_->Get(path, &value))
     return;
 
-  if (value->IsType(base::Value::Type::DICTIONARY)) {
+  if (value->type() == base::Value::Type::DICTIONARY) {
     ParseWGTI18nEachElement(value, path);
     ParseWGTI18nEachElement(value, path, kLocaleFirstOne);
-  } else if (value->IsType(base::Value::Type::LIST)) {
+  } else if (value->type() == base::Value::Type::LIST) {
     base::ListValue* list;
     value->GetAsList(&list);
 
@@ -248,7 +248,7 @@ bool Manifest::ParseWGTI18nEachElement(base::Value* value,
     std::string locale_key(
         GetLocalizedKey(path + kPathConnectSymbol + iter.key(), xml_lang));
     if (!i18n_data_->Get(locale_key, NULL))
-      i18n_data_->Set(locale_key, base::MakeUnique<base::Value>(iter.value().Clone()));
+      i18n_data_->Set(locale_key, std::make_unique<base::Value>(iter.value().Clone()));
 
     iter.Advance();
   }

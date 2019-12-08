@@ -15,7 +15,7 @@
 
 namespace base {
 class WaitableEvent;
-};
+}
 
 namespace xwalk {
 

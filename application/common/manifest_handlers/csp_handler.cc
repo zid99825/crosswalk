@@ -56,7 +56,7 @@ bool CSPHandler::Parse(scoped_refptr<ApplicationData> application,
         base::KEEP_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
     csp_info->SetDirective(directive_name, directive_value);
   }
-  application->SetManifestData(csp_key, csp_info.release());
+  application->SetManifestData(csp_key, std::move(csp_info));
 
   return true;
 }

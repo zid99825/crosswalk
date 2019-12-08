@@ -16,19 +16,18 @@
 #include "content/public/renderer/document_state.h"
 #include "content/public/renderer/render_frame.h"
 #include "content/public/renderer/render_view.h"
-#include "third_party/WebKit/public/platform/WebSecurityOrigin.h"
-#include "third_party/WebKit/public/platform/WebSize.h"
-#include "third_party/WebKit/public/web/WebDocument.h"
-#include "third_party/WebKit/public/web/WebElement.h"
-#include "third_party/WebKit/public/web/WebElementCollection.h"
-#include "third_party/WebKit/public/web/WebFrameWidget.h"
-#include "third_party/WebKit/public/web/WebHitTestResult.h"
-#include "third_party/WebKit/public/web/WebImageCache.h"
-#include "third_party/WebKit/public/web/WebLocalFrame.h"
-#include "third_party/WebKit/public/web/WebMeaningfulLayout.h"
-#include "third_party/WebKit/public/web/WebNode.h"
-#include "third_party/WebKit/public/web/WebView.h"
-//#include "third_party/skia/include/core/SkPicture.h"
+#include "third_party/blink/public/platform/web_security_origin.h"
+#include "third_party/blink/public/platform/web_size.h"
+#include "third_party/blink/public/web/web_document.h"
+#include "third_party/blink/public/web/web_element.h"
+#include "third_party/blink/public/web/web_element_collection.h"
+#include "third_party/blink/public/web/web_frame_widget.h"
+#include "third_party/blink/public/web/web_hit_test_result.h"
+#include "third_party/blink/public/web/web_image_cache.h"
+#include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/public/web/web_meaningful_layout.h"
+#include "third_party/blink/public/web/web_node.h"
+#include "third_party/blink/public/web/web_view.h"
 #include "url/url_canon.h"
 #include "url/url_constants.h"
 #include "url/url_util.h"
@@ -44,9 +43,9 @@ const char kEmailPrefix[] = "mailto:";
 const char kPhoneNumberPrefix[] = "tel:";
 
 
-GURL GetAbsoluteUrl(const blink::WebNode& node,
+GURL GetAbsoluteUrl(const blink::WebElement& element,
                     const base::string16& url_fragment) {
-  return GURL(node.GetDocument().CompleteURL(blink::WebString::FromUTF16(url_fragment)));
+  return GURL(element.GetDocument().CompleteURL(blink::WebString::FromUTF16(url_fragment)));
 }
 
 base::string16 GetHref(const blink::WebElement& element) {
@@ -193,8 +192,8 @@ void XWalkRenderFrameExt::OnDocumentHasImagesRequest(uint32_t id) {
                                                       has_images));
 }
 
-void XWalkRenderFrameExt::DidCommitProvisionalLoad(
-    bool is_new_navigation, bool is_same_document_navigation) {
+void XWalkRenderFrameExt::DidCommitProvisionalLoad(bool is_same_document_navigation,
+                                                   ui::PageTransition transition) {
 
   blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
   content::DocumentState* document_state =
@@ -219,20 +218,18 @@ void XWalkRenderFrameExt::DidCommitProvisionalLoad(
   }
 }
 
-void XWalkRenderFrameExt::FocusedNodeChanged(const blink::WebNode& node) {
-  if (node.IsNull() || !node.IsElementNode() || !render_frame() ||
-      !render_frame()->GetRenderView())
+void XWalkRenderFrameExt::FocusedElementChanged(const blink::WebElement& element) {
+  if (element.IsNull() || !render_frame() || !render_frame()->GetRenderView())
     return;
 
-  const blink::WebElement element = node.ToConst<blink::WebElement>();
   XWalkHitTestData data;
 
   data.href = GetHref(element);
   data.anchor_text = element.TextContent().Utf16();
 
   GURL absolute_link_url;
-  if (node.IsLink())
-    absolute_link_url = GetAbsoluteUrl(node, data.href);
+  if (element.IsLink())
+    absolute_link_url = GetAbsoluteUrl(element, data.href);
 
   GURL absolute_image_url = GetChildImageUrlFromElement(element);
 

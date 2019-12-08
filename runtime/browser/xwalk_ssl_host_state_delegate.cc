@@ -25,16 +25,18 @@ CertPolicy::CertPolicy(const CertPolicy&) = default;
 // allowed cert if the |error| is an exact match to or subset of the errors
 // in the saved CertStatus.
 bool CertPolicy::Check(const net::X509Certificate& cert,
-                       net::CertStatus error) const {
+                       int error) const {
   net::SHA256HashValue fingerprint = cert.CalculateChainFingerprint256();
-  CertMap::const_iterator allowed_iter = allowed_.find(fingerprint);
-  return (allowed_iter != allowed_.end()) &&
-         (allowed_iter->second & error) &&
-         ((allowed_iter->second & error) == error);
+  auto allowed_iter = allowed_.find(fingerprint);
+  if ((allowed_iter != allowed_.end()) && (allowed_iter->second & error) &&
+      ((allowed_iter->second & error) == error)) {
+    return true;
+  }
+  return false;
 }
 
 void CertPolicy::Allow(const net::X509Certificate& cert,
-                       net::CertStatus error) {
+                       int error) {
   // If this same cert had already been saved with a different error status,
   // this will replace it with the new error status.
   net::SHA256HashValue fingerprint = cert.CalculateChainFingerprint256();
@@ -65,11 +67,14 @@ bool XWalkSSLHostStateDelegate::DidHostRunInsecureContent(
 
 void XWalkSSLHostStateDelegate::RevokeUserAllowExceptions(
     const std::string& host) {
+  cert_policy_for_host_.erase(host);
 }
 
 bool XWalkSSLHostStateDelegate::HasAllowException(
     const std::string& host) const {
-  return false;
+  auto policy_iterator = cert_policy_for_host_.find(host);
+  return policy_iterator != cert_policy_for_host_.end() &&
+         policy_iterator->second.HasAllowException();
 }
 
 void XWalkSSLHostStateDelegate::AllowCert(const std::string& host,
@@ -79,14 +84,26 @@ void XWalkSSLHostStateDelegate::AllowCert(const std::string& host,
 }
 
 void XWalkSSLHostStateDelegate::Clear(const base::Callback<bool(const std::string&)>& host_filter) {
-  // TODO(iotto) use host filter if not null
-  cert_policy_for_host_.clear();
+  if (host_filter.is_null()) {
+    cert_policy_for_host_.clear();
+    return;
+  }
+
+  for (auto it = cert_policy_for_host_.begin();
+       it != cert_policy_for_host_.end();) {
+    auto next_it = std::next(it);
+
+    if (host_filter.Run(it->first))
+      cert_policy_for_host_.erase(it);
+
+    it = next_it;
+  }
 }
 
 SSLHostStateDelegate::CertJudgment XWalkSSLHostStateDelegate::QueryPolicy(
     const std::string& host,
     const net::X509Certificate& cert,
-    net::CertStatus error,
+    int error,
     bool* expired_previous_decision) {
   return cert_policy_for_host_[host].Check(cert, error)
              ? SSLHostStateDelegate::ALLOWED

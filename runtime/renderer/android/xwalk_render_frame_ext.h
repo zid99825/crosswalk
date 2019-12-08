@@ -35,11 +35,11 @@ class XWalkRenderFrameExt : public content::RenderFrameObserver {
   ~XWalkRenderFrameExt() override;
 
   // RenderFrameObserver:
-  void DidCommitProvisionalLoad(bool is_new_navigation,
-                                bool is_same_document_navigation) override;
+  void DidCommitProvisionalLoad(bool is_same_document_navigation,
+                                ui::PageTransition transition) override;
 
   bool OnMessageReceived(const IPC::Message& message) override;
-  void FocusedNodeChanged(const blink::WebNode& node) override;
+  void FocusedElementChanged(const blink::WebElement& element) override;
   void OnDestruct() override;
 
   void OnDocumentHasImagesRequest(uint32_t id);

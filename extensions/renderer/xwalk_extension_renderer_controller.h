@@ -13,7 +13,7 @@
 #include "base/compiler_specific.h"
 #include "base/synchronization/waitable_event.h"
 #include "content/public/renderer/render_thread_observer.h"
-#include "third_party/WebKit/public/web/WebFrame.h"
+#include "third_party/blink/public/web/web_frame.h"
 #include "v8/include/v8.h"
 
 namespace content {

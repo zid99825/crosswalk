@@ -46,16 +46,16 @@ class XWalkContentRendererClient :
   void RenderFrameCreated(content::RenderFrame* render_frame) override;
   void RenderViewCreated(content::RenderView* render_view) override;
   bool IsExternalPepperPlugin(const std::string& module_name) override;
-  unsigned long long VisitedLinkHash(const char* canonical_url, size_t length) override;
-  bool IsLinkVisited(unsigned long long link_hash) override;
+  uint64_t VisitedLinkHash(const char* canonical_url, size_t length) override;
+  bool IsLinkVisited(uint64_t link_hash) override;
 
-  bool WillSendRequest(blink::WebLocalFrame* frame, ui::PageTransition transition_type, const blink::WebURL& url,
-                       std::vector<std::unique_ptr<content::URLLoaderThrottle>>* throttles,
-                       GURL* new_url) override;
+  void WillSendRequest(blink::WebLocalFrame* frame, ui::PageTransition transition_type, const blink::WebURL& url,
+                       const url::Origin* initiator_origin, GURL* new_url,
+                       bool* attach_same_site_cookies) override;
 
   void AddSupportedKeySystems(std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) override;
 
-  bool ShouldReportDetailedMessageForSource(const base::string16& source) const override;
+  bool ShouldReportDetailedMessageForSource(const base::string16& source) override;
 
   // Returns true if the embedder has an error page to show for the given http
   // status code. If so |error_domain| should be set to according to WebURLError
@@ -81,13 +81,16 @@ class XWalkContentRendererClient :
 
   std::unique_ptr<visitedlink::VisitedLinkSlave> visited_link_slave_;
 
-  void GetNavigationErrorStrings(content::RenderFrame* render_frame, const blink::WebURLRequest& failed_request,
-                                 const blink::WebURLError& error, std::string* error_html,
-                                 base::string16* error_description) override;
-  void GetNavigationErrorStringsForHttpStatusError(content::RenderFrame* render_frame,
-                                                   const blink::WebURLRequest& failed_request,
-                                                   const GURL& unreachable_url, int http_status,
-                                                   std::string* error_html, base::string16* error_description) override;
+  void GetErrorDescription(const blink::WebURLError& error, const std::string& http_method,
+                           base::string16* error_description) override;
+  void PrepareErrorPage(content::RenderFrame* render_frame, const blink::WebURLError& error,
+                        const std::string& http_method,
+                        bool ignoring_cache,
+                        std::string* error_html) override;
+  void PrepareErrorPageForHttpStatusError(content::RenderFrame* render_frame, const GURL& unreachable_url,
+                                          const std::string& http_method,
+                                          bool ignoring_cache,
+                                          int http_status, std::string* error_html) override;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkContentRendererClient)
   ;

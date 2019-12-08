@@ -6,7 +6,7 @@
 #define XWALK_RUNTIME_RENDERER_ANDROID_XWALK_PERMISSION_CLIENT_H_
 
 #include "content/public/renderer/render_frame_observer.h"
-#include "third_party/WebKit/public/platform/WebContentSettingsClient.h"
+#include "third_party/blink/public/platform/web_content_settings_client.h"
 
 namespace xwalk {
 

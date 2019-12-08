@@ -25,7 +25,7 @@ namespace application {
 class ApplicationService;
 }
 
-class XWalkPermissionManager : public content::PermissionManager {
+class XWalkPermissionManager : public content::PermissionControllerDelegate {
  public:
   XWalkPermissionManager(
       application::ApplicationService* application_service);

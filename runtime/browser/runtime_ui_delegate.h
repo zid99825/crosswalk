@@ -5,7 +5,7 @@
 #ifndef XWALK_RUNTIME_BROWSER_RUNTIME_UI_DELEGATE_H_
 #define XWALK_RUNTIME_BROWSER_RUNTIME_UI_DELEGATE_H_
 
-#include "content/public/browser/download_item.h"
+#include "components/download/public/common/download_item.h"
 #include "content/public/browser/download_manager_delegate.h"
 #include "url/gurl.h"
 #include "xwalk/runtime/browser/ui/native_app_window.h"
@@ -29,7 +29,7 @@ class RuntimeUIDelegate {
   virtual void DeleteDelegate() = 0;
   virtual void SetLoadProgress(double progress) = 0;
   virtual void SetAddressURL(const GURL& url) = 0;
-  virtual bool AddDownloadItem(content::DownloadItem* download_item,
+  virtual bool AddDownloadItem(download::DownloadItem* download_item,
       const content::DownloadTargetCallback& callback,
       const base::FilePath& suggested_path) = 0;
   virtual blink::WebDisplayMode GetDisplayMode() const = 0;
@@ -55,7 +55,7 @@ class DefaultRuntimeUIDelegate : public RuntimeUIDelegate,
   void DeleteDelegate() override;
   void SetLoadProgress(double progress) override {}
   void SetAddressURL(const GURL& url) override {}
-  bool AddDownloadItem(content::DownloadItem* download_item,
+  bool AddDownloadItem(download::DownloadItem* download_item,
       const content::DownloadTargetCallback& callback,
       const base::FilePath& suggested_path) override;
   blink::WebDisplayMode GetDisplayMode() const override;

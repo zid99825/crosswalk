@@ -28,16 +28,19 @@ class CertPolicy {
   // Returns true if the user has decided to proceed through the ssl error
   // before. For a certificate to be allowed, it must not have any
   // *additional* errors from when it was allowed.
-  bool Check(const net::X509Certificate& cert, net::CertStatus error) const;
+  bool Check(const net::X509Certificate& cert, int error) const;
 
   // Causes the policy to allow this certificate for a given |error|. And
   // remember the user's choice.
-  void Allow(const net::X509Certificate& cert, net::CertStatus error);
+  void Allow(const net::X509Certificate& cert, int error);
+
+  // Returns true if and only if there exists a user allow exception for some
+  // certificate.
+  bool HasAllowException() const { return allowed_.size() > 0; }
 
  private:
   // The set of fingerprints of allowed certificates.
-  typedef std::map<net::SHA256HashValue, net::CertStatus,
-      net::SHA256HashValueLessThan> CertMap;
+  typedef std::map<net::SHA256HashValue, int> CertMap;
   CertMap allowed_;
 };
 
@@ -52,7 +55,7 @@ class XWalkSSLHostStateDelegate : public content::SSLHostStateDelegate {
   // a specified |error| type.
   void AllowCert(const std::string& host,
                  const net::X509Certificate& cert,
-                 net::CertStatus error) override;
+                 int error) override;
 
   void Clear(const base::Callback<bool(const std::string&)>& host_filter) override;
 
@@ -60,7 +63,7 @@ class XWalkSSLHostStateDelegate : public content::SSLHostStateDelegate {
   content::SSLHostStateDelegate::CertJudgment QueryPolicy(
       const std::string& host,
       const net::X509Certificate& cert,
-      net::CertStatus error,
+      int error,
       bool* expired_previous_decision) override;
 
   // Records that a host has run insecure content.
@@ -70,11 +73,11 @@ class XWalkSSLHostStateDelegate : public content::SSLHostStateDelegate {
   // Returns whether the specified host ran insecure content.
   bool DidHostRunInsecureContent(const std::string& host,
                                  int pid,
-                                 InsecureContentType content_type) const override;
+                                 InsecureContentType content_type) override;
 
   void RevokeUserAllowExceptions(const std::string& host) override;
 
-  bool HasAllowException(const std::string& host) const override;
+  bool HasAllowException(const std::string& host) override;
 
  private:
   // Certificate policies for each host.

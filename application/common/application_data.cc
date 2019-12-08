@@ -84,9 +84,9 @@ ApplicationData::ManifestData* ApplicationData::GetManifestData(
 }
 
 void ApplicationData::SetManifestData(const std::string& key,
-                                      ApplicationData::ManifestData* data) {
+                                      std::unique_ptr<ManifestData> data) {
   DCHECK(!finished_parsing_manifest_ && thread_checker_.CalledOnValidThread());
-  manifest_data_[key] = linked_ptr<ManifestData>(data);
+  manifest_data_[key] = std::move(data);
 }
 
 const std::string ApplicationData::VersionString() const {

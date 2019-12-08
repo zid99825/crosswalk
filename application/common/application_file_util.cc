@@ -18,6 +18,7 @@
 #include "base/memory/ptr_util.h"
 #include "base/metrics/histogram.h"
 #include "base/path_service.h"
+#include "base/stl_util.h"
 #include "base/strings/string16.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/string_util.h"
@@ -168,7 +169,7 @@ inline bool IsElementSupportSpanAndDir(xmlNode* root) {
 }
 
 bool IsSingletonElement(const std::string& name) {
-  for (size_t i = 0; i < arraysize(kSingletonElements); ++i)
+  for (size_t i = 0; i < base::size(kSingletonElements); ++i)
     if (kSingletonElements[i] == name)
       return true;
   return false;
@@ -314,12 +315,12 @@ base::DictionaryValue* LoadXMLNode(
     value->Get(sub_node_name, &temp);
     DCHECK(temp);
 
-    if (temp->IsType(base::Value::Type::LIST)) {
+    if (temp->type() == base::Value::Type::LIST) {
       base::ListValue* list;
       temp->GetAsList(&list);
       list->Append(std::move(sub_value));
     } else {
-      DCHECK(temp->IsType(base::Value::Type::DICTIONARY));
+      DCHECK(temp->type() == base::Value::Type::DICTIONARY);
       base::DictionaryValue* dict;
       temp->GetAsDictionary(&dict);
 //      base::DictionaryValue* prev_value = dict->DeepCopy();
@@ -377,7 +378,7 @@ std::unique_ptr<Manifest> LoadManifest<Manifest::TYPE_MANIFEST>(
     return std::unique_ptr<Manifest>();
   }
 
-  if (!root->IsType(base::Value::Type::DICTIONARY)) {
+  if (root->type() != base::Value::Type::DICTIONARY) {
     *error = base::StringPrintf("%s", errors::kManifestUnreadable);
     return std::unique_ptr<Manifest>();
   }

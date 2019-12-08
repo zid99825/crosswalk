@@ -257,8 +257,8 @@ void ApplicationService::OnApplicationTerminated(
   }
 
   if (applications_.empty()) {
-    base::MessageLoop::current()->task_runner()->PostTask(
-          FROM_HERE, base::MessageLoop::QuitWhenIdleClosure());
+    base::ThreadTaskRunnerHandle::Get()->PostTask(
+          FROM_HERE, base::RunLoop().QuitWhenIdleClosure());
   }
 }
 

@@ -15,11 +15,11 @@
 #include "base/files/file_path.h"
 #include "base/memory/weak_ptr.h"
 #include "base/numerics/safe_math.h"
+#include "base/sequenced_task_runner.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/string_util.h"
-#include "base/task_scheduler/post_task.h"
+#include "base/task/post_task.h"
 #include "base/threading/thread_restrictions.h"
-#include "base/threading/sequenced_worker_pool.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/resource_request_info.h"
 #include "url/url_util.h"
@@ -293,9 +293,9 @@ ApplicationProtocolHandler::MaybeCreateJob(
 
 }  // namespace
 
-linked_ptr<net::URLRequestJobFactory::ProtocolHandler>
+std::unique_ptr<net::URLRequestJobFactory::ProtocolHandler>
 CreateApplicationProtocolHandler(ApplicationService* service) {
-  return linked_ptr<net::URLRequestJobFactory::ProtocolHandler>(
+  return std::unique_ptr<net::URLRequestJobFactory::ProtocolHandler>(
       new ApplicationProtocolHandler(service));
 }
 

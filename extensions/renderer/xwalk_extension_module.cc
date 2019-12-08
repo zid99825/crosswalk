@@ -9,7 +9,7 @@
 #include "base/strings/stringprintf.h"
 #include "base/values.h"
 #include "content/public/renderer/v8_value_converter.h"
-#include "third_party/WebKit/public/web/WebFrame.h"
+#include "third_party/blink/public/web/web_frame.h"
 #include "xwalk/extensions/renderer/xwalk_module_system.h"
 #include "xwalk/extensions/renderer/xwalk_v8_utils.h"
 
@@ -35,17 +35,18 @@ XWalkExtensionModule::XWalkExtensionModule(XWalkExtensionClient* client,
       module_system_(module_system),
       instance_id_(0) {
   v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
   v8::HandleScope handle_scope(isolate);
   v8::Handle<v8::Object> function_data = v8::Object::New(isolate);
-  function_data->Set(v8::String::NewFromUtf8(isolate, kXWalkExtensionModule),
-                     v8::External::New(isolate, this));
+  function_data->Set(context,v8::String::NewFromUtf8(isolate, kXWalkExtensionModule).ToLocalChecked(),
+                     v8::External::New(isolate, this)).Check();
 
   v8::Handle<v8::ObjectTemplate> object_template =
       v8::ObjectTemplate::New(isolate);
   // TODO(cmarcelo): Use Template::Set() function that takes isolate, once we
   // update the Chromium (and V8) version.
-  object_template->Set(
-      v8::String::NewFromUtf8(isolate, "postMessage"),
+  object_template->Set(context,
+      v8::String::NewFromUtf8(isolate, "postMessage").ToLocalChecked(),
       v8::FunctionTemplate::New(isolate, PostMessageCallback, function_data));
   object_template->Set(
       v8::String::NewFromUtf8(isolate, "sendSyncMessage"),

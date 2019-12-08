@@ -9,7 +9,7 @@
 #include "base/files/file_path.h"
 #include "base/strings/string16.h"
 #include "content/public/common/context_menu_params.h"
-#include "third_party/WebKit/public/platform/WebDisplayMode.h"
+#include "third_party/blink/public/common/manifest/web_display_mode.h"
 #include "ui/base/ui_base_types.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"

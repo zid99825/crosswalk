@@ -7,9 +7,9 @@
 #include "base/logging.h"
 #include "content/public/renderer/v8_value_converter.h"
 #include "content/public/renderer/render_view.h"
-#include "third_party/WebKit/public/web/WebDocument.h"
-#include "third_party/WebKit/public/web/WebLocalFrame.h"
-#include "third_party/WebKit/public/web/WebView.h"
+#include "third_party/blink/public/web/web_document.h"
+#include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/public/web/web_view.h"
 
 namespace xwalk {
 namespace application {
@@ -28,7 +28,7 @@ void ApplicationNativeModule::GetViewByIDCallback(
   if (info.Length() != 1 || !info[0]->IsInt32())
     return;
 
-  int main_routing_id = info[0]->ToInt32(info.GetIsolate())->Value();
+  int main_routing_id = info[0]->ToInt32(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Value();
   content::RenderView* render_view =
     content::RenderView::FromRoutingID(main_routing_id);
   if (!render_view)
@@ -56,11 +56,12 @@ void ApplicationNativeModule::GetCurrentRoutingIDCallback(
 
 ApplicationNativeModule::ApplicationNativeModule() {
   v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
   v8::HandleScope handle_scope(isolate);
   v8::Handle<v8::Object> function_data = v8::Object::New(isolate);
-  function_data->Set(
-      v8::String::NewFromUtf8(isolate, kApplicationNativeModule),
-      v8::External::New(isolate, this));
+  function_data->Set(context,
+      v8::String::NewFromUtf8(isolate, kApplicationNativeModule).ToLocalChecked(),
+      v8::External::New(isolate, this)).Check();
 
   // Register native function templates to object template here.
   v8::Handle<v8::ObjectTemplate> object_template =
@@ -90,10 +91,11 @@ ApplicationNativeModule::~ApplicationNativeModule() {
 
 v8::Handle<v8::Object> ApplicationNativeModule::NewInstance() {
   v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
   v8::EscapableHandleScope handle_scope(isolate);
   v8::Handle<v8::ObjectTemplate> object_template =
       v8::Local<v8::ObjectTemplate>::New(isolate, object_template_);
-  return handle_scope.Escape(object_template->NewInstance());
+  return handle_scope.Escape(object_template->NewInstance(context).ToLocalChecked());
 }
 
 }  // namespace application

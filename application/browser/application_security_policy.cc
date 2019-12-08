@@ -182,7 +182,7 @@ void ApplicationSecurityPolicyCSP::InitEntries() {
             continue;
 
           URLPattern allowedUrl(URLPattern::SCHEME_ALL);
-          if (allowedUrl.Parse(url.spec()) != URLPattern::PARSE_SUCCESS)
+          if (allowedUrl.Parse(url.spec()) != URLPattern::ParseResult::kSuccess)
             continue;
 
           AddWhitelistEntry(url, allowedUrl.host(), allowedUrl.match_subdomains());

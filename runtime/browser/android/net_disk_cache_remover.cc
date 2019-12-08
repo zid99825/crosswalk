@@ -14,11 +14,9 @@
 #include "net/http/http_transaction_factory.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "net/url_request/url_request_context.h"
-#include "net/base/completion_callback.h"
 
 using content::BrowserThread;
 using disk_cache::Backend;
-using net::CompletionCallback;
 using net::URLRequestContextGetter;
 
 namespace {
@@ -42,13 +40,13 @@ void ClearHttpDiskCacheOfContext(URLRequestContextGetter* context_getter,
                                  const std::string& key) {
   typedef Backend* BackendPtr;  // Make line below easier to understand.
   BackendPtr* backend_ptr = new BackendPtr(NULL);
-  CompletionCallback callback;
+  net::CompletionOnceCallback callback;
   if (!key.empty()) {
-    callback = base::Bind(&CallDoomEntry,
+    callback = base::BindOnce(&CallDoomEntry,
                           base::Owned(backend_ptr),
                           key);
   } else {
-    callback = base::Bind(&CallDoomAllEntries,
+    callback = base::BindOnce(&CallDoomAllEntries,
                           base::Owned(backend_ptr));
   }
 

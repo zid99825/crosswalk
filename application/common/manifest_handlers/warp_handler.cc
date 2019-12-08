@@ -39,7 +39,7 @@ bool WARPHandler::Parse(scoped_refptr<ApplicationData> application,
 
   std::unique_ptr<base::Value> safe_value = base::WrapUnique<base::Value>(value);
   std::unique_ptr<base::ListValue> warp_list;
-  if (value->IsType(base::Value::Type::DICTIONARY)) {
+  if (value->type() == base::Value::Type::DICTIONARY) {
     warp_list.reset(new base::ListValue);
     warp_list->Append(std::move(safe_value));
   } else {
@@ -57,7 +57,7 @@ bool WARPHandler::Parse(scoped_refptr<ApplicationData> application,
 
   std::unique_ptr<WARPInfo> warp_info(new WARPInfo);
   warp_info->SetWARP(warp_list.release());
-  application->SetManifestData(keys::kAccessKey, warp_info.release());
+  application->SetManifestData(keys::kAccessKey, std::move(warp_info));
 
   return true;
 }

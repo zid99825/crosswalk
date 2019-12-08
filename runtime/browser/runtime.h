@@ -98,7 +98,7 @@ class Runtime : public content::WebContentsDelegate,
   }
 
   content::RenderProcessHost* GetRenderProcessHost();
-  bool AddDownloadItem(content::DownloadItem* download_item,
+  bool AddDownloadItem(download::DownloadItem* download_item,
       const content::DownloadTargetCallback& callback,
       const base::FilePath& suggested_path);
   void RequestApplicationExit();
@@ -112,14 +112,14 @@ class Runtime : public content::WebContentsDelegate,
       const content::OpenURLParams& params) override;
   void LoadingStateChanged(content::WebContents* source,
                            bool to_different_document) override;
-  void EnterFullscreenModeForTab(content::WebContents* web_contents,
-                                 const GURL& origin) override;
+  void EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL& origin,
+                                       const blink::WebFullscreenOptions& options) override;
   void ExitFullscreenModeForTab(
       content::WebContents* web_contents) override;
   bool IsFullscreenForTabOrPending(
-      const content::WebContents* web_contents) const override;
+      const content::WebContents* web_contents) override;
   blink::WebDisplayMode GetDisplayMode(
-      const content::WebContents* web_contents) const override;
+      const content::WebContents* web_contents) override;
   void RequestToLockMouse(content::WebContents* web_contents,
                           bool user_gesture,
                           bool last_unlocked_by_target) override;
@@ -135,30 +135,23 @@ class Runtime : public content::WebContentsDelegate,
   content::JavaScriptDialogManager* GetJavaScriptDialogManager(
       content::WebContents* contents) override;
   void ActivateContents(content::WebContents* contents) override;
-  bool CanOverscrollContent() const override;
+  bool CanOverscrollContent() override;
   content::KeyboardEventProcessingResult PreHandleKeyboardEvent(
       content::WebContents* source,
       const content::NativeWebKeyboardEvent& event) override;
-  void HandleKeyboardEvent(
-      content::WebContents* source,
-      const content::NativeWebKeyboardEvent& event) override;
-  content::ColorChooser* OpenColorChooser(
-      content::WebContents* web_contents,
-      SkColor initial_color,
-      const std::vector<content::ColorSuggestion>& suggestions) override;
-  void RunFileChooser(
-      content::RenderFrameHost* render_frame_host,
-      const content::FileChooserParams& params) override;
-  void EnumerateDirectory(content::WebContents* web_contents,
-                          int request_id,
+  bool HandleKeyboardEvent(content::WebContents* source, const content::NativeWebKeyboardEvent& event) override;
+  content::ColorChooser* OpenColorChooser(content::WebContents* web_contents, SkColor initial_color,
+                                          const std::vector<blink::mojom::ColorSuggestionPtr>& suggestions) override;
+  void RunFileChooser(content::RenderFrameHost* render_frame_host, std::unique_ptr<content::FileSelectListener> listener,
+                      const blink::mojom::FileChooserParams& params) override;
+  void EnumerateDirectory(content::WebContents* web_contents, std::unique_ptr<content::FileSelectListener> listener,
                           const base::FilePath& path) override;
-  void RequestMediaAccessPermission(
-      content::WebContents* web_contents,
-      const content::MediaStreamRequest& request,
-      const content::MediaResponseCallback& callback) override;
-  bool CheckMediaAccessPermission(content::WebContents* web_contents,
-                                  const GURL& security_origin,
-                                  content::MediaStreamType type) override;
+  void RequestMediaAccessPermission(content::WebContents* web_contents, const content::MediaStreamRequest& request,
+                                    content::MediaResponseCallback callback) override;
+  bool CheckMediaAccessPermission(
+      content::RenderFrameHost* render_frame_host, const GURL& security_origin, blink::mojom::MediaStreamType type)
+          override;
+
   void LoadProgressChanged(content::WebContents* source,
                            double progress) override;
   void SetOverlayMode(bool useOverlayMode) override;
@@ -175,7 +168,7 @@ class Runtime : public content::WebContentsDelegate,
                           const GURL& image_url,
                           const std::vector<SkBitmap>& bitmaps,
                           const std::vector<gfx::Size>& sizes);
-  bool HandleContextMenu(const content::ContextMenuParams& params) override;
+  bool HandleContextMenu(content::RenderFrameHost* render_frame_host, const content::ContextMenuParams& params) override;
 
   // NotificationObserver
   void Observe(int type,

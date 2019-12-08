@@ -286,19 +286,19 @@ void Application::OnRuntimeClosed(Runtime* runtime) {
   CHECK(found != runtimes_.end());
   runtimes_.erase(found);
 
-  if (runtimes_.empty())
-    base::MessageLoop::current()->task_runner()->PostTask(FROM_HERE,
+  if (runtimes_.empty()) {
+    base::ThreadTaskRunnerHandle::Get()->PostTask(FROM_HERE,
         base::Bind(&Application::NotifyTermination,
                    weak_factory_.GetWeakPtr()));
+  }
 }
 
 void Application::OnApplicationExitRequested(Runtime* runtime) {
   Terminate();
 }
 
-void Application::RenderProcessExited(RenderProcessHost* host,
-                                      base::TerminationStatus,
-                                      int) {
+void Application::RenderProcessExited(content::RenderProcessHost* host, const content::ChildProcessTerminationInfo& info) {
+  LOG(ERROR) << "iotto " << __func__ << " CEHCK/FIX";
   DCHECK(render_process_host_ == host);
   VLOG(1) << "RenderProcess id: " << host->GetID() << " is gone!";
   XWalkRunner::GetInstance()->OnRenderProcessHostGone(host);
@@ -336,7 +336,7 @@ bool Application::RegisterPermissions(const std::string& extension_name,
 
   for (base::ListValue::iterator iter = permission_list->begin();
       iter != permission_list->end(); ++iter) {
-    if (!iter->IsType(base::Value::Type::DICTIONARY))
+    if (iter->type() != base::Value::Type::DICTIONARY)
       return false;
 
     base::DictionaryValue * dict_val;
@@ -352,7 +352,7 @@ bool Application::RegisterPermissions(const std::string& extension_name,
     for (base::ListValue::const_iterator api_iter = api_list->begin();
         api_iter != api_list->end(); ++api_iter) {
       std::string api;
-      if (!(api_iter->IsType(base::Value::Type::STRING)
+      if (!(api_iter->type() == base::Value::Type::STRING
           && api_iter->GetAsString(&api)))
         return false;
       // register the permission and api

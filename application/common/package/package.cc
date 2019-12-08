@@ -90,7 +90,7 @@ bool Package::ExtractTo(const base::FilePath& target_path) {
 // it's safer to extract the XPK/WGT file into a temporary directory first.
 bool Package::CreateTempDirectory() {
   base::FilePath tmp;
-  PathService::Get(base::DIR_TEMP, &tmp);
+  base::PathService::Get(base::DIR_TEMP, &tmp);
   if (tmp.empty())
     return false;
   if (!temp_dir_.CreateUniqueTempDirUnderPath(tmp))

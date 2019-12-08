@@ -119,7 +119,7 @@ void DefaultRuntimeUIDelegate::OnWindowDestroyed() {
 }
 
 bool DefaultRuntimeUIDelegate::AddDownloadItem(
-    content::DownloadItem* download_item,
+    download::DownloadItem* download_item,
     const content::DownloadTargetCallback& callback,
     const base::FilePath& suggested_path) {
   return false;
