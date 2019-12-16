@@ -43,17 +43,8 @@ class RuntimeResourceDispatcherHostDelegateAndroid
       bool must_download,
       bool is_new_request,
       std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) override;
-  content::ResourceDispatcherHostLoginDelegate* CreateLoginDelegate(
-      net::AuthChallengeInfo* auth_info,
-      net::URLRequest* request) override;
-  bool HandleExternalProtocol(
-      const GURL& url,
-      content::ResourceRequestInfo* info) override;
-  void OnResponseStarted(
-      net::URLRequest* request,
-      content::ResourceContext* resource_context,
-      content::ResourceResponse* response) override;
-
+  void OnResponseStarted(net::URLRequest* request, content::ResourceContext* resource_context,
+                         network::ResourceResponse* response) override;
   void RemovePendingThrottleOnIoThread(IoThreadClientThrottle* throttle);
 
   static void OnIoThreadClientReady(int new_render_process_id,

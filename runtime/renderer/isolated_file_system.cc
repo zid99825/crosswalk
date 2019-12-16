@@ -11,14 +11,13 @@
 #include "content/public/renderer/render_view.h"
 #include "storage/common/fileapi/file_system_types.h"
 #include "storage/common/fileapi/file_system_util.h"
-#include "third_party/WebKit/public/platform/WebFileSystem.h"
-#include "third_party/WebKit/public/platform/WebFileSystemType.h"
-#include "third_party/WebKit/public/platform/WebString.h"
-#include "third_party/WebKit/public/web/WebDocumentLoader.h"
-#include "third_party/WebKit/public/web/WebDOMFileSystem.h"
-#include "third_party/WebKit/public/web/WebFrame.h"
-#include "third_party/WebKit/public/web/WebLocalFrame.h"
-#include "third_party/WebKit/public/web/WebView.h"
+#include "third_party/blink/public/platform/web_file_system_type.h"
+#include "third_party/blink/public/platform/web_string.h"
+#include "third_party/blink/public/web/web_document_loader.h"
+#include "third_party/blink/public/web/web_dom_file_system.h"
+#include "third_party/blink/public/web/web_frame.h"
+#include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/public/web/web_view.h"
 #include "v8/include/v8.h"
 #include "xwalk/extensions/renderer/xwalk_module_system.h"
 
@@ -42,18 +41,18 @@ void IsolatedFileSystem::GetIsolatedFileSystem(
   CHECK(info.Length() == 1 || info.Length() == 2);
   CHECK(info[0]->IsString());
 
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
   blink::WebLocalFrame* webframe =
       blink::WebLocalFrame::FrameForCurrentContext();
   CHECK(webframe);
-  std::string file_system_id(*v8::String::Utf8Value(info[0]));
+  std::string file_system_id(*v8::String::Utf8Value(isolate,info[0]));
 
-  blink::WebDocumentLoader * loader = webframe->GetProvisionalDocumentLoader() ?
-      webframe->GetProvisionalDocumentLoader() : webframe->GetDocumentLoader();
+  blink::WebDocumentLoader * loader = webframe->GetDocumentLoader();
 
 //  blink::WebDataSource* data_source = webframe->ProvisionalDataSource() ?
 //      webframe->ProvisionalDataSource() : webframe->DataSource();
   CHECK(loader);
-  GURL context_url(loader->GetRequest().Url());
+  GURL context_url(loader->GetUrl());
 
   // In instrument test, context_url.GetOrigin() returns emtpy string.
   // That causes app crash. So assign "file:///" as default value to
@@ -73,7 +72,6 @@ void IsolatedFileSystem::GetIsolatedFileSystem(
       origin,
       file_system_id,
       optional_root_name)));
-  v8::Isolate* isolate = v8::Isolate::GetCurrent();
   info.GetReturnValue().Set(blink::WebDOMFileSystem::Create(webframe,
       blink::kWebFileSystemTypeIsolated,
       blink::WebString::FromUTF8(name),
@@ -82,11 +80,12 @@ void IsolatedFileSystem::GetIsolatedFileSystem(
 
 IsolatedFileSystem::IsolatedFileSystem() {
   v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
   v8::HandleScope handle_scope(isolate);
   v8::Handle<v8::Object> function_data = v8::Object::New(isolate);
-  function_data->Set(
-      v8::String::NewFromUtf8(isolate, kIsolatedFileSystemModule),
-      v8::External::New(isolate, this));
+  function_data->Set(context,
+      v8::String::NewFromUtf8(isolate, kIsolatedFileSystemModule).ToLocalChecked(),
+      v8::External::New(isolate, this)).Check();
 
   // Register native function templates to object template here.
   v8::Handle<v8::ObjectTemplate> object_template =
@@ -109,10 +108,11 @@ IsolatedFileSystem::~IsolatedFileSystem() {
 
 v8::Handle<v8::Object> IsolatedFileSystem::NewInstance() {
   v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
   v8::EscapableHandleScope handle_scope(isolate);
   v8::Handle<v8::ObjectTemplate> object_template =
       v8::Local<v8::ObjectTemplate>::New(isolate, object_template_);
-  return handle_scope.Escape(object_template->NewInstance());
+  return handle_scope.Escape(object_template->NewInstance(context).ToLocalChecked());
 }
 
 }  // namespace extensions

@@ -7,8 +7,10 @@
 
 #include "base/logging.h"
 #include "base/synchronization/waitable_event.h"
+#include "base/task/post_task.h"
 #include "components/autofill/core/browser/webdata/autofill_table.h"
 #include "components/webdata/common/webdata_constants.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 
 using base::WaitableEvent;
@@ -28,16 +30,17 @@ namespace xwalk {
 
 XWalkFormDatabaseService::XWalkFormDatabaseService(const base::FilePath path) {
   CHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+  _db_task_runner = base::CreateSingleThreadTaskRunnerWithTraits({base::MayBlock()});
   web_database_ = new WebDatabaseService(path.Append(kWebDataFilename),
-      BrowserThread::GetTaskRunnerForThread(BrowserThread::UI),
-      BrowserThread::GetTaskRunnerForThread(BrowserThread::DB));
+                                         base::CreateSingleThreadTaskRunnerWithTraits({content::BrowserThread::UI}),
+                                         _db_task_runner);
   web_database_->AddTable(
       std::unique_ptr<WebDatabaseTable>(new autofill::AutofillTable()));
   web_database_->LoadDatabase();
   autofill_data_ = new autofill::AutofillWebDataService(
       web_database_,
-      BrowserThread::GetTaskRunnerForThread(BrowserThread::UI),
-      BrowserThread::GetTaskRunnerForThread(BrowserThread::DB),
+      base::CreateSingleThreadTaskRunnerWithTraits({content::BrowserThread::UI}),
+      _db_task_runner,
       base::Bind(&DatabaseErrorCallback));
   autofill_data_->Init();
 }
@@ -62,10 +65,9 @@ XWalkFormDatabaseService::get_autofill_webdata_service() {
 }
 
 void XWalkFormDatabaseService::ClearFormData() {
-  BrowserThread::PostTask(
-      BrowserThread::DB,
+  _db_task_runner->PostTask(
       FROM_HERE,
-      base::Bind(&XWalkFormDatabaseService::ClearFormDataImpl,
+      base::BindOnce(&XWalkFormDatabaseService::ClearFormDataImpl,
                  base::Unretained(this)));
 }
 
@@ -81,8 +83,7 @@ bool XWalkFormDatabaseService::HasFormData() {
       base::WaitableEvent::ResetPolicy::AUTOMATIC,
       base::WaitableEvent::InitialState::NOT_SIGNALED);
   bool result = false;
-  BrowserThread::PostTask(
-      BrowserThread::DB,
+  _db_task_runner->PostTask(
       FROM_HERE,
       base::Bind(&XWalkFormDatabaseService::HasFormDataImpl,
                  base::Unretained(this),
@@ -108,7 +109,7 @@ void XWalkFormDatabaseService::OnWebDataServiceRequestDone(
     WebDataServiceBase::Handle h,
     std::unique_ptr<WDTypedResult> result) {
 
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::DB));
+//  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::DB));
   bool has_form_data = false;
   if (result) {
     DCHECK_EQ(AUTOFILL_VALUE_RESULT, result->GetType());

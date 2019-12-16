@@ -17,10 +17,11 @@
 #include "components/prefs/pref_service.h"
 #include "components/prefs/pref_service_factory.h"
 #include "base/strings/utf_string_conversions.h"
-#include "components/autofill/core/common/autofill_pref_names.h"
+#include "components/autofill/core/common/autofill_prefs.h"
 #include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "components/user_prefs/user_prefs.h"
 #include "components/visitedlink/browser/visitedlink_master.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/resource_context.h"
@@ -66,12 +67,12 @@ class XWalkBrowserContext::RuntimeResourceContext :
   ~RuntimeResourceContext() override {
   }
 
-  // ResourceContext implementation:
-  net::HostResolver* GetHostResolver() override {
+  // TODO(iotto): Removed in base ... we should too
+  net::HostResolver* GetHostResolver() {
     CHECK(getter_);
     return getter_->host_resolver();
   }
-  net::URLRequestContext* GetRequestContext() override {
+  net::URLRequestContext* GetRequestContext() {
     CHECK(getter_);
     return getter_->GetURLRequestContext();
   }
@@ -141,7 +142,7 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
   base::FilePath path;
   if (cmd_line->HasSwitch(switches::kXWalkDataPath)) {
     path = cmd_line->GetSwitchValuePath(switches::kXWalkDataPath);
-    PathService::OverrideAndCreateIfNeeded(
+    base::PathService::OverrideAndCreateIfNeeded(
                                            DIR_DATA_PATH,
                                            path, false, true);
   } else {
@@ -161,7 +162,7 @@ void XWalkBrowserContext::InitWhileIOAllowed() {
     CHECK(PathService::Get(base::DIR_APP_DATA, &path));
     path = path.Append(xwalk_suffix);
 #elif defined(OS_ANDROID)
-    CHECK(PathService::Get(base::DIR_ANDROID_APP_DATA, &path));
+    CHECK(base::PathService::Get(base::DIR_ANDROID_APP_DATA, &path));
     path = path.Append(xwalk_suffix);
 #else
     NOTIMPLEMENTED();
@@ -181,14 +182,14 @@ std::unique_ptr<content::ZoomLevelDelegate> XWalkBrowserContext::CreateZoomLevel
 }
 #endif
 
-base::FilePath XWalkBrowserContext::GetPath() const {
+base::FilePath XWalkBrowserContext::GetPath() {
   base::FilePath result;
 #if defined(OS_ANDROID)
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
   if (cmd_line->HasSwitch(switches::kUserDataDir))
     result = cmd_line->GetSwitchValuePath(switches::kUserDataDir);
   if (result.empty())
-    CHECK(PathService::Get(base::DIR_ANDROID_APP_DATA, &result));
+    CHECK(base::PathService::Get(base::DIR_ANDROID_APP_DATA, &result));
   if (cmd_line->HasSwitch(switches::kXWalkProfileName))
     result = result.Append(
                            cmd_line->GetSwitchValuePath(switches::kXWalkProfileName));
@@ -198,18 +199,19 @@ base::FilePath XWalkBrowserContext::GetPath() const {
   return result;
 }
 
-bool XWalkBrowserContext::IsOffTheRecord() const {
+bool XWalkBrowserContext::IsOffTheRecord() {
   // We don't consider off the record scenario.
   return false;
 }
 
 content::DownloadManagerDelegate*
 XWalkBrowserContext::GetDownloadManagerDelegate() {
-  content::DownloadManager* manager = BrowserContext::GetDownloadManager(this);
+//  content::DownloadManager* manager = BrowserContext::GetDownloadManager(this);
 
   if (!download_manager_delegate_.get()) {
     download_manager_delegate_ = new RuntimeDownloadManagerDelegate();
-    download_manager_delegate_->SetDownloadManager(manager);
+    LOG(WARNING) << "iotto " << __func__ << " Do we need the DownloadManager?!";
+//    download_manager_delegate_->SetDownloadManager(manager);
   }
 
   return download_manager_delegate_.get();
@@ -289,7 +291,7 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
 
   protocol_handlers->insert(
       std::pair<std::string,
-          linked_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
+          std::unique_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
           application::kApplicationScheme,
           application::CreateApplicationProtocolHandler(
                                                         application_service_)));
@@ -297,8 +299,11 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
   url_request_getter_ = new RuntimeURLRequestContextGetter(
       false, /* ignore_certificate_error = false */
       GetPath(),
-      content::BrowserThread::GetTaskRunnerForThread(BrowserThread::IO),
-      content::BrowserThread::GetTaskRunnerForThread(BrowserThread::FILE),
+      base::CreateSingleThreadTaskRunnerWithTraits({content::BrowserThread::IO}),
+      base::CreateSingleThreadTaskRunnerWithTraits(
+                {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
+                 base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN}),
+//      content::BrowserThread::GetTaskRunnerForThread(BrowserThread::FILE),
       protocol_handlers,
       std::move(request_interceptors));
   resource_context_->set_url_request_context_getter(url_request_getter_.get());
@@ -321,12 +326,15 @@ void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
   PrefRegistrySimple* pref_registry = new PrefRegistrySimple();
   pref_registry->RegisterStringPref("intl.accept_languages", "");
 
-  // We only use the autocomplete feature of the Autofill, which is
-  // controlled via the manager_delegate. We don't use the rest
-  // of autofill, which is why it is hardcoded as disabled here.
-  pref_registry->RegisterBooleanPref(
-                                     autofill::prefs::kAutofillEnabled,
-                                     false);
+  // We only use the autocomplete feature of Autofill, which is controlled via
+  // the manager_delegate. We don't use the rest of Autofill, which is why it is
+  // hardcoded as disabled here.
+  // TODO(crbug.com/873740): The following also disables autocomplete.
+  // Investigate what the intended behavior is.
+  pref_registry->RegisterBooleanPref(autofill::prefs::kAutofillProfileEnabled,
+                                false);
+  pref_registry->RegisterBooleanPref(autofill::prefs::kAutofillCreditCardEnabled,
+                                false);
 
   PrefServiceFactory pref_service_factory;
   pref_service_factory.set_user_prefs(base::MakeRefCounted<XWalkPrefStore>());
@@ -345,9 +353,9 @@ void XWalkBrowserContext::UpdateAcceptLanguages(
 void XWalkBrowserContext::InitFormDatabaseService() {
   base::FilePath user_data_dir;
 #if defined(OS_ANDROID)
-  CHECK(PathService::Get(base::DIR_ANDROID_APP_DATA, &user_data_dir));
+  CHECK(base::PathService::Get(base::DIR_ANDROID_APP_DATA, &user_data_dir));
 #elif defined(OS_WIN)
-  CHECK(PathService::Get(base::DIR_APP_DATA, &user_data_dir));
+  CHECK(base::PathService::Get(base::DIR_APP_DATA, &user_data_dir));
 #endif
   form_database_service_.reset(new XWalkFormDatabaseService(user_data_dir));
 }

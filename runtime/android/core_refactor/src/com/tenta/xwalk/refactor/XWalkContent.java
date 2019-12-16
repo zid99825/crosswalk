@@ -774,7 +774,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         return ((color >> 24) & 0xFF) == 0xFF;
     }
 
-    @CalledByNative
+//    @CalledByNative
     public void setBackgroundColor(final int color) {
         if (mNativeContent == 0)
             return;
@@ -1072,45 +1072,45 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         }
     }
 
-    @CalledByNative
-    public void onGetUrlFromManifest(String url) {
-        if (url != null && !url.isEmpty()) {
-            loadUrl(url);
-        }
-    }
+//    @CalledByNative
+//    public void onGetUrlFromManifest(String url) {
+//        if (url != null && !url.isEmpty()) {
+//            loadUrl(url);
+//        }
+//    }
 
-    @CalledByNative
-    public void onGetUrlAndLaunchScreenFromManifest(String url, String readyWhen,
-            String imageBorder) {
-        Log.e("iotto", "Fix or remove displayLaunchScreen ... we're not using launchscreen!");
-//        if (url == null || url.isEmpty())
+//    @CalledByNative
+//    public void onGetUrlAndLaunchScreenFromManifest(String url, String readyWhen,
+//            String imageBorder) {
+//        Log.e("iotto", "Fix or remove displayLaunchScreen ... we're not using launchscreen!");
+////        if (url == null || url.isEmpty())
+////            return;
+////        mLaunchScreenManager.displayLaunchScreen(readyWhen, imageBorder);
+////        mContentsClientBridge.registerPageLoadListener(mLaunchScreenManager);
+////        loadUrl(url);
+//    }
+
+//    @CalledByNative
+//    public void onGetFullscreenFlagFromManifest(boolean enterFullscreen) {
+//        if (!(mXWalkView.getContext() instanceof Activity))
 //            return;
-//        mLaunchScreenManager.displayLaunchScreen(readyWhen, imageBorder);
-//        mContentsClientBridge.registerPageLoadListener(mLaunchScreenManager);
-//        loadUrl(url);
-    }
-
-    @CalledByNative
-    public void onGetFullscreenFlagFromManifest(boolean enterFullscreen) {
-        if (!(mXWalkView.getContext() instanceof Activity))
-            return;
-
-        Activity activity = (Activity) mXWalkView.getContext();
-        if (enterFullscreen) {
-            if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
-                View decorView = activity.getWindow().getDecorView();
-                decorView.setSystemUiVisibility(
-                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                | View.SYSTEM_UI_FLAG_FULLSCREEN
-                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-            } else {
-                activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            }
-        }
-    }
+//
+//        Activity activity = (Activity) mXWalkView.getContext();
+//        if (enterFullscreen) {
+//            if (VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
+//                View decorView = activity.getWindow().getDecorView();
+//                decorView.setSystemUiVisibility(
+//                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+//                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//                                | View.SYSTEM_UI_FLAG_FULLSCREEN
+//                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+//            } else {
+//                activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//            }
+//        }
+//    }
 
     /**
      * Reset swipe-to-refresh handler.

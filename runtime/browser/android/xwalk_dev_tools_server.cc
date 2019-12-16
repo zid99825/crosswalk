@@ -32,9 +32,9 @@
 #include "content/public/browser/web_contents_delegate.h"
 #include "content/public/common/user_agent.h"
 #include "grit/xwalk_resources.h"
-#include "jni/XWalkDevToolsServer_jni.h"
 #include "net/base/net_errors.h"
 #include "ui/base/resource/resource_bundle.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkDevToolsServer_jni.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 
 #include "meta_logging.h"
@@ -127,10 +127,11 @@ void XWalkDevToolsServer::Start(bool allow_debug_permission, bool allow_socket_a
   net::UnixDomainServerSocket::AuthCallback auth_callback =
       allow_debug_permission ?
           base::Bind(&AuthorizeSocketAccessWithDebugPermission) : base::Bind(&content::CanUserConnectToDevTools);
+
   std::unique_ptr<content::DevToolsSocketFactory> factory(
       new UnixDomainServerSocketFactory(socket_name_, auth_callback));
 
-  DevToolsAgentHost::StartRemoteDebuggingServer(std::move(factory), std::string(), base::FilePath(), base::FilePath());
+  DevToolsAgentHost::StartRemoteDebuggingServer(std::move(factory), base::FilePath(), base::FilePath());
 
   is_started_ = true;
 }

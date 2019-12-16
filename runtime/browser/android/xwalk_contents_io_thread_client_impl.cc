@@ -14,7 +14,6 @@
 #include "base/android/jni_string.h"
 #include "base/android/jni_weak_ref.h"
 #include "base/lazy_instance.h"
-#include "base/memory/linked_ptr.h"
 #include "base/synchronization/lock.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/render_frame_host.h"
@@ -23,11 +22,12 @@
 #include "content/public/browser/resource_request_info.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_contents_observer.h"
-#include "jni/XWalkContentsIoThreadClient_jni.h"
+#include "content/public/common/resource_type.h"
 #include "net/http/http_request_headers.h"
 #include "net/http/http_response_headers.h"
 #include "net/url_request/url_request.h"
 #include "url/gurl.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContentsIoThreadClient_jni.h"
 #include "xwalk/runtime/browser/android/xwalk_web_resource_response_impl.h"
 
 using base::android::AttachCurrentThread;
@@ -196,10 +196,9 @@ struct WebResourceRequest {
   WebResourceRequest(JNIEnv* env, const net::URLRequest* request)
       : jstring_url(ConvertUTF8ToJavaString(env, request->url().spec())),
         jstring_method(ConvertUTF8ToJavaString(env, request->method())) {
-    const content::ResourceRequestInfo* info =
-        content::ResourceRequestInfo::ForRequest(request);
+    content::ResourceRequestInfo* info = content::ResourceRequestInfo::ForRequest(request);
     is_main_frame =
-        info && info->GetResourceType() == content::RESOURCE_TYPE_MAIN_FRAME;
+        info && info->GetResourceType() == content::ResourceType::kMainFrame;
     has_user_gesture = info && info->HasUserGesture();
 
     vector<string> header_names;
@@ -317,10 +316,8 @@ XWalkContentsIoThreadClientImpl::ShouldInterceptRequest(
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
   if (java_object_.is_null())
     return std::unique_ptr<XWalkWebResourceResponse>();
-  const content::ResourceRequestInfo* info =
-      content::ResourceRequestInfo::ForRequest(request);
-  bool is_main_frame = info &&
-      info->GetResourceType() == content::RESOURCE_TYPE_MAIN_FRAME;
+  content::ResourceRequestInfo* info = content::ResourceRequestInfo::ForRequest(request);
+  bool is_main_frame = info && info->GetResourceType() == content::ResourceType::kMainFrame;
   bool has_user_gesture = info && info->HasUserGesture();
 
   vector<string> headers_names;

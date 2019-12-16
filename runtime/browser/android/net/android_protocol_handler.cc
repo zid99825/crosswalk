@@ -12,7 +12,6 @@
 #include "base/memory/ptr_util.h"
 #include "base/strings/string_util.h"
 #include "content/public/common/url_constants.h"
-#include "jni/AndroidProtocolHandler_jni.h"
 #include "net/base/io_buffer.h"
 #include "net/base/mime_util.h"
 #include "net/base/net_errors.h"
@@ -21,6 +20,7 @@
 #include "net/url_request/url_request_intercepting_job_factory.h"
 #include "net/url_request/url_request_interceptor.h"
 #include "url/gurl.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/AndroidProtocolHandler_jni.h"
 #include "xwalk/runtime/browser/android/net/android_stream_reader_url_request_job.h"
 #include "xwalk/runtime/browser/android/net/input_stream_impl.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
@@ -337,7 +337,7 @@ std::unique_ptr<net::URLRequestInterceptor> CreateAppSchemeRequestInterceptor() 
 //
 // |context| should be a android.content.Context instance or NULL to enable
 // the use of the standard application context.
-static void JNI_AndroidProtocolHandler_SetResourceContextForTesting(JNIEnv* env, const JavaParamRef<jclass>& /*clazz*/,
+static void JNI_AndroidProtocolHandler_SetResourceContextForTesting(JNIEnv* env,
                                                                     const JavaParamRef<jobject>& context) {
   if (context) {
     ResetResourceContext(new JavaObjectWeakGlobalRef(env, context));
@@ -347,13 +347,13 @@ static void JNI_AndroidProtocolHandler_SetResourceContextForTesting(JNIEnv* env,
 }
 
 static ScopedJavaLocalRef<jstring> JNI_AndroidProtocolHandler_GetAndroidAssetPath(
-    JNIEnv* env, const JavaParamRef<jclass>& /*clazz*/) {
+    JNIEnv* env) {
   // OK to release, JNI binding.
   return ConvertUTF8ToJavaString(env, xwalk::kAndroidAssetPath);
 }
 
 static ScopedJavaLocalRef<jstring> JNI_AndroidProtocolHandler_GetAndroidResourcePath(
-    JNIEnv* env, const JavaParamRef<jclass>& /*clazz*/) {
+    JNIEnv* env) {
   // OK to release, JNI binding.
   return ConvertUTF8ToJavaString(env, xwalk::kAndroidResourcePath);
 }

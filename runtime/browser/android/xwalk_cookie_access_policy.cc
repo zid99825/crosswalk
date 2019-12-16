@@ -42,6 +42,11 @@ void XWalkCookieAccessPolicy::SetGlobalAllowAccess(bool allow) {
 bool XWalkCookieAccessPolicy::OnCanGetCookies(
     const net::URLRequest& request,
     const net::CookieList& cookie_list) {
+  LOG(WARNING) << "iotto " << __func__ << " IMPLEMENT";
+//  see: android_webview/browser/aw_cookie_access_policy.cc
+//  bool third_party = GetShouldAcceptThirdPartyCookies(request);
+//  return CanAccessCookies(request.url(), request.site_for_cookies(),
+//                          third_party);
   return GetGlobalAllowAccess();
 }
 
@@ -49,6 +54,7 @@ bool XWalkCookieAccessPolicy::OnCanSetCookie(
     const net::URLRequest& request,
     const net::CanonicalCookie& cookie,
     net::CookieOptions* options) {
+  LOG(WARNING) << "iotto " << __func__ << " IMPLEMENT";
   return GetGlobalAllowAccess();
 }
 

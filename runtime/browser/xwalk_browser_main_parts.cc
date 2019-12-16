@@ -17,7 +17,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "cc/base/switches.h"
-#include "components/nacl/common/features.h"
+#include "components/nacl/common/buildflags.h"
 #include "content/browser/devtools/devtools_http_handler.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
@@ -138,7 +138,31 @@ void XWalkBrowserMainParts::PreMainMessageLoopStart() {
 void XWalkBrowserMainParts::PostMainMessageLoopStart() {
 }
 
-void XWalkBrowserMainParts::PreEarlyInitialization() {
+int XWalkBrowserMainParts::PreEarlyInitialization() {
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
+//  // Network change notifier factory must be singleton, only set factory
+//  // instance while it is not been created.
+//  // In most cases, this check is not necessary because SetFactory should be
+//  // called only once, but both webview and native cronet calls this function,
+//  // in case of building both webview and cronet to one app, it is required to
+//  // avoid crashing the app.
+//  if (!net::NetworkChangeNotifier::GetFactory()) {
+//    net::NetworkChangeNotifier::SetFactory(
+//        new AwNetworkChangeNotifierFactory());
+//  }
+//
+//  // Creates a SingleThreadTaskExecutor for Android WebView if doesn't exist.
+//  DCHECK(!main_task_executor_.get());
+//  if (!base::MessageLoopCurrent::IsSet()) {
+//    main_task_executor_ = std::make_unique<base::SingleThreadTaskExecutor>(
+//        base::MessagePump::Type::UI);
+//  }
+//
+//  browser_process_ = std::make_unique<AwBrowserProcess>(
+//      browser_client_->aw_feature_list_creator());
+  return service_manager::RESULT_CODE_NORMAL_EXIT;
+
+
 #if !defined(OS_CHROMEOS) && defined(USE_AURA) && defined(OS_LINUX)
   ui::InitializeInputMethodForTesting();
 #if defined(USE_GTK_UI)
@@ -154,7 +178,7 @@ void XWalkBrowserMainParts::PreEarlyInitialization() {
 }
 
 int XWalkBrowserMainParts::PreCreateThreads() {
-  return content::RESULT_CODE_NORMAL_EXIT;
+  return service_manager::RESULT_CODE_NORMAL_EXIT;
 }
 
 void XWalkBrowserMainParts::RegisterExternalExtensions() {

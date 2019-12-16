@@ -8,46 +8,47 @@
 #include <jni.h>
 #include <string>
 
-//#include "components/web_contents_delegate_android/web_contents_delegate_android.h"
-#include "android_webview/browser/aw_web_contents_delegate.h"
+#include "components/embedder_support/android/delegate/web_contents_delegate_android.h"
 
 namespace xwalk {
 
-class XWalkWebContentsDelegate : public android_webview::AwWebContentsDelegate {
+class XWalkWebContentsDelegate
+    : public web_contents_delegate_android::WebContentsDelegateAndroid {
  public:
   XWalkWebContentsDelegate(JNIEnv* env, jobject obj);
   ~XWalkWebContentsDelegate() override;
 
-  void AddNewContents(content::WebContents* source, content::WebContents* new_contents,
-                      WindowOpenDisposition disposition, const gfx::Rect& initial_pos,
+  void AddNewContents(content::WebContents* source,
+                      std::unique_ptr<content::WebContents> new_contents,
+                      WindowOpenDisposition disposition,
+                      const gfx::Rect& initial_rect,
                       bool user_gesture,
                       bool* was_blocked) override;
+
   void CloseContents(content::WebContents* source) override;
   void ActivateContents(content::WebContents* contents) override;
   void UpdatePreferredSize(content::WebContents* web_contents, const gfx::Size& pref_size) override;
-  void RunFileChooser(content::RenderFrameHost* render_frame_host, const content::FileChooserParams& params) override;
+  void RunFileChooser(content::RenderFrameHost* render_frame_host,
+                      std::unique_ptr<content::FileSelectListener> listener,
+                      const blink::mojom::FileChooserParams& params) override;
+
   content::JavaScriptDialogManager* GetJavaScriptDialogManager(content::WebContents* web_contents) override;
 
   void RequestMediaAccessPermission(content::WebContents* web_contents, const content::MediaStreamRequest& request,
-                                    const content::MediaResponseCallback& callback) override;
-
-  void RendererUnresponsive(content::WebContents* source,
-                            const content::WebContentsUnresponsiveState& unresponsive_state) override;
-//        content::WebContents* source,
-//        content::RenderWidgetHost* render_widget_host,
-//        base::RepeatingClosure hang_monitor_restarter) override;
-  void RendererResponsive(content::WebContents* source) override;
-//  content::WebContents* source,
-//  content::RenderWidgetHost* render_widget_host) override;
-  bool DidAddMessageToConsole(content::WebContents* source, int32_t level, const base::string16& message,
-                              int32_t line_no, const base::string16& source_id) override;
-  void HandleKeyboardEvent(content::WebContents* source, const content::NativeWebKeyboardEvent& event) override;
-
+                                    content::MediaResponseCallback callback) override;
+  void RendererUnresponsive(content::WebContents* source, content::RenderWidgetHost* render_widget_host,
+                            base::RepeatingClosure hang_monitor_restarter) override;
+  void RendererResponsive(content::WebContents* source, content::RenderWidgetHost* render_widget_host) override;
+  bool DidAddMessageToConsole(
+      content::WebContents* source, blink::mojom::ConsoleMessageLevel log_level, const base::string16& message,
+      int32_t line_no, const base::string16& source_id) override;
+  bool HandleKeyboardEvent(content::WebContents* source, const content::NativeWebKeyboardEvent& event) override;
   void ShowRepostFormWarningDialog(content::WebContents* source) override;
+  void EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL& origin,
+                                 const blink::WebFullscreenOptions& options) override;
 
-  void EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL& origin) override;
-  void ExitFullscreenModeForTab(content::WebContents* web_contents) override;bool IsFullscreenForTabOrPending(
-      const content::WebContents* web_contents) const override;
+  void ExitFullscreenModeForTab(content::WebContents* web_contents) override;
+  bool IsFullscreenForTabOrPending(const content::WebContents* web_contents) override;
 
   bool ShouldCreateWebContents(
       content::WebContents* web_contents,
@@ -71,7 +72,6 @@ class XWalkWebContentsDelegate : public android_webview::AwWebContentsDelegate {
   void LoadingStateChanged(content::WebContents* source, bool to_different_document) override;
 
   void SetOverlayMode(bool useOverlayMode) override;
-  base::android::ScopedJavaLocalRef<jobject> GetContentVideoViewEmbedder() override;
  private:
   std::unique_ptr<content::JavaScriptDialogManager> javascript_dialog_manager_;DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsDelegate)
   ;

@@ -19,14 +19,14 @@ class RuntimeDownloadManagerDelegate
  public:
   RuntimeDownloadManagerDelegate();
 
-  void SetDownloadManager(content::DownloadManager* manager);
+//  void SetDownloadManager(content::DownloadManager* manager);
 
   void Shutdown() override;
   bool DetermineDownloadTarget(
-      content::DownloadItem* download,
+      download::DownloadItem* download,
       const content::DownloadTargetCallback& callback) override;
   bool ShouldOpenDownload(
-      content::DownloadItem* item,
+      download::DownloadItem* item,
       const content::DownloadOpenDelayedCallback& callback) override;
   void GetNextId(const content::DownloadIdCallback& callback) override;
 
@@ -52,7 +52,7 @@ class RuntimeDownloadManagerDelegate
                           const content::DownloadTargetCallback& callback,
                           const base::FilePath& suggested_path);
 
-  content::DownloadManager* download_manager_;
+//  content::DownloadManager* download_manager_;
   base::FilePath default_download_path_;
   bool suppress_prompting_;
 

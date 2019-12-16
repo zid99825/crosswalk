@@ -10,7 +10,7 @@
 #include "base/base_paths_android.h"
 #include "content/public/browser/browser_thread.h"
 
-#include "jni/XWalkPresentationHost_jni.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkPresentationHost_jni.h"
 
 using base::android::AttachCurrentThread;
 using base::android::JavaParamRef;

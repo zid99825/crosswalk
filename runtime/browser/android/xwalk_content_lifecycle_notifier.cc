@@ -5,7 +5,7 @@
 
 #include "xwalk/runtime/browser/android/xwalk_content_lifecycle_notifier.h"
 
-#include "jni/XWalkContentLifecycleNotifier_jni.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContentLifecycleNotifier_jni.h"
 
 using base::android::AttachCurrentThread;
 
@@ -24,8 +24,7 @@ void XWalkContentLifecycleNotifier::OnXWalkViewCreated() {
 
 // static
 void XWalkContentLifecycleNotifier::OnXWalkViewDestroyed() {
-  Java_XWalkContentLifecycleNotifier_onXWalkViewDestroyed(
-      AttachCurrentThread());
+  Java_XWalkContentLifecycleNotifier_onXWalkViewDestroyed(AttachCurrentThread());
 }
 
 }  // namespace xwalk

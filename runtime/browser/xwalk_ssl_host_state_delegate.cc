@@ -6,6 +6,7 @@
 #include "xwalk/runtime/browser/xwalk_ssl_host_state_delegate.h"
 
 #include "net/base/hash_value.h"
+#include "base/callback.h"
 
 using content::SSLHostStateDelegate;
 
@@ -60,7 +61,7 @@ void XWalkSSLHostStateDelegate::HostRanInsecureContent(const std::string& host,
 bool XWalkSSLHostStateDelegate::DidHostRunInsecureContent(
     const std::string& host,
     int pid,
-    InsecureContentType content_type) const {
+    InsecureContentType content_type) {
   // Intentional no-op.
   return false;
 }
@@ -71,7 +72,7 @@ void XWalkSSLHostStateDelegate::RevokeUserAllowExceptions(
 }
 
 bool XWalkSSLHostStateDelegate::HasAllowException(
-    const std::string& host) const {
+    const std::string& host) {
   auto policy_iterator = cert_policy_for_host_.find(host);
   return policy_iterator != cert_policy_for_host_.end() &&
          policy_iterator->second.HasAllowException();
@@ -79,7 +80,7 @@ bool XWalkSSLHostStateDelegate::HasAllowException(
 
 void XWalkSSLHostStateDelegate::AllowCert(const std::string& host,
                                           const net::X509Certificate& cert,
-                                          net::CertStatus error) {
+                                          int error) {
   cert_policy_for_host_[host].Allow(cert, error);
 }
 

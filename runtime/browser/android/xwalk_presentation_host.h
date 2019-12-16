@@ -23,7 +23,7 @@ class XWalkPresentationHost {
     int id;
   };
 
-  class SessionObserver {
+  class SessionObserver : public base::CheckedObserver{
    public:
     virtual void OnPresentationClosed(int render_process_id,
       int render_frame_id) = 0;

@@ -28,14 +28,14 @@ RuntimeNetworkDelegate::~RuntimeNetworkDelegate() {
 
 int RuntimeNetworkDelegate::OnBeforeURLRequest(
     net::URLRequest* request,
-    const net::CompletionCallback& callback,
+    net::CompletionOnceCallback callback,
     GURL* new_url) {
   return net::OK;
 }
 
 int RuntimeNetworkDelegate::OnBeforeStartTransaction(
     net::URLRequest* request,
-    const net::CompletionCallback& callback,
+    net::CompletionOnceCallback callback,
     net::HttpRequestHeaders* headers) {
   return net::OK;
 }
@@ -47,7 +47,7 @@ void RuntimeNetworkDelegate::OnStartTransaction(
 
 int RuntimeNetworkDelegate::OnHeadersReceived(
     net::URLRequest* request,
-    const net::CompletionCallback& callback,
+    net::CompletionOnceCallback callback,
     const net::HttpResponseHeaders* original_response_headers,
     scoped_refptr<net::HttpResponseHeaders>* override_response_headers,
     GURL* allowed_unsafe_redirect_url) {
@@ -80,7 +80,7 @@ void RuntimeNetworkDelegate::OnNetworkBytesReceived(net::URLRequest* request,
 }
 
 void RuntimeNetworkDelegate::OnCompleted(net::URLRequest* request,
-                                         bool started) {
+                                         bool started, int net_error) {
 }
 
 void RuntimeNetworkDelegate::OnURLRequestDestroyed(net::URLRequest* request) {
@@ -90,31 +90,26 @@ void RuntimeNetworkDelegate::OnPACScriptError(int line_number,
                                               const base::string16& error) {
 }
 
-RuntimeNetworkDelegate::AuthRequiredResponse
-RuntimeNetworkDelegate::OnAuthRequired(
-    net::URLRequest* request,
-    const net::AuthChallengeInfo& auth_info,
-    const AuthCallback& callback,
+RuntimeNetworkDelegate::AuthRequiredResponse RuntimeNetworkDelegate::OnAuthRequired(
+    net::URLRequest* request, const net::AuthChallengeInfo& auth_info, AuthCallback callback,
     net::AuthCredentials* credentials) {
   return AUTH_REQUIRED_RESPONSE_NO_ACTION;
 }
 
 bool RuntimeNetworkDelegate::OnCanGetCookies(
-    const net::URLRequest& request,
-    const net::CookieList& cookie_list) {
+    const net::URLRequest& request, const net::CookieList& cookie_list, bool allowed_from_caller) {
 #if defined(OS_ANDROID)
-  return XWalkCookieAccessPolicy::GetInstance()->OnCanGetCookies(
+  return allowed_from_caller && XWalkCookieAccessPolicy::GetInstance()->OnCanGetCookies(
     request, cookie_list);
 #else
   return true;
 #endif
 }
 
-bool RuntimeNetworkDelegate::OnCanSetCookie(const net::URLRequest& request,
-                                            const net::CanonicalCookie& cookie,
-                                            net::CookieOptions* options) {
+bool RuntimeNetworkDelegate::OnCanSetCookie(const net::URLRequest& request, const net::CanonicalCookie& cookie,
+                                            net::CookieOptions* options, bool allowed_from_caller) {
 #if defined(OS_ANDROID)
-  return XWalkCookieAccessPolicy::GetInstance()->OnCanSetCookie(request,
+  return allowed_from_caller && XWalkCookieAccessPolicy::GetInstance()->OnCanSetCookie(request,
                                                                 cookie,
                                                                 options);
 #else

@@ -45,7 +45,7 @@ using PresentationConnectionErrorCallback =
 using PresentationConnectionCallback =
     content::PresentationConnectionCallback;
 using RenderFrameHostId = XWalkPresentationServiceDelegate::RenderFrameHostId;
-using SessionInfo = content::PresentationInfo;
+using SessionInfo = blink::mojom::PresentationInfo;
 
 #if defined(OS_ANDROID)
 using SystemString = std::basic_string<char>;
@@ -92,13 +92,13 @@ class DisplayInfoManagerService {
 // display monitors (including wireless).
 class DisplayInfoManager {
  public:
-  class Observer {
+  class Observer : public base::CheckedObserver {
    public:
     virtual void OnDisplayInfoChanged(
         const std::vector<DisplayInfo>& info_list) {}
 
    protected:
-    virtual ~Observer() {}
+    ~Observer() override {}
   };
 
  public:

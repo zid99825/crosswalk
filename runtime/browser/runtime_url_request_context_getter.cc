@@ -17,10 +17,11 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
-#include "base/task_scheduler/post_task.h"
-#include "base/threading/sequenced_worker_pool.h"
+#include "base/task/post_task.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/cookie_store_factory.h"
+#include "content/public/browser/network_quality_observer_factory.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/url_constants.h"
 #include "net/cert/cert_verifier.h"
@@ -35,9 +36,9 @@
 #include "net/http/http_cache.h"
 #include "net/http/http_network_session.h"
 #include "net/http/http_server_properties_impl.h"
-#include "net/proxy/proxy_service.h"
-#include "net/ssl/channel_id_service.h"
-#include "net/ssl/default_channel_id_store.h"
+//#include "net/proxy/proxy_service.h"
+//#include "net/ssl/channel_id_service.h"
+//#include "net/ssl/default_channel_id_store.h"
 #include "net/ssl/ssl_config_service_defaults.h"
 #include "net/url_request/data_protocol_handler.h"
 #include "net/url_request/file_protocol_handler.h"
@@ -53,14 +54,14 @@
 #include "xwalk/runtime/common/xwalk_content_client.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 #ifdef TENTA_CHROMIUM_BUILD
-#include "host_resolver_tenta.h"
+//#include "host_resolver_tenta.h"
 #include "xwalk/third_party/tenta/chromium_cache/chromium_cache_factory.h"
 
 namespace tenta_cache = tenta::fs::cache;
 #endif
 
 #if defined(OS_ANDROID)
-#include "net/proxy/proxy_config_service_android.h"
+//#include "net/proxy/proxy_config_service_android.h"
 #include "xwalk/runtime/browser/android/cookie_manager.h"
 #include "xwalk/runtime/browser/android/net/android_protocol_handler.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
@@ -120,7 +121,7 @@ class IgnoresCTPolicyEnforcer : public net::CTPolicyEnforcer {
 
   net::ct::CTPolicyCompliance CheckCompliance(
       net::X509Certificate* cert,
-      const net::SCTList& verified_scts,
+      const net::ct::SCTList& verified_scts,
       const net::NetLogWithSource& net_log) override {
     return net::ct::CTPolicyCompliance::CT_POLICY_COMPLIES_VIA_SCTS;
   }
@@ -163,18 +164,19 @@ RuntimeURLRequestContextGetter::RuntimeURLRequestContextGetter(
 
   std::swap(protocol_handlers_, *protocol_handlers);
 
-  // We must create the proxy config service on the UI loop on Linux because it
-  // must synchronously run on the glib message loop. This will be passed to
-  // the URLRequestContextStorage on the IO thread in GetURLRequestContext().
-#if defined(OS_ANDROID)
-  proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(io_task_runner);
-  net::ProxyConfigServiceAndroid* android_config_service =
-      static_cast<net::ProxyConfigServiceAndroid*>(proxy_config_service_.get());
-  android_config_service->set_exclude_pac_url(true);
-#else
-  proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(
-      io_task_runner, file_task_runner);
-#endif
+  // TODO(iotto): Remove
+//  // We must create the proxy config service on the UI loop on Linux because it
+//  // must synchronously run on the glib message loop. This will be passed to
+//  // the URLRequestContextStorage on the IO thread in GetURLRequestContext().
+//#if defined(OS_ANDROID)
+//  proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(io_task_runner);
+//  net::ProxyConfigServiceAndroid* android_config_service =
+//      static_cast<net::ProxyConfigServiceAndroid*>(proxy_config_service_.get());
+//  android_config_service->set_exclude_pac_url(true);
+//#else
+//  proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(
+//      io_task_runner, file_task_runner);
+//#endif
 }
 
 RuntimeURLRequestContextGetter::~RuntimeURLRequestContextGetter() {
@@ -188,7 +190,6 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     network_delegate_.reset(new RuntimeNetworkDelegate);
     url_request_context_->set_network_delegate(network_delegate_.get());
 
-    std::unique_ptr<net::ExternalEstimateProvider> external_estimate_provider;
     std::map<std::string, std::string> network_quality_estimator_params;
     // TODO(iotto): Setup estimator network params
 //    variations::GetVariationParams(kNetworkQualityEstimatorFieldTrialName,
@@ -200,8 +201,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 
     _network_quality_estimator.reset(
         new net::NetworkQualityEstimator(
-            std::move(external_estimate_provider),
-            base::MakeUnique<net::NetworkQualityEstimatorParams>(network_quality_estimator_params), nullptr));
+            std::make_unique<net::NetworkQualityEstimatorParams>(network_quality_estimator_params), nullptr));
 
     _network_quality_observer = content::CreateNetworkQualityObserver(_network_quality_estimator.get());
 
@@ -240,17 +240,19 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(
         new tenta_cache::ChromiumCacheFactory(_network_quality_estimator.get()));
 
-    //TODO (iotto): Remove backup, needed for speed comparison
-    // or use when we'll have option for native host resolver
-    std::unique_ptr<net::HostResolver> backup =
-    net::HostResolver::CreateDefaultResolver(NULL);
+    LOG(ERROR) << "iotto " << __func__ << " FIX host resolver";
+//    //TODO (iotto): Remove backup, needed for speed comparison
+//    // or use when we'll have option for native host resolver
+//    std::unique_ptr<net::HostResolver> backup =
+//    net::HostResolver::CreateStandaloneContextResolver(nullptr /*netlog*/);
+//
+//    tenta::ext::HostResolverTenta * hrt = new tenta::ext::HostResolverTenta(
+//        std::move(backup));
+//    hrt->use_backup(false);
+//
+//    std::unique_ptr<net::HostResolver> host_resolver(hrt);
 
-    tenta::ext::HostResolverTenta * hrt = new tenta::ext::HostResolverTenta(
-        std::move(backup));
-    hrt->use_backup(false);
-
-    std::unique_ptr<net::HostResolver> host_resolver(hrt);
-
+    std::unique_ptr<net::HostResolver> host_resolver = net::HostResolver::CreateStandaloneResolver(nullptr /*netlog*/);
 #else
     base::FilePath cache_path = base_path_.Append(FILE_PATH_LITERAL("Cache"));
 
@@ -264,7 +266,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
             net::HostResolver::CreateDefaultResolver(nullptr)));
 #endif
 
-    storage_->set_cert_verifier(net::CertVerifier::CreateDefault());
+    storage_->set_cert_verifier(net::CertVerifier::CreateDefault(nullptr/*cert_net_fetcher*/));
     storage_->set_transport_security_state(
         base::WrapUnique(new net::TransportSecurityState));
 
@@ -280,21 +282,22 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     storage_->set_ct_policy_enforcer(
         base::WrapUnique(new IgnoresCTPolicyEnforcer));
 
-#if defined(OS_ANDROID)
-    // Android provides a local HTTP proxy that handles all the proxying.
-    // Create the proxy without a resolver since we rely
-    // on this local HTTP proxy.
-    storage_->set_proxy_service(
-        net::ProxyService::CreateWithoutProxyResolver(
-            std::move(proxy_config_service_), NULL));
-#else
-    storage_->set_proxy_service(
-        net::ProxyService::CreateUsingSystemProxyResolver(
-            std::move(proxy_config_service_),
-            0,
-            NULL));
-#endif
-    storage_->set_ssl_config_service(new net::SSLConfigServiceDefaults);
+    // TODO(iotto): Remove
+//#if defined(OS_ANDROID)
+//    // Android provides a local HTTP proxy that handles all the proxying.
+//    // Create the proxy without a resolver since we rely
+//    // on this local HTTP proxy.
+//    storage_->set_proxy_service(
+//        net::ProxyService::CreateWithoutProxyResolver(
+//            std::move(proxy_config_service_), NULL));
+//#else
+//    storage_->set_proxy_service(
+//        net::ProxyService::CreateUsingSystemProxyResolver(
+//            std::move(proxy_config_service_),
+//            0,
+//            NULL));
+//#endif
+    storage_->set_ssl_config_service(base::WrapUnique(new net::SSLConfigServiceDefaults()));
     storage_->set_http_auth_handler_factory(
         net::HttpAuthHandlerFactory::CreateDefault(host_resolver.get()));
     storage_->set_http_server_properties(
@@ -322,7 +325,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
         ->http_auth_handler_factory();
     network_session_context.http_server_properties = url_request_context_
         ->http_server_properties();
-    network_session_context.network_quality_provider = url_request_context_->network_quality_estimator();
+    network_session_context.network_quality_estimator = url_request_context_->network_quality_estimator();
     network_session_params.ignore_certificate_errors =
         ignore_certificate_errors_;
 
@@ -421,7 +424,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 }
 
 scoped_refptr<base::SingleThreadTaskRunner> RuntimeURLRequestContextGetter::GetNetworkTaskRunner() const {
-  return BrowserThread::GetTaskRunnerForThread(BrowserThread::IO);
+  return base::CreateSingleThreadTaskRunnerWithTraits({content::BrowserThread::IO});
 }
 
 net::HostResolver* RuntimeURLRequestContextGetter::host_resolver() {

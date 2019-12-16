@@ -48,13 +48,13 @@ void XWalkPrefStore::SetValue(const std::string& key,
                               std::unique_ptr<base::Value> value,
                               uint32_t flags) {
   DCHECK(value);
-  if (prefs_.SetValue(key, std::move(value)))
+  if (prefs_.SetValue(key, base::Value::FromUniquePtrValue(std::move(value))))
       ReportValueChanged(key, flags);
 }
 
 void XWalkPrefStore::SetValueSilently(
     const std::string& key, std::unique_ptr<base::Value> value, uint32_t flags) {
-  prefs_.SetValue(key, std::move(value));
+  prefs_.SetValue(key, base::Value::FromUniquePtrValue(std::move(value)));
 }
 
 void XWalkPrefStore::RemoveValue(const std::string& key, uint32_t flags) {

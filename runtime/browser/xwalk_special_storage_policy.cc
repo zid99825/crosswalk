@@ -4,7 +4,10 @@
 
 #include "xwalk/runtime/browser/xwalk_special_storage_policy.h"
 
-using namespace xwalk;
+#include "base/bind.h"
+#include "meta_logging.h"
+
+namespace xwalk {
 
 XWalkSpecialStoragePolicy::XWalkSpecialStoragePolicy(void) {}
 
@@ -41,6 +44,13 @@ bool XWalkSpecialStoragePolicy::HasSessionOnlyOrigins() {
   // Do not allow any origins to have session-only storage.
   return false;
 }
-
+network::SessionCleanupCookieStore::DeleteCookiePredicate XWalkSpecialStoragePolicy::CreateDeleteCookieOnExitPredicate() {
+  return base::BindRepeating(&XWalkSpecialStoragePolicy::ShouldDeleteCookieOnExit, base::Unretained(this));
 }
 
+bool XWalkSpecialStoragePolicy::ShouldDeleteCookieOnExit(const std::string& domain, bool is_https) {
+  TENTA_LOG_COOKIE(WARNING) << __func__ << " domain=" << domain << " isHttps=" << is_https;
+  return false;
+}
+
+} // namesapce xwalk

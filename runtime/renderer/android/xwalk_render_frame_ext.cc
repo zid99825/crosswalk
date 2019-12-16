@@ -84,7 +84,8 @@ bool RemovePrefixAndAssignIfMatches(const base::StringPiece& prefix,
   if (spec.starts_with(prefix)) {
     url::RawCanonOutputW<1024> output;
     url::DecodeURLEscapeSequences(spec.data() + prefix.length(),
-                                  spec.length() - prefix.length(), &output);
+                                  spec.length() - prefix.length(),
+                                  url::DecodeURLMode::kUTF8OrIsomorphic,&output);
     *dest =
         base::UTF16ToUTF8(base::StringPiece16(output.data(), output.length()));
     return true;
@@ -286,7 +287,7 @@ void XWalkRenderFrameExt::OnSetTextZoomLevel(double zoom_level) {
     return;
 
   // Hide selection and autofill popups.
-  webview->HidePopups();
+  webview->CancelPagePopup();
   webview->SetZoomLevel(zoom_level);
 }
 
@@ -307,11 +308,11 @@ void XWalkRenderFrameExt::OnSetInitialPageScale(double page_scale_factor) {
 }
 
 void XWalkRenderFrameExt::OnSetBackgroundColor(SkColor c) {
-  blink::WebFrameWidget* web_frame_widget = GetWebFrameWidget();
-  if (!web_frame_widget)
+  blink::WebView* webview = GetWebView();
+  if (!webview)
     return;
 
-  web_frame_widget->SetBaseBackgroundColor(c);
+  webview->SetBaseBackgroundColor(c);
 }
 
 void XWalkRenderFrameExt::OnSetTextZoomFactor(float zoom_factor) {
@@ -320,7 +321,7 @@ void XWalkRenderFrameExt::OnSetTextZoomFactor(float zoom_factor) {
     return;
 
   // Hide selection and autofill popups.
-  webview->HidePopups();
+  webview->CancelPagePopup();
   webview->SetTextZoomFactor(zoom_factor);
 }
 
@@ -333,9 +334,8 @@ blink::WebView* XWalkRenderFrameExt::GetWebView() {
 }
 
 blink::WebFrameWidget* XWalkRenderFrameExt::GetWebFrameWidget() {
-  if (!render_frame() || !render_frame()->GetRenderView())
-    return nullptr;
-
-  return render_frame()->GetRenderView()->GetWebFrameWidget();
+  return render_frame()
+             ? render_frame()->GetWebFrame()->LocalRoot()->FrameWidget()
+             : nullptr;
 }
 } /* namespace xwalk */

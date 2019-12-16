@@ -131,7 +131,7 @@ void XWalkContentRendererClient::RenderThreadStarted() {
   xwalk_render_thread_observer_.reset(new XWalkRenderThreadObserver);
   thread->AddObserver(xwalk_render_thread_observer_.get());
 
-  auto registry = base::MakeUnique<service_manager::BinderRegistry>();
+  auto registry = std::make_unique<service_manager::BinderRegistry>();
 
   visited_link_slave_.reset(new visitedlink::VisitedLinkSlave);
   registry->AddInterface(visited_link_slave_->GetBindCallback(),
@@ -139,7 +139,7 @@ void XWalkContentRendererClient::RenderThreadStarted() {
 
   content::ChildThread::Get()
       ->GetServiceManagerConnection()
-      ->AddConnectionFilter(base::MakeUnique<content::SimpleConnectionFilter>(
+      ->AddConnectionFilter(std::make_unique<content::SimpleConnectionFilter>(
           std::move(registry)));
 
 
@@ -268,8 +268,9 @@ void XWalkContentRendererClient::DidCreateModuleSystem(
       new extensions::IsolatedFileSystem());
   module_system->RegisterNativeModule("isolated_file_system",
       std::move(isolated_file_system_module));
-  module_system->RegisterNativeModule("sysapps_common",
-      extensions::CreateJSModuleFromResource(IDR_XWALK_SYSAPPS_COMMON_API));
+  LOG(ERROR) << "iotto " << __func__ << " FIX sysapps_common";
+//  module_system->RegisterNativeModule("sysapps_common",
+//      extensions::CreateJSModuleFromResource(IDR_XWALK_SYSAPPS_COMMON_API));
   module_system->RegisterNativeModule("widget_common",
       extensions::CreateJSModuleFromResource(
           IDR_XWALK_APPLICATION_WIDGET_COMMON_API));
@@ -403,7 +404,7 @@ void XWalkContentRendererClient::AddSupportedKeySystems(
 #endif  // defined(OS_ANDROID)
 }
 
-bool XWalkContentRendererClient::ShouldReportDetailedMessageForSource(const base::string16& source) const {
+bool XWalkContentRendererClient::ShouldReportDetailedMessageForSource(const base::string16& source) {
   TENTA_LOG_NET(INFO) << __func__ << " src=" << source;
   return false;
 }

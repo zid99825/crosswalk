@@ -8,7 +8,7 @@
 
 #include <string>
 
-DEFINE_WEB_CONTENTS_USER_DATA_KEY(
+WEB_CONTENTS_USER_DATA_KEY_IMPL(
     xwalk::XWalkPresentationServiceDelegateAndroid);
 
 namespace xwalk {

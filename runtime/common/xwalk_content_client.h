@@ -24,15 +24,11 @@ class XWalkContentClient : public content::ContentClient {
 
   void AddPepperPlugins(
       std::vector<content::PepperPluginInfo>* plugins) override;
-  std::string GetProduct() const override;
-  std::string GetUserAgent() const override;
-  base::string16 GetLocalizedString(int message_id) const override;
-  base::StringPiece GetDataResource(
-      int resource_id,
-      ui::ScaleFactor scale_factor) const override;
-  base::RefCountedMemory* GetDataResourceBytes(
-      int resource_id) const override;
-  gfx::Image& GetNativeImageNamed(int resource_id) const override;
+
+  base::string16 GetLocalizedString(int message_id) override;
+  base::StringPiece GetDataResource(int resource_id, ui::ScaleFactor scale_factor) override;
+  base::RefCountedMemory* GetDataResourceBytes(int resource_id) override;
+  gfx::Image& GetNativeImageNamed(int resource_id) override;
   void AddAdditionalSchemes(Schemes* schemes) override;
 
 /*  void AddAdditionalSchemes(

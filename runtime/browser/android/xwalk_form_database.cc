@@ -8,7 +8,7 @@
 #include "base/android/scoped_java_ref.h"
 
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
-#include "jni/XWalkFormDatabase_jni.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkFormDatabase_jni.h"
 
 namespace xwalk {
 
@@ -24,12 +24,12 @@ XWalkFormDatabaseService* GetFormDatabaseService() {
 } // anonymous namespace
 
 // static
-jboolean JNI_XWalkFormDatabase_HasFormData(JNIEnv*, const base::android::JavaParamRef<jclass>&) {
+jboolean JNI_XWalkFormDatabase_HasFormData(JNIEnv*) {
   return GetFormDatabaseService()->HasFormData();
 }
 
 // static
-void JNI_XWalkFormDatabase_ClearFormData(JNIEnv*, const base::android::JavaParamRef<jclass>&) {
+void JNI_XWalkFormDatabase_ClearFormData(JNIEnv*) {
   GetFormDatabaseService()->ClearFormData();
 }
 

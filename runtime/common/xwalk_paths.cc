@@ -117,7 +117,7 @@ bool GetInternalPluginsDirectory(base::FilePath* result) {
 #endif
 
   // The rest of the world expects plugins in the module directory.
-  return PathService::Get(base::DIR_MODULE, result);
+  return base::PathService::Get(base::DIR_MODULE, result);
 }
 
 #if defined(OS_WIN)
@@ -161,7 +161,7 @@ bool GetDownloadPath(base::FilePath* result) {
 #elif defined(OS_WIN)
   return GetUserDownloadDirectory(result);
 #else
-  if (!PathService::Get(DIR_DATA_PATH, result))
+  if (!base::PathService::Get(DIR_DATA_PATH, result))
     return false;
   ignore_result(result->Append(FILE_PATH_LITERAL("Downloads")));
   return true;
@@ -179,7 +179,7 @@ bool PathProvider(int key, base::FilePath* path) {
     case xwalk::DIR_LOGS:
 #ifdef NDEBUG
       // Release builds write to the data dir
-      return PathService::Get(xwalk::DIR_DATA_PATH, path);
+      return base::PathService::Get(xwalk::DIR_DATA_PATH, path);
 #else
       // Debug builds write next to the binary (in the build tree)
 #if defined(OS_MACOSX)
@@ -232,7 +232,7 @@ bool PathProvider(int key, base::FilePath* path) {
       cur = cur.Append(FILE_PATH_LITERAL("pnacl"));
       break;
     case xwalk::DIR_TEST_DATA:
-      if (!PathService::Get(base::DIR_SOURCE_ROOT, &cur))
+      if (!base::PathService::Get(base::DIR_SOURCE_ROOT, &cur))
         return false;
       cur = cur.Append(FILE_PATH_LITERAL("xwalk"));
       cur = cur.Append(FILE_PATH_LITERAL("test"));
@@ -260,7 +260,7 @@ bool PathProvider(int key, base::FilePath* path) {
 }
 
 void RegisterPathProvider() {
-  PathService::RegisterProvider(PathProvider, PATH_START, PATH_END);
+  base::PathService::RegisterProvider(PathProvider, PATH_START, PATH_END);
 }
 
 }  // namespace xwalk

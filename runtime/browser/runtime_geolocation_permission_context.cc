@@ -8,16 +8,18 @@
 
 #include "base/bind.h"
 #include "base/callback.h"
-#include "components/prefs/pref_service.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/task/post_task.h"
+#include "components/prefs/pref_service.h"
 #include "components/url_formatter/url_formatter.h"
 #include "components/user_prefs/user_prefs.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
-#include "device/geolocation/geolocation_provider.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/web_contents.h"
 #include "grit/xwalk_resources.h"
+#include "services/device/geolocation/geolocation_provider.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/common/xwalk_system_locale.h"
@@ -48,17 +50,17 @@ CancelGeolocationPermissionRequestOnUIThread(
 void
 RuntimeGeolocationPermissionContext::RequestGeolocationPermissionOnUIThread(
     content::WebContents* web_contents,
-    const GURL& requesting_frame,
-    base::Callback<void(bool)> result_callback) {
+          const GURL& requesting_frame,
+          base::OnceCallback<void(bool)> result_callback) {
   DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
   XWalkContent* xwalk_content =
       XWalkContent::FromWebContents(web_contents);
   if (!xwalk_content) {
-    result_callback.Run(false);
+    std::move(result_callback).Run(false);
     return;
   }
 
-  xwalk_content->ShowGeolocationPrompt(requesting_frame, result_callback);
+  xwalk_content->ShowGeolocationPrompt(requesting_frame, std::move(result_callback));
 }
 #endif
 
@@ -66,9 +68,8 @@ void RuntimeGeolocationPermissionContext::CancelGeolocationPermissionRequest(
     content::WebContents* web_contents,
     const GURL& requesting_frame) {
 #if defined(OS_ANDROID)
-  content::BrowserThread::PostTask(
-      content::BrowserThread::UI, FROM_HERE,
-      base::Bind(
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+      base::BindOnce(
           &RuntimeGeolocationPermissionContext::
               CancelGeolocationPermissionRequestOnUIThread,
           this,
@@ -92,17 +93,14 @@ RuntimeGeolocationPermissionContext::RequestGeolocationPermission(
     content::WebContents* web_contents,
     const GURL& requesting_frame,
     const std::string& application_name,
-    base::Callback<void(bool)> result_callback) {
+    base::OnceCallback<void(bool)> result_callback) {
 #if defined(OS_ANDROID)
-  content::BrowserThread::PostTask(
-      content::BrowserThread::UI, FROM_HERE,
-      base::Bind(
-          &RuntimeGeolocationPermissionContext::
-              RequestGeolocationPermissionOnUIThread,
-          this,
-          web_contents,
-          requesting_frame,
-          result_callback));
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI}, base::BindOnce(
+      &RuntimeGeolocationPermissionContext::RequestGeolocationPermissionOnUIThread,
+      this,
+      web_contents,
+      requesting_frame,
+      std::move(result_callback)));
 #else
   DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
   XWalkPermissionDialogManager* permission_dialog_manager =

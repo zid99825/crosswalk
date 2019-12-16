@@ -11,13 +11,17 @@
 
 //#include "components/auto_login_parser/auto_login_parser.h"
 #include "android_webview/browser/renderer_host/auto_login_parser.h"
+#include "base/task/post_task.h"
 #include "components/navigation_interception/intercept_navigation_delegate.h"
-#include "content/public/browser/browser_thread.h"
-//#include "content/public/browser/resource_controller.h"
 #include "content/browser/loader/resource_controller.h"
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
+#include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/resource_request_info.h"
 #include "content/public/browser/resource_throttle.h"
+#include "content/public/browser/web_contents.h"
 #include "content/public/common/url_constants.h"
+
 #include "net/base/load_flags.h"
 #include "net/base/net_errors.h"
 #include "net/http/http_response_headers.h"
@@ -25,7 +29,6 @@
 #include "xwalk/runtime/browser/android/net/url_constants.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
-#include "xwalk/runtime/browser/android/xwalk_login_delegate.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 
@@ -86,7 +89,7 @@ class IoThreadClientThrottle : public content::ResourceThrottle {
   void WillStartRequest(bool* defer) override;
   void WillRedirectRequest(const net::RedirectInfo& redirect_info,
                            bool* defer) override;
-  const char* GetNameForLogging() const override;
+  const char* GetNameForLogging() override;
 
   bool MaybeDeferRequest(bool* defer);
   void OnIoThreadClientReady(int new_render_process_id,
@@ -125,7 +128,7 @@ IoThreadClientThrottle::GetIoThreadClient() const {
 //    return XWalkContentsIoThreadClient::GetServiceWorkerIoThreadClient();
 
   if (render_process_id_ == -1 || render_frame_id_ == -1) {
-    const content::ResourceRequestInfo* resourceRequestInfo = content::ResourceRequestInfo::ForRequest(request_);
+    content::ResourceRequestInfo* resourceRequestInfo = content::ResourceRequestInfo::ForRequest(request_);
     if (resourceRequestInfo == nullptr) {
       return nullptr;
     }
@@ -153,7 +156,7 @@ void IoThreadClientThrottle::WillRedirectRequest(
   WillStartRequest(defer);
 }
 
-const char* IoThreadClientThrottle::GetNameForLogging() const {
+const char* IoThreadClientThrottle::GetNameForLogging() {
   return "IoThreadClientThrottle";
 }
 
@@ -247,7 +250,7 @@ void RuntimeResourceDispatcherHostDelegateAndroid::RequestBeginning(
     content::AppCacheService* appcache_service,
     content::ResourceType resource_type,
     std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
-  const content::ResourceRequestInfo* request_info =
+  content::ResourceRequestInfo* request_info =
       content::ResourceRequestInfo::ForRequest(request);
 
 //  // If io_client is NULL, then the browser side objects have already been
@@ -260,12 +263,26 @@ void RuntimeResourceDispatcherHostDelegateAndroid::RequestBeginning(
 //  if (!io_client)
 //    return;
 
-  throttles->push_back(base::WrapUnique<IoThreadClientThrottle>(new IoThreadClientThrottle(
-      request_info->GetChildID(), request_info->GetRenderFrameID(), request)));
+  int render_process_id = request_info->GetChildID();
+  int render_frame_id = request_info->GetRenderFrameID();
 
-  bool is_main_frame = resource_type == content::RESOURCE_TYPE_MAIN_FRAME;
-  if (!is_main_frame)
-    InterceptNavigationDelegate::UpdateUserGestureCarryoverInfo(request);
+  throttles->push_back(base::WrapUnique<IoThreadClientThrottle>(new IoThreadClientThrottle(
+      render_process_id, render_frame_id, request)));
+
+  bool is_main_frame = resource_type == content::ResourceType::kMainFrame;
+  if (!is_main_frame) {
+    content::RenderFrameHost* render_frame_host = content::RenderFrameHost::FromID(render_process_id, render_frame_id);
+    if (!render_frame_host)
+      return;
+
+    content::WebContents* web_contents = content::WebContents::FromRenderFrameHost(render_frame_host);
+
+    InterceptNavigationDelegate* intercept_navigation_delegate = InterceptNavigationDelegate::Get(web_contents);
+
+    if (intercept_navigation_delegate) {
+      intercept_navigation_delegate->UpdateLastUserGestureCarryoverTimestamp();
+    }
+  }
 
   // TODO(iotto) : Add do not track header here!
 //  if (!request->is_pending()) {
@@ -316,52 +333,32 @@ void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
 
   request->Cancel();
 
-  const content::ResourceRequestInfo* request_info =
+  content::ResourceRequestInfo* request_info =
       content::ResourceRequestInfo::ForRequest(request);
 
-  BrowserThread::PostTask(
-      BrowserThread::UI, FROM_HERE,
-      base::Bind(&DownloadStartingOnUIThread,
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+      base::BindOnce(&DownloadStartingOnUIThread,
                  request_info->GetWebContentsGetterForRequest(), url,
                  user_agent, content_disposition, mime_type, content_length));
 }
 
-content::ResourceDispatcherHostLoginDelegate*
-    RuntimeResourceDispatcherHostDelegateAndroid::CreateLoginDelegate(
-        net::AuthChallengeInfo* auth_info,
-        net::URLRequest* request) {
-  return new XWalkLoginDelegate(auth_info, request);
-}
-
-bool RuntimeResourceDispatcherHostDelegateAndroid::HandleExternalProtocol(
-    const GURL& url,
-    content::ResourceRequestInfo* info) {
-  // On Android, there are many Uris need to be handled differently.
-  // e.g: sms:, tel:, mailto: and etc.
-  // So here return false to let embedders to decide which protocol
-  // to be handled.
-  return false;
-}
-
-void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(net::URLRequest* request,
-                                                                     content::ResourceContext* resource_context,
-                                                                     content::ResourceResponse* response) {
-//    IPC::Sender* sender) {
-  const content::ResourceRequestInfo* request_info = content::ResourceRequestInfo::ForRequest(request);
+void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(net::URLRequest* request, content::ResourceContext* resource_context,
+                                                                     network::ResourceResponse* response) {
+  content::ResourceRequestInfo* request_info = content::ResourceRequestInfo::ForRequest(request);
   if (!request_info) {
     DLOG(FATAL) << "Started request without associated info: " << request->url();
     return;
   }
 
   // TODO(iotto) : May be removed in the future
-  if (request_info->GetResourceType() == content::RESOURCE_TYPE_MAIN_FRAME) {
+  if (request_info->GetResourceType() == content::ResourceType::kMainFrame) {
     // Check for x-auto-login header.
     android_webview::HeaderData header_data;
 //    auto_login_parser::HeaderData header_data;
     if (android_webview::ParserHeaderInResponse(request, android_webview::RealmRestriction::ALLOW_ANY_REALM,
                                                 &header_data)) {
-      BrowserThread::PostTask(BrowserThread::UI, FROM_HERE,
-      base::Bind(&NewLoginRequestOnUIThread,
+      base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+      base::BindOnce(&NewLoginRequestOnUIThread,
           request_info->GetWebContentsGetterForRequest(),
           header_data.realm, header_data.account, header_data.args));
     }
@@ -384,8 +381,8 @@ RemovePendingThrottleOnIoThread(
 void RuntimeResourceDispatcherHostDelegateAndroid::OnIoThreadClientReady(
     int new_render_process_id,
     int new_render_frame_id) {
-  BrowserThread::PostTask(BrowserThread::IO, FROM_HERE,
-      base::Bind(
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::IO},
+      base::BindOnce(
           &RuntimeResourceDispatcherHostDelegateAndroid::
           OnIoThreadClientReadyInternal,
           base::Unretained(
@@ -400,8 +397,8 @@ void RuntimeResourceDispatcherHostDelegateAndroid::AddPendingThrottle(
     int render_process_id,
     int render_frame_id,
     IoThreadClientThrottle* pending_throttle) {
-  BrowserThread::PostTask(BrowserThread::IO, FROM_HERE,
-      base::Bind(
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::IO},
+      base::BindOnce(
           &RuntimeResourceDispatcherHostDelegateAndroid::
               AddPendingThrottleOnIoThread,
           base::Unretained(

@@ -7,11 +7,11 @@
 
 namespace content {
 class WebContents;
-};
+}
 
 namespace net {
 class AuthChallengeInfo;
-};
+}
 
 namespace xwalk {
 

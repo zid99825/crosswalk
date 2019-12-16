@@ -13,7 +13,7 @@
 #include "base/containers/id_map.h"
 #include "base/macros.h"
 #include "base/memory/weak_ptr.h"
-#include "content/public/browser/permission_manager.h"
+#include "content/public/browser/permission_controller_delegate.h"
 #include "content/public/browser/permission_type.h"
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "xwalk/runtime/browser/runtime_geolocation_permission_context.h"
@@ -25,6 +25,8 @@ namespace application {
 class ApplicationService;
 }
 
+class LastRequestResultCache;
+
 class XWalkPermissionManager : public content::PermissionControllerDelegate {
  public:
   XWalkPermissionManager(
@@ -33,56 +35,48 @@ class XWalkPermissionManager : public content::PermissionControllerDelegate {
 
   // PermissionManager implementation.
 
-  int RequestPermission(
-      content::PermissionType permission,
-      content::RenderFrameHost* render_frame_host,
-      const GURL& requesting_origin,
-      bool user_gesture,
-      const base::Callback<void(blink::mojom::PermissionStatus)>& callback) override;
+  int RequestPermission(content::PermissionType permission, content::RenderFrameHost* render_frame_host,
+                        const GURL& requesting_origin, bool user_gesture,
+                        base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) override;
 
-  int RequestPermissions(
-      const std::vector<content::PermissionType>& permission,
-      content::RenderFrameHost* render_frame_host,
-      const GURL& requesting_origin,
-      bool user_gesture,
-      const base::Callback<void(
-          const std::vector<blink::mojom::PermissionStatus>&)>& callback) override;
+  int RequestPermissions(const std::vector<content::PermissionType>& permissions,
+                         content::RenderFrameHost* render_frame_host, const GURL& requesting_origin, bool user_gesture,
+                         base::OnceCallback<void(const std::vector<blink::mojom::PermissionStatus>&)> callback)
+                             override;
 
-  void CancelPermissionRequest(int request_id) override;
   void ResetPermission(content::PermissionType permission,
                        const GURL& requesting_origin,
                        const GURL& embedding_origin) override;
-  blink::mojom::PermissionStatus GetPermissionStatus(
-      content::PermissionType permission,
-      const GURL& requesting_origin,
-      const GURL& embedding_origin) override;
-
-  int SubscribePermissionStatusChange(
-      content::PermissionType permission,
-      const GURL& requesting_origin,
-      const GURL& embedding_origin,
-      const base::Callback<void(blink::mojom::PermissionStatus)>& callback)
-      override;
+  blink::mojom::PermissionStatus GetPermissionStatus(content::PermissionType permission, const GURL& requesting_origin,
+                                                     const GURL& embedding_origin) override;
+  blink::mojom::PermissionStatus GetPermissionStatusForFrame(content::PermissionType permission,
+                                                             content::RenderFrameHost* render_frame_host,
+                                                             const GURL& requesting_origin) override;
+  int SubscribePermissionStatusChange(content::PermissionType permission, content::RenderFrameHost* render_frame_host,
+                                      const GURL& requesting_origin,
+                                      base::RepeatingCallback<void(blink::mojom::PermissionStatus)> callback) override;
   void UnsubscribePermissionStatusChange(int subscription_id) override;
 
+ protected:
+  void CancelPermissionRequest(int request_id);
+  void CancelPermissionRequests();
+
  private:
-  struct PendingRequest;
+  class PendingRequest;
   using PendingRequestsMap = base::IDMap<std::unique_ptr<PendingRequest>>;
 
-  void GetApplicationName(
-      content::RenderFrameHost* render_frame_host,
-      std::string* name);
-  static void OnRequestResponse(
-      const base::WeakPtr<XWalkPermissionManager>& manager,
-      int request_id,
-      const base::Callback<void(blink::mojom::PermissionStatus)>& callback,
-      bool allowed);
+  void GetApplicationName(content::RenderFrameHost* render_frame_host, std::string* name);
+  static void OnRequestResponse(const base::WeakPtr<XWalkPermissionManager>& manager, int request_id,
+                                content::PermissionType permission, bool allowed);
+
+  virtual int GetRenderProcessID(content::RenderFrameHost* render_frame_host);
+  virtual int GetRenderFrameID(content::RenderFrameHost* render_frame_host);
+  virtual GURL LastCommittedOrigin(content::RenderFrameHost* render_frame_host);
 
   PendingRequestsMap pending_requests_;
-  scoped_refptr<RuntimeGeolocationPermissionContext>
-      geolocation_permission_context_;
-  scoped_refptr<RuntimeNotificationPermissionContext>
-      notification_permission_context_;
+  std::unique_ptr<LastRequestResultCache> result_cache_;
+  scoped_refptr<RuntimeGeolocationPermissionContext> geolocation_permission_context_;
+  scoped_refptr<RuntimeNotificationPermissionContext> notification_permission_context_;
   application::ApplicationService* application_service_;
   base::WeakPtrFactory<XWalkPermissionManager> weak_ptr_factory_;
   DISALLOW_COPY_AND_ASSIGN(XWalkPermissionManager);

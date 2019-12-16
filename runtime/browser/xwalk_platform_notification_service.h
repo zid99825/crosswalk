@@ -11,7 +11,7 @@
 
 #include "base/memory/singleton.h"
 #include "content/public/browser/platform_notification_service.h"
-#include "third_party/WebKit/public/platform/modules/permissions/permission_status.mojom.h"
+#include "third_party/blink/public/mojom/permissions/permission_status.mojom.h"
 
 namespace xwalk {
 #if defined(OS_LINUX) && defined(USE_LIBNOTIFY) || defined(OS_WIN)
@@ -28,42 +28,37 @@ class XWalkPlatformNotificationService
   // be called from any thread.
   static XWalkPlatformNotificationService* GetInstance();
 
-  // content::PlatformNotificationService implementation.
-  blink::mojom::PermissionStatus CheckPermissionOnUIThread(
-      content::BrowserContext* browser_context,
-      const GURL& origin,
-      int render_process_id) override;
-  // content::PlatformNotificationService implementation.
-  blink::mojom::PermissionStatus CheckPermissionOnIOThread(
-      content::ResourceContext* resource_context,
-      const GURL& origin,
-      int render_process_id) override;
+//  // content::PlatformNotificationService implementation.
+//  blink::mojom::PermissionStatus CheckPermissionOnUIThread(
+//      content::BrowserContext* browser_context,
+//      const GURL& origin,
+//      int render_process_id) override;
+//  // content::PlatformNotificationService implementation.
+//  blink::mojom::PermissionStatus CheckPermissionOnIOThread(
+//      content::ResourceContext* resource_context,
+//      const GURL& origin,
+//      int render_process_id) override;
 
-  void DisplayNotification(
-      content::BrowserContext* browser_context,
-      const std::string& notification_id,
-      const GURL& origin,
-      const content::PlatformNotificationData& notification_data,
-      const content::NotificationResources& notification_resources) override;
+  void DisplayNotification(const std::string& notification_id,
+                           const GURL& origin, const blink::PlatformNotificationData& notification_data,
+                           const blink::NotificationResources& notification_resources) override;
 
-  void DisplayPersistentNotification(
-      content::BrowserContext* browser_context,
-      const std::string& notification_id,
-      const GURL& service_worker_origin,
-      const GURL& origin,
-      const content::PlatformNotificationData& notification_data,
-      const content::NotificationResources& notification_resources) override {}
-
+  void DisplayPersistentNotification(const std::string& notification_id,
+                                     const GURL& service_worker_origin, const GURL& origin,
+                                     const blink::PlatformNotificationData& notification_data,
+                                     const blink::NotificationResources& notification_resources) override {
+  }
   // Closes the notification identified by |notification_id|. This method must
   // be called on the UI thread.
-  void CloseNotification(content::BrowserContext* browser_context, const std::string& notification_id) override;
-  void ClosePersistentNotification(
-      content::BrowserContext* browser_context,
-      const std::string& notification_id) override {}
-
-  void GetDisplayedNotifications(
-      content::BrowserContext* browser_context,
-      const DisplayedNotificationsCallback& callback) override;
+  void CloseNotification(const std::string& notification_id) override;
+  void ClosePersistentNotification(const std::string& notification_id)
+      override {
+  }
+  void GetDisplayedNotifications(DisplayedNotificationsCallback callback) override;
+  void ScheduleTrigger(base::Time timestamp) override;
+  base::Time ReadNextTriggerTimestamp() override;
+  int64_t ReadNextPersistentNotificationId() override;
+  void RecordNotificationUkmEvent(const content::NotificationDatabaseData& data) override;
 
  private:
   friend struct base::DefaultSingletonTraits<XWalkPlatformNotificationService>;

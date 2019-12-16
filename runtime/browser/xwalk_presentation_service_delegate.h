@@ -73,7 +73,7 @@ class XWalkPresentationServiceDelegate
   void ListenForConnectionStateChange(
       int render_process_id,
       int render_frame_id,
-      const content::PresentationInfo& connection,
+      const blink::mojom::PresentationInfo& connection,
       const content::PresentationConnectionStateChangedCallback&
           state_changed_cb) override;
 
@@ -90,10 +90,8 @@ class XWalkPresentationServiceDelegate
   // ownership passed from controlling frame to the offscreen presentation.
   // |receiver_connection_request|: Mojo InterfaceRequest to be bind to receiver
   // page's presentation connection.
-  void ConnectToPresentation(
-      int render_process_id,
-      int render_frame_id,
-      const content::PresentationInfo& session,
+  void StartPresentation(
+      const content::PresentationRequest& request,
       content::PresentationConnectionPtr controller_connection_ptr,
       content::PresentationConnectionRequest receiver_connection_request) override {}
 

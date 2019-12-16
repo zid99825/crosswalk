@@ -193,7 +193,7 @@ base::FilePath GetLogFileName() {
   const base::FilePath log_filename(FILE_PATH_LITERAL("xwalk_debug.log"));
   base::FilePath log_path;
 
-  if (PathService::Get(xwalk::DIR_LOGS, &log_path)) {
+  if (base::PathService::Get(xwalk::DIR_LOGS, &log_path)) {
     log_path = log_path.Append(log_filename);
     return log_path;
   } else {

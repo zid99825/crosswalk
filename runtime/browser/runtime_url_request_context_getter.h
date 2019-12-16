@@ -58,7 +58,7 @@ class RuntimeURLRequestContextGetter : public net::URLRequestContextGetter {
   scoped_refptr<base::SingleThreadTaskRunner> io_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> file_task_runner_;
 
-  std::unique_ptr<net::ProxyConfigService> proxy_config_service_;
+//  std::unique_ptr<net::ProxyConfigService> proxy_config_service_;
   std::unique_ptr<net::NetworkDelegate> network_delegate_;
   std::unique_ptr<net::URLRequestContextStorage> storage_;
   std::unique_ptr<net::URLRequestContext> url_request_context_;

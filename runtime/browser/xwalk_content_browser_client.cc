@@ -12,7 +12,7 @@
 #include "base/memory/ptr_util.h"
 #include "base/path_service.h"
 #include "base/files/file.h"
-#include "components/nacl/common/features.h"
+#include "components/nacl/common/buildflags.h"
 #include "content/public/browser/browser_child_process_host.h"
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/browser/browser_ppapi_host.h"
@@ -27,14 +27,15 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_descriptors.h"
 #include "content/public/common/main_function_params.h"
+#include "content/public/common/user_agent.h"
 #include "content/public/common/web_preferences.h"
-#include "device/geolocation/geolocation_provider.h"
 #include "gin/v8_initializer.h"
 #include "gin/public/isolate_holder.h"
 #include "net/ssl/ssl_info.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "ppapi/host/ppapi_host.h"
-#include "ppapi/features/features.h"
+#include "ppapi/buildflags/buildflags.h"
+#include "services/device/geolocation/geolocation_provider.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
 #include "xwalk/application/common/constants.h"
 #include "xwalk/runtime/browser/media/media_capture_devices_dispatcher.h"
@@ -51,6 +52,7 @@
 #include "xwalk/runtime/common/xwalk_paths.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/browser/devtools/xwalk_devtools_manager_delegate.h"
+#include "xwalk/runtime/browser/network_services/xwalk_proxying_restricted_cookie_manager.h"
 
 #if BUILDFLAG(ENABLE_NACL)
 #include "components/nacl/browser/nacl_browser.h"
@@ -70,6 +72,7 @@
 #include "components/navigation_interception/intercept_navigation_delegate.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/navigation_throttle.h"
+#include "xwalk/runtime/browser/android/xwalk_login_delegate.h"
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
 #include "xwalk/runtime/browser/android/xwalk_settings.h"
@@ -101,23 +104,21 @@ namespace {
 // The application-wide singleton of ContentBrowserClient impl.
 XWalkContentBrowserClient* g_browser_client = nullptr;
 
-//// A provider of services for Geolocation.
-//class XWalkGeolocationDelegate : public device::GeolocationDelegate {
-// public:
-//  explicit XWalkGeolocationDelegate(net::URLRequestContextGetter* request_context)
-//      : request_context_(request_context) {}
-//
-//  scoped_refptr<device::AccessTokenStore> CreateAccessTokenStore() final {
-//    return scoped_refptr<device::AccessTokenStore>( new XWalkAccessTokenStore(request_context_));
-//  }
-//
-// private:
-//  net::URLRequestContextGetter* request_context_;
-//
-//  DISALLOW_COPY_AND_ASSIGN(XWalkGeolocationDelegate);
-//};
+}
 
-}  // namespace
+std::string GetProduct() {
+  // TODO(iotto) : Check out and use version_info::GetProductNameAndVersionForUserAgent();
+  return "Chrome/" CHROME_VERSION;
+}
+
+std::string GetUserAgent() {
+  std::string product = GetProduct();
+  product += " Crosswalk/" XWALK_VERSION;
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch(switches::kUseMobileUserAgent))
+    product += " Mobile";
+  return content::BuildUserAgentFromProduct(product);
+}
 
 // static
 XWalkContentBrowserClient* XWalkContentBrowserClient::Get() {
@@ -140,13 +141,10 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
   g_browser_client = nullptr;
 }
 
-/**
- *
- */
-  void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* renderViewHost,
-      content::WebPreferences* webPrefs) {
-    XWalkSettings* settings = XWalkSettings::FromWebContents(
-        content::WebContents::FromRenderViewHost(renderViewHost));
+void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* renderViewHost,
+    content::WebPreferences* webPrefs) {
+  XWalkSettings* settings = XWalkSettings::FromWebContents(
+      content::WebContents::FromRenderViewHost(renderViewHost));
   if (settings) {
     settings->PopulateWebPreferences(webPrefs);
   }
@@ -215,17 +213,20 @@ XWalkContentBrowserClient::~XWalkContentBrowserClient() {
 ////  prefs->accelerated_filters_enabled = true;
 }
 
-content::BrowserMainParts* XWalkContentBrowserClient::CreateBrowserMainParts(
-    const content::MainFunctionParams& parameters) {
+std::unique_ptr<content::BrowserMainParts> XWalkContentBrowserClient::CreateBrowserMainParts(
+      const content::MainFunctionParams& parameters) {
+  std::unique_ptr<XWalkBrowserMainParts> ret_val;
+
 #if defined(OS_MACOSX)
   main_parts_ = new XWalkBrowserMainPartsMac(parameters);
 #elif defined(OS_ANDROID)
-  main_parts_ = new XWalkBrowserMainPartsAndroid(parameters);
+  ret_val = base::WrapUnique(new XWalkBrowserMainPartsAndroid(parameters));
 #else
   main_parts_ = new XWalkBrowserMainParts(parameters);
 #endif
 
-  return main_parts_;
+  main_parts_ = ret_val.get();
+  return ret_val;
 }
 
 // This allow us to append extra command line switches to the child
@@ -246,9 +247,9 @@ void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
       browser_process_cmd_line, extra_switches, arraysize(extra_switches));
 }
 
-content::QuotaPermissionContext*
+scoped_refptr<content::QuotaPermissionContext>
 XWalkContentBrowserClient::CreateQuotaPermissionContext() {
-  return new RuntimeQuotaPermissionContext();
+  return std::make_unique<RuntimeQuotaPermissionContext>();
 }
 
 content::WebContentsViewDelegate*
@@ -261,8 +262,8 @@ XWalkContentBrowserClient::GetWebContentsViewDelegate(
 #endif
 }
 
-void XWalkContentBrowserClient::RenderProcessWillLaunch(
-    content::RenderProcessHost* host) {
+void XWalkContentBrowserClient::RenderProcessWillLaunch(content::RenderProcessHost* host,
+      service_manager::mojom::ServiceRequest* service_request) {
 #if BUILDFLAG(ENABLE_NACL)
   int id = host->GetID();
   net::URLRequestContextGetter* context =
@@ -287,51 +288,9 @@ content::MediaObserver* XWalkContentBrowserClient::GetMediaObserver() {
   return XWalkMediaCaptureDevicesDispatcher::GetInstance();
 }
 
-bool XWalkContentBrowserClient::AllowGetCookie(
-    const GURL& url,
-    const GURL& first_party,
-    const net::CookieList& cookie_list,
-    content::ResourceContext* context,
-    int render_process_id,
-    int render_frame_id) {
-#if defined(OS_ANDROID)
-  return XWalkCookieAccessPolicy::GetInstance()->AllowGetCookie(
-      url,
-      first_party,
-      cookie_list,
-      context,
-      render_process_id,
-      render_frame_id);
-#else
-  return true;
-#endif
-}
-
-bool XWalkContentBrowserClient::AllowSetCookie(
-    const GURL& url,
-    const GURL& first_party,
-    const net::CanonicalCookie& cookie,
-    content::ResourceContext* context,
-    int render_process_id,
-    int render_frame_id,
-    const net::CookieOptions& options) {
-#if defined(OS_ANDROID)
-  return XWalkCookieAccessPolicy::GetInstance()->AllowSetCookie(
-      url,
-      first_party,
-      cookie,
-      context,
-      render_process_id,
-      render_frame_id,
-      options);
-#else
-  return true;
-#endif
-}
-
 // Selects a SSL client certificate and returns it to the |delegate|. If no
 // certificate was selected NULL is returned to the |delegate|.
-void XWalkContentBrowserClient::SelectClientCertificate(
+base::OnceClosure XWalkContentBrowserClient::SelectClientCertificate(
     content::WebContents* web_contents,
     net::SSLCertRequestInfo* cert_request_info,
     net::ClientCertIdentityList client_certs,
@@ -345,17 +304,17 @@ void XWalkContentBrowserClient::SelectClientCertificate(
     delegate->ContinueWithCertificate(nullptr, nullptr);
   }
 #endif
+  return base::OnceClosure();
 }
 
-void XWalkContentBrowserClient::AllowCertificateError(
-    content::WebContents* web_contents,
-    int cert_error,
-    const net::SSLInfo& ssl_info,
-    const GURL& request_url,
-    content::ResourceType resource_type,
-    bool strict_enforcement,
-    bool expired_previous_decision,
-    const base::Callback<void(content::CertificateRequestResultType)>& callback) {
+void XWalkContentBrowserClient::AllowCertificateError(content::WebContents* web_contents,
+      int cert_error,
+      const net::SSLInfo& ssl_info,
+      const GURL& request_url,
+      bool is_main_frame_request,
+      bool strict_enforcement,
+      bool expired_previous_decision,
+      const base::Callback<void(content::CertificateRequestResultType)>& callback) {
   TENTA_LOG(ERROR) << __func__ << " error=" << cert_error << " url=" << request_url;
   // Currently only Android handles it.
   // TODO(yongsheng): applies it for other platforms?
@@ -380,7 +339,7 @@ void XWalkContentBrowserClient::AllowCertificateError(
 }
 
 content::PlatformNotificationService*
-XWalkContentBrowserClient::GetPlatformNotificationService() {
+XWalkContentBrowserClient::GetPlatformNotificationService(content::BrowserContext* browser_context) {
   return XWalkPlatformNotificationService::GetInstance();
 }
 
@@ -511,6 +470,15 @@ std::string XWalkContentBrowserClient::GetApplicationLocale() {
 #endif
 }
 
+
+std::string XWalkContentBrowserClient::GetProduct() {
+  return xwalk::GetProduct();
+}
+
+std::string XWalkContentBrowserClient::GetUserAgent() {
+  return xwalk::GetUserAgent();
+}
+
 #if defined(OS_ANDROID)
 std::vector<std::unique_ptr<content::NavigationThrottle>>
 XWalkContentBrowserClient::CreateThrottlesForNavigation(
@@ -549,6 +517,77 @@ void XWalkContentBrowserClient::ExposeInterfacesToFrame(
     service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>*
     registry) {
 
+}
+
+bool XWalkContentBrowserClient::WillCreateRestrictedCookieManager(
+    network::mojom::RestrictedCookieManagerRole role,
+    content::BrowserContext* browser_context,
+    const url::Origin& origin,
+    bool is_service_worker,
+    int process_id,
+    int routing_id,
+    network::mojom::RestrictedCookieManagerRequest* request) {
+  network::mojom::RestrictedCookieManagerRequest orig_request =
+  std::move(*request);
+
+  network::mojom::RestrictedCookieManagerPtrInfo target_rcm_info;
+  *request = mojo::MakeRequest(&target_rcm_info);
+
+  XwalkProxyingRestrictedCookieManager::CreateAndBind(
+      std::move(target_rcm_info), is_service_worker, process_id, routing_id,
+      std::move(orig_request));
+
+  return false;  // only made a proxy, still need the actual impl to be made.
+}
+
+std::unique_ptr<content::LoginDelegate> XWalkContentBrowserClient::CreateLoginDelegate(
+    const net::AuthChallengeInfo& auth_info,
+    content::WebContents* web_contents,
+    const content::GlobalRequestID& request_id,
+    bool is_main_frame,
+    const GURL& url,
+    scoped_refptr<net::HttpResponseHeaders> response_headers,
+    bool first_auth_attempt,
+    LoginAuthRequiredCallback auth_required_callback) {
+  LOG(ERROR) << "iotto " << __func__ << " FIX/ use the callback!";
+  return std::make_unique<XWalkLoginDelegate>(auth_info, web_contents);
+}
+
+bool XWalkContentBrowserClient::HandleExternalProtocol(const GURL& url,
+    content::ResourceRequestInfo::WebContentsGetter web_contents_getter,
+    int child_id,
+    content::NavigationUIData* navigation_data,
+    bool is_main_frame,
+    ui::PageTransition page_transition,
+    bool has_user_gesture,
+    network::mojom::URLLoaderFactoryPtr* out_factory) {
+
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!!";
+//  if (base::FeatureList::IsEnabled(network::features::kNetworkService)) {
+//    auto request = mojo::MakeRequest(out_factory);
+//    if (content::BrowserThread::CurrentlyOn(content::BrowserThread::IO)) {
+//      // Manages its own lifetime.
+//      new android_webview::AwProxyingURLLoaderFactory(
+//          0 /* process_id */, std::move(request), nullptr,
+//          true /* intercept_only */);
+//    } else {
+//      base::PostTaskWithTraits(
+//          FROM_HERE, {content::BrowserThread::IO},
+//          base::BindOnce(
+//              [](network::mojom::URLLoaderFactoryRequest request) {
+//                // Manages its own lifetime.
+//                new android_webview::AwProxyingURLLoaderFactory(
+//                    0 /* process_id */, std::move(request), nullptr,
+//                    true /* intercept_only */);
+//              },
+//              std::move(request)));
+//    }
+//  } else {
+//    // The AwURLRequestJobFactory implementation should ensure this method never
+//    // gets called when Network Service is not enabled.
+//    NOTREACHED();
+//  }
+  return false;
 }
 
 }  // namespace xwalk

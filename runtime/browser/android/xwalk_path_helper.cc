@@ -7,11 +7,11 @@
 #include "base/android/jni_android.h"
 #include "base/android/jni_weak_ref.h"
 #include "base/bind.h"
-#include "jni/XWalkPathHelper_jni.h"
 #include "xwalk/extensions/common/xwalk_extension.h"
 #include "xwalk/runtime/browser/xwalk_browser_main_parts.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
 
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkPathHelper_jni.h"
 using base::android::JavaParamRef;
 
 namespace xwalk {
@@ -29,7 +29,7 @@ void XWalkPathHelper::SetDirectory(const std::string& virtualRoot,
       base::FilePath::FromUTF8Unsafe(path);
 }
 
-static void JNI_XWalkPathHelper_SetDirectory(JNIEnv* env, const JavaParamRef<jclass>& clazz,
+static void JNI_XWalkPathHelper_SetDirectory(JNIEnv* env,
                                              const JavaParamRef<jstring>& virtualRoot,
                                              const JavaParamRef<jstring>& path) {
   const char* strVirtualRoot = env->GetStringUTFChars(virtualRoot, NULL);

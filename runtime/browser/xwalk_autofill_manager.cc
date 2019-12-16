@@ -11,8 +11,9 @@
 #include "components/autofill/core/browser/autofill_manager.h"
 #include "components/user_prefs/user_prefs.h"
 #include "content/public/browser/render_view_host.h"
-#include "content/public/common/renderer_preferences.h"
-#include "xwalk/runtime/browser/xwalk_autofill_client.h"
+//#include "content/public/common/renderer_preferences.h"
+//#include "xwalk/runtime/browser/xwalk_autofill_client.h"
+#include "xwalk/runtime/browser/aw_xwalk_autofill_client.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
@@ -28,6 +29,8 @@
 #include "xwalk/runtime/browser/xwalk_autofill_client_desktop.h"
 #endif
 
+#include "third_party/blink/public/mojom/renderer_preferences.mojom.h"
+
 namespace xwalk {
 
 XWalkAutofillManager::~XWalkAutofillManager() {
@@ -37,7 +40,7 @@ XWalkAutofillManager::XWalkAutofillManager(
     content::WebContents* web_contents)
     : web_contents_(web_contents) {
 #if defined(OS_ANDROID)
-  XWalkAutofillClient* autofill_manager_delegate =
+  XWalkAutofillClientAndroid* autofill_manager_delegate =
       XWalkAutofillClientAndroid::FromWebContents(web_contents_);
   if (autofill_manager_delegate)
     InitAutofillIfNecessary(autofill_manager_delegate->GetSaveFormData());
@@ -57,16 +60,12 @@ XWalkAutofillManager::XWalkAutofillManager(
 }
 
 void XWalkAutofillManager::UpdateRendererPreferences() {
-  content::RendererPreferences* prefs =
-    web_contents_->GetMutableRendererPrefs();
-  PrefService* pref_service =
-    user_prefs::UserPrefs::Get(XWalkBrowserContext::GetDefault());
-  const std::string& accept_languages =
-    pref_service->GetString(kIntlAcceptLanguage);
+  blink::mojom::RendererPreferences* prefs = web_contents_->GetMutableRendererPrefs();
+  PrefService* pref_service = user_prefs::UserPrefs::Get(XWalkBrowserContext::GetDefault());
+  const std::string& accept_languages = pref_service->GetString(kIntlAcceptLanguage);
   prefs->accept_languages = accept_languages;
   web_contents_->GetRenderViewHost()->SyncRendererPrefs();
-  XWalkBrowserContext* browser_context =
-      XWalkBrowserContext::FromWebContents(web_contents_);
+  XWalkBrowserContext* browser_context = XWalkBrowserContext::FromWebContents(web_contents_);
   CHECK(browser_context);
   browser_context->UpdateAcceptLanguages(accept_languages);
 }

@@ -11,13 +11,12 @@
 #include "base/command_line.h"
 #include "base/supports_user_data.h"
 #include "components/user_prefs/user_prefs.h"
-#include "content/browser/android/java/jni_helper.h"
 #include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/web_preferences.h"
-#include "jni/XWalkSettings_jni.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkSettings_jni.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
@@ -31,7 +30,6 @@ using base::android::ConvertUTF8ToJavaString;
 using base::android::GetClass;
 using base::android::ScopedJavaLocalRef;
 using base::android::JavaParamRef;
-using content::GetFieldID;
 using content::WebPreferences;
 
 namespace xwalk {
@@ -44,6 +42,16 @@ void PopulateFixedWebPreferences(content::WebPreferences* webPrefs) {
   webPrefs->shrinks_standalone_images_to_fit = false;
   webPrefs->should_clear_document_background = false;
   webPrefs->viewport_meta_enabled = true;
+}
+
+jfieldID GetFieldID(JNIEnv* env,
+                    const base::android::JavaRef<jclass>& clazz,
+                    const char* field_name,
+                    const char* jni_signature) {
+  jfieldID field_id = env->GetFieldID(clazz.obj(), field_name, jni_signature);
+  CHECK(!base::android::ClearException(env) && field_id) <<
+      "Failed to find field " << field_name << " " << jni_signature;
+  return field_id;
 }
 } // namespace
 
@@ -149,7 +157,7 @@ XWalkSettings::XWalkSettings(JNIEnv* env,
       _javascript_can_open_windows_automatically(false) {
 
   web_contents->SetUserData(kXWalkSettingsUserDataKey,
-                              base::MakeUnique<XWalkSettingsUserData>(this));
+                            std::make_unique<XWalkSettingsUserData>(this));
 }
 
 XWalkSettings::~XWalkSettings() {
@@ -206,10 +214,10 @@ void XWalkSettings::UpdateUserAgent(JNIEnv* env, const JavaParamRef<jobject>& ob
 
   if (ua_overidden) {
     std::string override = base::android::ConvertJavaStringToUTF8(str);
-    web_contents()->SetUserAgentOverride(override);
+    web_contents()->SetUserAgentOverride(override, true /*override_in_new_tabs*/);
   }
 
-  const content::NavigationController& controller =
+  content::NavigationController& controller =
       web_contents()->GetController();
   for (int i = 0; i < controller.GetEntryCount(); ++i)
     controller.GetEntryAtIndex(i)->SetIsOverridingUserAgent(ua_overidden);
@@ -367,7 +375,7 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
   // Please see the corresponding Blink settings for bug references.
   web_prefs->support_deprecated_target_density_dpi = support_quirks;
   web_prefs->use_legacy_background_size_shorthand_behavior = support_quirks;
-  web_prefs->viewport_meta_layout_size_quirk = support_quirks;
+//  web_prefs->viewport_meta_layout_size_quirk = support_quirks;
   web_prefs->viewport_meta_merge_content_quirk = support_quirks;
   web_prefs->viewport_meta_non_user_scalable_quirk = support_quirks;
   web_prefs->viewport_meta_zero_values_quirk = support_quirks;
@@ -375,7 +383,7 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
   web_prefs->ignore_main_frame_overflow_hidden_quirk = support_quirks;
   web_prefs->report_screen_size_in_physical_pixels_quirk = support_quirks;
 
-  web_prefs->resue_global_for_unowned_main_frame = Java_XWalkSettings_getAllowEmptyDocumentPersistenceLocked(env, obj);
+  web_prefs->reuse_global_for_unowned_main_frame = Java_XWalkSettings_getAllowEmptyDocumentPersistenceLocked(env, obj);
 
   web_prefs->password_echo_enabled = Java_XWalkSettings_getPasswordEchoEnabledLocked(env, obj);
 
@@ -603,7 +611,7 @@ static jlong JNI_XWalkSettings_Init(JNIEnv* env,
 }
 
 static ScopedJavaLocalRef<jstring>
-JNI_XWalkSettings_GetDefaultUserAgent(JNIEnv* env, const JavaParamRef<jclass>& clazz) {
+JNI_XWalkSettings_GetDefaultUserAgent(JNIEnv* env) {
   return base::android::ConvertUTF8ToJavaString(env, GetUserAgent());
 }
 

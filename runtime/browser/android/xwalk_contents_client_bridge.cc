@@ -12,6 +12,8 @@
 #include "base/callback.h"
 #include "base/callback_helpers.h"
 #include "base/guid.h"
+#include "base/task/post_task.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/favicon_status.h"
 #include "content/public/browser/navigation_entry.h"
@@ -20,12 +22,11 @@
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/file_chooser_file_info.h"
-#include "content/public/common/file_chooser_params.h"
-#include "content/public/common/notification_resources.h"
-#include "content/public/common/platform_notification_data.h"
-//#include "grit/components_strings.h"
+//#include "content/public/common/notification_resources.h"
+//#include "content/public/common/platform_notification_data.h"
 #include "components/strings/grit/components_strings.h"
-#include "jni/XWalkContentsClientBridge_jni.h"
+#include "third_party/blink/public/common/notifications/notification_resources.h"
+#include "third_party/blink/public/common/notifications/platform_notification_data.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "ui/base/l10n/l10n_util.h"
@@ -35,10 +36,12 @@
 #include "net/base/escape.h"
 #include "net/cert/cert_database.h"
 #include "net/cert/x509_certificate.h"
-//#include "net/ssl/openssl_client_key_store.h"
+#include "net/cert/x509_util.h"
 #include "net/ssl/ssl_platform_key_android.h"
 #include "net/ssl/ssl_private_key.h"
 #include "meta_logging.h"
+
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContentsClientBridge_jni.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertJavaStringToUTF16;
@@ -50,7 +53,9 @@ using base::android::ScopedJavaLocalRef;
 using base::android::JavaParamRef;
 //using base::ScopedPtrHashMap;
 using content::BrowserThread;
-using content::FileChooserParams;
+//using blink::mojom::FileChooserFileInfo;
+//using blink::mojom::FileChooserFileInfoPtr;
+//using blink::mojom::FileChooserParams;
 using content::RenderViewHost;
 using content::WebContents;
 
@@ -97,14 +102,14 @@ namespace {
 
 void NotifyClientCertificatesChanged() {
   DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
-  net::CertDatabase::GetInstance()->OnAndroidKeyStoreChanged();
+  net::CertDatabase::GetInstance()->NotifyObserversCertDBChanged();
 }
 
 }  // namespace
 
 // static
 void XWalkContentsClientBridge::Associate(WebContents* web_contents, XWalkContentsClientBridge* handler) {
-  web_contents->SetUserData(kXWalkContentsClientBridge, base::MakeUnique<UserData>(handler));
+  web_contents->SetUserData(kXWalkContentsClientBridge, std::make_unique<UserData>(handler));
 }
 
 // static
@@ -193,39 +198,28 @@ XWalkContentsClientBridge::~XWalkContentsClientBridge() {
       env, obj, 0);
 }
 
-void XWalkContentsClientBridge::AllowCertificateError(
-    int cert_error,
-    net::X509Certificate* cert,
-    const GURL& request_url,
-    const base::Callback<void(content::CertificateRequestResultType)>& callback) {
+void XWalkContentsClientBridge::AllowCertificateError(int cert_error, net::X509Certificate* cert,
+                                                      const GURL& request_url, CertErrorCallback callback,
+                                                      bool* cancel_request) {
 
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
   JNIEnv* env = AttachCurrentThread();
 
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
   if (obj.is_null())
     return;
 
-  std::string der_string;
-  if (!net::X509Certificate::GetDEREncoded(cert->os_cert_handle(),
-      &der_string))
-    return;
+  base::StringPiece der_string = net::x509_util::CryptoBufferAsStringPiece(cert->cert_buffer());
   ScopedJavaLocalRef<jbyteArray> jcert = base::android::ToJavaByteArray(
-      env,
-      reinterpret_cast<const uint8_t*>(der_string.data()),
-      der_string.length());
-  ScopedJavaLocalRef<jstring> jurl(ConvertUTF8ToJavaString(
-      env, request_url.spec()));
+      env, reinterpret_cast<const uint8_t*>(der_string.data()), der_string.length());
+  ScopedJavaLocalRef<jstring> jurl(ConvertUTF8ToJavaString(env, request_url.spec()));
   // We need to add the callback before making the call to java side,
   // as it may do a synchronous callback prior to returning.
-  int request_id = pending_cert_error_callbacks_.Add(
-      base::MakeUnique<CertErrorCallback>(callback));
-  bool cancel_request = !Java_XWalkContentsClientBridge_allowCertificateError(
-      env, obj, cert_error, jcert, jurl, request_id);
+  int request_id = pending_cert_error_callbacks_.Add(std::make_unique<CertErrorCallback>(std::move(callback)));
+  *cancel_request = !Java_XWalkContentsClientBridge_allowCertificateError(env, obj, cert_error, jcert, jurl, request_id);
   // if the request is cancelled, then cancel the stored callback
-  if (cancel_request) {
+  if (*cancel_request) {
     pending_cert_error_callbacks_.Remove(request_id);
-    callback.Run(content::CertificateRequestResultType::CERTIFICATE_REQUEST_RESULT_TYPE_DENY);
   }
 }
 
@@ -237,13 +231,9 @@ void XWalkContentsClientBridge::ProceedSslError(JNIEnv* env, jobject obj,
     LOG(WARNING) << "Ignoring unexpected ssl error proceed callback";
     return;
   }
-  // TODO(iotto) rewrite java to allow CERTIFICATE_REQUEST_RESULT_TYPE_CANCEL
-  if ( proceed ) {
-    callback->Run(content::CertificateRequestResultType::CERTIFICATE_REQUEST_RESULT_TYPE_CONTINUE);
-  } else {
-    callback->Run(content::CertificateRequestResultType::CERTIFICATE_REQUEST_RESULT_TYPE_DENY);
-  }
-
+  std::move(*callback).Run(
+      proceed ? content::CERTIFICATE_REQUEST_RESULT_TYPE_CONTINUE
+              : content::CERTIFICATE_REQUEST_RESULT_TYPE_CANCEL);
   pending_cert_error_callbacks_.Remove(id);
 }
 
@@ -261,7 +251,7 @@ void XWalkContentsClientBridge::RunJavaScriptDialog(content::JavaScriptDialogTyp
   }
 
   int callback_id = pending_js_dialog_callbacks_.Add(
-      base::MakeUnique<content::JavaScriptDialogManager::DialogClosedCallback>(std::move(callback)));
+      std::make_unique<content::JavaScriptDialogManager::DialogClosedCallback>(std::move(callback)));
   ScopedJavaLocalRef<jstring> jurl(ConvertUTF8ToJavaString(env, origin_url.spec()));
   ScopedJavaLocalRef<jstring> jmessage(ConvertUTF16ToJavaString(env, message_text));
 
@@ -296,7 +286,7 @@ void XWalkContentsClientBridge::RunBeforeUnloadDialog(const GURL& origin_url,
   const base::string16 message_text = l10n_util::GetStringUTF16(IDS_BEFOREUNLOAD_MESSAGEBOX_MESSAGE);
 
   int callback_id = pending_js_dialog_callbacks_.Add(
-      base::MakeUnique<content::JavaScriptDialogManager::DialogClosedCallback>(std::move(callback)));
+      std::make_unique<content::JavaScriptDialogManager::DialogClosedCallback>(std::move(callback)));
   ScopedJavaLocalRef<jstring> jurl(ConvertUTF8ToJavaString(env, origin_url.spec()));
   ScopedJavaLocalRef<jstring> jmessage(ConvertUTF16ToJavaString(env, message_text));
 
@@ -332,8 +322,8 @@ bool XWalkContentsClientBridge::OnReceivedHttpAuthRequest(
 //}
 
 void XWalkContentsClientBridge::ShowNotification(
-    const content::PlatformNotificationData& notification_data,
-    const content::NotificationResources& notification_resources) {
+    const blink::PlatformNotificationData& notification_data,
+    const blink::NotificationResources& notification_resources) {
   //TODO(iotto): See how to support Web notifications!
   LOG(WARNING) << __func__ << " Notsupported!";
 //  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
@@ -561,49 +551,50 @@ void XWalkContentsClientBridge::NotificationClosed(JNIEnv*, jobject, jint id, bo
 //    notification_delegate->NotificationClosed();
 }
 
-static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, const JavaParamRef<jclass>& jclazz, int process_id,
+static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, int process_id,
                                                 int render_id, int mode_flags, const JavaParamRef<jobjectArray>& file_paths,
                                                 const JavaParamRef<jobjectArray>& display_names) {
-  content::RenderFrameHost* rfh = content::RenderFrameHost::FromID(process_id, render_id);
-  if (!rfh)
-    return;
-
-  std::vector<std::string> file_path_str;
-  std::vector<std::string> display_name_str;
-  // Note file_paths maybe NULL, but this will just yield a zero-length vector.
-  base::android::AppendJavaStringArrayToStringVector(env, file_paths, &file_path_str);
-  base::android::AppendJavaStringArrayToStringVector(env, display_names, &display_name_str);
-  std::vector<content::FileChooserFileInfo> files;
-  files.reserve(file_path_str.size());
-  for (size_t i = 0; i < file_path_str.size(); ++i) {
-    GURL url(file_path_str[i]);
-    if (!url.is_valid()) {
-      TENTA_LOG_NET(WARNING) << __func__ << " invalid_url=" << file_path_str[i];
-      continue;
-    }
-    base::FilePath path(
-        url.SchemeIsFile() ?
-            net::UnescapeURLComponent(
-                url.path(), net::UnescapeRule::SPACES | net::UnescapeRule::URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS) :
-            file_path_str[i]);
-    content::FileChooserFileInfo file_info;
-    file_info.file_path = path;
-    if (!display_name_str[i].empty())
-      file_info.display_name = display_name_str[i];
-    TENTA_LOG_NET(INFO) << __func__ << " new_file=" << path;
-    files.push_back(file_info);
-  }
-  FileChooserParams::Mode mode = static_cast<content::FileChooserParams::Mode>(mode_flags);
-//  if (mode_flags & kFileChooserModeOpenFolder) {
-//    mode = FileChooserParams::UploadFolder;
-//  } else if (mode_flags & kFileChooserModeOpenMultiple) {
-//    mode = FileChooserParams::OpenMultiple;
-//  } else {
-//    mode = FileChooserParams::Open;
+  LOG(ERROR) << "iotto " << __func__ << " FIX/MOVE to xwalk_web_contents_delegate";
+//  content::RenderFrameHost* rfh = content::RenderFrameHost::FromID(process_id, render_id);
+//  if (!rfh)
+//    return;
+//
+//  std::vector<std::string> file_path_str;
+//  std::vector<std::string> display_name_str;
+//  // Note file_paths maybe NULL, but this will just yield a zero-length vector.
+//  base::android::AppendJavaStringArrayToStringVector(env, file_paths, &file_path_str);
+//  base::android::AppendJavaStringArrayToStringVector(env, display_names, &display_name_str);
+//  std::vector<content::FileChooserFileInfo> files;
+//  files.reserve(file_path_str.size());
+//  for (size_t i = 0; i < file_path_str.size(); ++i) {
+//    GURL url(file_path_str[i]);
+//    if (!url.is_valid()) {
+//      TENTA_LOG_NET(WARNING) << __func__ << " invalid_url=" << file_path_str[i];
+//      continue;
+//    }
+//    base::FilePath path(
+//        url.SchemeIsFile() ?
+//            net::UnescapeURLComponent(
+//                url.path(), net::UnescapeRule::SPACES | net::UnescapeRule::URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS) :
+//            file_path_str[i]);
+//    content::FileChooserFileInfo file_info;
+//    file_info.file_path = path;
+//    if (!display_name_str[i].empty())
+//      file_info.display_name = display_name_str[i];
+//    TENTA_LOG_NET(INFO) << __func__ << " new_file=" << path;
+//    files.push_back(file_info);
 //  }
-  TENTA_LOG_NET(INFO) << __func__ << " mode=" << mode << " files_cnt=" << files.size() << " file paths="
-                      << base::JoinString(file_path_str, ":");
-  rfh->FilesSelectedInChooser(files, mode);
+//  FileChooserParams::Mode mode = static_cast<content::FileChooserParams::Mode>(mode_flags);
+////  if (mode_flags & kFileChooserModeOpenFolder) {
+////    mode = FileChooserParams::UploadFolder;
+////  } else if (mode_flags & kFileChooserModeOpenMultiple) {
+////    mode = FileChooserParams::OpenMultiple;
+////  } else {
+////    mode = FileChooserParams::Open;
+////  }
+//  TENTA_LOG_NET(INFO) << __func__ << " mode=" << mode << " files_cnt=" << files.size() << " file paths="
+//                      << base::JoinString(file_path_str, ":");
+//  rfh->FilesSelectedInChooser(files, mode);
 }
 
 void XWalkContentsClientBridge::DownloadIcon(JNIEnv* env, jobject obj, jstring url) {
@@ -679,8 +670,8 @@ void XWalkContentsClientBridge::ProvideClientCertificateResponse(
   // Convert the encoded chain to a vector of strings.
   std::vector<std::string> encoded_chain_strings;
   if (!encoded_chain_ref.is_null()) {
-    base::android::JavaArrayOfByteArrayToStringVector(
-        env, encoded_chain_ref.obj(), &encoded_chain_strings);
+    base::android::JavaArrayOfByteArrayToStringVector(env, encoded_chain_ref,
+                                                      &encoded_chain_strings);
   }
 
   std::vector<base::StringPiece> encoded_chain;
@@ -706,16 +697,6 @@ void XWalkContentsClientBridge::ProvideClientCertificateResponse(
   delegate->ContinueWithCertificate(std::move(client_cert),
                                     std::move(private_key));
 }
-
-//// Use to cleanup if there is an error in client certificate response.
-//void XWalkContentsClientBridge::HandleErrorInClientCertificateResponse(
-//    int request_id) {
-//  content::ClientCertificateDelegate* delegate =
-//      pending_client_cert_request_delegates_.Lookup(request_id);
-//  pending_client_cert_request_delegates_.Remove(request_id);
-//
-//  delete delegate;
-//}
 
 void XWalkContentsClientBridge::SelectClientCertificate(net::SSLCertRequestInfo* cert_request_info,
                                                         std::unique_ptr<content::ClientCertificateDelegate> delegate) {
@@ -772,12 +753,10 @@ void XWalkContentsClientBridge::ClearClientCertPreferences(
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
   ScopedJavaGlobalRef<jobject>* j_callback = new ScopedJavaGlobalRef<jobject>();
   j_callback->Reset(env, callback);
-  content::BrowserThread::PostTaskAndReply(
-      content::BrowserThread::IO,
-      FROM_HERE,
-      base::Bind(&NotifyClientCertificatesChanged),
-      base::Bind(&XWalkContentsClientBridge::ClientCertificatesCleared,
-          base::Unretained(this), base::Owned(j_callback)));
+  base::PostTaskWithTraitsAndReply(FROM_HERE, {content::BrowserThread::IO},
+    base::BindOnce(&NotifyClientCertificatesChanged),
+    base::BindOnce(&XWalkContentsClientBridge::ClientCertificatesCleared,
+        base::Unretained(this), base::Owned(j_callback)));
 }
 
 void XWalkContentsClientBridge::ClientCertificatesCleared(

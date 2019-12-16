@@ -454,30 +454,21 @@ std::string XWalkDevToolsManagerDelegate::GetDiscoveryPageHTML() {
   IDR_DEVTOOLS_FRONTEND_PAGE_HTML).as_string();
 }
 
-std::string XWalkDevToolsManagerDelegate::GetFrontendResource(const std::string& path) {
-#if defined(OS_ANDROID)
-  return std::string();
-#else
-  return content::DevToolsFrontendHost::GetFrontendResource(path).as_string();
-#endif
-
-}
-
 bool XWalkDevToolsManagerDelegate::IsBrowserTargetDiscoverable() {
   return true;
 }
 
-bool XWalkDevToolsManagerDelegate::HandleCommand(
-    DevToolsAgentHost* agent_host,
-    int session_id,
-    base::DictionaryValue* command_dict) {
-  /*
-   * TODO(iotto): for implementation details (like scroll, click, etc ...) see:
-   * chrome/browser/devtools/chrome_devtools_session.h
-   * chrome/browser/devtools/chrome_devtools_manager_delegate.cc
-   */
-  return false;
-}
+//bool XWalkDevToolsManagerDelegate::HandleCommand(
+//    DevToolsAgentHost* agent_host,
+//    int session_id,
+//    base::DictionaryValue* command_dict) {
+//  /*
+//   * TODO(iotto): for implementation details (like scroll, click, etc ...) see:
+//   * chrome/browser/devtools/chrome_devtools_session.h
+//   * chrome/browser/devtools/chrome_devtools_manager_delegate.cc
+//   */
+//  return false;
+//}
 
 XWalkDevToolsManagerDelegate::~XWalkDevToolsManagerDelegate() {
 }

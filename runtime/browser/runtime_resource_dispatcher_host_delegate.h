@@ -33,9 +33,9 @@ class RuntimeResourceDispatcherHostDelegate
       bool must_download,
       bool is_new_request,
       std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) override;
-  bool HandleExternalProtocol(
-      const GURL& url,
-      content::ResourceRequestInfo* info) override;
+//  bool HandleExternalProtocol(
+//      const GURL& url,
+//      content::ResourceRequestInfo* info) override;
  private:
   DISALLOW_COPY_AND_ASSIGN(RuntimeResourceDispatcherHostDelegate);
 };

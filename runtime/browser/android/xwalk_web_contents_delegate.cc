@@ -37,7 +37,7 @@ using base::android::AttachCurrentThread;
 using base::android::ConvertUTF8ToJavaString;
 using base::android::ConvertUTF16ToJavaString;
 using base::android::ScopedJavaLocalRef;
-using content::FileChooserParams;
+using blink::mojom::FileChooserParams;
 using content::WebContents;
 
 namespace xwalk {
@@ -49,8 +49,10 @@ XWalkWebContentsDelegate::XWalkWebContentsDelegate(JNIEnv* env, jobject obj)
 XWalkWebContentsDelegate::~XWalkWebContentsDelegate() {
 }
 
-void XWalkWebContentsDelegate::AddNewContents(content::WebContents* source, content::WebContents* new_contents,
-                                              WindowOpenDisposition disposition, const gfx::Rect& initial_pos,
+void XWalkWebContentsDelegate::AddNewContents(content::WebContents* source,
+                                              std::unique_ptr<content::WebContents> new_contents,
+                                              WindowOpenDisposition disposition,
+                                              const gfx::Rect& initial_rect,
                                               bool user_gesture,
                                               bool* was_blocked) {
   JNIEnv* env = AttachCurrentThread();
@@ -64,11 +66,29 @@ void XWalkWebContentsDelegate::AddNewContents(content::WebContents* source, cont
         env, java_delegate, is_dialog, user_gesture);
   }
 
+
   if (create_popup) {
-    XWalkContent::FromWebContents(source)->SetPendingWebContentsForPopup(base::WrapUnique(new_contents));
-    new_contents->WasHidden();
+    // The embedder would like to display the popup and we will receive
+    // a callback from them later with an AwContents to use to display
+    // it. The source AwContents takes ownership of the new WebContents
+    // until then, and when the callback is made we will swap the WebContents
+    // out into the new AwContents.
+    WebContents* raw_new_contents = new_contents.get();
+    XWalkContent::FromWebContents(source)->SetPendingWebContentsForPopup(
+        std::move(new_contents));
+    // It's possible that SetPendingWebContentsForPopup deletes |new_contents|,
+    // but it only does so asynchronously, so it's safe to use a raw pointer
+    // here.
+    // Hide the WebContents for the pop up now, we will show it again
+    // when the user calls us back with an AwContents to use to show it.
+    raw_new_contents->WasHidden();
   } else {
-    base::MessageLoop::current()->task_runner()->DeleteSoon(FROM_HERE, new_contents);
+    // The embedder has forgone their chance to display this popup
+    // window, so we're done with the WebContents now. We use
+    // DeleteSoon as WebContentsImpl may call methods on |new_contents|
+    // after this method returns.
+    base::ThreadTaskRunnerHandle::Get()->DeleteSoon(FROM_HERE,
+                                                    std::move(new_contents));
   }
 
   if (was_blocked) {
@@ -106,7 +126,8 @@ void XWalkWebContentsDelegate::UpdatePreferredSize(content::WebContents* content
 }
 
 void XWalkWebContentsDelegate::RunFileChooser(content::RenderFrameHost* render_frame_host,
-                                              const content::FileChooserParams& params) {
+                                              std::unique_ptr<content::FileSelectListener> listener,
+                                              const blink::mojom::FileChooserParams& params) {
   JNIEnv* env = AttachCurrentThread();
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
@@ -140,7 +161,7 @@ XWalkWebContentsDelegate::GetJavaScriptDialogManager(WebContents* source) {
 
 void XWalkWebContentsDelegate::RequestMediaAccessPermission(content::WebContents* web_contents,
                                                             const content::MediaStreamRequest& request,
-                                                            const content::MediaResponseCallback& callback) {
+                                                            content::MediaResponseCallback callback) {
 
   LOG(INFO) << "XWalkWebContentsDelegate::RequestMediaAccessPermission";
 
@@ -165,65 +186,79 @@ void XWalkWebContentsDelegate::RequestMediaAccessPermission(content::WebContents
  }
  */
 
-void XWalkWebContentsDelegate::RendererUnresponsive(WebContents* source,
-                                                    const content::WebContentsUnresponsiveState& unresponsive_state) {
+void XWalkWebContentsDelegate::RendererUnresponsive(content::WebContents* source,
+                                                    content::RenderWidgetHost* render_widget_host,
+                                                    base::RepeatingClosure hang_monitor_restarter) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_rendererUnresponsive(env, obj);
+
+  content::RenderProcessHost* render_process_host =
+      render_widget_host->GetProcess();
+  if (render_process_host->IsInitializedAndNotDead()) {
+    Java_XWalkWebContentsDelegate_rendererUnresponsive(env, obj);
+    hang_monitor_restarter.Run();
+  }
 }
 
-void XWalkWebContentsDelegate::RendererResponsive(WebContents* source) {
+void XWalkWebContentsDelegate::RendererResponsive(content::WebContents* source,
+                                                  content::RenderWidgetHost* render_widget_host) {
+
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
-  Java_XWalkWebContentsDelegate_rendererResponsive(env, obj);
+
+  content::RenderProcessHost* render_process_host = render_widget_host->GetProcess();
+  if (render_process_host->IsInitializedAndNotDead()) {
+    Java_XWalkWebContentsDelegate_rendererResponsive(env, obj);
+  }
 }
 
-bool XWalkWebContentsDelegate::DidAddMessageToConsole(content::WebContents* source, int32_t level,
-                                                      const base::string16& message, int32_t line_no,
+bool XWalkWebContentsDelegate::DidAddMessageToConsole(content::WebContents* source,
+                                                      blink::mojom::ConsoleMessageLevel log_level,
+                                                      const base::string16& message,
+                                                      int32_t line_no,
                                                       const base::string16& source_id) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
-    return WebContentsDelegate::DidAddMessageToConsole(source, level, message, line_no, source_id);
+    return WebContentsDelegate::DidAddMessageToConsole(source, log_level, message, line_no, source_id);
   ScopedJavaLocalRef<jstring> jmessage(ConvertUTF16ToJavaString(env, message));
   ScopedJavaLocalRef<jstring> jsource_id(ConvertUTF16ToJavaString(env, source_id));
   int jlevel = web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_DEBUG;
-  switch (level) {
-    case logging::LOG_VERBOSE:
+  switch (log_level) {
+    case blink::mojom::ConsoleMessageLevel::kVerbose:
       jlevel = web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_DEBUG;
       break;
-    case logging::LOG_INFO:
+    case blink::mojom::ConsoleMessageLevel::kInfo:
       jlevel = web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_LOG;
       break;
-    case logging::LOG_WARNING:
+    case blink::mojom::ConsoleMessageLevel::kWarning:
       jlevel = web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_WARNING;
       break;
-    case logging::LOG_ERROR:
+    case blink::mojom::ConsoleMessageLevel::kError:
       jlevel = web_contents_delegate_android::WEB_CONTENTS_DELEGATE_LOG_LEVEL_ERROR;
       break;
     default:
       NOTREACHED();
   }
-  return Java_XWalkWebContentsDelegate_addMessageToConsole(
-      env, GetJavaDelegate(env), jlevel, jmessage, line_no,
-      jsource_id);
+  return Java_XWalkWebContentsDelegate_addMessageToConsole(env, GetJavaDelegate(env), jlevel, jmessage, line_no,
+                                                           jsource_id);
 }
 
-void XWalkWebContentsDelegate::HandleKeyboardEvent(
-    content::WebContents* source,
-    const content::NativeWebKeyboardEvent& event) {
+bool XWalkWebContentsDelegate::HandleKeyboardEvent(content::WebContents* source,
+                                                   const content::NativeWebKeyboardEvent& event) {
   ScopedJavaGlobalRef<jobject> key_event = event.os_event;
   if (!key_event.obj())
-    return;
+    return true;
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
-    return;
+    return true;
   Java_XWalkWebContentsDelegate_handleKeyboardEvent(env, obj, key_event);
+  return true;
 }
 
 void XWalkWebContentsDelegate::ShowRepostFormWarningDialog(WebContents* source) {
@@ -234,13 +269,14 @@ void XWalkWebContentsDelegate::ShowRepostFormWarningDialog(WebContents* source) 
   Java_XWalkWebContentsDelegate_showRepostFormWarningDialog(env, obj);
 }
 
-void XWalkWebContentsDelegate::EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL&) {
+void XWalkWebContentsDelegate::EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL& origin,
+                                                         const blink::WebFullscreenOptions& options) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
     return;
   Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj, true);
-  web_contents->GetRenderViewHost()->GetWidget()->WasResized();
+  web_contents->GetRenderViewHost()->GetWidget()->SynchronizeVisualProperties();
 }
 
 void XWalkWebContentsDelegate::ExitFullscreenModeForTab(content::WebContents* web_contents) {
@@ -249,10 +285,10 @@ void XWalkWebContentsDelegate::ExitFullscreenModeForTab(content::WebContents* we
   if (obj.is_null())
     return;
   Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj, false);
-  web_contents->GetRenderViewHost()->GetWidget()->WasResized();
+  web_contents->GetRenderViewHost()->GetWidget()->SynchronizeVisualProperties();
 }
 
-bool XWalkWebContentsDelegate::IsFullscreenForTabOrPending(const content::WebContents* web_contents) const {
+bool XWalkWebContentsDelegate::IsFullscreenForTabOrPending(const content::WebContents* web_contents) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
   if (obj.is_null())
@@ -332,13 +368,7 @@ void XWalkWebContentsDelegate::SetOverlayMode(bool useOverlayMode) {
   }
 }
 
-base::android::ScopedJavaLocalRef<jobject> XWalkWebContentsDelegate::GetContentVideoViewEmbedder() {
-  return base::android::ScopedJavaLocalRef<jobject>();
-}
-
 bool RegisterXWalkWebContentsDelegate(JNIEnv* env) {
-  // TODO(iotto) remove registering too
-//  return RegisterNativesImpl(env);
   return true;
 }
 

@@ -10,8 +10,8 @@
 #include "content/public/browser/render_widget_host_iterator.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/web_contents.h"
-#include "content/public/common/notification_resources.h"
-#include "content/public/common/platform_notification_data.h"
+#include "third_party/blink/public/common/notifications/notification_resources.h"
+#include "third_party/blink/public/common/notifications/platform_notification_data.h"
 
 #if defined(OS_ANDROID)
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
@@ -35,60 +35,60 @@ XWalkPlatformNotificationService::XWalkPlatformNotificationService() {}
 
 XWalkPlatformNotificationService::~XWalkPlatformNotificationService() {}
 
-blink::mojom::PermissionStatus
-XWalkPlatformNotificationService::CheckPermissionOnUIThread(
-    content::BrowserContext* resource_context,
-    const GURL& origin,
-    int render_process_id) {
-#if defined(OS_ANDROID)
-  return blink::mojom::PermissionStatus::GRANTED;
-#elif defined(OS_LINUX) && defined(USE_LIBNOTIFY) || defined(OS_WIN)
-  return blink::mojom::PermissionStatus::GRANTED;
-#elif defined(OS_WIN)
-  ContentSetting setting =
-      XWalkContentSettings::GetInstance()->GetPermission(
-          CONTENT_SETTINGS_TYPE_NOTIFICATIONS, origin, origin);
-  if (setting == CONTENT_SETTING_ALLOW)
-    return blink::mojom::PermissionStatus::GRANTED;
-  if (setting == CONTENT_SETTING_BLOCK)
-    return blink::mojom::PermissionStatus::DENIED;
-
-  return blink::mojom::PermissionStatus::ASK;
-#else
-  return blink::mojom::PermissionStatus::DENIED;
-#endif
-}
-
-blink::mojom::PermissionStatus
-XWalkPlatformNotificationService::CheckPermissionOnIOThread(
-    content::ResourceContext* resource_context,
-    const GURL& origin,
-    int render_process_id) {
-#if defined(OS_ANDROID)
-  return blink::mojom::PermissionStatus::GRANTED;
-#elif defined(OS_LINUX) && defined(USE_LIBNOTIFY)
-  return blink::mojom::PermissionStatus::GRANTED;
-#elif defined(OS_WIN)
-  ContentSetting setting =
-      XWalkContentSettings::GetInstance()->GetPermission(
-          CONTENT_SETTINGS_TYPE_NOTIFICATIONS, origin, origin);
-  if (setting == CONTENT_SETTING_ALLOW)
-    return blink::mojom::PermissionStatus::GRANTED;
-  if (setting == CONTENT_SETTING_BLOCK)
-    return blink::mojom::PermissionStatus::DENIED;
-
-  return blink::mojom::PermissionStatus::ASK;
-#else
-  return blink::mojom::PermissionStatus::DENIED;
-#endif
-}
+//blink::mojom::PermissionStatus
+//XWalkPlatformNotificationService::CheckPermissionOnUIThread(
+//    content::BrowserContext* resource_context,
+//    const GURL& origin,
+//    int render_process_id) {
+//#if defined(OS_ANDROID)
+//  return blink::mojom::PermissionStatus::GRANTED;
+//#elif defined(OS_LINUX) && defined(USE_LIBNOTIFY) || defined(OS_WIN)
+//  return blink::mojom::PermissionStatus::GRANTED;
+//#elif defined(OS_WIN)
+//  ContentSetting setting =
+//      XWalkContentSettings::GetInstance()->GetPermission(
+//          CONTENT_SETTINGS_TYPE_NOTIFICATIONS, origin, origin);
+//  if (setting == CONTENT_SETTING_ALLOW)
+//    return blink::mojom::PermissionStatus::GRANTED;
+//  if (setting == CONTENT_SETTING_BLOCK)
+//    return blink::mojom::PermissionStatus::DENIED;
+//
+//  return blink::mojom::PermissionStatus::ASK;
+//#else
+//  return blink::mojom::PermissionStatus::DENIED;
+//#endif
+//}
+//
+//blink::mojom::PermissionStatus
+//XWalkPlatformNotificationService::CheckPermissionOnIOThread(
+//    content::ResourceContext* resource_context,
+//    const GURL& origin,
+//    int render_process_id) {
+//#if defined(OS_ANDROID)
+//  return blink::mojom::PermissionStatus::GRANTED;
+//#elif defined(OS_LINUX) && defined(USE_LIBNOTIFY)
+//  return blink::mojom::PermissionStatus::GRANTED;
+//#elif defined(OS_WIN)
+//  ContentSetting setting =
+//      XWalkContentSettings::GetInstance()->GetPermission(
+//          CONTENT_SETTINGS_TYPE_NOTIFICATIONS, origin, origin);
+//  if (setting == CONTENT_SETTING_ALLOW)
+//    return blink::mojom::PermissionStatus::GRANTED;
+//  if (setting == CONTENT_SETTING_BLOCK)
+//    return blink::mojom::PermissionStatus::DENIED;
+//
+//  return blink::mojom::PermissionStatus::ASK;
+//#else
+//  return blink::mojom::PermissionStatus::DENIED;
+//#endif
+//}
 
 void XWalkPlatformNotificationService::DisplayNotification(
-    content::BrowserContext* browser_context,
     const std::string& notification_id,
     const GURL& origin,
-    const content::PlatformNotificationData& notification_data,
-    const content::NotificationResources& notification_resources) {
+    const blink::PlatformNotificationData& notification_data,
+    const blink::NotificationResources& notification_resources) {
+  LOG(ERROR) << "iotto " << __func__ << " FIX/IMPLEMENT";
 #if defined(OS_ANDROID)
   std::unique_ptr<content::RenderWidgetHostIterator> widgets(
       content::RenderWidgetHost::GetRenderWidgetHosts());
@@ -134,14 +134,13 @@ void XWalkPlatformNotificationService::DisplayNotification(
 #endif
 }
 
-void XWalkPlatformNotificationService::CloseNotification(content::BrowserContext* browser_context, const std::string& notification_id) {
+void XWalkPlatformNotificationService::CloseNotification(const std::string& notification_id) {
   // TODO(iotto) : Implement
-  LOG(WARNING) << __func__ << " not_implemented";
+  LOG(ERROR) << "iotto " << __func__ << " FIX/IMPLEMENT";
 }
 
 void XWalkPlatformNotificationService::GetDisplayedNotifications(
-    content::BrowserContext* browser_context,
-    const DisplayedNotificationsCallback& callback) {
+    DisplayedNotificationsCallback callback) {
     NOTIMPLEMENTED();
     // TODO(iotto) check do we need to implement?
 }

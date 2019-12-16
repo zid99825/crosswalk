@@ -59,6 +59,7 @@ class XWalkFormDatabaseService : public WebDataServiceConsumer {
 
   scoped_refptr<autofill::AutofillWebDataService> autofill_data_;
   scoped_refptr<WebDatabaseService> web_database_;
+  scoped_refptr<base::SingleThreadTaskRunner> _db_task_runner;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkFormDatabaseService);
 };

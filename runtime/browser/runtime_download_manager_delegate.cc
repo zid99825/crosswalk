@@ -17,12 +17,11 @@
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "components/download/public/common/download_interrupt_reasons.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_thread.h"
-#include "content/public/browser/download_interrupt_reasons.h"
 #include "content/public/browser/download_manager.h"
 #include "content/public/browser/web_contents.h"
-#include "content/public/common/file_chooser_params.h"
 #include "content/shell/common/shell_switches.h"
 #include "net/base/filename_util.h"
 #include "xwalk/runtime/browser/runtime_platform_util.h"
@@ -41,7 +40,7 @@ using content::BrowserThread;
 namespace xwalk {
 
 RuntimeDownloadManagerDelegate::RuntimeDownloadManagerDelegate()
-    : download_manager_(NULL),
+    : /*download_manager_(NULL),*/
       suppress_prompting_(false) {
   // Balanced in Shutdown();
   AddRef();
@@ -50,30 +49,31 @@ RuntimeDownloadManagerDelegate::RuntimeDownloadManagerDelegate()
 RuntimeDownloadManagerDelegate::~RuntimeDownloadManagerDelegate() {
 }
 
-void RuntimeDownloadManagerDelegate::SetDownloadManager(
-    content::DownloadManager* download_manager) {
-  download_manager_ = download_manager;
-}
+//void RuntimeDownloadManagerDelegate::SetDownloadManager(
+//    content::DownloadManager* download_manager) {
+//  download_manager_ = download_manager;
+//}
 
 void RuntimeDownloadManagerDelegate::Shutdown() {
   Release();
 }
 
 bool RuntimeDownloadManagerDelegate::DetermineDownloadTarget(
-    content::DownloadItem* download,
+    download::DownloadItem* download,
     const content::DownloadTargetCallback& callback) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
+  LOG(WARNING) << "iotto " << __func__ << " Might need refactoring";
   // This assignment needs to be here because even at the call to
   // SetDownloadManager, the system is not fully initialized.
   if (default_download_path_.empty())
-    PathService::Get(xwalk::DIR_DOWNLOAD_PATH, &default_download_path_);
+    base::PathService::Get(xwalk::DIR_DOWNLOAD_PATH, &default_download_path_);
 
   if (!download->GetForcedFilePath().empty()) {
     callback.Run(download->GetForcedFilePath(),
-                 content::DownloadItem::TARGET_DISPOSITION_OVERWRITE,
-                 content::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS,
+                 download::DownloadItem::TARGET_DISPOSITION_OVERWRITE,
+                 donwload::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS,
                  download->GetForcedFilePath(),
-                 content::DownloadInterruptReason::DOWNLOAD_INTERRUPT_REASON_NONE);
+                 download::DownloadInterruptReason::DOWNLOAD_INTERRUPT_REASON_NONE);
     return true;
   }
 
@@ -93,6 +93,14 @@ bool RuntimeDownloadManagerDelegate::DetermineDownloadTarget(
           this, download->GetId(), callback, generated_name,
           default_download_path_));
   return true;
+//  // Note this cancel is independent of the URLRequest cancel in
+//  // AwResourceDispatcherHostDelegate::DownloadStarting. The request
+//  // could have already finished by the time DownloadStarting is called.
+//  callback.Run(base::FilePath() /* Empty file path for cancel */,
+//               download::DownloadItem::TARGET_DISPOSITION_OVERWRITE,
+//               download::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS, base::FilePath(),
+//               download::DOWNLOAD_INTERRUPT_REASON_USER_CANCELED);
+//  return true;
 }
 
 bool RuntimeDownloadManagerDelegate::ShouldOpenDownload(

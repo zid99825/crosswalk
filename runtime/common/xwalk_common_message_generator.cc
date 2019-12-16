@@ -10,10 +10,6 @@
 #include "ipc/struct_constructor_macros.h"
 #include "xwalk/runtime/common/xwalk_common_message_generator.h"  // NOLINT
 
-// Generate destructors.
-#include "ipc/struct_destructor_macros.h"
-#include "xwalk/runtime/common/xwalk_common_message_generator.h"  // NOLINT
-
 // Generate param traits write methods.
 #include "ipc/param_traits_write_macros.h"
 namespace IPC {

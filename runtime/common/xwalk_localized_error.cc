@@ -11,12 +11,13 @@
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/values.h"
+#include "components/error_page/common/error.h"
 #include "components/error_page/common/net_error_info.h"
 #include "grit/xwalk_resources.h"
 #include "components/strings/grit/components_strings.h"
 #include "net/base/escape.h"
 #include "net/base/net_errors.h"
-#include "third_party/WebKit/public/platform/WebURLError.h"
+#include "third_party/blink/public/platform/web_url_error.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/webui/web_ui_util.h"
 #include "url/gurl.h"
@@ -196,22 +197,22 @@ const LocalizedErrorMap* FindErrorMapInArray(const LocalizedErrorMap* maps,
 
 const LocalizedErrorMap* LookupErrorMap(const std::string& error_domain,
                                         int error_code, bool is_post) {
-  if (error_domain == net::kErrorDomain) {
+  if (error_domain == error_page::Error::kNetErrorDomain) {
     // Display a different page in the special case of navigating through the
     // history to an uncached page created by a POST.
     if (is_post && error_code == net::ERR_CACHE_MISS)
       return &repost_error;
     return FindErrorMapInArray(net_error_options,
-                               arraysize(net_error_options),
+                               base::size(net_error_options),
                                error_code);
   } else if (error_domain == LocalizedError::kHttpErrorDomain) {
     return FindErrorMapInArray(http_error_options,
-                               arraysize(http_error_options),
+                               base::size(http_error_options),
                                error_code);
   } else if (error_domain == LocalizedError::kDnsProbeErrorDomain) {
     const LocalizedErrorMap* map =
         FindErrorMapInArray(dns_probe_error_options,
-                            arraysize(dns_probe_error_options),
+                            base::size(dns_probe_error_options),
                             error_code);
     DCHECK(map);
     return map;

@@ -12,7 +12,7 @@
 
 #include "base/android/jni_weak_ref.h"
 #include "base/android/scoped_java_ref.h"
-#include "third_party/WebKit/public/platform/modules/permissions/permission_status.mojom.h"
+#include "third_party/blink/public/mojom/permissions/permission_status.mojom.h"
 #include "xwalk/runtime/browser/android/find_helper.h"
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
 
@@ -81,7 +81,8 @@ class XWalkContent :
   ScopedJavaLocalRef<jstring> GetVersion(JNIEnv* env, jobject obj);
   jint GetRoutingID(JNIEnv* env, jobject obj);
   base::android::ScopedJavaLocalRef<jbyteArray> GetState(JNIEnv* env, jobject obj);
-  jboolean SetState(JNIEnv* env, jobject obj, jbyteArray state);
+  jboolean SetState(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
+                    const base::android::JavaParamRef<jbyteArray>& state);
 
   /******** Using Metafs **********/
   //TODO make this private
@@ -136,13 +137,14 @@ class XWalkContent :
   }
 
   void SetJsOnlineProperty(JNIEnv* env, jobject obj, jboolean network_up);
-  jboolean SetManifest(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, const base::android::JavaParamRef<jstring>& path,
+  jboolean SetManifest(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
+                       const base::android::JavaParamRef<jstring>& path,
                        const base::android::JavaParamRef<jstring>& manifest);
-  void SetBackgroundColor(JNIEnv* env, jobject obj, jint color);
+  void SetBackgroundColor(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, jint color);
   void SetOriginAccessWhitelist(JNIEnv* env, jobject obj, jstring url, jstring match_patterns);
 
   // Geolocation API support
-  void ShowGeolocationPrompt(const GURL& origin, const base::Callback<void(bool)>& callback);  // NOLINT
+  void ShowGeolocationPrompt(const GURL& origin, base::OnceCallback<void(bool)> callback);  // NOLINT
   void HideGeolocationPrompt(const GURL& origin);
   void InvokeGeolocationCallback(JNIEnv* env, jobject obj, jboolean value, jstring origin);
 
@@ -187,7 +189,7 @@ class XWalkContent :
   // GURL is supplied by the content layer as requesting frame.
   // Callback is supplied by the content layer, and is invoked with the result
   // from the permission prompt.
-  typedef std::pair<const GURL, const base::Callback<void(bool)> > /* NOLINT */
+  typedef std::pair<const GURL, base::OnceCallback<void(bool)> > /* NOLINT */
   OriginCallback;
   // The first element in the list is always the currently pending request.
   std::list<OriginCallback> pending_geolocation_prompts_;

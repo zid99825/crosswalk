@@ -53,46 +53,30 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   ~XWalkContentBrowserClient() override;
 
   // ContentBrowserClient overrides.
-  content::BrowserMainParts* CreateBrowserMainParts(
-      const content::MainFunctionParams& parameters) override;
-  void AppendExtraCommandLineSwitches(base::CommandLine* command_line,
-                                      int child_process_id) override;
-  content::QuotaPermissionContext*
-      CreateQuotaPermissionContext() override;
-  content::WebContentsViewDelegate* GetWebContentsViewDelegate(
-      content::WebContents* web_contents) override;
-  void RenderProcessWillLaunch(
-      content::RenderProcessHost* host) override;
+  std::unique_ptr<content::BrowserMainParts> CreateBrowserMainParts(const content::MainFunctionParams& parameters)
+      override;
+  void AppendExtraCommandLineSwitches(base::CommandLine* command_line, int child_process_id) override;
+  scoped_refptr<content::QuotaPermissionContext> CreateQuotaPermissionContext() override;
+  content::WebContentsViewDelegate* GetWebContentsViewDelegate(content::WebContents* web_contents) override;
+  void RenderProcessWillLaunch(content::RenderProcessHost* host,
+                               service_manager::mojom::ServiceRequest* service_request) override;
   content::MediaObserver* GetMediaObserver() override;
-  void BindInterfaceRequestFromFrame(
-        content::RenderFrameHost* render_frame_host,
-        const std::string& interface_name,
-        mojo::ScopedMessagePipeHandle interface_pipe) override;
-  bool AllowGetCookie(const GURL& url,
-                      const GURL& first_party,
-                      const net::CookieList& cookie_list,
-                      content::ResourceContext* context,
-                      int render_process_id,
-                      int render_frame_id) override;
-  bool AllowSetCookie(const GURL& url,
-                      const GURL& first_party,
-                      const net::CanonicalCookie& cookie,
-                      content::ResourceContext* context,
-                      int render_process_id,
-                      int render_frame_id,
-                      const net::CookieOptions& options) override;
+  void BindInterfaceRequestFromFrame(content::RenderFrameHost* render_frame_host, const std::string& interface_name,
+                                     mojo::ScopedMessagePipeHandle interface_pipe) override;
+  bool WillCreateRestrictedCookieManager(
+      network::mojom::RestrictedCookieManagerRole role, content::BrowserContext* browser_context,
+      const url::Origin& origin,
+      bool is_service_worker,
+      int process_id, int routing_id, network::mojom::RestrictedCookieManagerRequest* request) override;
 
-  void AllowCertificateError(
-      content::WebContents* web_contents,
-      int cert_error,
-      const net::SSLInfo& ssl_info,
-      const GURL& request_url,
-      content::ResourceType resource_type,
-      bool strict_enforcement,
-      bool expired_previous_decision,
-      const base::Callback<void(content::CertificateRequestResultType)>& callback) override;
+  void AllowCertificateError(content::WebContents* web_contents, int cert_error, const net::SSLInfo& ssl_info,
+                             const GURL& request_url,
+                             bool is_main_frame_request,
+                             bool strict_enforcement,
+                             bool expired_previous_decision,
+                             const base::Callback<void(content::CertificateRequestResultType)>& callback) override;
 
-  void SelectClientCertificate(
+  base::OnceClosure SelectClientCertificate(
       content::WebContents* web_contents,
       net::SSLCertRequestInfo* cert_request_info,
       net::ClientCertIdentityList client_certs,
@@ -101,7 +85,7 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   content::SpeechRecognitionManagerDelegate*
       CreateSpeechRecognitionManagerDelegate() override;
 
-  content::PlatformNotificationService* GetPlatformNotificationService()
+  content::PlatformNotificationService* GetPlatformNotificationService(content::BrowserContext* browser_context)
       override;
 
 #if !defined(OS_ANDROID)
@@ -169,10 +153,30 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
 
   std::string GetApplicationLocale() override;
 
+  std::string GetProduct() override;
+  std::string GetUserAgent() override;
+
 #if defined(OS_ANDROID)
   std::vector<std::unique_ptr<content::NavigationThrottle>> CreateThrottlesForNavigation(
       content::NavigationHandle* navigation_handle) override;
 #endif
+
+  std::unique_ptr<content::LoginDelegate> CreateLoginDelegate(const net::AuthChallengeInfo& auth_info,
+                                                              content::WebContents* web_contents,
+                                                              const content::GlobalRequestID& request_id,
+                                                              bool is_main_frame,
+                                                              const GURL& url,
+                                                              scoped_refptr<net::HttpResponseHeaders> response_headers,
+                                                              bool first_auth_attempt,
+                                                              LoginAuthRequiredCallback auth_required_callback)
+                                                                  override;
+  bool HandleExternalProtocol(
+      const GURL& url, content::ResourceRequestInfo::WebContentsGetter web_contents_getter, int child_id,
+      content::NavigationUIData* navigation_data,
+      bool is_main_frame,
+      ui::PageTransition page_transition,
+      bool has_user_gesture,
+      network::mojom::URLLoaderFactoryPtr* out_factory) override;
 
   // TODO(iotto) : Implement for geolocation
 //  // Allows the embedder to provide a URLRequestContextGetter to use for network

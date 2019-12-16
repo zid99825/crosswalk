@@ -4,8 +4,6 @@
 
 #include "xwalk/runtime/browser/runtime_quota_permission_context.h"
 
-#include "storage/common/quota/quota_types.h"
-
 namespace xwalk {
 
 RuntimeQuotaPermissionContext::RuntimeQuotaPermissionContext() {}
@@ -15,7 +13,7 @@ void RuntimeQuotaPermissionContext::RequestQuotaPermission(
       int render_process_id,
       const PermissionCallback& callback) {
   // TODO(wang16): Handle request according to app's manifest declaration.
-  callback.Run(QUOTA_PERMISSION_RESPONSE_ALLOW);
+  callback.Run(content::QuotaPermissionContext::QUOTA_PERMISSION_RESPONSE_ALLOW);
 }
 
 RuntimeQuotaPermissionContext::~RuntimeQuotaPermissionContext() {}

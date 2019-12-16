@@ -12,7 +12,6 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/browser/loader/resource_controller.h"
 #include "content/public/browser/resource_dispatcher_host.h"
-#include "content/public/browser/resource_dispatcher_host_login_delegate.h"
 #include "content/public/browser/resource_request_info.h"
 #include "content/public/browser/resource_throttle.h"
 #include "content/public/common/url_constants.h"
@@ -63,11 +62,11 @@ void RuntimeResourceDispatcherHostDelegate::DownloadStarting(
       std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
 }
 
-bool RuntimeResourceDispatcherHostDelegate::HandleExternalProtocol(
-      const GURL& url,
-      content::ResourceRequestInfo* info) {
-  platform_util::OpenExternal(url);
-  return true;
-}
+//bool RuntimeResourceDispatcherHostDelegate::HandleExternalProtocol(
+//      const GURL& url,
+//      content::ResourceRequestInfo* info) {
+//  platform_util::OpenExternal(url);
+//  return true;
+//}
 
 }  // namespace xwalk

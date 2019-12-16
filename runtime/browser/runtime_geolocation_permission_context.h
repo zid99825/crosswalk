@@ -10,7 +10,7 @@
 #include "base/callback.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/string16.h"
-#include "third_party/WebKit/public/platform/modules/permissions/permission_status.mojom.h"
+#include "third_party/blink/public/mojom/permissions/permission_status.mojom.h"
 
 class GURL;
 
@@ -30,7 +30,7 @@ class RuntimeGeolocationPermissionContext
       content::WebContents* web_contents,
       const GURL& requesting_frame,
       const std::string& application_name,
-      base::Callback<void(bool)> result_callback);
+      base::OnceCallback<void(bool)> result_callback);
   virtual void CancelGeolocationPermissionRequest(
       content::WebContents* web_contents,
       const GURL& requesting_frame);
@@ -46,7 +46,7 @@ class RuntimeGeolocationPermissionContext
   void RequestGeolocationPermissionOnUIThread(
       content::WebContents* web_contents,
       const GURL& requesting_frame,
-      base::Callback<void(bool)> result_callback);
+      base::OnceCallback<void(bool)> result_callback);
 
   void CancelGeolocationPermissionRequestOnUIThread(
       content::WebContents* web_contents,

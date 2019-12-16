@@ -14,7 +14,7 @@
 #include "base/observer_list.h"
 #include "content/public/browser/media_observer.h"
 #include "content/public/browser/web_contents.h"
-#include "content/public/common/media_stream_request.h"
+#include "content/public/browser/media_stream_request.h"
 
 namespace xwalk {
 // This singleton is used to receive updates about media events from the content

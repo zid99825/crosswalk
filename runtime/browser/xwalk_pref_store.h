@@ -43,7 +43,8 @@ class XWalkPrefStore : public PersistentPrefStore {
   PrefReadError GetReadError() const override;
   PersistentPrefStore::PrefReadError ReadPrefs() override;
   void ReadPrefsAsync(ReadErrorDelegate* error_delegate) override;
-  void CommitPendingWrite(base::OnceClosure done_callback) override {}
+  void CommitPendingWrite(base::OnceClosure reply_callback = base::OnceClosure(),
+                          base::OnceClosure synchronous_done_callback = base::OnceClosure()) override {}
   void SchedulePendingLossyWrites() override {}
   void ClearMutableValues() override {}
   // Cleans preference data that may have been saved outside of the store.
@@ -58,7 +59,7 @@ class XWalkPrefStore : public PersistentPrefStore {
   // Stores the preference values.
   PrefValueMap prefs_;
 
-  base::ObserverList<PrefStore::Observer, true> observers_;
+  base::ObserverList<PrefStore::Observer, true>::Unchecked observers_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkPrefStore);
 };

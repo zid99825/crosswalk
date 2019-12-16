@@ -6,8 +6,8 @@
 
 #include "content/public/common/url_constants.h"
 #include "content/public/renderer/render_frame.h"
-#include "third_party/WebKit/public/platform/WebURL.h"
-#include "third_party/WebKit/public/web/WebLocalFrame.h"
+#include "third_party/blink/public/platform/web_url.h"
+#include "third_party/blink/public/web/web_local_frame.h"
 #include "url/gurl.h"
 
 namespace xwalk {

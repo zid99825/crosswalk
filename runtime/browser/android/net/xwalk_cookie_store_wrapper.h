@@ -17,7 +17,9 @@
 #include "base/time/time.h"
 #include "net/cookies/canonical_cookie.h"
 #include "net/cookies/cookie_constants.h"
+#include "net/cookies/cookie_monster_change_dispatcher.h"
 #include "net/cookies/cookie_store.h"
+
 
 namespace xwalk {
 
@@ -45,46 +47,43 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
                                  const net::CookieOptions& options,
                                  SetCookiesCallback callback) override;
 
-  void SetCanonicalCookieAsync(std::unique_ptr<net::CanonicalCookie> cookie,
-                                         bool secure_source,
-                                         bool modify_http_only,
-                                         SetCookiesCallback callback) override;
-
-  void GetCookiesWithOptionsAsync(const GURL& url,
-                                  const net::CookieOptions& options,
-                                  GetCookiesCallback callback) override;
+  void SetCanonicalCookieAsync(std::unique_ptr<net::CanonicalCookie> cookie, std::string source_scheme,
+                               const net::CookieOptions& options, SetCookiesCallback callback) override;
+//  void GetCookiesWithOptionsAsync(const GURL& url,
+//                                  const net::CookieOptions& options,
+//                                  GetCookiesCallback callback) override;
   void GetCookieListWithOptionsAsync(
       const GURL& url,
       const net::CookieOptions& options,
       GetCookieListCallback callback) override;
   void GetAllCookiesAsync(GetCookieListCallback callback) override;
-  void DeleteCookieAsync(const GURL& url,
-                         const std::string& cookie_name,
-                         base::OnceClosure callback) override;
+//  void DeleteCookieAsync(const GURL& url,
+//                         const std::string& cookie_name,
+//                         base::OnceClosure callback) override;
   void DeleteCanonicalCookieAsync(const net::CanonicalCookie& cookie,
                                   DeleteCallback callback) override;
-  void DeleteAllCreatedBetweenAsync(const base::Time& delete_begin,
-                                    const base::Time& delete_end,
-                                    DeleteCallback callback) override;
-  void DeleteAllCreatedBetweenWithPredicateAsync(
-      const base::Time& delete_begin,
-      const base::Time& delete_end,
-      const net::CookieStore::CookiePredicate& predicate,
-      DeleteCallback callback) override;
+  void DeleteAllCreatedInTimeRangeAsync(const net::CookieDeletionInfo::TimeRange& creation_range,
+                                        DeleteCallback callback) override;
+  void DeleteAllMatchingInfoAsync(net::CookieDeletionInfo delete_info,
+                                  DeleteCallback callback) override;
   void DeleteSessionCookiesAsync(DeleteCallback callback) override;
   void FlushStore(base::OnceClosure callback) override;
   void SetForceKeepSessionState() override;
-  std::unique_ptr<CookieChangedSubscription> AddCallbackForCookie(
-      const GURL& url,
-      const std::string& name,
-      const CookieChangedCallback& callback) override;
+  net::CookieChangeDispatcher& GetChangeDispatcher() override;
+  void SetCookieableSchemes(const std::vector<std::string>& schemes, SetCookieableSchemesCallback callback) override;
 
-  std::unique_ptr<CookieChangedSubscription> AddCallbackForAllChanges(
-        const CookieChangedCallback& callback) override;
+  // TODO(iotto): Implement! see net/cookies/cookie_change_dispatcher.h
+//  std::unique_ptr<CookieChangedSubscription> AddCallbackForCookie(
+//      const GURL& url,
+//      const std::string& name,
+//      const CookieChangedCallback& callback) override;
+//
+//  std::unique_ptr<CookieChangedSubscription> AddCallbackForAllChanges(
+//        const CookieChangedCallback& callback) override;
 
-  bool IsEphemeral() override;
+//  bool IsEphemeral() override;
 
-  void TriggerCookieFetch() override;
+  void TriggerCookieFetch();
 
  private:
   // Used by CreateWrappedCallback below. Takes an arugment of Type and posts
@@ -95,24 +94,24 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
   static void RunCallbackOnClientThread(
       base::TaskRunner* task_runner,
       base::WeakPtr<XWalkCookieStoreWrapper> weak_cookie_store,
-      base::Callback<void(Type)> callback,
+      base::OnceCallback<void(Type)> callback,
       Type argument) {
     task_runner->PostTask(
         FROM_HERE,
-        base::Bind(&XWalkCookieStoreWrapper::RunClosureCallback,
-                   weak_cookie_store, base::Bind(callback, argument)));
+        base::BindOnce(&XWalkCookieStoreWrapper::RunClosureCallback,
+                   weak_cookie_store, base::BindOnce(std::move(callback), argument)));
   }
 
   // Returns a base::Callback that takes an argument of Type and posts a task to
   // the |client_task_runner_| to invoke |callback| with that argument.
   template <class Type>
-  base::Callback<void(Type)> CreateWrappedCallback(
-      base::Callback<void(Type)> callback) {
+  base::OnceCallback<void(Type)> CreateWrappedCallback(
+      base::OnceCallback<void(Type)> callback) {
     if (callback.is_null())
       return callback;
-    return base::Bind(&XWalkCookieStoreWrapper::RunCallbackOnClientThread<Type>,
+    return base::BindOnce(&XWalkCookieStoreWrapper::RunCallbackOnClientThread<Type>,
                       base::RetainedRef(client_task_runner_),
-                      weak_factory_.GetWeakPtr(), callback);
+                      weak_factory_.GetWeakPtr(), std::move(callback));
   }
 
   // Returns a base::Closure that posts a task to the |client_task_runner_| to
@@ -121,10 +120,10 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
 
   // Runs |callback|. Used to prevent callbacks from being invoked after the
   // XWalkCookieStoreWrapper has been destroyed.
-  void RunClosureCallback(const base::Closure& callback);
+  void RunClosureCallback(base::OnceClosure callback);
 
   scoped_refptr<base::SingleThreadTaskRunner> client_task_runner_;
-
+  net::CookieMonsterChangeDispatcher change_dispatcher_;
   base::WeakPtrFactory<XWalkCookieStoreWrapper> weak_factory_;
 };
 

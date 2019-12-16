@@ -10,7 +10,7 @@
 #include "xwalk/runtime/browser/android/xwalk_http_auth_handler_base.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/string16.h"
-#include "content/public/browser/resource_dispatcher_host_login_delegate.h"
+#include "content/public/browser/login_delegate.h"
 
 namespace net {
 class AuthChallengeInfo;
@@ -20,7 +20,7 @@ class URLRequest;
 namespace xwalk {
 
 class XWalkLoginDelegate
-    : public content::ResourceDispatcherHostLoginDelegate {
+    : public content::LoginDelegate {
  public:
   XWalkLoginDelegate(net::AuthChallengeInfo* auth_info,
                      net::URLRequest* request);

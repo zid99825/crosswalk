@@ -15,11 +15,11 @@
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "components/nacl/common/nacl_process_type.h"
-#include "components/nacl/common/features.h"
+#include "components/nacl/common/buildflags.h"
 #include "content/public/common/content_constants.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/user_agent.h"
-#include "ppapi/features/features.h"
+#include "ppapi/buildflags/buildflags.h"
 
 #if BUILDFLAG(ENABLE_PLUGINS)
 #include "content/public/common/pepper_plugin_info.h"
@@ -118,19 +118,6 @@ void AddPepperFlashFromCommandline(
 
 namespace xwalk {
 
-std::string GetProduct() {
-  // TODO(iotto) : Check out and use version_info::GetProductNameAndVersionForUserAgent();
-  return "Chrome/" CHROME_VERSION;
-}
-
-std::string GetUserAgent() {
-  std::string product = GetProduct();
-  product += " Crosswalk/" XWALK_VERSION;
-  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line->HasSwitch(switches::kUseMobileUserAgent))
-    product += " Mobile";
-  return content::BuildUserAgentFromProduct(product);
-}
 
 XWalkContentClient::XWalkContentClient() {
 }
@@ -181,31 +168,19 @@ void XWalkContentClient::AddPepperPlugins(
 #endif
 }
 
-std::string XWalkContentClient::GetProduct() const {
-  return xwalk::GetProduct();
-}
-
-std::string XWalkContentClient::GetUserAgent() const {
-  return xwalk::GetUserAgent();
-}
-
-base::string16 XWalkContentClient::GetLocalizedString(int message_id) const {
+base::string16 XWalkContentClient::GetLocalizedString(int message_id) {
   return l10n_util::GetStringUTF16(message_id);
 }
 
-base::StringPiece XWalkContentClient::GetDataResource(
-    int resource_id,
-    ui::ScaleFactor scale_factor) const {
-  return ui::ResourceBundle::GetSharedInstance().GetRawDataResourceForScale(
-      resource_id, scale_factor);
+base::StringPiece XWalkContentClient::GetDataResource(int resource_id, ui::ScaleFactor scale_factor) {
+  return ui::ResourceBundle::GetSharedInstance().GetRawDataResourceForScale(resource_id, scale_factor);
 }
 
-base::RefCountedMemory* XWalkContentClient::GetDataResourceBytes(
-    int resource_id) const {
+base::RefCountedMemory* XWalkContentClient::GetDataResourceBytes(int resource_id) {
   return ui::ResourceBundle::GetSharedInstance().LoadDataResourceBytes(resource_id);
 }
 
-gfx::Image& XWalkContentClient::GetNativeImageNamed(int resource_id) const {
+gfx::Image& XWalkContentClient::GetNativeImageNamed(int resource_id) {
   return ui::ResourceBundle::GetSharedInstance().GetNativeImageNamed(resource_id);
 }
 

@@ -6,7 +6,7 @@
 #define XWALK_RUNTIME_COMMON_XWALK_SWITCHES_H_
 
 #include "build/build_config.h"
-#include "ppapi/features/features.h"
+#include "ppapi/buildflags/buildflags.h"
 
 // Defines all command line switches for XWalk.
 namespace switches {

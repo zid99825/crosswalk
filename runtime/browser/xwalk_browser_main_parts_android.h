@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "base/memory/ref_counted.h"
+#include "base/task/single_thread_task_executor.h"
 #include "xwalk/runtime/browser/xwalk_browser_main_parts.h"
 
 namespace xwalk {
@@ -20,7 +21,7 @@ class XWalkBrowserMainPartsAndroid : public XWalkBrowserMainParts {
       const content::MainFunctionParams& parameters);
   ~XWalkBrowserMainPartsAndroid() override;
 
-  void PreEarlyInitialization() override;
+  int PreEarlyInitialization() override;
   void PreMainMessageLoopStart() override;
   void PostMainMessageLoopStart() override;
   void PreMainMessageLoopRun() override;
@@ -42,6 +43,8 @@ class XWalkBrowserMainPartsAndroid : public XWalkBrowserMainParts {
   void RegisterExtensionInPath(const std::string& path);
 
  private:
+  // Android specific UI SingleThreadTaskExecutor.
+  std::unique_ptr<base::SingleThreadTaskExecutor> main_task_executor_;
   extensions::XWalkExtensionVector extensions_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkBrowserMainPartsAndroid);

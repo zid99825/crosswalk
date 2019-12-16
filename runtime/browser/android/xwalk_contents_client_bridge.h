@@ -31,9 +31,12 @@ namespace net {
 class X509Certificate;
 }
 
-namespace content {
+namespace blink {
 struct NotificationResources;
 struct PlatformNotificationData;
+}  // namespace blink
+
+namespace content {
 class RenderFrameHost;
 class WebContents;
 }
@@ -52,6 +55,8 @@ namespace xwalk {
 // TODO(iotto) : Move IconHelper
 class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
  public:
+  using CertErrorCallback = base::OnceCallback<void(content::CertificateRequestResultType)>;
+
   // Adds the handler to the UserData registry.
   static void Associate(content::WebContents* web_contents, XWalkContentsClientBridge* handler);
   static XWalkContentsClientBridge* FromWebContents(content::WebContents* web_contents);
@@ -68,15 +73,15 @@ class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
 
   // XWalkContentsClientBridge implementation
   void AllowCertificateError(int cert_error, net::X509Certificate* cert, const GURL& request_url,
-                             const base::Callback<void(content::CertificateRequestResultType)>& callback);
+                             CertErrorCallback callback, bool* cancel_request);
 
   void RunJavaScriptDialog(content::JavaScriptDialogType dialog_type, const GURL& origin_url,
                            const base::string16& message_text, const base::string16& default_prompt_text,
                            content::JavaScriptDialogManager::DialogClosedCallback callback);
   void RunBeforeUnloadDialog(const GURL& origin_url,
                              content::JavaScriptDialogManager::DialogClosedCallback callback);
-  void ShowNotification(const content::PlatformNotificationData& notification_data,
-                        const content::NotificationResources& notification_resources);
+  void ShowNotification(const blink::PlatformNotificationData& notification_data,
+                        const blink::NotificationResources& notification_resources);
   void OnWebLayoutPageScaleFactorChanged(float page_scale_factor);
 
   bool OnReceivedHttpAuthRequest(const base::android::JavaRef<jobject>& handler, const std::string& host,
@@ -123,7 +128,6 @@ class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
  private:
   JavaObjectWeakGlobalRef java_ref_;
 
-  typedef const base::Callback<void(content::CertificateRequestResultType)> CertErrorCallback; // NOLINT
   base::IDMap<std::unique_ptr<CertErrorCallback>> pending_cert_error_callbacks_;
   base::IDMap<std::unique_ptr<content::JavaScriptDialogManager::DialogClosedCallback>>
       pending_js_dialog_callbacks_;

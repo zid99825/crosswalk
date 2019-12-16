@@ -23,22 +23,23 @@
 #include "base/single_thread_task_runner.h"
 #include "base/synchronization/lock.h"
 #include "base/synchronization/waitable_event.h"
-#include "base/threading/sequenced_worker_pool.h"
+#include "base/task/post_task.h"
 #include "base/threading/thread.h"
 #include "base/threading/thread_restrictions.h"
 #include "content/public/browser/browser_context.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/cookie_store_factory.h"
 #include "content/public/common/url_constants.h"
 #include "net/cookies/canonical_cookie.h"
 
-#include "jni/XWalkCookieManager_jni.h"
 #include "net/cookies/cookie_monster.h"
 #include "net/cookies/cookie_options.h"
 #include "net/cookies/cookie_store.h"
 #include "net/cookies/cookie_util.h"
 #include "net/url_request/url_request_context.h"
 #include "ui/base/resource/resource_bundle.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkCookieManager_jni.h"
 #include "xwalk/runtime/browser/android/scoped_allow_wait_for_legacy_web_view_api.h"
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
 #include "xwalk/runtime/browser/xwalk_browser_main_parts_android.h"
@@ -78,7 +79,7 @@ void ImportKitkatDataIfNecessary(const base::FilePath& old_data_dir,
 
   const char* possible_data_dir_names[] = { "Cache", "Cookies",
       "Cookies-journal", "IndexedDB", "Local Storage", };
-  for (size_t i = 0; i < arraysize(possible_data_dir_names); i++) {
+  for (size_t i = 0; i < base::size(possible_data_dir_names); i++) {
     base::FilePath dir = old_data_dir.Append(possible_data_dir_names[i]);
     if (base::PathExists(dir)) {
       if (!base::Move(dir, profile.Append(possible_data_dir_names[i]))) {
@@ -123,7 +124,7 @@ void MoveUserDataDirIfNecessary(const base::FilePath& user_data_dir,
 }
 
 void GetUserDataDir(FilePath* user_data_dir) {
-  if (!PathService::Get(base::DIR_ANDROID_APP_DATA, user_data_dir)) {
+  if (!base::PathService::Get(base::DIR_ANDROID_APP_DATA, user_data_dir)) {
     NOTREACHED() << "Failed to get app data directory for Android WebView";
   }
 }
@@ -177,14 +178,13 @@ class CookieManager {
   void SaveCookiesAsyncHelper(base::Pickle *dstPickle,
                               base::WaitableEvent* completion);
 
-  void SaveCookiesCompleted(base::Pickle *dstPickle,
-                            base::WaitableEvent* completion,
-                            const net::CookieList& cookies);
+  void SaveCookiesCompleted(base::Pickle *dstPickle, base::WaitableEvent* completion, const net::CookieList& cookies,
+                            const net::CookieStatusList& excluded_list);
 
   void RestoreCookies(CookieByteArray * cb);
   void RestoreCookiesAsyncHelper(CookieByteArray * cb,
                                  base::WaitableEvent* completion);
-  void RestoreCookieCallback(bool success);
+  void RestoreCookieCallback(net::CanonicalCookie::CookieInclusionStatus status);
 
   void SetAcceptCookie(bool accept);
   bool AcceptCookie();
@@ -217,12 +217,12 @@ class CookieManager {
 
   void SetCookieAsyncHelper(const GURL& host, const std::string& value,
                             base::WaitableEvent* completion);
-  void SetCookieCompleted(bool success);
+  void SetCookieCompleted(net::CanonicalCookie::CookieInclusionStatus status);
 
   void GetCookieValueAsyncHelper(const GURL& host, std::string* result,
                                  base::WaitableEvent* completion);
-  void GetCookieValueCompleted(base::WaitableEvent* completion,
-                               std::string* result, const std::string& value);
+  void GetCookieValueCompleted(base::WaitableEvent* completion, std::string* result, const net::CookieList& cookies,
+                               const net::CookieStatusList& excluded_list);
 
   void RemoveSessionCookieAsyncHelper(base::WaitableEvent* completion);
   void RemoveAllCookieAsyncHelper(base::WaitableEvent* completion);
@@ -231,8 +231,8 @@ class CookieManager {
   void FlushCookieStoreAsyncHelper(base::WaitableEvent* completion);
 
   void HasCookiesAsyncHelper(bool* result, base::WaitableEvent* completion);
-  void HasCookiesCompleted(base::WaitableEvent* completion, bool* result,
-                           const net::CookieList& cookies);
+  void HasCookiesCompleted(base::WaitableEvent* completion, bool* result, const net::CookieList& cookies,
+                           const net::CookieStatusList& excluded_list);
 
 #ifdef TENTA_CHROMIUM_BUILD
   void TriggerCookieFetchAsyncHelper(base::WaitableEvent* completion);
@@ -282,10 +282,10 @@ CookieManager::CookieManager()
       cookie_store_client_thread_("CookieMonsterClient"),
       cookie_store_backend_thread_("CookieMonsterBackend") {
   // make MessageLoopForIO type!
-  base::Thread::Options op(base::MessageLoop::Type::TYPE_IO, 0 /*default stack size*/);
+  base::Thread::Options op(base::MessageLoop::TYPE_IO, 0 /*default stack size*/);
   cookie_store_client_thread_.StartWithOptions(op);
 //  cookie_store_task_runner_ = cookie_store_client_thread_.task_runner();
-  cookie_store_task_runner_ = BrowserThread::GetTaskRunnerForThread(BrowserThread::IO);
+  cookie_store_task_runner_ = base::CreateSingleThreadTaskRunnerWithTraits({content::BrowserThread::IO});
 
   cookie_store_backend_thread_.Start();
   TENTA_LOG_COOKIE(INFO) << __func__ << " thread_id=" << cookie_store_client_thread_.GetThreadId();
@@ -333,8 +333,10 @@ net::CookieStore* CookieManager::GetCookieStore() {
 #if TENTA_LOG_COOKIE_ENABLE == 1
     LOG(INFO) << "!!! " << __func__ << " cookie_store_path=" << cookie_store_path.value();
 #endif
-    content::CookieStoreConfig cookie_config(cookie_store_path, content::CookieStoreConfig::RESTORED_SESSION_COOKIES,
-                                             nullptr);
+    content::CookieStoreConfig cookie_config(cookie_store_path,
+                                             true /* restore_old_session_cookies */,
+                                             true /* persist_session_cookies */,
+                                             nullptr /* storage_policy */);
     // TODO(iotto) : If not set will be posted to BrowerThread::IO
     cookie_config.client_task_runner = cookie_store_task_runner_;
 
@@ -387,13 +389,13 @@ void CookieManager::SetCookieAsyncHelper(const GURL& host, const std::string& va
   options.set_include_httponly();
 
   GetCookieStore()->SetCookieWithOptionsAsync(host, value, options,
-                                              base::Bind(&CookieManager::SetCookieCompleted, base::Unretained(this)));
+                                              base::BindOnce(&CookieManager::SetCookieCompleted, base::Unretained(this)));
 }
 
-void CookieManager::SetCookieCompleted(bool success) {
+void CookieManager::SetCookieCompleted(net::CanonicalCookie::CookieInclusionStatus status) {
 // The CookieManager API does not return a value for SetCookie,
 // so we don't need to propagate the |success| value back to the caller.
-  TENTA_LOG_COOKIE(INFO) << __func__ << " success=" << success;
+  TENTA_LOG_COOKIE(INFO) << __func__ << " status=" << (int)status;
 }
 
 std::string CookieManager::GetCookie(const GURL& host) {
@@ -405,17 +407,15 @@ std::string CookieManager::GetCookie(const GURL& host) {
 }
 
 void CookieManager::GetCookieValueAsyncHelper(const GURL& host, std::string* result, base::WaitableEvent* completion) {
-  net::CookieOptions options;
-  options.set_include_httponly();
-
-  GetCookieStore()->GetCookiesWithOptionsAsync(
-      host, options, base::Bind(&CookieManager::GetCookieValueCompleted, base::Unretained(this), completion, result));
+  GetCookieStore()->GetAllCookiesForURLAsync(host,
+                                             base::BindOnce(&CookieManager::GetCookieValueCompleted,
+                                                            base::Unretained(this), completion, result));
 }
 
 void CookieManager::GetCookieValueCompleted(base::WaitableEvent* completion, std::string* result,
-                                            const std::string& value) {
-  *result = value;
-  DCHECK(completion);
+                                            const net::CookieList& cookies,
+                                              const net::CookieStatusList& excluded_list) {
+  *result = net::CanonicalCookie::BuildCookieLine(cookies);
   completion->Signal();
 }
 
@@ -462,7 +462,7 @@ void CookieManager::RemoveExpiredCookie() {
 
 void CookieManager::FlushCookieStoreAsyncHelper(base::WaitableEvent* completion) {
   DCHECK(!completion);
-  GetCookieStore()->FlushStore(base::Bind(&base::DoNothing));
+  GetCookieStore()->FlushStore(base::DoNothing());
 }
 
 void CookieManager::FlushCookieStore() {
@@ -529,11 +529,11 @@ void CookieManager::SaveCookies(base::Pickle *dstPickle) {
 
 void CookieManager::SaveCookiesAsyncHelper(base::Pickle *dstPickle, base::WaitableEvent* completion) {
   GetCookieStore()->GetAllCookiesAsync(
-      base::Bind(&CookieManager::SaveCookiesCompleted, base::Unretained(this), dstPickle, completion));
+      base::BindOnce(&CookieManager::SaveCookiesCompleted, base::Unretained(this), dstPickle, completion));
 }
 
 void CookieManager::SaveCookiesCompleted(base::Pickle *pickle, base::WaitableEvent* completion,
-                                         const net::CookieList& cookies) {
+                                         const net::CookieList& cookies, const net::CookieStatusList& excluded_list) {
   DCHECK(pickle != nullptr);
 
 // write list to pickle
@@ -594,8 +594,11 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb, base::Waitab
     base::Pickle pickle(cb->data(), cb->len());
     base::PickleIterator it(pickle);
 
-    net::CookieStore::SetCookiesCallback callback = base::Bind(&CookieManager::RestoreCookieCallback,
+    net::CookieStore::SetCookiesCallback callback = base::BindOnce(&CookieManager::RestoreCookieCallback,
                                                                base::Unretained(this));
+
+    net::CookieOptions options;
+    options.set_include_httponly();
 
     int cnt;  // cookie count
 
@@ -619,8 +622,8 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb, base::Waitab
               base::Time::FromInternalValue(e_time), base::Time::FromInternalValue(l_time), secure, http_only,
               static_cast<net::CookieSameSite>(same_site), static_cast<net::CookiePriority>(prio));
 
-          cs->SetCanonicalCookieAsync(std::move(cookie), true /*secure_source*/, true /*modify_http_only*/,
-                                      std::move(callback));
+          cs->SetCanonicalCookieAsync(std::move(cookie), url.scheme(), options,
+                                      base::BindOnce(&CookieManager::RestoreCookieCallback, base::Unretained(this)));
 
 #if TENTA_LOG_COOKIE_ENABLE == 1
           LOG(INFO) << "Cookie restored name=" << name << " value=" << value << " domain=" << domain << " url="
@@ -645,8 +648,8 @@ void CookieManager::RestoreCookiesAsyncHelper(CookieByteArray * cb, base::Waitab
   }
 }
 
-void CookieManager::RestoreCookieCallback(bool success) {
-  TENTA_LOG_COOKIE(INFO) << "!!! " << __func__ << " success=" << (success == true ? "true" : "false");
+void CookieManager::RestoreCookieCallback(net::CanonicalCookie::CookieInclusionStatus status) {
+  TENTA_LOG_COOKIE(INFO) << "!!! " << __func__ << " status=" << (int)status;
 }
 
 bool CookieManager::HasCookies() {
@@ -660,12 +663,11 @@ bool CookieManager::HasCookies() {
 // should not be needed.
 void CookieManager::HasCookiesAsyncHelper(bool* result, base::WaitableEvent* completion) {
   GetCookieStore()->GetAllCookiesAsync(
-      base::Bind(&CookieManager::HasCookiesCompleted, base::Unretained(this), completion, result));
+      base::BindOnce(&CookieManager::HasCookiesCompleted, base::Unretained(this), completion, result));
 }
 
-void CookieManager::HasCookiesCompleted(base::WaitableEvent* completion,
-bool* result,
-                                        const CookieList& cookies) {
+void CookieManager::HasCookiesCompleted(base::WaitableEvent* completion, bool* result, const net::CookieList& cookies,
+                                        const net::CookieStatusList& excluded_list) {
   *result = cookies.size() != 0;
   DCHECK(completion);
   completion->Signal();
@@ -762,7 +764,8 @@ void CookieManager::SetZoneAsyncHelper(const std::string& zone, base::WaitableEv
 void CookieManager::SetZoneDoneDelete(const std::string& zone, uint32_t num_deleted) {
   TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone << " num_deleted=" << num_deleted;
 
-  GetCookieStore()->TriggerCookieFetch();
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT TriggerCookieFetch";
+//  GetCookieStore()->TriggerCookieFetch();
   _tenta_store->ZoneSwitching(false);  // done switching zone
 }
 
@@ -771,7 +774,9 @@ void CookieManager::SetZoneDoneDelete(const std::string& zone, uint32_t num_dele
  */
 void CookieManager::TriggerCookieFetchAsyncHelper(base::WaitableEvent* completion) {
   TENTA_LOG_COOKIE(INFO) << __func__;
-  GetCookieStore()->TriggerCookieFetch();
+
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT TriggerCookieFetch";
+//  GetCookieStore()->TriggerCookieFetch();
 }
 #endif // TENTA_CHROMIUM_BUILD
 

@@ -5,7 +5,9 @@
 #include "xwalk/runtime/browser/android/net_disk_cache_remover.h"
 
 #include "base/bind_helpers.h"
+#include "base/task/post_task.h"
 #include "content/public/browser/browser_context.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/storage_partition.h"
@@ -28,12 +30,12 @@ void Noop(int rv) {
 
 void CallDoomAllEntries(Backend** backend, int rv) {
   DCHECK(rv == net::OK);
-  (*backend)->DoomAllEntries(base::Bind(&Noop));
+  (*backend)->DoomAllEntries(base::BindOnce(&Noop));
 }
 
-void CallDoomEntry(Backend** backend, const std::string& key, int rv) {
+void CallDoomEntry(Backend** backend, const std::string& key, net::RequestPriority priority, int rv) {
   DCHECK(rv == net::OK);
-  (*backend)->DoomEntry(key, base::Bind(&Noop));
+  (*backend)->DoomEntry(key, priority, base::BindOnce(&Noop));
 }
 
 void ClearHttpDiskCacheOfContext(URLRequestContextGetter* context_getter,
@@ -44,19 +46,14 @@ void ClearHttpDiskCacheOfContext(URLRequestContextGetter* context_getter,
   if (!key.empty()) {
     callback = base::BindOnce(&CallDoomEntry,
                           base::Owned(backend_ptr),
-                          key);
+                          key, net::RequestPriority::DEFAULT_PRIORITY);
   } else {
     callback = base::BindOnce(&CallDoomAllEntries,
                           base::Owned(backend_ptr));
   }
 
-  int rv = context_getter->GetURLRequestContext()->
-    http_transaction_factory()->GetCache()->GetBackend(backend_ptr, callback);
-
-  // If not net::ERR_IO_PENDING, then backend pointer is updated but callback
-  // is not called, so call it explicitly.
-  if (rv != net::ERR_IO_PENDING)
-    callback.Run(net::OK);
+  context_getter->GetURLRequestContext()->
+    http_transaction_factory()->GetCache()->GetBackend(backend_ptr, std::move(callback));
 }
 
 void ClearHttpDiskCacheOnIoThread(
@@ -73,9 +70,8 @@ namespace xwalk {
 
 void RemoveHttpDiskCache(content::RenderProcessHost* render_process_host,
                          const std::string& key) {
-  BrowserThread::PostTask(
-      BrowserThread::IO, FROM_HERE,
-      base::Bind(&ClearHttpDiskCacheOnIoThread,
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::IO},
+      base::BindOnce(&ClearHttpDiskCacheOnIoThread,
                  base::Unretained(render_process_host->GetStoragePartition()->
                      GetURLRequestContext()),
                  base::Unretained(render_process_host->GetStoragePartition()->

@@ -31,12 +31,7 @@ class XWalkDevToolsManagerDelegate : public content::DevToolsManagerDelegate {
   std::string GetTargetType(content::WebContents* web_contents) override;
   std::string GetTargetDescription(content::WebContents* web_contents) override;
   std::string GetDiscoveryPageHTML() override;
-  std::string GetFrontendResource(const std::string& path) override;
   bool IsBrowserTargetDiscoverable() override;
-
-  bool HandleCommand(content::DevToolsAgentHost* agent_host,
-                     int session_id,
-                     base::DictionaryValue* command_dict) override;
 
   ~XWalkDevToolsManagerDelegate() override;
 

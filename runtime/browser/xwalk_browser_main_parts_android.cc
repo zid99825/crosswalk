@@ -13,7 +13,7 @@
 #include "base/macros.h"
 #include "base/message_loop/message_loop.h"
 #include "base/path_service.h"
-#include "base/threading/sequenced_worker_pool.h"
+#include "base/process/process_metrics.h"
 #include "cc/base/switches.h"
 #include "content/public/browser/android/compositor.h"
 #include "content/public/browser/browser_thread.h"
@@ -63,7 +63,7 @@ void ImportKitkatDataIfNecessary(const base::FilePath& old_data_dir,
       "Local Storage",
       "databases",
   };
-  for (size_t i = 0; i < arraysize(possible_data_dir_names); i++) {
+  for (size_t i = 0; i < base::size(possible_data_dir_names); i++) {
     base::FilePath dir = old_data_dir.Append(possible_data_dir_names[i]);
     if (base::PathExists(dir)) {
       if (!base::Move(dir, profile.Append(possible_data_dir_names[i]))) {
@@ -126,7 +126,7 @@ using extensions::XWalkExtension;
 using content::BrowserContext;
 
 void GetUserDataDir(base::FilePath* user_data_dir) {
-  if (!PathService::Get(base::DIR_ANDROID_APP_DATA, user_data_dir)) {
+  if (!base::PathService::Get(base::DIR_ANDROID_APP_DATA, user_data_dir)) {
     NOTREACHED() << "Failed to get app data directory for Android WebView";
   }
 }
@@ -139,7 +139,7 @@ XWalkBrowserMainPartsAndroid::XWalkBrowserMainPartsAndroid(
 XWalkBrowserMainPartsAndroid::~XWalkBrowserMainPartsAndroid() {
 }
 
-void XWalkBrowserMainPartsAndroid::PreEarlyInitialization() {
+int XWalkBrowserMainPartsAndroid::PreEarlyInitialization() {
   net::NetworkChangeNotifier::SetFactory(
 //		  new tenta::NetworkChangeNotifierFactoryTenta());
       new net::NetworkChangeNotifierFactoryAndroid());
@@ -147,12 +147,18 @@ void XWalkBrowserMainPartsAndroid::PreEarlyInitialization() {
   // As Crosswalk uses in-process mode, that's easier than Chromium
   // to reach the default limit(1024) of open files per process on
   // Android. So increase the limit to 4096 explicitly.
-  base::SetFdLimit(4096);
+  base::IncreaseFdLimitTo(4096);
 
   // Initialize the Compositor.
   content::Compositor::Initialize();
 
+  if (!base::MessageLoopCurrent::IsSet()) {
+    main_task_executor_ = std::make_unique<base::SingleThreadTaskExecutor>(
+        base::MessagePump::Type::UI);
+  }
+
   XWalkBrowserMainParts::PreEarlyInitialization();
+  return service_manager::RESULT_CODE_NORMAL_EXIT;
 }
 
 void XWalkBrowserMainPartsAndroid::PreMainMessageLoopStart() {
@@ -190,7 +196,6 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopStart() {
 }
 
 void XWalkBrowserMainPartsAndroid::PostMainMessageLoopStart() {
-  base::MessageLoopForUI::current()->Start();
 }
 
 void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
@@ -215,11 +220,7 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
 #endif
   extension_service_ = xwalk_runner_->extension_service();
 
-  // Due to http://code.google.com/p/chromium/issues/detail?id=507809,
-  // it's not possible to inject javascript into the main world by default.
-  // So lift this limitation here to enable XWalkView.evaluateJavaScript
-  // to work.
-  content::RenderFrameHost::AllowInjectingJavaScriptForAndroidWebView();
+  content::RenderFrameHost::AllowInjectingJavaScript();
 
   // Prepare the cookie store.
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();

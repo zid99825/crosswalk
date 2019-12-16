@@ -21,9 +21,11 @@
 #include "base/path_service.h"
 #include "base/pickle.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/task/post_task.h"
 #include "components/navigation_interception/intercept_navigation_delegate.h"
 #include "components/version_info/version_info.h"
 #include "content/public/browser/browser_context.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/browsing_data_remover.h"
 #include "content/public/browser/devtools_agent_host.h"
@@ -33,13 +35,13 @@
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/ssl_status.h"
 #include "content/public/browser/web_contents.h"
-#include "content/public/common/renderer_preferences.h"
-//#include "content/public/common/ssl_status.h"
 #include "content/public/common/url_constants.h"
-
+#include "net/cert/x509_certificate.h"
+#include "net/cert/x509_util.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "xwalk/application/common/application_manifest_constants.h"
 #include "xwalk/application/common/manifest.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContent_jni.h"
 #include "xwalk/runtime/browser/android/net_disk_cache_remover.h"
 #include "xwalk/runtime/browser/android/state_serializer.h"
 #include "xwalk/runtime/browser/android/xwalk_autofill_client_android.h"
@@ -51,7 +53,6 @@
 #include "xwalk/runtime/browser/xwalk_autofill_manager.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
-#include "jni/XWalkContent_jni.h"
 
 #ifdef TENTA_CHROMIUM_BUILD
 #include "xwalk/third_party/tenta/meta_fs/meta_errors.h"
@@ -182,34 +183,34 @@ class XWalkContentUserData :
   XWalkContent* content_;
 };
 
-// FIXME(wang16): Remove following methods after deprecated fields
-// are not supported any more.
-void PrintManifestDeprecationWarning(std::string field) {
-  LOG(WARNING) << "\"" << field << "\" is deprecated for Crosswalk. " << "Please follow "
-               << "https://www.crosswalk-project.org/#documentation/manifest.";
-}
+//// FIXME(wang16): Remove following methods after deprecated fields
+//// are not supported any more.
+//void PrintManifestDeprecationWarning(std::string field) {
+//  LOG(WARNING) << "\"" << field << "\" is deprecated for Crosswalk. " << "Please follow "
+//               << "https://www.crosswalk-project.org/#documentation/manifest.";
+//}
 
-bool ManifestHasPath(const xwalk::application::Manifest& manifest, const std::string& path,
-                     const std::string& deprecated_path) {
-  if (manifest.HasPath(path))
-    return true;
-  if (manifest.HasPath(deprecated_path)) {
-    PrintManifestDeprecationWarning(deprecated_path);
-    return true;
-  }
-  return false;
-}
-
-bool ManifestGetString(const xwalk::application::Manifest& manifest, const std::string& path,
-                       const std::string& deprecated_path, std::string* out_value) {
-  if (manifest.GetString(path, out_value))
-    return true;
-  if (manifest.GetString(deprecated_path, out_value)) {
-    PrintManifestDeprecationWarning(deprecated_path);
-    return true;
-  }
-  return false;
-}
+//bool ManifestHasPath(const xwalk::application::Manifest& manifest, const std::string& path,
+//                     const std::string& deprecated_path) {
+//  if (manifest.HasPath(path))
+//    return true;
+//  if (manifest.HasPath(deprecated_path)) {
+//    PrintManifestDeprecationWarning(deprecated_path);
+//    return true;
+//  }
+//  return false;
+//}
+//
+//bool ManifestGetString(const xwalk::application::Manifest& manifest, const std::string& path,
+//                       const std::string& deprecated_path, std::string* out_value) {
+//  if (manifest.GetString(path, out_value))
+//    return true;
+//  if (manifest.GetString(deprecated_path, out_value)) {
+//    PrintManifestDeprecationWarning(deprecated_path);
+//    return true;
+//  }
+//  return false;
+//}
 
 }  // namespace
 
@@ -275,7 +276,7 @@ void XWalkContent::SetJavaPeers(
   web_contents_delegate_.reset(new XWalkWebContentsDelegate(env, web_contents_delegate));
   contents_client_bridge_.reset(new XWalkContentsClientBridge(env, contents_client_bridge, web_contents_.get()));
 
-  web_contents_->SetUserData(kXWalkContentUserDataKey, base::MakeUnique<XWalkContentUserData>(this));
+  web_contents_->SetUserData(kXWalkContentUserDataKey, std::make_unique<XWalkContentUserData>(this));
 
   XWalkContentsIoThreadClientImpl::RegisterPendingContents(web_contents_.get());
 
@@ -297,9 +298,8 @@ void XWalkContent::SetJavaPeers(
   Java_XWalkContent_getTabId(env, obj);
 #endif // TENTA_CHROMIUM_BUILD
 
-  // XWalk does not use disambiguation popup for multiple targets.
-  content::RendererPreferences* prefs = web_contents_->GetMutableRendererPrefs();
-  prefs->tap_multiple_targets_strategy = content::TAP_MULTIPLE_TARGETS_STRATEGY_NONE;
+//  // XWalk does not use disambiguation popup for multiple targets.
+//  blink::mojom::RendererPreferences* prefs = web_contents_->GetMutableRendererPrefs();
 
   XWalkContentsClientBridge::Associate(web_contents_.get(),
                                            contents_client_bridge_.get());
@@ -331,10 +331,14 @@ void XWalkContent::SetPendingWebContentsForPopup(std::unique_ptr<content::WebCon
   if (pending_contents_.get()) {
     // TODO(benm): Support holding multiple pop up window requests.
     LOG(WARNING) << "Blocking popup window creation as an outstanding " << "popup window is still pending.";
-    base::MessageLoop::current()->task_runner()->DeleteSoon(FROM_HERE, pending.release());
+    base::ThreadTaskRunnerHandle::Get()->DeleteSoon(FROM_HERE, pending.release());
     return;
   }
   pending_contents_.reset(new XWalkContent(std::move(pending)));
+  LOG(ERROR) << "iotto " << __func__ << " FIX";
+//  // Set dip_scale for pending contents, which is necessary for the later
+//  // SynchronousCompositor and InputHandler setup.
+//  pending_contents_->SetDipScaleInternal(browser_view_renderer_.dip_scale());
 }
 
 jlong XWalkContent::ReleasePopupXWalkContent(JNIEnv* env, jobject obj) {
@@ -425,7 +429,7 @@ ScopedJavaLocalRef<jstring> XWalkContent::GetVersion(JNIEnv* env, jobject obj) {
 }
 
 static ScopedJavaLocalRef<jstring> JNI_XWalkContent_GetChromeVersion(
-    JNIEnv* env, const base::android::JavaParamRef<jclass>& jcaller) {
+    JNIEnv* env) {
   LOG(INFO) << "GetChromeVersion=" << version_info::GetVersionNumber();
   return base::android::ConvertUTF8ToJavaString(env, version_info::GetVersionNumber());
 }
@@ -437,122 +441,123 @@ void XWalkContent::SetJsOnlineProperty(JNIEnv* env, jobject obj, jboolean networ
 jboolean XWalkContent::SetManifest(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
                                    const base::android::JavaParamRef<jstring>& path,
                                    const base::android::JavaParamRef<jstring>& manifest_string) {
-  std::string path_str = base::android::ConvertJavaStringToUTF8(env, path);
-  std::string json_input = base::android::ConvertJavaStringToUTF8(env, manifest_string);
-
-  std::unique_ptr<base::Value> manifest_value = base::JSONReader::Read(json_input);
-  if (!manifest_value || !manifest_value->IsType(base::Value::Type::DICTIONARY))
-    return false;
-
-  xwalk::application::Manifest manifest(
-      base::WrapUnique(static_cast<base::DictionaryValue*>(manifest_value.release())));
-
-  std::string url;
-  if (manifest.GetString(keys::kStartURLKey, &url)) {
-    std::string scheme = GURL(url).scheme();
-    if (scheme.empty())
-      url = path_str + url;
-  } else if (manifest.GetString(keys::kLaunchLocalPathKey, &url)) {
-    PrintManifestDeprecationWarning(keys::kLaunchLocalPathKey);
-    // According to original proposal for "app:launch:local_path", the "http"
-    // and "https" schemes are supported. So |url| should do nothing when it
-    // already has "http" or "https" scheme.
-    std::string scheme = GURL(url).scheme();
-    if (scheme != url::kHttpScheme && scheme != url::kHttpsScheme)
-      url = path_str + url;
-  } else if (manifest.GetString(keys::kLaunchWebURLKey, &url)) {
-    PrintManifestDeprecationWarning(keys::kLaunchWebURLKey);
-  } else {
-    NOTIMPLEMENTED()
-    ;
-  }
-
-  std::string match_patterns;
-  const base::ListValue* xwalk_hosts = NULL;
-  if (manifest.GetList(xwalk::application_manifest_keys::kXWalkHostsKey, &xwalk_hosts)) {
-    base::JSONWriter::Write(*xwalk_hosts, &match_patterns);
-  }
-  render_view_host_ext_->SetOriginAccessWhitelist(url, match_patterns);
-
-  std::string csp;
-  ManifestGetString(manifest, keys::kCSPKey, keys::kDeprecatedCSPKey, &csp);
-  XWalkBrowserContext* browser_context = XWalkRunner::GetInstance()->browser_context();
-  CHECK(browser_context);
-  browser_context->SetCSPString(csp);
-
-  ScopedJavaLocalRef<jstring> url_buffer = base::android::ConvertUTF8ToJavaString(env, url);
-
-  if (manifest.HasPath(kDisplay)) {
-    std::string display_string;
-    if (manifest.GetString(kDisplay, &display_string)) {
-      // TODO(David): update the handling process of the display strings
-      // including fullscreen etc.
-      bool display_as_fullscreen = base::LowerCaseEqualsASCII(display_string, "fullscreen");
-      Java_XWalkContent_onGetFullscreenFlagFromManifest(env, obj, display_as_fullscreen ? JNI_TRUE : JNI_FALSE);
-    }
-  }
-
-  // Check whether need to display launch screen. (Read from manifest.json)
-  if (ManifestHasPath(manifest, keys::kXWalkLaunchScreen, keys::kLaunchScreen)) {
-    std::string ready_when;
-    // Get the value of 'ready_when' from manifest.json
-    ManifestGetString(manifest, keys::kXWalkLaunchScreenReadyWhen, keys::kLaunchScreenReadyWhen, &ready_when);
-    ScopedJavaLocalRef<jstring> ready_when_buffer = base::android::ConvertUTF8ToJavaString(env, ready_when);
-
-    // Get the value of 'image_border'
-    // 1. When 'launch_screen.[orientation]' was defined, but no 'image_border'
-    //    The value of 'image_border' will be set as 'empty'.
-    // 2. Otherwise, there is no 'launch_screen.[orientation]' defined,
-    //    The value of 'image_border' will be empty.
-    const char empty[] = "empty";
-    std::string image_border_default;
-    ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderDefault, keys::kLaunchScreenImageBorderDefault,
-                      &image_border_default);
-    if (image_border_default.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenDefault,
-                                                        keys::kLaunchScreenDefault)) {
-      image_border_default = empty;
-    }
-
-    std::string image_border_landscape;
-    ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderLandscape, keys::kLaunchScreenImageBorderLandscape,
-                      &image_border_landscape);
-    if (image_border_landscape.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenLandscape,
-                                                          keys::kLaunchScreenLandscape)) {
-      image_border_landscape = empty;
-    }
-
-    std::string image_border_portrait;
-    ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderPortrait, keys::kLaunchScreenImageBorderPortrait,
-                      &image_border_portrait);
-    if (image_border_portrait.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenPortrait,
-                                                         keys::kLaunchScreenPortrait)) {
-      image_border_portrait = empty;
-    }
-
-    std::string image_border = image_border_default + ';' + image_border_landscape + ';' + image_border_portrait;
-    ScopedJavaLocalRef<jstring> image_border_buffer = base::android::ConvertUTF8ToJavaString(env, image_border);
-
-    Java_XWalkContent_onGetUrlAndLaunchScreenFromManifest(
-                                                          env,
-                                                          obj, url_buffer,
-                                                          ready_when_buffer,
-                                                          image_border_buffer);
-  } else {
-    // No need to display launch screen, load the url directly.
-    Java_XWalkContent_onGetUrlFromManifest(env, obj, url_buffer);
-  }
-  std::string view_background_color;
-  ManifestGetString(manifest, keys::kXWalkViewBackgroundColor, keys::kViewBackgroundColor, &view_background_color);
-
-  if (view_background_color.empty())
-    return true;
-  unsigned int view_background_color_int = 0;
-  if (!base::HexStringToUInt(view_background_color.substr(1), &view_background_color_int)) {
-    LOG(ERROR) << "Background color format error! Valid background color"
-               "should be(Alpha Red Green Blue): #ff01abcd";
-    return false;
-  }
-  Java_XWalkContent_setBackgroundColor(env, obj, view_background_color_int);
+  LOG(ERROR) << "iotto " << __func__ << " FIX if in use";
+//  std::string path_str = base::android::ConvertJavaStringToUTF8(env, path);
+//  std::string json_input = base::android::ConvertJavaStringToUTF8(env, manifest_string);
+//
+//  std::unique_ptr<base::Value> manifest_value = base::JSONReader::Read(json_input);
+//  if (!manifest_value || !manifest_value->IsType(base::Value::Type::DICTIONARY))
+//    return false;
+//
+//  xwalk::application::Manifest manifest(
+//      base::WrapUnique(static_cast<base::DictionaryValue*>(manifest_value.release())));
+//
+//  std::string url;
+//  if (manifest.GetString(keys::kStartURLKey, &url)) {
+//    std::string scheme = GURL(url).scheme();
+//    if (scheme.empty())
+//      url = path_str + url;
+//  } else if (manifest.GetString(keys::kLaunchLocalPathKey, &url)) {
+//    PrintManifestDeprecationWarning(keys::kLaunchLocalPathKey);
+//    // According to original proposal for "app:launch:local_path", the "http"
+//    // and "https" schemes are supported. So |url| should do nothing when it
+//    // already has "http" or "https" scheme.
+//    std::string scheme = GURL(url).scheme();
+//    if (scheme != url::kHttpScheme && scheme != url::kHttpsScheme)
+//      url = path_str + url;
+//  } else if (manifest.GetString(keys::kLaunchWebURLKey, &url)) {
+//    PrintManifestDeprecationWarning(keys::kLaunchWebURLKey);
+//  } else {
+//    NOTIMPLEMENTED()
+//    ;
+//  }
+//
+//  std::string match_patterns;
+//  const base::ListValue* xwalk_hosts = NULL;
+//  if (manifest.GetList(xwalk::application_manifest_keys::kXWalkHostsKey, &xwalk_hosts)) {
+//    base::JSONWriter::Write(*xwalk_hosts, &match_patterns);
+//  }
+//  render_view_host_ext_->SetOriginAccessWhitelist(url, match_patterns);
+//
+//  std::string csp;
+//  ManifestGetString(manifest, keys::kCSPKey, keys::kDeprecatedCSPKey, &csp);
+//  XWalkBrowserContext* browser_context = XWalkRunner::GetInstance()->browser_context();
+//  CHECK(browser_context);
+//  browser_context->SetCSPString(csp);
+//
+//  ScopedJavaLocalRef<jstring> url_buffer = base::android::ConvertUTF8ToJavaString(env, url);
+//
+//  if (manifest.HasPath(kDisplay)) {
+//    std::string display_string;
+//    if (manifest.GetString(kDisplay, &display_string)) {
+//      // TODO(David): update the handling process of the display strings
+//      // including fullscreen etc.
+//      bool display_as_fullscreen = base::LowerCaseEqualsASCII(display_string, "fullscreen");
+//      Java_XWalkContent_onGetFullscreenFlagFromManifest(env, obj, display_as_fullscreen ? JNI_TRUE : JNI_FALSE);
+//    }
+//  }
+//
+//  // Check whether need to display launch screen. (Read from manifest.json)
+//  if (ManifestHasPath(manifest, keys::kXWalkLaunchScreen, keys::kLaunchScreen)) {
+//    std::string ready_when;
+//    // Get the value of 'ready_when' from manifest.json
+//    ManifestGetString(manifest, keys::kXWalkLaunchScreenReadyWhen, keys::kLaunchScreenReadyWhen, &ready_when);
+//    ScopedJavaLocalRef<jstring> ready_when_buffer = base::android::ConvertUTF8ToJavaString(env, ready_when);
+//
+//    // Get the value of 'image_border'
+//    // 1. When 'launch_screen.[orientation]' was defined, but no 'image_border'
+//    //    The value of 'image_border' will be set as 'empty'.
+//    // 2. Otherwise, there is no 'launch_screen.[orientation]' defined,
+//    //    The value of 'image_border' will be empty.
+//    const char empty[] = "empty";
+//    std::string image_border_default;
+//    ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderDefault, keys::kLaunchScreenImageBorderDefault,
+//                      &image_border_default);
+//    if (image_border_default.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenDefault,
+//                                                        keys::kLaunchScreenDefault)) {
+//      image_border_default = empty;
+//    }
+//
+//    std::string image_border_landscape;
+//    ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderLandscape, keys::kLaunchScreenImageBorderLandscape,
+//                      &image_border_landscape);
+//    if (image_border_landscape.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenLandscape,
+//                                                          keys::kLaunchScreenLandscape)) {
+//      image_border_landscape = empty;
+//    }
+//
+//    std::string image_border_portrait;
+//    ManifestGetString(manifest, keys::kXWalkLaunchScreenImageBorderPortrait, keys::kLaunchScreenImageBorderPortrait,
+//                      &image_border_portrait);
+//    if (image_border_portrait.empty() && ManifestHasPath(manifest, keys::kXWalkLaunchScreenPortrait,
+//                                                         keys::kLaunchScreenPortrait)) {
+//      image_border_portrait = empty;
+//    }
+//
+//    std::string image_border = image_border_default + ';' + image_border_landscape + ';' + image_border_portrait;
+//    ScopedJavaLocalRef<jstring> image_border_buffer = base::android::ConvertUTF8ToJavaString(env, image_border);
+//
+//    Java_XWalkContent_onGetUrlAndLaunchScreenFromManifest(
+//                                                          env,
+//                                                          obj, url_buffer,
+//                                                          ready_when_buffer,
+//                                                          image_border_buffer);
+//  } else {
+//    // No need to display launch screen, load the url directly.
+//    Java_XWalkContent_onGetUrlFromManifest(env, obj, url_buffer);
+//  }
+//  std::string view_background_color;
+//  ManifestGetString(manifest, keys::kXWalkViewBackgroundColor, keys::kViewBackgroundColor, &view_background_color);
+//
+//  if (view_background_color.empty())
+//    return true;
+//  unsigned int view_background_color_int = 0;
+//  if (!base::HexStringToUInt(view_background_color.substr(1), &view_background_color_int)) {
+//    LOG(ERROR) << "Background color format error! Valid background color"
+//               "should be(Alpha Red Green Blue): #ff01abcd";
+//    return false;
+//  }
+//  Java_XWalkContent_setBackgroundColor(env, obj, view_background_color_int);
   return true;
 }
 
@@ -570,7 +575,7 @@ base::android::ScopedJavaLocalRef<jbyteArray> XWalkContent::GetState(JNIEnv* env
   return base::android::ToJavaByteArray(env, reinterpret_cast<const uint8_t*>(pickle.data()), pickle.size());
 }
 
-jboolean XWalkContent::SetState(JNIEnv* env, jobject obj, jbyteArray state) {
+jboolean XWalkContent::SetState(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jbyteArray>& state) {
   std::vector<uint8_t> state_vector;
   base::android::JavaByteArrayToByteVector(env, state, &state_vector);
 
@@ -893,9 +898,8 @@ void ShowGeolocationPromptHelperTask(const JavaObjectWeakGlobalRef& java_ref, co
 void ShowGeolocationPromptHelper(const JavaObjectWeakGlobalRef& java_ref, const GURL& origin) {
   JNIEnv* env = AttachCurrentThread();
   if (java_ref.get(env).obj()) {
-    content::BrowserThread::PostTask(content::BrowserThread::UI,
-    FROM_HERE,
-    base::Bind(&ShowGeolocationPromptHelperTask,
+    base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+    base::BindOnce(&ShowGeolocationPromptHelperTask,
         java_ref,
         origin));
   }
@@ -903,10 +907,11 @@ void ShowGeolocationPromptHelper(const JavaObjectWeakGlobalRef& java_ref, const 
 }
 // anonymous namespace
 
-                                     void XWalkContent::ShowGeolocationPrompt(const GURL& requesting_frame, const base::Callback<void(bool)>& callback) {  // NOLINT
+void XWalkContent::ShowGeolocationPrompt(const GURL& requesting_frame,
+                                         base::OnceCallback<void(bool)> callback) {  // NOLINT
       GURL origin = requesting_frame.GetOrigin();
       bool show_prompt = pending_geolocation_prompts_.empty();
-      pending_geolocation_prompts_.push_back(OriginCallback(origin, callback));
+      pending_geolocation_prompts_.push_back(OriginCallback(origin, std::move(callback)));
       if (show_prompt) {
         ShowGeolocationPromptHelper(java_ref_, origin);
       }
@@ -916,7 +921,7 @@ void ShowGeolocationPromptHelper(const JavaObjectWeakGlobalRef& java_ref, const 
 void XWalkContent::InvokeGeolocationCallback(JNIEnv* env, jobject obj, jboolean value, jstring origin) {
   GURL callback_origin(base::android::ConvertJavaStringToUTF16(env, origin));
   if (callback_origin.GetOrigin() == pending_geolocation_prompts_.front().first) {
-    pending_geolocation_prompts_.front().second.Run(value);
+    std::move(pending_geolocation_prompts_.front().second).Run(value);
     pending_geolocation_prompts_.pop_front();
     if (!pending_geolocation_prompts_.empty()) {
       ShowGeolocationPromptHelper(java_ref_, pending_geolocation_prompts_.front().first);
@@ -951,7 +956,7 @@ void XWalkContent::HideGeolocationPrompt(const GURL& origin) {
 }
 
 // Called by Java.
-void XWalkContent::SetBackgroundColor(JNIEnv* env, jobject obj, jint color) {
+void XWalkContent::SetBackgroundColor(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, jint color) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   render_view_host_ext_->SetBackgroundColor(color);
 }
@@ -971,8 +976,8 @@ base::android::ScopedJavaLocalRef<jbyteArray> XWalkContent::GetCertificate(JNIEn
   }
 
   // Convert the certificate and return it
-  std::string der_string;
-  net::X509Certificate::GetDEREncoded(entry->GetSSL().certificate->os_cert_handle(), &der_string);
+  base::StringPiece der_string = net::x509_util::CryptoBufferAsStringPiece(
+      entry->GetSSL().certificate->cert_buffer());
   return base::android::ToJavaByteArray(env, reinterpret_cast<const uint8_t*>(der_string.data()), der_string.length());
 }
 
@@ -994,20 +999,20 @@ base::android::ScopedJavaLocalRef<jobjectArray> XWalkContent::GetCertificateChai
 
   std::vector<std::string> cert_chain;
   // Convert the certificate and return it
-  std::string der_string;
-  net::X509Certificate::GetDEREncoded(cert->os_cert_handle(), &der_string);
+  base::StringPiece der_string = net::x509_util::CryptoBufferAsStringPiece(
+      entry->GetSSL().certificate->cert_buffer());
 
-  cert_chain.push_back(der_string);  // store main cert
+  cert_chain.push_back(der_string.as_string());  // store main cert
 
   // iterate over the list of intermediates
-  const net::X509Certificate::OSCertHandles& intermediates = cert->GetIntermediateCertificates();
+//  const net::X509Certificate::OSCertHandles& intermediates = cert->intermediate_buffers();
+  const std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>& intermediates = cert->intermediate_buffers();
 
   for (size_t i = 0; i < intermediates.size(); ++i) {
-    der_string.clear();
+    der_string = net::x509_util::CryptoBufferAsStringPiece(
+        intermediates[i].get());
 
-    net::X509Certificate::GetDEREncoded(intermediates[i], &der_string);
-    cert_chain.push_back(der_string);  // store intermediates
-
+    cert_chain.push_back(der_string.as_string());  // store intermediates
   }
   return base::android::ToJavaArrayOfByteArray(env, cert_chain);
 }

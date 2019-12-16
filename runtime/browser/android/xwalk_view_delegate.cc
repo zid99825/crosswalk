@@ -6,11 +6,11 @@
 
 #include "base/android/jni_android.h"
 #include "build/build_config.h"
-#include "jni/XWalkViewDelegate_jni.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkViewDelegate_jni.h"
 
 namespace xwalk {
 
-jboolean JNI_XWalkViewDelegate_IsLibraryBuiltForIA(JNIEnv* env, const base::android::JavaParamRef<jclass>& jcaller) {
+jboolean JNI_XWalkViewDelegate_IsLibraryBuiltForIA(JNIEnv* env) {
 #if defined(ARCH_CPU_X86) || defined(ARCH_CPU_X86_64)
   return JNI_TRUE;
 #else
@@ -19,7 +19,6 @@ jboolean JNI_XWalkViewDelegate_IsLibraryBuiltForIA(JNIEnv* env, const base::andr
 }
 
 bool RegisterXWalkViewDelegate(JNIEnv* env) {
-//  return RegisterNativesImpl(env);
   return false;
 }
 

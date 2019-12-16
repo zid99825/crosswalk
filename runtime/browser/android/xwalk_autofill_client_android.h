@@ -11,7 +11,7 @@
 
 #include "base/android/jni_weak_ref.h"
 #include "base/compiler_specific.h"
-#include "xwalk/runtime/browser/xwalk_autofill_client.h"
+#include "xwalk/runtime/browser/aw_xwalk_autofill_client.h"
 
 namespace gfx {
 class RectF;
@@ -27,23 +27,28 @@ namespace xwalk {
 // keep the feature enabled at the pref service, and control it via
 // the delegates.
 class XWalkAutofillClientAndroid
-    : public XWalkAutofillClient,
-      public content::WebContentsUserData<XWalkAutofillClientAndroid> {
+    : public AwXwalkAutofillClient{
  public:
-  void SuggestionSelected(JNIEnv* env, jobject obj, jint position);
+//  void SuggestionSelected(JNIEnv* env, jobject obj, jint position);
 
- private:
+  static XWalkAutofillClientAndroid* FromWebContents(content::WebContents* web_contents) {
+    return static_cast<XWalkAutofillClientAndroid*>(web_contents->GetUserData(UserDataKey()));
+  }
+ protected:
+//  using content::WebContentsUserData<AwAutofillClient>::FromWebContents;
+//  using content::WebContentsUserData<AwAutofillClient>::CreateForWebContents;
+//  using content::WebContentsUserData<AwAutofillClient>::UserDataKey;
+
   explicit XWalkAutofillClientAndroid(content::WebContents* web_contents);
   friend class content::WebContentsUserData<XWalkAutofillClientAndroid>;
 
-  void ShowAutofillPopupImpl(
-      const gfx::RectF& element_bounds,
-      base::i18n::TextDirection text_direction,
-      const std::vector<autofill::Suggestion>& suggestions) override;
+  void ShowAutofillPopupImpl(const gfx::RectF& element_bounds, bool is_rtl,
+                             const std::vector<autofill::Suggestion>& suggestions) override;
   void HideAutofillPopupImpl() override;
 
   JavaObjectWeakGlobalRef java_ref_;
 
+  WEB_CONTENTS_USER_DATA_KEY_DECL();
   DISALLOW_COPY_AND_ASSIGN(XWalkAutofillClientAndroid);
 };
 

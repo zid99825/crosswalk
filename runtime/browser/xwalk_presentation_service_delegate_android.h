@@ -27,6 +27,7 @@ class XWalkPresentationServiceDelegateAndroid
 
   friend class content::WebContentsUserData<
       XWalkPresentationServiceDelegateAndroid>;
+  WEB_CONTENTS_USER_DATA_KEY_DECL();
 
  public:
   void StartPresentation(
