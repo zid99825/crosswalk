@@ -464,3 +464,39 @@ template("generate_jni_with_includes") {
     ]
   }
 }
+
+# Creates raw Android resources from sources
+template("raw_resources") {
+  _deps = []
+  if (defined(invoker.deps)) {
+    _deps = invoker.deps
+  }
+
+  _sources = []
+  if (defined(invoker.sources)) {
+    _sources = invoker.sources
+  }
+
+  _copy_target_name = "${target_name}_copy"
+  _zip_target_name = "${target_name}_zip"
+  _res_dir = "$target_gen_dir/$target_name"
+  _res_zip = "$_res_dir/res.zip"
+
+  copy(_copy_target_name) {
+    deps = _deps
+    sources = _sources
+    outputs = ["$_res_dir/raw/{{source_file_part}}"]
+  }
+
+  zip(_zip_target_name) {
+    deps = [":$_copy_target_name"]
+    base_dir = _res_dir
+    inputs = get_target_outputs(":$_copy_target_name")
+    output = _res_zip
+  }
+
+  android_generated_resources(target_name) {
+    generated_resources_zip = _res_zip
+    generating_target_name = ":$_zip_target_name"
+  }
+}
