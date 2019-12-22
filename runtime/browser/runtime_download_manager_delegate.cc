@@ -17,8 +17,11 @@
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "base/task/post_task.h"
+#include "base/task/task_traits.h"
 #include "components/download/public/common/download_interrupt_reasons.h"
 #include "content/public/browser/browser_context.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/download_manager.h"
 #include "content/public/browser/web_contents.h"
@@ -40,7 +43,7 @@ using content::BrowserThread;
 namespace xwalk {
 
 RuntimeDownloadManagerDelegate::RuntimeDownloadManagerDelegate()
-    : /*download_manager_(NULL),*/
+    : download_manager_(NULL),
       suppress_prompting_(false) {
   // Balanced in Shutdown();
   AddRef();
@@ -49,10 +52,9 @@ RuntimeDownloadManagerDelegate::RuntimeDownloadManagerDelegate()
 RuntimeDownloadManagerDelegate::~RuntimeDownloadManagerDelegate() {
 }
 
-//void RuntimeDownloadManagerDelegate::SetDownloadManager(
-//    content::DownloadManager* download_manager) {
-//  download_manager_ = download_manager;
-//}
+void RuntimeDownloadManagerDelegate::SetDownloadManager(content::DownloadManager* download_manager) {
+  download_manager_ = download_manager;
+}
 
 void RuntimeDownloadManagerDelegate::Shutdown() {
   Release();
@@ -71,7 +73,7 @@ bool RuntimeDownloadManagerDelegate::DetermineDownloadTarget(
   if (!download->GetForcedFilePath().empty()) {
     callback.Run(download->GetForcedFilePath(),
                  download::DownloadItem::TARGET_DISPOSITION_OVERWRITE,
-                 donwload::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS,
+                 download::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS,
                  download->GetForcedFilePath(),
                  download::DownloadInterruptReason::DOWNLOAD_INTERRUPT_REASON_NONE);
     return true;
@@ -85,10 +87,8 @@ bool RuntimeDownloadManagerDelegate::DetermineDownloadTarget(
       download->GetMimeType(),
       "download");
 
-  BrowserThread::PostTask(
-      BrowserThread::FILE,
-      FROM_HERE,
-      base::Bind(
+  base::PostTaskWithTraits(FROM_HERE, {base::MayBlock(), base::TaskPriority::BEST_EFFORT},
+      base::BindOnce(
           &RuntimeDownloadManagerDelegate::GenerateFilename,
           this, download->GetId(), callback, generated_name,
           default_download_path_));
@@ -104,14 +104,14 @@ bool RuntimeDownloadManagerDelegate::DetermineDownloadTarget(
 }
 
 bool RuntimeDownloadManagerDelegate::ShouldOpenDownload(
-      content::DownloadItem* item,
+    download::DownloadItem* item,
       const content::DownloadOpenDelayedCallback& callback) {
   return true;
 }
 
 void RuntimeDownloadManagerDelegate::GetNextId(
     const content::DownloadIdCallback& callback) {
-  static uint32_t next_id = content::DownloadItem::kInvalidId + 1;
+  static uint32_t next_id = download::DownloadItem::kInvalidId + 1;
   callback.Run(next_id++);
 }
 
@@ -120,7 +120,6 @@ void RuntimeDownloadManagerDelegate::GenerateFilename(
     const content::DownloadTargetCallback& callback,
     const base::FilePath& generated_name,
     const base::FilePath& suggested_directory) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::FILE));
   if (!base::CreateDirectory(suggested_directory)) {
     LOG(ERROR) << "Failed to create directory: "
                << suggested_directory.value();
@@ -128,10 +127,8 @@ void RuntimeDownloadManagerDelegate::GenerateFilename(
   }
 
   base::FilePath suggested_path(suggested_directory.Append(generated_name));
-  BrowserThread::PostTask(
-      BrowserThread::UI,
-      FROM_HERE,
-      base::Bind(
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+      base::BindOnce(
           &RuntimeDownloadManagerDelegate::OnDownloadPathGenerated,
           this, download_id, callback, suggested_path));
 }
@@ -144,10 +141,10 @@ void RuntimeDownloadManagerDelegate::OnDownloadPathGenerated(
   if (suppress_prompting_) {
     // Testing exit.
     callback.Run(suggested_path,
-                 content::DownloadItem::TARGET_DISPOSITION_OVERWRITE,
-                 content::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS,
+                 download::DownloadItem::TARGET_DISPOSITION_OVERWRITE,
+                 download::DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS,
                  suggested_path.AddExtension(FILE_PATH_LITERAL(".crdownload")),
-                 content::DownloadInterruptReason::DOWNLOAD_INTERRUPT_REASON_NONE);
+                 download::DownloadInterruptReason::DOWNLOAD_INTERRUPT_REASON_NONE);
     return;
   }
 
@@ -159,8 +156,8 @@ void RuntimeDownloadManagerDelegate::ChooseDownloadPath(
     const content::DownloadTargetCallback& callback,
     const base::FilePath& suggested_path) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  content::DownloadItem* item = download_manager_->GetDownload(download_id);
-  if (!item || (item->GetState() != content::DownloadItem::IN_PROGRESS))
+  download::DownloadItem* item = download_manager_->GetDownload(download_id);
+  if (!item || (item->GetState() != download::DownloadItem::IN_PROGRESS))
     return;
 
 #if defined(OS_LINUX) || defined(OS_WIN)

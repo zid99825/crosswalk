@@ -339,10 +339,9 @@ void RuntimeFileSelectHelper::EnumerateDirectory(content::WebContents* tab,
       request_id, tab->GetRenderViewHost(), path);
 }
 
-void RuntimeFileSelectHelper::RunFileChooser(
-    content::RenderFrameHost* render_frame_host,
-    content::WebContents* web_contents,
-    const FileChooserParams& params) {
+void RuntimeFileSelectHelper::RunFileChooser(content::RenderFrameHost* render_frame_host,
+                          content::WebContents* web_contents,
+                          const blink::mojom::::FileChooserParams& params) {
   DCHECK(!render_frame_host_);
   DCHECK(!web_contents_);
   render_frame_host_ = render_frame_host;

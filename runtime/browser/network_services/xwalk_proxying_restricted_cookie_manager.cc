@@ -162,9 +162,9 @@ XwalkProxyingRestrictedCookieManager::XwalkProxyingRestrictedCookieManager(
     int frame_id)
     : underlying_restricted_cookie_manager_(
           std::move(underlying_restricted_cookie_manager)),
-      is_service_worker_(is_service_worker),
+      /*is_service_worker_(is_service_worker),
       process_id_(process_id),
-      frame_id_(frame_id),
+      frame_id_(frame_id),*/
       weak_factory_(this) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
 }
@@ -186,14 +186,17 @@ void XwalkProxyingRestrictedCookieManager::CreateAndBindOnIoThread(
 bool XwalkProxyingRestrictedCookieManager::AllowCookies(
     const GURL& url,
     const GURL& site_for_cookies) const {
-  if (is_service_worker_) {
-    // Service worker cookies are always first-party, so only need to check
-    // the global toggle.
-    return XWalkCookieAccessPolicy::GetInstance()->GetShouldAcceptCookies();
-  } else {
-    return XWalkCookieAccessPolicy::GetInstance()->AllowCookies(
-        url, site_for_cookies, process_id_, frame_id_);
-  }
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!";
+  // see: android_webview/browser/network_service/aw_proxying_restricted_cookie_manager.cc
+  return true;
+//  if (is_service_worker_) {
+//    // Service worker cookies are always first-party, so only need to check
+//    // the global toggle.
+//    return XWalkCookieAccessPolicy::GetInstance()->GetShouldAcceptCookies();
+//  } else {
+//    return XWalkCookieAccessPolicy::GetInstance()->AllowCookies(
+//        url, site_for_cookies, process_id_, frame_id_);
+//  }
 }
 
 } /* namespace xwalk */

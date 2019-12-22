@@ -12,6 +12,9 @@
 
 namespace xwalk {
 
+extern const int kFileChooserModeOpenMultiple;
+extern const int kFileChooserModeOpenFolder;
+
 class XWalkWebContentsDelegate
     : public web_contents_delegate_android::WebContentsDelegateAndroid {
  public:
@@ -72,8 +75,14 @@ class XWalkWebContentsDelegate
   void LoadingStateChanged(content::WebContents* source, bool to_different_document) override;
 
   void SetOverlayMode(bool useOverlayMode) override;
+
+  std::unique_ptr<content::FileSelectListener> TakeFileSelectListener();
  private:
-  std::unique_ptr<content::JavaScriptDialogManager> javascript_dialog_manager_;DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsDelegate)
+  std::unique_ptr<content::JavaScriptDialogManager> javascript_dialog_manager_;
+  // Maintain a FileSelectListener instance passed to RunFileChooser() until
+  // a callback is called.
+  std::unique_ptr<content::FileSelectListener> file_select_listener_;
+  DISALLOW_COPY_AND_ASSIGN(XWalkWebContentsDelegate)
   ;
 };
 

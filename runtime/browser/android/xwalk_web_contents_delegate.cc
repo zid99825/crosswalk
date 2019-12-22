@@ -14,6 +14,8 @@
 #include "base/memory/ptr_util.h"
 #include "base/message_loop/message_loop.h"
 #include "base/strings/utf_string_conversions.h"
+#include "content/public/common/file_chooser_file_info.h"
+#include "content/public/browser/file_select_listener.h"
 #include "content/public/browser/native_web_keyboard_event.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
@@ -21,11 +23,9 @@
 #include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/web_contents.h"
 #include "chrome/browser/media/webrtc/media_capture_devices_dispatcher.h"
-#include "content/public/common/file_chooser_file_info.h"
-#include "content/public/common/file_chooser_params.h"
-#include "jni/XWalkWebContentsDelegate_jni.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkWebContentsDelegate_jni.h"
 #include "xwalk/runtime/browser/media/media_capture_devices_dispatcher.h"
-#include "xwalk/runtime/browser/runtime_file_select_helper.h"
+//#include "xwalk/runtime/browser/runtime_file_select_helper.h"
 #include "xwalk/runtime/browser/runtime_javascript_dialog_manager.h"
 
 #include "meta_logging.h"
@@ -41,6 +41,11 @@ using blink::mojom::FileChooserParams;
 using content::WebContents;
 
 namespace xwalk {
+
+// WARNING: these constants are exposed in the public interface Java side, so
+// must remain in sync with what clients are expecting.
+const int kFileChooserModeOpenMultiple = 1 << 0;
+const int kFileChooserModeOpenFolder = 1 << 1;
 
 XWalkWebContentsDelegate::XWalkWebContentsDelegate(JNIEnv* env, jobject obj)
     : WebContentsDelegateAndroid(env, obj) {
@@ -131,24 +136,49 @@ void XWalkWebContentsDelegate::RunFileChooser(content::RenderFrameHost* render_f
   JNIEnv* env = AttachCurrentThread();
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
-  if (!java_delegate.obj())
-    return;
-
-  if (params.mode == FileChooserParams::Save) {
-    // Save not supported, so cancel it.
-    render_frame_host->FilesSelectedInChooser(std::vector<content::FileChooserFileInfo>(), params.mode);
+  if (!java_delegate.obj()) {
+    listener->FileSelectionCanceled();
     return;
   }
-  int mode = static_cast<int>(params.mode);
+
+  int mode_flags = 0;
+  if (params.mode == FileChooserParams::Mode::kOpenMultiple) {
+    mode_flags |= kFileChooserModeOpenMultiple;
+  } else if (params.mode == FileChooserParams::Mode::kUploadFolder) {
+    // Folder implies multiple in Chrome.
+    mode_flags |= kFileChooserModeOpenMultiple | kFileChooserModeOpenFolder;
+  } else if (params.mode == FileChooserParams::Mode::kSave) {
+    // Save not supported, so cancel it.
+    listener->FileSelectionCanceled();
+    return;
+  } else {
+    DCHECK_EQ(FileChooserParams::Mode::kOpen, params.mode);
+  }
+  DCHECK(!file_select_listener_)
+        << "Multiple concurrent FileChooser requests are not supported.";
+
+  file_select_listener_ = std::move(listener);
+
   Java_XWalkWebContentsDelegate_shouldOverrideRunFileChooser(
       env,
       java_delegate,
       render_frame_host->GetProcess()->GetID(),
       render_frame_host->GetRoutingID(),
-      mode,
+      mode_flags,
       ConvertUTF16ToJavaString(
           env, base::JoinString(params.accept_types, base::ASCIIToUTF16(","))),
-      params.capture);
+          // TODO(iotto): Default file name
+//          params.title.empty() ? nullptr
+//                                     : ConvertUTF16ToJavaString(env, params.title),
+//                params.default_file_name.empty()
+//                    ? nullptr
+//                    : ConvertUTF8ToJavaString(env, params.default_file_name.value()),
+      params.use_media_capture);
+}
+
+std::unique_ptr<content::FileSelectListener>
+XWalkWebContentsDelegate::TakeFileSelectListener() {
+  return std::move(file_select_listener_);
 }
 
 content::JavaScriptDialogManager*
@@ -165,7 +195,19 @@ void XWalkWebContentsDelegate::RequestMediaAccessPermission(content::WebContents
 
   LOG(INFO) << "XWalkWebContentsDelegate::RequestMediaAccessPermission";
 
-  XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(web_contents, request, callback);
+  XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(web_contents, request, std::move(callback));
+
+//  AwContents* aw_contents = AwContents::FromWebContents(web_contents);
+//  if (!aw_contents) {
+//    std::move(callback).Run(
+//        blink::MediaStreamDevices(),
+//        blink::mojom::MediaStreamRequestResult::FAILED_DUE_TO_SHUTDOWN,
+//        std::unique_ptr<content::MediaStreamUI>());
+//    return;
+//  }
+//  aw_contents->GetPermissionRequestHandler()->SendRequest(
+//      std::unique_ptr<AwPermissionRequestDelegate>(
+//          new MediaAccessPermissionRequest(request, std::move(callback))));
 }
 /*
  *

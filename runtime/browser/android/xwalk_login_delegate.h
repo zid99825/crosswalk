@@ -10,7 +10,9 @@
 #include "xwalk/runtime/browser/android/xwalk_http_auth_handler_base.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/string16.h"
+#include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/login_delegate.h"
+#include "content/public/browser/web_contents_observer.h"
 
 namespace net {
 class AuthChallengeInfo;
@@ -20,17 +22,15 @@ class URLRequest;
 namespace xwalk {
 
 class XWalkLoginDelegate
-    : public content::LoginDelegate {
+    : public content::LoginDelegate,
+      public content::WebContentsObserver {
  public:
-  XWalkLoginDelegate(net::AuthChallengeInfo* auth_info,
-                     net::URLRequest* request);
+  XWalkLoginDelegate(const net::AuthChallengeInfo& auth_info, content::WebContents* web_contents, bool first_auth_attempt,
+                     LoginAuthRequiredCallback callback);
 
   virtual void Proceed(const base::string16& user,
                        const base::string16& password);
   virtual void Cancel();
-
-  // from ResourceDispatcherHostLoginDelegate
-  void OnRequestCancelled() override;
 
  private:
   ~XWalkLoginDelegate() override;

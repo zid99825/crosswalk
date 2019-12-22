@@ -54,7 +54,7 @@ int XWalkMainDelegateAndroid::RunProcess(
     const std::string& process_type,
     const content::MainFunctionParams& main_function_params) {
   if (process_type.empty()) {
-    browser_runner_.reset(content::BrowserMainRunner::Create());
+    browser_runner_ = content::BrowserMainRunner::Create();
     int exit_code = browser_runner_->Initialize(main_function_params);
     DCHECK_LT(exit_code, 0);
 
@@ -68,7 +68,7 @@ void XWalkMainDelegateAndroid::InitResourceBundle() {
 
   base::FilePath pak_file;
   base::FilePath pak_dir;
-  bool got_path = PathService::Get(base::DIR_ANDROID_APP_DATA, &pak_dir);
+  bool got_path = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &pak_dir);
   DCHECK(got_path);
   pak_dir = pak_dir.Append(FILE_PATH_LITERAL("paks"));
   pak_file = pak_dir.Append(FILE_PATH_LITERAL(kXWalkPakFilePath));

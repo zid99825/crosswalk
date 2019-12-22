@@ -26,18 +26,18 @@ class XWalkMediaCaptureDevicesDispatcher : public content::MediaObserver {
     // Handle an information update consisting of a up-to-date audio capture
     // device lists. This happens when a microphone is plugged in or unplugged.
     virtual void OnUpdateAudioDevices(
-        const content::MediaStreamDevices& devices) {}
+        const blink::MediaStreamDevices& devices) {}
 
     // Handle an information update consisting of a up-to-date video capture
     // device lists. This happens when a camera is plugged in or unplugged.
     virtual void OnUpdateVideoDevices(
-        const content::MediaStreamDevices& devices) {}
+        const blink::MediaStreamDevices& devices) {}
 
     // Handle an information update related to a media stream request.
     virtual void OnRequestUpdate(
         int render_process_id,
         int render_frame_id,
-        content::MediaStreamType stream_type,
+        blink::mojom::MediaStreamType stream_type,
         const content::MediaRequestState state) {}
 
     virtual ~Observer() {}
@@ -48,15 +48,15 @@ class XWalkMediaCaptureDevicesDispatcher : public content::MediaObserver {
   static void RunRequestMediaAccessPermission(
       content::WebContents* web_contents,
       const content::MediaStreamRequest& request,
-      const content::MediaResponseCallback& callback);
+      content::MediaResponseCallback callback);
 
   // Methods for observers. Called on UI thread.
   // Observers should add themselves on construction and remove themselves
   // on destruction.
   void AddObserver(Observer* observer);
   void RemoveObserver(Observer* observer);
-  const content::MediaStreamDevices& GetAudioCaptureDevices();
-  const content::MediaStreamDevices& GetVideoCaptureDevices();
+  const blink::MediaStreamDevices& GetAudioCaptureDevices();
+  const blink::MediaStreamDevices& GetVideoCaptureDevices();
 
   // Helper for picking the device that was requested for an OpenDevice request.
   // If the device requested is not available it will revert to using the first
@@ -66,7 +66,7 @@ class XWalkMediaCaptureDevicesDispatcher : public content::MediaObserver {
                           const std::string& requested_video_device_id,
                           bool audio,
                           bool video,
-                          content::MediaStreamDevices* devices);
+                          blink::MediaStreamDevices* devices);
 
   // Overridden from content::MediaObserver:
   void OnAudioCaptureDevicesChanged() override;
@@ -76,19 +76,19 @@ class XWalkMediaCaptureDevicesDispatcher : public content::MediaObserver {
       int render_frame_id,
       int page_request_id,
       const GURL& security_origin,
-      content::MediaStreamType stream_type,
+      blink::mojom::MediaStreamType stream_type,
       content::MediaRequestState state) override;
   void OnCreatingAudioStream(int render_process_id,
                              int render_view_id) override {}
   void OnSetCapturingLinkSecured(int render_process_id,
                                  int render_frame_id,
                                  int page_request_id,
-                                 content::MediaStreamType stream_type,
+                                 blink::mojom::MediaStreamType stream_type,
                                  bool is_secure) override {}
 
   // Only for testing.
-  void SetTestAudioCaptureDevices(const content::MediaStreamDevices& devices);
-  void SetTestVideoCaptureDevices(const content::MediaStreamDevices& devices);
+  void SetTestAudioCaptureDevices(const blink::MediaStreamDevices& devices);
+  void SetTestVideoCaptureDevices(const blink::MediaStreamDevices& devices);
 
  private:
   friend struct
@@ -115,17 +115,17 @@ class XWalkMediaCaptureDevicesDispatcher : public content::MediaObserver {
       int render_process_id,
       int render_frame_id,
       const GURL& security_origin,
-      content::MediaStreamType stream_type,
+      blink::mojom::MediaStreamType stream_type,
       content::MediaRequestState state);
 
   // Only for testing, a list of cached audio capture devices.
-  content::MediaStreamDevices test_audio_devices_;
+  blink::MediaStreamDevices test_audio_devices_;
 
   // Only for testing, a list of video audio capture devices.
-  content::MediaStreamDevices test_video_devices_;
+  blink::MediaStreamDevices test_video_devices_;
 
   // A list of observers for the device update notifications.
-  base::ObserverList<Observer> observers_;
+  base::ObserverList<Observer>::Unchecked observers_;
 };
 
 }  // namespace xwalk

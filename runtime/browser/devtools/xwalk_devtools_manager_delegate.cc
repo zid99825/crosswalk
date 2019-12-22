@@ -350,7 +350,7 @@ scoped_refptr<DevToolsAgentHost> DevToolsAgentHostForTab(TentaTab* tab, content:
   if (result)
     return result;
 
-  result = DevToolsAgentHost::Forward(tab->zone_tab_id().ToString(), base::MakeUnique<TabProxyDelegate>(tab, context));
+  result = DevToolsAgentHost::Forward(tab->zone_tab_id().ToString(), std::make_unique<TabProxyDelegate>(tab, context));
   tab->SetDevToolsAgentHost(result);
   return result;
 }
@@ -374,7 +374,7 @@ void XWalkDevToolsManagerDelegate::StartHttpHandler(XWalkBrowserContext* browser
    frontend_url = base::StringPrintf(kFrontEndURL, GetWebKitRevision().c_str());
    #endif
    */
-  content::DevToolsAgentHost::StartRemoteDebuggingServer(CreateSocketFactory(GetInspectorPort()), frontend_url,
+  content::DevToolsAgentHost::StartRemoteDebuggingServer(CreateSocketFactory(GetInspectorPort()),
                                                          browserContext->GetPath(), base::FilePath());
 }
 

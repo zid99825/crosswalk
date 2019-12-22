@@ -140,8 +140,8 @@ source_set("xwalk_runtime") {
     "runtime/browser/android/xwalk_dev_tools_server.h",
     "runtime/browser/android/xwalk_form_database.cc",
     "runtime/browser/android/xwalk_form_database.h",
-#TODO(iotto):Fix    "runtime/browser/android/xwalk_http_auth_handler.cc",
-#TODO(iotto):Fix    "runtime/browser/android/xwalk_http_auth_handler.h",
+    "runtime/browser/android/xwalk_http_auth_handler.cc",
+    "runtime/browser/android/xwalk_http_auth_handler.h",
 #TODO(iotto):Fix    "runtime/browser/android/xwalk_http_auth_handler_base.cc",
 #TODO(iotto):Fix    "runtime/browser/android/xwalk_http_auth_handler_base.h",
     "runtime/browser/android/xwalk_icon_helper.cc",
@@ -183,8 +183,8 @@ source_set("xwalk_runtime") {
     "runtime/browser/runtime.h",
     "runtime/browser/runtime_download_manager_delegate.cc",
     "runtime/browser/runtime_download_manager_delegate.h",
-    "runtime/browser/runtime_file_select_helper.cc",
-    "runtime/browser/runtime_file_select_helper.h",
+#todo(iotto):Fix    "runtime/browser/runtime_file_select_helper.cc",
+#todo(iotto):Fix    "runtime/browser/runtime_file_select_helper.h",
     "runtime/browser/runtime_geolocation_permission_context.cc",
     "runtime/browser/runtime_geolocation_permission_context.h",
     "runtime/browser/runtime_javascript_dialog_manager.cc",
@@ -335,8 +335,8 @@ source_set("xwalk_runtime") {
     "runtime/renderer/xwalk_content_renderer_client.h",
     "runtime/net/tenta_network_change_notifier_factory.cc",
     "runtime/net/tenta_network_change_notifier_factory.h",
-    "//android_webview/browser/renderer_host/auto_login_parser.cc",
-    "//android_webview/browser/renderer_host/auto_login_parser.h",
+#    "//android_webview/browser/renderer_host/auto_login_parser.cc",
+#    "//android_webview/browser/renderer_host/auto_login_parser.h",
   ]
 
   if (!is_android) {
@@ -376,7 +376,7 @@ source_set("xwalk_runtime") {
   ]
   deps = [
 #     ":generate_upstream_blink_version",
-    "//android_webview:common",
+#    "//android_webview:common",
     "//build/util:webkit_version",
     "//base",
     "//base:base_static",
@@ -392,6 +392,7 @@ source_set("xwalk_runtime") {
     "//components/keyed_service/content",
     "//components/nacl/common:buildflags",
     "//components/resources:components_resources",
+    "//components/services/app_service/public/mojom",
     "//components/strings",
     "//components/url_formatter",
     "//components/user_prefs",
@@ -404,7 +405,7 @@ source_set("xwalk_runtime") {
     "//content/public/common",
     "//content/public/utility",
     "//services/device/public/cpp/geolocation",
-#    "//device/geolocation/public/interfaces",
+    "//services/network/public/mojom:mojom",
     "//gin",
     "//ipc",
     "//media",
@@ -456,8 +457,6 @@ source_set("xwalk_runtime") {
       "//content/public/android:content_java",
       "//components/autofill/android:autofill_java",
       "//components/cdm/browser",
-#       "//xwalk/runtime/android/core_internal:xwalk_core_jar_jni",
-#       "//xwalk/runtime/android/core_internal:xwalk_core_native_jni",
       "//xwalk/runtime/android/core_refactor:xwalk_refactor_native_jni",
       "//xwalk/runtime/android/core_refactor:xwalk_core_jar_jni",
     ]

@@ -104,7 +104,7 @@ class Runtime : public content::WebContentsDelegate,
   void RequestApplicationExit();
 
  protected:
-  explicit Runtime(content::WebContents* web_contents);
+  explicit Runtime(std::unique_ptr<content::WebContents> web_contents);
 
     // Overridden from content::WebContentsDelegate:
   content::WebContents* OpenURLFromTab(

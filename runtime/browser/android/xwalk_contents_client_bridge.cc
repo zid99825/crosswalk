@@ -13,15 +13,16 @@
 #include "base/callback_helpers.h"
 #include "base/guid.h"
 #include "base/task/post_task.h"
+#include "content/public/common/file_chooser_file_info.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/favicon_status.h"
+#include "content/public/browser/file_select_listener.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/web_contents.h"
-#include "content/public/common/file_chooser_file_info.h"
 //#include "content/public/common/notification_resources.h"
 //#include "content/public/common/platform_notification_data.h"
 #include "components/strings/grit/components_strings.h"
@@ -34,6 +35,7 @@
 #include "ui/shell_dialogs/selected_file_info.h"
 #include "url/gurl.h"
 #include "net/base/escape.h"
+#include "net/base/filename_util.h"
 #include "net/cert/cert_database.h"
 #include "net/cert/x509_certificate.h"
 #include "net/cert/x509_util.h"
@@ -42,6 +44,7 @@
 #include "meta_logging.h"
 
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContentsClientBridge_jni.h"
+#include "xwalk/runtime/browser/android/xwalk_web_contents_delegate.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertJavaStringToUTF16;
@@ -51,11 +54,10 @@ using base::android::JavaRef;
 using base::android::ScopedJavaGlobalRef;
 using base::android::ScopedJavaLocalRef;
 using base::android::JavaParamRef;
-//using base::ScopedPtrHashMap;
 using content::BrowserThread;
-//using blink::mojom::FileChooserFileInfo;
-//using blink::mojom::FileChooserFileInfoPtr;
-//using blink::mojom::FileChooserParams;
+using blink::mojom::FileChooserFileInfo;
+using blink::mojom::FileChooserFileInfoPtr;
+using blink::mojom::FileChooserParams;
 using content::RenderViewHost;
 using content::WebContents;
 
@@ -554,6 +556,66 @@ void XWalkContentsClientBridge::NotificationClosed(JNIEnv*, jobject, jint id, bo
 static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, int process_id,
                                                 int render_id, int mode_flags, const JavaParamRef<jobjectArray>& file_paths,
                                                 const JavaParamRef<jobjectArray>& display_names) {
+
+  content::RenderFrameHost* rfh = content::RenderFrameHost::FromID(process_id, render_id);
+  auto* web_contents = WebContents::FromRenderFrameHost(rfh);
+  if (!web_contents)
+    return;
+  auto* delegate = static_cast<XWalkWebContentsDelegate*>(web_contents->GetDelegate());
+  if (!delegate)
+    return;
+  std::unique_ptr < content::FileSelectListener > listener = delegate->TakeFileSelectListener();
+
+  if (!file_paths.obj()) {
+    listener->FileSelectionCanceled();
+    return;
+  }
+
+  std::vector<std::string> file_path_str;
+  std::vector<base::string16> display_name_str;
+  // Note file_paths maybe NULL, but this will just yield a zero-length vector.
+  base::android::AppendJavaStringArrayToStringVector(env, file_paths,
+                                                     &file_path_str);
+  base::android::AppendJavaStringArrayToStringVector(env, display_names,
+                                                     &display_name_str);
+  std::vector<FileChooserFileInfoPtr> files;
+  files.reserve(file_path_str.size());
+  for (size_t i = 0; i < file_path_str.size(); ++i) {
+    GURL url(file_path_str[i]);
+    if (!url.is_valid())
+      continue;
+    base::FilePath path;
+    if (url.SchemeIsFile()) {
+      if (!net::FileURLToFilePath(url, &path))
+        continue;
+    } else {
+      path = base::FilePath(file_path_str[i]);
+    }
+    auto file_info = blink::mojom::NativeFileInfo::New();
+    file_info->file_path = path;
+    if (!display_name_str[i].empty())
+      file_info->display_name = display_name_str[i];
+    files.push_back(FileChooserFileInfo::NewNativeFile(std::move(file_info)));
+  }
+  base::FilePath base_dir;
+  FileChooserParams::Mode mode;
+  if (mode_flags & kFileChooserModeOpenFolder) {
+    mode = FileChooserParams::Mode::kUploadFolder;
+    // We'd like to set |base_dir| to a folder which a user selected. But it's
+    // impossible with WebChromeClient API in the current Android.
+  } else if (mode_flags & kFileChooserModeOpenMultiple) {
+    mode = FileChooserParams::Mode::kOpenMultiple;
+  } else {
+    mode = FileChooserParams::Mode::kOpen;
+  }
+  DVLOG(0) << "File Chooser result: mode = " << mode
+           << ", file paths = " << base::JoinString(file_path_str, ":");
+  listener->FileSelected(std::move(files), base_dir, mode);
+
+
+
+
+
   LOG(ERROR) << "iotto " << __func__ << " FIX/MOVE to xwalk_web_contents_delegate";
 //  content::RenderFrameHost* rfh = content::RenderFrameHost::FromID(process_id, render_id);
 //  if (!rfh)

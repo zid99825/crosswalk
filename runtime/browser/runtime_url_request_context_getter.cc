@@ -22,6 +22,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/cookie_store_factory.h"
 #include "content/public/browser/network_quality_observer_factory.h"
+#include "content/public/browser/network_service_instance.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/url_constants.h"
 #include "net/cert/cert_verifier.h"
@@ -75,6 +76,7 @@ namespace tenta_cache = tenta::fs::cache;
 #include "net/nqe/rtt_throughput_estimates_observer.h"
 #include "components/variations/variations_associated_data.h"
 #include "content/public/browser/network_quality_observer_factory.h"
+#include "services/network/public/cpp/features.h"
 
 using content::BrowserThread;
 
@@ -199,17 +201,18 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 //
 //    network_quality_estimator_params["effective_connection_type_algorithm"] = "TransportRTTOrDownstreamThroughput";
 
-    _network_quality_estimator.reset(
-        new net::NetworkQualityEstimator(
-            std::make_unique<net::NetworkQualityEstimatorParams>(network_quality_estimator_params), nullptr));
+    network_quality_tracker_ = std::make_unique<network::NetworkQualityTracker>(
+        base::BindRepeating(&content::GetNetworkService));
 
-    _network_quality_observer = content::CreateNetworkQualityObserver(_network_quality_estimator.get());
+    network_quality_observer_ =
+        content::CreateNetworkQualityObserver(network_quality_tracker_.get());
 
     storage_.reset(
         new net::URLRequestContextStorage(url_request_context_.get()));
 #if defined(OS_ANDROID)
     storage_->set_cookie_store(base::WrapUnique(new XWalkCookieStoreWrapper));
-    url_request_context_->set_network_quality_estimator(_network_quality_estimator.get());
+    LOG(WARNING) << "iotto " << __func__ << " set_network_quality_estimator!";
+//    url_request_context_->set_network_quality_estimator(_network_quality_estimator.get());
 #else
     content::CookieStoreConfig cookie_config(base_path_.Append(
             application::kCookieDatabaseFilename),
@@ -227,10 +230,6 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     auto cookie_store = content::CreateCookieStore(cookie_config);
     storage_->set_cookie_store(std::move(cookie_store));
 #endif
-    //TODO(iotto) : Implement safe ChannelIDStore
-    storage_->set_channel_id_service(
-        base::WrapUnique(
-            new net::ChannelIDService(new net::DefaultChannelIDStore(NULL))));
     storage_->set_http_user_agent_settings(
         base::WrapUnique(
             new net::StaticHttpUserAgentSettings("en-US,en",
@@ -238,7 +237,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 
 #ifdef TENTA_CHROMIUM_BUILD
     std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(
-        new tenta_cache::ChromiumCacheFactory(_network_quality_estimator.get()));
+        new tenta_cache::ChromiumCacheFactory(nullptr));
 
     LOG(ERROR) << "iotto " << __func__ << " FIX host resolver";
 //    //TODO (iotto): Remove backup, needed for speed comparison
@@ -299,7 +298,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 //#endif
     storage_->set_ssl_config_service(base::WrapUnique(new net::SSLConfigServiceDefaults()));
     storage_->set_http_auth_handler_factory(
-        net::HttpAuthHandlerFactory::CreateDefault(host_resolver.get()));
+        net::HttpAuthHandlerFactory::CreateDefault());
     storage_->set_http_server_properties(
         std::unique_ptr < net::HttpServerProperties
             > (new net::HttpServerPropertiesImpl));
@@ -307,32 +306,19 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     net::HttpNetworkSession::Params network_session_params;
     net::HttpNetworkSession::Context network_session_context;
 
-    network_session_context.cert_verifier =
-        url_request_context_->cert_verifier();
-    network_session_context.transport_security_state = url_request_context_
-        ->transport_security_state();
-    network_session_context.cert_transparency_verifier = url_request_context_
-        ->cert_transparency_verifier();
-    network_session_context.ct_policy_enforcer = url_request_context_
-        ->ct_policy_enforcer();
-    network_session_context.channel_id_service = url_request_context_
-        ->channel_id_service();
-    network_session_context.proxy_service =
-        url_request_context_->proxy_service();
-    network_session_context.ssl_config_service = url_request_context_
-        ->ssl_config_service();
-    network_session_context.http_auth_handler_factory = url_request_context_
-        ->http_auth_handler_factory();
-    network_session_context.http_server_properties = url_request_context_
-        ->http_server_properties();
+    network_session_context.cert_verifier = url_request_context_->cert_verifier();
+    network_session_context.transport_security_state = url_request_context_->transport_security_state();
+    network_session_context.cert_transparency_verifier = url_request_context_->cert_transparency_verifier();
+    network_session_context.ct_policy_enforcer = url_request_context_->ct_policy_enforcer();
+    network_session_context.ssl_config_service = url_request_context_->ssl_config_service();
+    network_session_context.http_auth_handler_factory = url_request_context_->http_auth_handler_factory();
+    network_session_context.http_server_properties = url_request_context_->http_server_properties();
     network_session_context.network_quality_estimator = url_request_context_->network_quality_estimator();
-    network_session_params.ignore_certificate_errors =
-        ignore_certificate_errors_;
+    network_session_params.ignore_certificate_errors = ignore_certificate_errors_;
 
     // Give |storage_| ownership at the end in case it's |mapped_host_resolver|.
     storage_->set_host_resolver(std::move(host_resolver));
-    network_session_context.host_resolver =
-        url_request_context_->host_resolver();
+    network_session_context.host_resolver = url_request_context_->host_resolver();
 
     storage_->set_http_network_session(
         base::WrapUnique(new net::HttpNetworkSession(network_session_params, network_session_context)));

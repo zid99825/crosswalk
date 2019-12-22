@@ -20,9 +20,11 @@
 #include "components/autofill/core/common/autofill_prefs.h"
 #include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "components/user_prefs/user_prefs.h"
+#include "components/variations/net/variations_http_headers.h"
 #include "components/visitedlink/browser/visitedlink_master.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/cors_exempt_headers.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/resource_context.h"
 #include "content/public/browser/storage_partition.h"
@@ -206,12 +208,11 @@ bool XWalkBrowserContext::IsOffTheRecord() {
 
 content::DownloadManagerDelegate*
 XWalkBrowserContext::GetDownloadManagerDelegate() {
-//  content::DownloadManager* manager = BrowserContext::GetDownloadManager(this);
+  content::DownloadManager* manager = BrowserContext::GetDownloadManager(this);
 
   if (!download_manager_delegate_.get()) {
     download_manager_delegate_ = new RuntimeDownloadManagerDelegate();
-    LOG(WARNING) << "iotto " << __func__ << " Do we need the DownloadManager?!";
-//    download_manager_delegate_->SetDownloadManager(manager);
+    download_manager_delegate_->SetDownloadManager(manager);
   }
 
   return download_manager_delegate_.get();
@@ -251,6 +252,11 @@ content::PermissionControllerDelegate* XWalkBrowserContext::GetPermissionControl
   if (!permission_manager_.get())
     permission_manager_.reset(new XWalkPermissionManager(application_service_));
   return permission_manager_.get();
+}
+
+content::ClientHintsControllerDelegate*
+XWalkBrowserContext::GetClientHintsControllerDelegate() {
+  return nullptr;
 }
 
 content::BackgroundFetchDelegate* XWalkBrowserContext::GetBackgroundFetchDelegate() {
@@ -401,4 +407,84 @@ void XWalkBrowserContext::RebuildTable(
   enumerator->OnComplete(true);
 }
 
+// static
+base::FilePath XWalkBrowserContext::GetCookieStorePath() {
+  base::FilePath cookie_store_path;
+  if (!base::PathService::Get(base::DIR_ANDROID_APP_DATA, &cookie_store_path)) {
+    NOTREACHED() << "Failed to get app data directory for Android WebView";
+  }
+  cookie_store_path = cookie_store_path.Append(FILE_PATH_LITERAL("Cookies"));
+  return cookie_store_path;
+}
+
+base::FilePath XWalkBrowserContext::GetCacheDir() {
+  base::FilePath cache_path;
+  if (!base::PathService::Get(base::DIR_CACHE, &cache_path)) {
+    NOTREACHED() << "Failed to get app cache directory for Android WebView";
+  }
+  cache_path =
+      cache_path.Append(FILE_PATH_LITERAL("com.tenta.xwalk"));
+  return cache_path;
+}
+
+network::mojom::NetworkContextParamsPtr XWalkBrowserContext::GetNetworkContextParams(
+    bool in_memory, const base::FilePath& relative_partition_path) {
+  network::mojom::NetworkContextParamsPtr context_params = network::mojom::NetworkContextParams::New();
+  // TODO(iotto) : Fix
+//  context_params->user_agent = xwalk::GetUserAgent();
+
+  // TODO(ntfschr): set this value to a proper value based on the user's
+  // preferred locales (http://crbug.com/898555). For now, set this to
+  // "en-US,en" instead of "en-us,en", since Android guarantees region codes
+  // will be uppercase.
+  context_params->accept_language = net::HttpUtil::GenerateAcceptLanguageHeader("en-US,en");
+
+  // HTTP cache
+  context_params->http_cache_enabled = true;
+  // TODO(iotto): Fix this
+  context_params->http_cache_max_size = 20 * 1024 * 1024;  // 20M
+      //GetHttpCacheSize();
+  context_params->http_cache_path = GetCacheDir();
+
+  // WebView should persist and restore cookies between app sessions (including
+  // session cookies).
+  context_params->cookie_path = XWalkBrowserContext::GetCookieStorePath();
+  context_params->restore_old_session_cookies = true;
+  context_params->persist_session_cookies = true;
+  context_params->cookie_manager_params = network::mojom::CookieManagerParams::New();
+  context_params->cookie_manager_params->allow_file_scheme_cookies = false;
+      //CookieManager::GetInstance()->AllowFileSchemeCookies();
+
+  context_params->initial_ssl_config = network::mojom::SSLConfig::New();
+  // Allow SHA-1 to be used for locally-installed trust anchors, as WebView
+  // should behave like the Android system would.
+  context_params->initial_ssl_config->sha1_local_anchors_enabled = true;
+  // Do not enforce the Legacy Symantec PKI policies outlined in
+  // https://security.googleblog.com/2017/09/chromes-plan-to-distrust-symantec.html,
+  // defer to the Android system.
+  context_params->initial_ssl_config->symantec_enforcement_disabled = true;
+
+  // WebView does not currently support Certificate Transparency
+  // (http://crbug.com/921750).
+  context_params->enforce_chrome_ct_policy = false;
+
+  // WebView does not support ftp yet.
+  context_params->enable_ftp_url_support = false;
+
+  context_params->enable_brotli = false;
+      //base::FeatureList::IsEnabled(android_webview::features::kWebViewBrotliSupport);
+
+  context_params->check_clear_text_permitted = true;
+      //AwContentBrowserClient::get_check_cleartext_permitted();
+
+  // Update the cors_exempt_header_list to include internally-added headers, to
+  // avoid triggering CORS checks.
+  content::UpdateCorsExemptHeader(context_params.get());
+  variations::UpdateCorsExemptHeaderForVariations(context_params.get());
+
+  // Add proxy settings
+//  AwProxyConfigMonitor::GetInstance()->AddProxyToNetworkContextParams(context_params);
+
+  return context_params;
+}
 }  // namespace xwalk

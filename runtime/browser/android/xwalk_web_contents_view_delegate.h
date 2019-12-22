@@ -22,8 +22,6 @@ class XWalkWebContentsViewDelegate : public content::WebContentsViewDelegate {
       const content::ContextMenuParams& params) override;
   content::WebDragDestDelegate* GetDragDestDelegate() override;
 
-  void OverrideDisplayColorSpace(gfx::ColorSpace* color_space) override;
-
  private:
 //  content::WebContents* web_contents_;
   content::ContextMenuParams params_;

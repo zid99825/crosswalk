@@ -19,7 +19,7 @@
 
 namespace xwalk {
 
-bool OnJNIOnLoadInit() {
+bool OnJNIOnLoadInit(base::android::LibraryProcessType) {
   if (!content::android::OnJNIOnLoadInit()) {
     return false;
   }

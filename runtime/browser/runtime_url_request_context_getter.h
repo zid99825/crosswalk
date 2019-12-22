@@ -14,6 +14,8 @@
 #include "content/public/browser/browser_context.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "net/url_request/url_request_job_factory.h"
+#include "services/network/public/cpp/network_quality_tracker.h"
+#include "services/network/public/mojom/network_service.mojom-forward.h"
 
 namespace base {
 class MessageLoop;
@@ -65,8 +67,11 @@ class RuntimeURLRequestContextGetter : public net::URLRequestContextGetter {
   content::ProtocolHandlerMap protocol_handlers_;
   content::URLRequestInterceptorScopedVector request_interceptors_;
 
-  std::unique_ptr<net::NetworkQualityEstimator> _network_quality_estimator;
-  std::unique_ptr<net::RTTAndThroughputEstimatesObserver> _network_quality_observer;
+  std::unique_ptr<network::NetworkQualityTracker> network_quality_tracker_;
+
+  // Listens to NetworkQualityTracker and sends network quality updates to the
+  // renderer.
+  std::unique_ptr<network::NetworkQualityTracker::RTTAndThroughputEstimatesObserver> network_quality_observer_;
 
   DISALLOW_COPY_AND_ASSIGN(RuntimeURLRequestContextGetter);
 };

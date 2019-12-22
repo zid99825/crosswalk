@@ -21,27 +21,10 @@ XWalkWebContentsViewDelegate::XWalkWebContentsViewDelegate(
 XWalkWebContentsViewDelegate::~XWalkWebContentsViewDelegate() {
 }
 
-/*
- * TODO(iotto)
-content::WebDragDestDelegate* AwWebContentsViewDelegate::GetDragDestDelegate() {
-  // GetDragDestDelegate is a pure virtual method from WebContentsViewDelegate
-  // and must have an implementation although android doesn't use it.
-  NOTREACHED();
-  return NULL;
-}
-*/
-
-void XWalkWebContentsViewDelegate::OverrideDisplayColorSpace(gfx::ColorSpace* color_space) {
-  // TODO(ccameron): WebViews that are embedded in WCG windows will want to
-  // override the display color space to gfx::ColorSpace::CreateExtendedSRGB().
-  // This situation is not yet detected.
-  // https://crbug.com/735658
-  *color_space = gfx::ColorSpace::CreateSRGB();
-}
-
 void XWalkWebContentsViewDelegate::ShowContextMenu(
     content::RenderFrameHost* render_frame_host,
     const content::ContextMenuParams& params) {
+  LOG(WARNING) << "iotto " << __func__ << " maybe IMPLEMENT";
   // TODO(iotto): Fix this!
 //  if (params.is_editable && params.selection_text.empty()) {
 //    content::ContentViewCore* content_view_core =

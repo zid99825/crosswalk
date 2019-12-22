@@ -9,10 +9,10 @@
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
 #include "base/memory/ptr_util.h"
-#include "jni/XWalkWebResourceResponse_jni.h"
 #include "net/http/http_response_headers.h"
 #include "net/url_request/url_request.h"
 #include "net/url_request/url_request_job.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkWebResourceResponse_jni.h"
 #include "xwalk/runtime/browser/android/net/input_stream_impl.h"
 
 using base::android::ScopedJavaLocalRef;
@@ -97,9 +97,9 @@ bool XWalkWebResourceResponseImpl::GetResponseHeaders(
   std::vector<std::string> header_names;
   std::vector<std::string> header_values;
   AppendJavaStringArrayToStringVector(
-      env, jstringArray_headerNames.obj(), &header_names);
+      env, jstringArray_headerNames, &header_names);
   AppendJavaStringArrayToStringVector(
-      env, jstringArray_headerValues.obj(), &header_values);
+      env, jstringArray_headerValues, &header_values);
   DCHECK_EQ(header_values.size(), header_names.size());
   for (size_t i = 0; i < header_names.size(); ++i) {
     std::string header_line(header_names[i]);

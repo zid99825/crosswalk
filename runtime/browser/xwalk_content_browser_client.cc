@@ -9,15 +9,17 @@
 #include <memory>
 
 #include "base/command_line.h"
+#include "base/feature_list.h"
+#include "base/files/file.h"
 #include "base/memory/ptr_util.h"
 #include "base/path_service.h"
-#include "base/files/file.h"
 #include "components/nacl/common/buildflags.h"
 #include "content/public/browser/browser_child_process_host.h"
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/browser/browser_ppapi_host.h"
 #include "content/public/browser/child_process_data.h"
 #include "content/public/browser/client_certificate_delegate.h"
+#include "content/public/browser/network_service_instance.h"
 #include "content/public/browser/presentation_service_delegate.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
@@ -26,6 +28,7 @@
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_descriptors.h"
+#include "content/public/common/content_switches.h"
 #include "content/public/common/main_function_params.h"
 #include "content/public/common/user_agent.h"
 #include "content/public/common/web_preferences.h"
@@ -36,6 +39,7 @@
 #include "ppapi/host/ppapi_host.h"
 #include "ppapi/buildflags/buildflags.h"
 #include "services/device/geolocation/geolocation_provider.h"
+#include "services/network/public/cpp/features.h"
 #include "xwalk/extensions/common/xwalk_extension_switches.h"
 #include "xwalk/application/common/constants.h"
 #include "xwalk/runtime/browser/media/media_capture_devices_dispatcher.h"
@@ -72,7 +76,7 @@
 #include "components/navigation_interception/intercept_navigation_delegate.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/navigation_throttle.h"
-#include "xwalk/runtime/browser/android/xwalk_login_delegate.h"
+#include "xwalk/runtime/browser/android/xwalk_http_auth_handler.h"
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
 #include "xwalk/runtime/browser/android/xwalk_settings.h"
@@ -90,7 +94,8 @@
 #endif
 
 #if defined(OS_ANDROID)
-#include "xwalk/runtime/browser/xwalk_presentation_service_delegate_android.h"
+// TODO(iotto): Fix if we need it
+//#include "xwalk/runtime/browser/xwalk_presentation_service_delegate_android.h"
 #elif defined(OS_WIN)
 #include "xwalk/runtime/browser/xwalk_presentation_service_delegate_win.h"
 #endif
@@ -103,6 +108,19 @@ namespace {
 
 // The application-wide singleton of ContentBrowserClient impl.
 XWalkContentBrowserClient* g_browser_client = nullptr;
+
+// TODO(iotto: ch77 Fix this
+//void PassMojoCookieManagerToAwCookieManager(
+//    const network::mojom::NetworkContextPtr& network_context) {
+//  // Get the CookieManager from the NetworkContext.
+//  network::mojom::CookieManagerPtrInfo cookie_manager_info;
+//  network_context->GetCookieManager(mojo::MakeRequest(&cookie_manager_info));
+//
+//  // Pass the CookieManagerPtrInfo to android_webview::CookieManager, so it can
+//  // implement its APIs with this mojo CookieManager.
+//  CookieManager::GetInstance()->SetMojoCookieManager(
+//      std::move(cookie_manager_info));
+//}
 
 }
 
@@ -213,6 +231,32 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
 ////  prefs->accelerated_filters_enabled = true;
 }
 
+network::mojom::NetworkContextPtr XWalkContentBrowserClient::CreateNetworkContext(content::BrowserContext* context,
+    bool in_memory,
+    const base::FilePath& relative_partition_path) {
+  if (!base::FeatureList::IsEnabled(network::features::kNetworkService))
+    return nullptr;
+
+  content::GetNetworkService()->ConfigureHttpAuthPrefs(
+      XWalkRunner::GetInstance()->CreateHttpAuthDynamicParams());
+
+  auto* aw_context = static_cast<XWalkBrowserContext*>(context);
+  network::mojom::NetworkContextPtr network_context;
+  network::mojom::NetworkContextParamsPtr context_params =
+      aw_context->GetNetworkContextParams(in_memory, relative_partition_path);
+#if DCHECK_IS_ON()
+  g_created_network_context_params = true;
+#endif
+  content::GetNetworkService()->CreateNetworkContext(
+      MakeRequest(&network_context), std::move(context_params));
+  // TODO(iotto: ch77 Fix this
+//  // Pass a CookieManager to the code supporting AwCookieManager.java (i.e., the
+//  // Cookies APIs).
+//  PassMojoCookieManagerToAwCookieManager(network_context);
+
+  return network_context;
+}
+
 std::unique_ptr<content::BrowserMainParts> XWalkContentBrowserClient::CreateBrowserMainParts(
       const content::MainFunctionParams& parameters) {
   std::unique_ptr<XWalkBrowserMainParts> ret_val;
@@ -244,12 +288,12 @@ void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
   };
 
   command_line->CopySwitchesFrom(
-      browser_process_cmd_line, extra_switches, arraysize(extra_switches));
+      browser_process_cmd_line, extra_switches, base::size(extra_switches));
 }
 
 scoped_refptr<content::QuotaPermissionContext>
 XWalkContentBrowserClient::CreateQuotaPermissionContext() {
-  return std::make_unique<RuntimeQuotaPermissionContext>();
+  return new RuntimeQuotaPermissionContext();
 }
 
 content::WebContentsViewDelegate*
@@ -321,14 +365,15 @@ void XWalkContentBrowserClient::AllowCertificateError(content::WebContents* web_
 #if defined(OS_ANDROID)
   XWalkContentsClientBridge* client =
       XWalkContentsClientBridge::FromWebContents(web_contents);
-//  bool cancel_request = true;
+  bool cancel_request = true;
   if (client)
     client->AllowCertificateError(cert_error,
                                   ssl_info.cert.get(),
                                   request_url,
-                                  callback);
-//  if (cancel_request)
-//    *result = content::CERTIFICATE_REQUEST_RESULT_TYPE_DENY;
+                                  callback, &cancel_request);
+
+  if (cancel_request)
+    callback.Run(content::CERTIFICATE_REQUEST_RESULT_TYPE_DENY);
 #else
   DCHECK(web_contents);
   // The interstitial page shown is responsible for destroying
@@ -340,7 +385,9 @@ void XWalkContentBrowserClient::AllowCertificateError(content::WebContents* web_
 
 content::PlatformNotificationService*
 XWalkContentBrowserClient::GetPlatformNotificationService(content::BrowserContext* browser_context) {
-  return XWalkPlatformNotificationService::GetInstance();
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
+//  return XWalkPlatformNotificationService::GetInstance();
+  return nullptr;
 }
 
 void XWalkContentBrowserClient::DidCreatePpapiPlugin(
@@ -451,15 +498,24 @@ XWalkContentBrowserClient::GetDevToolsManagerDelegate() {
 
 content::ControllerPresentationServiceDelegate* XWalkContentBrowserClient::
     GetControllerPresentationServiceDelegate(content::WebContents* web_contents) {
-#if defined(OS_WIN)
-  return XWalkPresentationServiceDelegateWin::
-      GetOrCreateForWebContents(web_contents);
-#elif defined(OS_ANDROID)
-  return XWalkPresentationServiceDelegateAndroid::
-      GetOrCreateForWebContents(web_contents);
-#else
+
+  LOG(WARNING) << "iotto " << __func__ << " FIX PresentationServiceDelegate";
   return nullptr;
-#endif
+////  if (media_router::MediaRouterEnabled(web_contents->GetBrowserContext())) {
+////    return media_router::PresentationServiceDelegateImpl::
+////        GetOrCreateForWebContents(web_contents);
+////  }
+////  return nullptr;
+//
+//#if defined(OS_WIN)
+//  return XWalkPresentationServiceDelegateWin::
+//      GetOrCreateForWebContents(web_contents);
+//#elif defined(OS_ANDROID)
+//  return XWalkPresentationServiceDelegateAndroid::
+//      GetOrCreateForWebContents(web_contents);
+//#else
+//  return nullptr;
+//#endif
 }
 
 std::string XWalkContentBrowserClient::GetApplicationLocale() {
@@ -488,9 +544,17 @@ XWalkContentBrowserClient::CreateThrottlesForNavigation(
   // is used to post onPageStarted. We handle shouldOverrideUrlLoading
   // via a sync IPC.
   if (navigation_handle->IsInMainFrame()) {
+    // Use Synchronous mode for the navigation interceptor, since this class
+    // doesn't actually call into an arbitrary client, it just posts a task to
+    // call onPageStarted. shouldOverrideUrlLoading happens earlier (see
+    // ContentBrowserClient::ShouldOverrideUrlLoading).
     throttles.push_back(
         navigation_interception::InterceptNavigationDelegate::CreateThrottleFor(
-            navigation_handle));
+            navigation_handle, navigation_interception::SynchronyMode::kSync));
+    LOG(WARNING) << "iotto " << __func__ << " IMPLEMENT";
+//    throttles.push_back(std::make_unique<PolicyBlacklistNavigationThrottle>(
+//        navigation_handle, AwBrowserContext::FromWebContents(
+//                               navigation_handle->GetWebContents())));
   }
   return throttles;
 }
@@ -550,7 +614,9 @@ std::unique_ptr<content::LoginDelegate> XWalkContentBrowserClient::CreateLoginDe
     bool first_auth_attempt,
     LoginAuthRequiredCallback auth_required_callback) {
   LOG(ERROR) << "iotto " << __func__ << " FIX/ use the callback!";
-  return std::make_unique<XWalkLoginDelegate>(auth_info, web_contents);
+  return std::make_unique<XWalkHttpAuthHandler>(auth_info, web_contents,
+                                                first_auth_attempt,
+                                                std::move(auth_required_callback));
 }
 
 bool XWalkContentBrowserClient::HandleExternalProtocol(const GURL& url,

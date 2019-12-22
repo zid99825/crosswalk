@@ -11,6 +11,9 @@
 #include "content/public/browser/download_manager_delegate.h"
 #include "xwalk/runtime/browser/runtime.h"
 
+namespace content {
+class DownloadManager;
+}
 namespace xwalk {
 
 class RuntimeDownloadManagerDelegate
@@ -19,7 +22,7 @@ class RuntimeDownloadManagerDelegate
  public:
   RuntimeDownloadManagerDelegate();
 
-//  void SetDownloadManager(content::DownloadManager* manager);
+  void SetDownloadManager(content::DownloadManager* manager);
 
   void Shutdown() override;
   bool DetermineDownloadTarget(
@@ -52,7 +55,7 @@ class RuntimeDownloadManagerDelegate
                           const content::DownloadTargetCallback& callback,
                           const base::FilePath& suggested_path);
 
-//  content::DownloadManager* download_manager_;
+  content::DownloadManager* download_manager_;
   base::FilePath default_download_path_;
   bool suppress_prompting_;
 

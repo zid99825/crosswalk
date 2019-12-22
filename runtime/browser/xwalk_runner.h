@@ -9,7 +9,7 @@
 #include <string>
 
 #include "base/values.h"
-
+#include "services/network/network_service.h"
 #include "xwalk/runtime/browser/storage_component.h"
 
 namespace content {
@@ -73,6 +73,9 @@ class XWalkRunner {
     return extension_service_.get();
   }
 
+  // Constructs HttpAuthDynamicParams based on |local_state_|.
+  network::mojom::HttpAuthDynamicParamsPtr CreateHttpAuthDynamicParams();
+
   // Stages of main parts. See content/browser_main_parts.h for description.
   virtual void PreMainMessageLoopRun();
   virtual void PostMainMessageLoopRun();
@@ -101,7 +104,7 @@ class XWalkRunner {
   // These variables are used to export some values from the browser process
   // side to the extension side, such as application IDs and whatnot.
   virtual void InitializeRuntimeVariablesForExtensions(
-      const content::RenderProcessHost* host,
+      content::RenderProcessHost* host,
       base::DictionaryValue::DictStorage* runtime_variables);
   virtual void InitializeEnvironmentVariablesForGoogleAPIs(
       content::RenderProcessHost* host);

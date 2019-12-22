@@ -68,6 +68,19 @@ application::ApplicationSystem* XWalkRunner::app_system() {
   return app_component_ ? app_component_->app_system() : NULL;
 }
 
+network::mojom::HttpAuthDynamicParamsPtr XWalkRunner::CreateHttpAuthDynamicParams() {
+  LOG(WARNING) << "iotto " << __func__ << " FIX/IMPLEMENT";
+  network::mojom::HttpAuthDynamicParamsPtr auth_dynamic_params = network::mojom::HttpAuthDynamicParams::New();
+
+//  auth_dynamic_params->server_whitelist = local_state()->GetString(prefs::kAuthServerWhitelist);
+//  auth_dynamic_params->android_negotiate_account_type = local_state()->GetString(
+//      prefs::kAuthAndroidNegotiateAccountType);
+
+  auth_dynamic_params->ntlm_v2_enabled = true;
+
+  return auth_dynamic_params;
+}
+
 void XWalkRunner::PreMainMessageLoopRun() {
   browser_context_.reset(new XWalkBrowserContext);
   app_extension_bridge_.reset(new XWalkAppExtensionBridge());
@@ -133,7 +146,7 @@ std::unique_ptr<StorageComponent> XWalkRunner::CreateStorageComponent() {
 }
 
 void XWalkRunner::InitializeRuntimeVariablesForExtensions(
-    const content::RenderProcessHost* host,
+    content::RenderProcessHost* host,
     base::DictionaryValue::DictStorage* variables) {
   application::Application* app = app_system()->application_service()->
       GetApplicationByRenderHostID(host->GetID());

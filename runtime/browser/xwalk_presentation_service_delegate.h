@@ -94,7 +94,10 @@ class XWalkPresentationServiceDelegate
       const content::PresentationRequest& request,
       content::PresentationConnectionPtr controller_connection_ptr,
       content::PresentationConnectionRequest receiver_connection_request) override {}
-
+  void StartPresentation(
+      const content::PresentationRequest& request,
+      content::PresentationConnectionCallback success_cb,
+      content::PresentationConnectionErrorCallback error_cb) override;
  protected:
   PresentationFrame* GetOrAddPresentationFrame(
       const RenderFrameHostId& render_frame_host_id);

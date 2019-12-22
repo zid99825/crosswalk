@@ -70,15 +70,11 @@ class XWalkDevToolsHttpHandlerDelegate :
   ~XWalkDevToolsHttpHandlerDelegate() override;
 
   // DevToolsHttpHandlerDelegate implementation.
+  std::string GetTargetDescription(content::WebContents* web_contents) override;
+  content::DevToolsAgentHost::List RemoteDebuggingTargets() override;
   std::string GetDiscoveryPageHTML() override;
-  std::string GetFrontendResource(const std::string& path) override;
-/*  std::string GetPageThumbnailData(const GURL& url) override;
-  content::DevToolsExternalAgentProxyDelegate*
-      HandleWebSocketConnection(const std::string& path) override;
-  void ProcessAndSaveThumbnail(const GURL& url,
-                               scoped_refptr<base::RefCountedBytes> png);
-*/
- private:
+  bool IsBrowserTargetDiscoverable() override;
+
   using ThumbnailMap = std::map<GURL, std::string>;
   ThumbnailMap thumbnail_map_;
 
@@ -93,83 +89,76 @@ XWalkDevToolsHttpHandlerDelegate::XWalkDevToolsHttpHandlerDelegate()
 XWalkDevToolsHttpHandlerDelegate::~XWalkDevToolsHttpHandlerDelegate() {
 }
 
+// TODO(iotto): Implement
+//std::string DevToolsManagerDelegateAndroid::GetTargetType(
+//    content::WebContents* web_contents) {
+//  TabAndroid* tab = web_contents ? TabAndroid::FromWebContents(web_contents)
+//      : nullptr;
+//  return tab ? DevToolsAgentHost::kTypePage :
+//      DevToolsAgentHost::kTypeOther;
+//}
+
+std::string XWalkDevToolsHttpHandlerDelegate::GetTargetDescription(content::WebContents* web_contents) {
+  LOG(WARNING) << "iotto " << __func__ << " IMPLEMENT";
+  return std::string();
+}
+
+content::DevToolsAgentHost::List XWalkDevToolsHttpHandlerDelegate::RemoteDebuggingTargets() {
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
+  // see: chrome/browser/android/devtools_manager_delegate_android.cc
+
+  return content::DevToolsAgentHost::List();
+//  DevToolsAgentHost::List result;
+//  std::set<WebContents*> tab_web_contents;
+//  for (TabModelList::const_iterator iter = TabModelList::begin();
+//      iter != TabModelList::end(); ++iter) {
+//    TabModel* model = *iter;
+//    for (int i = 0; i < model->GetTabCount(); ++i) {
+//      TabAndroid* tab = model->GetTabAt(i);
+//      if (!tab)
+//        continue;
+//
+//      if (tab->web_contents())
+//        tab_web_contents.insert(tab->web_contents());
+//      result.push_back(DevToolsAgentHostForTab(tab));
+//    }
+//  }
+//
+//  // Add descriptors for targets not associated with any tabs.
+//  DevToolsAgentHost::List agents = DevToolsAgentHost::GetOrCreateAll();
+//  for (DevToolsAgentHost::List::iterator it = agents.begin();
+//       it != agents.end(); ++it) {
+//    if (WebContents* web_contents = (*it)->GetWebContents()) {
+//      if (tab_web_contents.find(web_contents) != tab_web_contents.end())
+//        continue;
+//    }
+//    result.push_back(*it);
+//  }
+//
+//  return result;
+}
+
 std::string XWalkDevToolsHttpHandlerDelegate::GetDiscoveryPageHTML() {
   return ui::ResourceBundle::GetSharedInstance().GetRawDataResource(
       IDR_DEVTOOLS_FRONTEND_PAGE_HTML).as_string();
 }
 
-std::string XWalkDevToolsHttpHandlerDelegate::GetFrontendResource(
-    const std::string& path) {
-#if defined(OS_ANDROID)
-  return std::string();
-#else
-  return content::DevToolsFrontendHost::GetFrontendResource(path).as_string();
-#endif
+bool XWalkDevToolsHttpHandlerDelegate::IsBrowserTargetDiscoverable() {
+  return true;
+}
 
-}
-/*
-std::string XWalkDevToolsHttpHandlerDelegate::GetPageThumbnailData(
-    const GURL& url) {
-  if (thumbnail_map_.find(url) != thumbnail_map_.end())
-    return thumbnail_map_[url];
-  // TODO(YangangHan): Support real time thumbnail.
-  DevToolsAgentHost::List agents =
-      content::DevToolsAgentHost::GetOrCreateAll();
-  for (auto& it : agents) {
-    content::WebContents* web_contents = it.get()->GetWebContents();
-    if (web_contents && web_contents->GetURL() == url) {
-      RenderWidgetHostView* render_widget_host_view =
-          web_contents->GetRenderWidgetHostView();
-      if (!render_widget_host_view)
-        continue;
-      gfx::Rect snapshot_bounds(
-        render_widget_host_view->GetViewBounds().size());
-      ui::GrabViewSnapshotAsync(
-        render_widget_host_view->GetNativeView(),
-        snapshot_bounds,
-        base::ThreadTaskRunnerHandle::Get(),
-        base::Bind(&XWalkDevToolsHttpHandlerDelegate::ProcessAndSaveThumbnail,
-                   weak_factory_.GetWeakPtr(),
-                   url));
-        break;
-    }
-  }
-  return std::string();
-}
-*/
-/*
-content::DevToolsExternalAgentProxyDelegate*
-XWalkDevToolsHttpHandlerDelegate::HandleWebSocketConnection(
-    const std::string& path) {
-  return nullptr;
-}
-*/
-/*
-void XWalkDevToolsHttpHandlerDelegate::ProcessAndSaveThumbnail(
-    const GURL& url,
-    scoped_refptr<base::RefCountedBytes> png) {
-  if (!png.get())
-    return;
-  const std::vector<unsigned char>& png_data = png->data();
-  std::string png_string_data(reinterpret_cast<const char*>(&png_data[0]),
-                              png_data.size());
-  thumbnail_map_[url] = png_string_data;
-}
-*/
 RemoteDebuggingServer::RemoteDebuggingServer(
     XWalkBrowserContext* browser_context,
     const std::string& ip,
     int port,
     const std::string& frontend_url) {
+
+  LOG(WARNING) << "iotto " << __func__ << " REFACTOR!";
   base::FilePath output_dir;
-  std::unique_ptr<content::DevToolsSocketFactory>
-      factory(new TCPServerSocketFactory(ip, port, 1));
-  devtools_http_handler_.reset(new content::DevToolsHttpHandler(
-          new XWalkDevToolsHttpHandlerDelegate(),
-          std::move(factory),
-          frontend_url,
-          output_dir,
-          output_dir));
+  std::unique_ptr<content::DevToolsSocketFactory> factory(new TCPServerSocketFactory(ip, port, 1));
+  DevToolsAgentHost::StartRemoteDebuggingServer(
+      std::move(factory),
+      base::FilePath(), base::FilePath());
 
   port_ = port;
 }

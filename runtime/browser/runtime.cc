@@ -33,7 +33,7 @@
 #include "xwalk/application/browser/application_system.h"
 #include "xwalk/runtime/browser/image_util.h"
 #include "xwalk/runtime/browser/media/media_capture_devices_dispatcher.h"
-#include "xwalk/runtime/browser/runtime_file_select_helper.h"
+//#include "xwalk/runtime/browser/runtime_file_select_helper.h"
 #include "xwalk/runtime/browser/ui/color_chooser.h"
 #include "xwalk/runtime/browser/xwalk_autofill_manager.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
@@ -58,15 +58,15 @@ Runtime* Runtime::Create(XWalkBrowserContext* browser_context,
                          scoped_refptr<content::SiteInstance> site) {
   WebContents::CreateParams params(browser_context, site);
   params.routing_id = MSG_ROUTING_NONE;
-  WebContents* web_contents = WebContents::Create(params);
+  std::unique_ptr<WebContents> web_contents(WebContents::Create(params));
 
  //TODO(iotto) have URL param and load url for debugger
-  return new Runtime(web_contents);
+  return new Runtime(std::move(web_contents));
 }
 
-Runtime::Runtime(content::WebContents* web_contents)
-    : WebContentsObserver(web_contents),
-      web_contents_(web_contents),
+Runtime::Runtime(std::unique_ptr<content::WebContents> web_contents)
+    : WebContentsObserver(web_contents.get()),
+      web_contents_(std::move(web_contents)),
       fullscreen_options_(NO_FULLSCREEN),
       ui_delegate_(nullptr),
       observer_(nullptr),
@@ -178,12 +178,12 @@ void Runtime::ExitFullscreenModeForTab(content::WebContents* web_contents) {
 }
 
 bool Runtime::IsFullscreenForTabOrPending(
-    const content::WebContents* web_contents) const {
+    const content::WebContents* web_contents) {
   return (fullscreen_options_ & FULLSCREEN_FOR_TAB) != 0;
 }
 
 blink::WebDisplayMode Runtime::GetDisplayMode(
-    const content::WebContents* web_contents) const {
+    const content::WebContents* web_contents) {
   return (ui_delegate_) ? ui_delegate_->GetDisplayMode()
                         : blink::kWebDisplayModeUndefined;
 }
@@ -207,7 +207,7 @@ void Runtime::RequestApplicationExit() {
     observer_->OnApplicationExitRequested(this);
 }
 
-bool Runtime::CanOverscrollContent() const {
+bool Runtime::CanOverscrollContent() {
   return false;
 }
 
@@ -237,10 +237,13 @@ void Runtime::WebContentsCreated(
     const std::string& frame_name,
     const GURL& target_url,
     content::WebContents* new_contents) {
-  if (observer_)
-    observer_->OnNewRuntimeAdded(new Runtime(new_contents));
-  else
-    LOG(WARNING) << "New web contents is left unhandled.";
+  LOG(ERROR) << "iotto " << __func__ << " REFACTOR! unique ptr";
+//  AwContentsIoThreadClient::RegisterPendingContents(new_contents);
+
+//  if (observer_)
+//    observer_->OnNewRuntimeAdded(new Runtime(new_contents));
+//  else
+//    LOG(WARNING) << "New web contents is left unhandled.";
 }
 
 void Runtime::DidNavigateMainFramePostCommit(
@@ -399,7 +402,7 @@ void Runtime::SetOverlayMode(bool useOverlayMode) {
   TENTA_LOG_NET(WARNING) << __func__ << " not_implemented useOverlayMode=" << useOverlayMode;
 }
 
-bool Runtime::AddDownloadItem(content::DownloadItem* download_item,
+bool Runtime::AddDownloadItem(download::DownloadItem* download_item,
     const content::DownloadTargetCallback& callback,
     const base::FilePath& suggested_path) {
   if (ui_delegate_) {

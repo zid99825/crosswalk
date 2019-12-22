@@ -24,7 +24,7 @@ RuntimeJavaScriptDialogManager::~RuntimeJavaScriptDialogManager() {
 
 void RuntimeJavaScriptDialogManager::RunJavaScriptDialog(
     content::WebContents* web_contents,
-    const GURL& origin_url,
+    content::RenderFrameHost* render_frame_host,
     content::JavaScriptDialogType javascript_dialog_type,
     const base::string16& message_text,
     const base::string16& default_prompt_text,
@@ -33,8 +33,12 @@ void RuntimeJavaScriptDialogManager::RunJavaScriptDialog(
 #if defined(OS_ANDROID)
   XWalkContentsClientBridge* bridge =
       XWalkContentsClientBridge::FromWebContents(web_contents);
+  if (!bridge) {
+    std::move(callback).Run(false, base::string16());
+    return;
+  }
   bridge->RunJavaScriptDialog(javascript_dialog_type,
-                              origin_url,
+                              render_frame_host->GetLastCommittedURL(),
                               message_text,
                               default_prompt_text,
                               std::move(callback));

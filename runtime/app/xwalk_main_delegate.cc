@@ -8,7 +8,7 @@
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/path_service.h"
-#include "components/nacl/common/features.h"
+#include "components/nacl/common/buildflags.h"
 #include "content/public/browser/browser_main_runner.h"
 #include "content/public/common/content_switches.h"
 #include "ui/base/material_design/material_design_controller.h"
@@ -95,7 +95,7 @@ void XWalkMainDelegate::SandboxInitialized(const std::string& process_type) {
 int XWalkMainDelegate::RunProcess(const std::string& process_type,
     const content::MainFunctionParams& main_function_params) {
   if (process_type.empty()) {
-    browser_runner_.reset(content::BrowserMainRunner::Create());
+    browser_runner_ = content::BrowserMainRunner::Create();
     int exit_code = browser_runner_->Initialize(main_function_params);
     DCHECK_LT(exit_code, 0);
 
@@ -137,7 +137,7 @@ void XWalkMainDelegate::InitializeResourceBundle() {
   pak_file = GetResourcesPakFilePath();
   pak_dir = pak_file.DirName();
 #else
-  PathService::Get(base::DIR_MODULE, &pak_dir);
+  base::PathService::Get(base::DIR_MODULE, &pak_dir);
   DCHECK(!pak_dir.empty());
 #endif
 

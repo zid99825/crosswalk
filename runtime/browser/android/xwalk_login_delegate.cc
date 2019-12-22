@@ -34,12 +34,14 @@ class UrlRequestAuthAttemptsData : public base::SupportsUserData::Data {
 
 namespace xwalk {
 
-XWalkLoginDelegate::XWalkLoginDelegate(net::AuthChallengeInfo* auth_info,
-                                       net::URLRequest* request)
+XWalkLoginDelegate::XWalkLoginDelegate(net::AuthChallengeInfo* auth_info, content::WebContents* web_contents, bool first_auth_attempt,
+                                       LoginAuthRequiredCallback callback)
     : auth_info_(auth_info),
       request_(request),
       render_process_id_(0),
       render_frame_id_(0) {
+  LOG(ERROR) << "iotto " << __func__ << " REFACTOR";
+
     ResourceRequestInfo::GetRenderFrameForRequest(
         request, &render_process_id_, &render_frame_id_);
 

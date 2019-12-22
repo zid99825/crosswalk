@@ -62,6 +62,7 @@ class XWalkBrowserContext
   // given WebContents.
   static XWalkBrowserContext* FromWebContents(
       content::WebContents* web_contents);
+  static base::FilePath GetCookieStorePath();
 
   // BrowserContext implementation.
   base::FilePath GetPath() override;
@@ -73,6 +74,7 @@ class XWalkBrowserContext
   content::PushMessagingService* GetPushMessagingService() override;
   content::SSLHostStateDelegate* GetSSLHostStateDelegate() override;
   content::PermissionControllerDelegate* GetPermissionControllerDelegate() override;
+  content::ClientHintsControllerDelegate* GetClientHintsControllerDelegate() override;
   // Returns the BackgroundFetchDelegate associated with that context if any,
   // nullptr otherwise.
   content::BackgroundFetchDelegate* GetBackgroundFetchDelegate() override;
@@ -114,7 +116,11 @@ class XWalkBrowserContext
   void RebuildTable(
       const scoped_refptr<URLEnumerator>& enumerator) override;
 
- private:
+  base::FilePath GetCacheDir();
+  network::mojom::NetworkContextParamsPtr GetNetworkContextParams(bool in_memory,
+                                                                  const base::FilePath& relative_partition_path);
+
+ private: // --------------------------------------------------
   class RuntimeResourceContext;
 
   // Performs initialization of the XWalkBrowserContext while IO is still

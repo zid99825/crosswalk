@@ -11,40 +11,46 @@
 #include "base/android/jni_android.h"
 #include "base/android/scoped_java_ref.h"
 #include "base/memory/ref_counted.h"
-#include "xwalk/runtime/browser/android/xwalk_login_delegate.h"
-#include "xwalk/runtime/browser/android/xwalk_http_auth_handler_base.h"
+#include "base/memory/weak_ptr.h"
+#include "content/public/browser/content_browser_client.h"
+#include "content/public/browser/login_delegate.h"
+#include "content/public/browser/web_contents_observer.h"
 
 namespace content {
 class WebContents;
-};
+} // namesapce content
 
 namespace net {
 class AuthChallengeInfo;
-};
+} // namespace net
 
 namespace xwalk {
 class XWalkLoginDelegate;
 // Native class for Java class of same name and owns an instance
 // of that Java object.
-// One instance of this class is created per underlying XWalkLoginDelegate.
-class XWalkHttpAuthHandler : public XWalkHttpAuthHandlerBase {
+class XWalkHttpAuthHandler : public content::LoginDelegate,
+                             public content::WebContentsObserver {
  public:
-  XWalkHttpAuthHandler(XWalkLoginDelegate* login_delegate,
-                       net::AuthChallengeInfo* auth_info,
-                       bool first_auth_attempt);
+  XWalkHttpAuthHandler(const net::AuthChallengeInfo& auth_info,
+                       content::WebContents* web_contents,
+                       bool first_auth_attempt,
+                       LoginAuthRequiredCallback callback);
   ~XWalkHttpAuthHandler() override;
 
-  // from XWalkHttpAuthHandler
-  bool HandleOnUIThread(content::WebContents* web_contents) override;
-
-  void Proceed(JNIEnv* env, jobject obj, jstring username, jstring password);
-  void Cancel(JNIEnv* env, jobject obj);
+  void Proceed(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
+               const base::android::JavaParamRef<jstring>& username,
+               const base::android::JavaParamRef<jstring>& password);
+  void Cancel(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
 
  private:
-  scoped_refptr<XWalkLoginDelegate> login_delegate_;
+  void Start();
+
   base::android::ScopedJavaGlobalRef<jobject> http_auth_handler_;
   std::string host_;
   std::string realm_;
+
+  LoginAuthRequiredCallback callback_;
+  base::WeakPtrFactory<XWalkHttpAuthHandler> weak_factory_;
 };
 
 }  // namespace xwalk

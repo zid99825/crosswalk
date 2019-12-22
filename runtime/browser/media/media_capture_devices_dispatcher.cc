@@ -10,13 +10,14 @@
 #include "components/prefs/pref_service.h"
 #include "components/user_prefs/user_prefs.h"
 #include "content/public/browser/media_capture_devices.h"
+#include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
-#include "content/public/common/media_stream_request.h"
 #include "grit/xwalk_resources.h"
 #include "net/base/url_util.h"
 #include "ui/base/l10n/l10n_util.h"
+#include "third_party/blink/public/common/mediastream/media_stream_request.h"
 #include "xwalk/application/browser/application.h"
 #include "xwalk/application/browser/application_service.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
@@ -27,27 +28,28 @@
 #include "xwalk/runtime/browser/ui/desktop/xwalk_permission_dialog_manager.h"
 #endif
 
+using blink::MediaStreamDevices;
 using content::BrowserThread;
 using content::MediaCaptureDevices;
-using content::MediaStreamDevices;
 
 namespace {
 
-const content::MediaStreamDevice* FindDefaultDeviceWithId(
-    const content::MediaStreamDevices& devices,
-    const std::string& device_id) {
-  if (devices.empty()) {
-    return NULL;
-  }
-  content::MediaStreamDevices::const_iterator iter = devices.begin();
+const blink::MediaStreamDevice* FindDefaultDeviceWithId(const blink::MediaStreamDevices& devices,
+                                                        const std::string& device_id) {
+  auto iter = devices.begin();
   for (; iter != devices.end(); ++iter) {
     if (iter->id == device_id) {
       return &(*iter);
     }
   }
-
-  return &(*devices.begin());
+  return NULL;
 }
+
+//content::WebContents* WebContentsFromIds(int render_process_id, int render_frame_id) {
+//  content::WebContents* web_contents = content::WebContents::FromRenderFrameHost(
+//      content::RenderFrameHost::FromID(render_process_id, render_frame_id));
+//  return web_contents;
+//}
 
 }  // namespace
 
@@ -61,18 +63,18 @@ XWalkMediaCaptureDevicesDispatcher*
 bool ContentTypeIsRequested(ContentSettingsType type,
     const content::MediaStreamRequest& request) {
   if (type == CONTENT_SETTINGS_TYPE_MEDIASTREAM_MIC)
-    return request.audio_type == content::MEDIA_DEVICE_AUDIO_CAPTURE;
+    return request.audio_type == blink::mojom::MediaStreamType::DEVICE_AUDIO_CAPTURE;
   if (type == CONTENT_SETTINGS_TYPE_MEDIASTREAM_CAMERA)
-    return request.video_type == content::MEDIA_DEVICE_VIDEO_CAPTURE;
+    return request.video_type == blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE;
 
   return false;
 }
 
 int GetDialogMessageText(const content::MediaStreamRequest& request) {
   bool audio_requested =
-      request.audio_type == content::MEDIA_DEVICE_AUDIO_CAPTURE;
+      request.audio_type == blink::mojom::MediaStreamType::DEVICE_AUDIO_CAPTURE;
   bool video_requested =
-      request.video_type == content::MEDIA_DEVICE_VIDEO_CAPTURE;
+      request.video_type == blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE;
   if (audio_requested && video_requested)
     return IDS_MEDIA_CAPTURE_AUDIO_AND_VIDEO;
   if (video_requested)
@@ -84,16 +86,16 @@ int GetDialogMessageText(const content::MediaStreamRequest& request) {
 void XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(
     content::WebContents* web_contents,
     const content::MediaStreamRequest& request,
-    const content::MediaResponseCallback& callback) {
-  content::MediaStreamDevices devices;
+    content::MediaResponseCallback callback) {
+  blink::MediaStreamDevices devices;
   if (ContentTypeIsRequested(
           CONTENT_SETTINGS_TYPE_MEDIASTREAM_MIC, request) ||
       ContentTypeIsRequested(
           CONTENT_SETTINGS_TYPE_MEDIASTREAM_CAMERA, request)) {
     switch (request.request_type) {
-      case content::MEDIA_OPEN_DEVICE_PEPPER_ONLY:
-      case content::MEDIA_DEVICE_ACCESS:
-      case content::MEDIA_GENERATE_STREAM:
+      case blink::MediaStreamRequestType::MEDIA_OPEN_DEVICE_PEPPER_ONLY:
+      case blink::MediaStreamRequestType::MEDIA_DEVICE_ACCESS:
+      case blink::MediaStreamRequestType::MEDIA_GENERATE_STREAM:
       {
 #if defined (OS_ANDROID)
         // Get the exact audio and video devices if id is specified.
@@ -101,8 +103,8 @@ void XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(
         XWalkMediaCaptureDevicesDispatcher::GetInstance()->GetRequestedDevice(
             request.requested_audio_device_id,
             request.requested_video_device_id,
-            request.audio_type == content::MEDIA_DEVICE_AUDIO_CAPTURE,
-            request.video_type == content::MEDIA_DEVICE_VIDEO_CAPTURE,
+            request.audio_type == blink::mojom::MediaStreamType::DEVICE_AUDIO_CAPTURE,
+            request.video_type == blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE,
             &devices);
         break;
 #else
@@ -110,13 +112,15 @@ void XWalkMediaCaptureDevicesDispatcher::RunRequestMediaAccessPermission(
         break;
 #endif
       }
+      default:
+        break;
     }
   }
 #if defined (OS_ANDROID)
-  callback.Run(devices,
+  std::move(callback).Run(devices,
                devices.empty() ?
-                   content::MEDIA_DEVICE_NO_HARDWARE :
-                   content::MEDIA_DEVICE_OK,
+                   blink::mojom::MediaStreamRequestResult::NO_HARDWARE :
+                   blink::mojom::MediaStreamRequestResult::OK,
                std::unique_ptr<content::MediaStreamUI>());
 #endif
 }
@@ -132,7 +136,7 @@ void XWalkMediaCaptureDevicesDispatcher::RequestPermissionToUser(
   // from WebRTC/mediaDevices. These requests can't be made from HTTP.
   if (request.security_origin.SchemeIs(url::kHttpScheme) &&
       !net::IsLocalhost(request.security_origin.host()))
-    callback.Run(content::MediaStreamDevices(),
+    callback.Run(blink::MediaStreamDevices(),
                  content::MEDIA_DEVICE_PERMISSION_DENIED,
                  std::unique_ptr<content::MediaStreamUI>());
 
@@ -175,7 +179,7 @@ void XWalkMediaCaptureDevicesDispatcher::OnPermissionRequestFinished(
     const content::MediaStreamRequest& request,
     content::WebContents* web_contents,
     bool success) {
-  content::MediaStreamDevices devices;
+  blink::MediaStreamDevices devices;
   bool audio_requested =
       request.audio_type == content::MEDIA_DEVICE_AUDIO_CAPTURE;
   bool video_requested =
@@ -250,20 +254,20 @@ void XWalkMediaCaptureDevicesDispatcher::GetRequestedDevice(
     const std::string& requested_video_device_id,
     bool audio,
     bool video,
-    content::MediaStreamDevices* devices) {
+    blink::MediaStreamDevices* devices) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   DCHECK(audio || video);
 
   if (audio) {
-    const content::MediaStreamDevices& audio_devices = GetAudioCaptureDevices();
-    const content::MediaStreamDevice* const device =
+    const blink::MediaStreamDevices& audio_devices = GetAudioCaptureDevices();
+    const blink::MediaStreamDevice* const device =
         FindDefaultDeviceWithId(audio_devices, requested_audio_device_id);
     if (device)
       devices->push_back(*device);
   }
   if (video) {
-    const content::MediaStreamDevices& video_devices = GetVideoCaptureDevices();
-    const content::MediaStreamDevice* const device =
+    const blink::MediaStreamDevices& video_devices = GetVideoCaptureDevices();
+    const blink::MediaStreamDevice* const device =
         FindDefaultDeviceWithId(video_devices, requested_video_device_id);
     if (device)
       devices->push_back(*device);
@@ -272,18 +276,16 @@ void XWalkMediaCaptureDevicesDispatcher::GetRequestedDevice(
 
 void XWalkMediaCaptureDevicesDispatcher::OnAudioCaptureDevicesChanged() {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
-  BrowserThread::PostTask(
-      BrowserThread::UI, FROM_HERE,
-      base::Bind(
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+      base::BindOnce(
           &XWalkMediaCaptureDevicesDispatcher::NotifyAudioDevicesChangedOnUIThread, // NOLINT
           base::Unretained(this)));
 }
 
 void XWalkMediaCaptureDevicesDispatcher::OnVideoCaptureDevicesChanged() {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
-  BrowserThread::PostTask(
-      BrowserThread::UI, FROM_HERE,
-      base::Bind(
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+      base::BindOnce(
           &XWalkMediaCaptureDevicesDispatcher::NotifyVideoDevicesChangedOnUIThread, // NOLINT
           base::Unretained(this)));
 }
@@ -293,12 +295,11 @@ void XWalkMediaCaptureDevicesDispatcher::OnMediaRequestStateChanged(
     int render_frame_id,
     int page_request_id,
     const GURL& security_origin,
-    content::MediaStreamType stream_type,
+    blink::mojom::MediaStreamType stream_type,
     content::MediaRequestState state) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
-  BrowserThread::PostTask(
-      BrowserThread::UI, FROM_HERE,
-      base::Bind(
+  base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+      base::BindOnce(
           &XWalkMediaCaptureDevicesDispatcher::UpdateMediaReqStateOnUIThread,
           base::Unretained(this), render_process_id, render_frame_id,
           security_origin, stream_type, state));
@@ -322,7 +323,7 @@ void XWalkMediaCaptureDevicesDispatcher::UpdateMediaReqStateOnUIThread(
     int render_process_id,
     int render_frame_id,
     const GURL& security_origin,
-    content::MediaStreamType stream_type,
+    blink::mojom::MediaStreamType stream_type,
     content::MediaRequestState state) {
   for (auto& observer : observers_) {
     observer.OnRequestUpdate(render_process_id,

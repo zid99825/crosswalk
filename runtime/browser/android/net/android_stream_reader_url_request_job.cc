@@ -17,9 +17,9 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/task_runner.h"
-#include "base/task_scheduler/post_task.h"
-#include "base/threading/sequenced_worker_pool.h"
+#include "base/task/post_task.h"
 #include "base/threading/thread.h"
+#include "base/threading/thread_task_runner_handle.h"
 #include "content/public/browser/browser_thread.h"
 #include "net/base/io_buffer.h"
 #include "net/base/mime_util.h"
@@ -180,7 +180,7 @@ void AndroidStreamReaderURLRequestJob::Start() {
       FROM_HERE,
       base::BindOnce(
           &OpenInputStreamOnWorkerThread,
-          base::MessageLoop::current()->task_runner(),
+          base::ThreadTaskRunnerHandle::Get(),
           // This is intentional - the job could be deleted while the callback
           // is executing on the background thread.
           // The delegate will be "returned" to the job once the InputStream
@@ -312,7 +312,7 @@ void AndroidStreamReaderURLRequestJob::HeadersComplete(
     int status_code,
     const std::string& status_text) {
   std::string status("HTTP/1.1 ");
-  status.append(base::IntToString(status_code));
+  status.append(base::NumberToString(status_code));
   status.append(" ");
   status.append(status_text);
   // HttpResponseHeaders expects its input string to be terminated by two NULs.
@@ -325,7 +325,7 @@ void AndroidStreamReaderURLRequestJob::HeadersComplete(
           net::HttpRequestHeaders::kContentLength);
       content_length_header.append(": ");
       content_length_header.append(
-          base::Int64ToString(expected_content_size()));
+          base::NumberToString(expected_content_size()));
       headers->AddHeader(content_length_header);
     }
 

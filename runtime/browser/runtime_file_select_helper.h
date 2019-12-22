@@ -13,9 +13,9 @@
 #include "base/gtest_prod_util.h"
 #include "content/public/browser/notification_observer.h"
 #include "content/public/browser/notification_registrar.h"
-#include "content/public/common/file_chooser_params.h"
 #include "net/base/directory_lister.h"
 #include "ui/shell_dialogs/select_file_dialog.h"
+#include "third_party/blink/public/mojom/choosers/file_chooser.mojom.h"
 
 namespace content {
 class RenderViewHost;
@@ -37,7 +37,7 @@ class RuntimeFileSelectHelper
  public:
   // Show the file chooser dialog.
   static void RunFileChooser(content::RenderFrameHost* render_frame_host,
-                             const content::FileChooserParams& params);
+                             const blink::mojom::FileChooserParams& params);
 
   // Enumerates all the files in directory.
   static void EnumerateDirectory(content::WebContents* tab,
@@ -72,7 +72,7 @@ class RuntimeFileSelectHelper
 
   void RunFileChooser(content::RenderFrameHost* render_frame_host,
                       content::WebContents* web_contents,
-                      const content::FileChooserParams& params);
+                      const blink::mojom::::FileChooserParams& params);
   void RunFileChooserOnFileThread(
       const content::FileChooserParams& params);
   void RunFileChooserOnUIThread(
@@ -145,7 +145,7 @@ class RuntimeFileSelectHelper
   // The type of file dialog last shown.
   ui::SelectFileDialog::Type dialog_type_;
 
-  content::FileChooserParams::Mode dialog_mode_;
+  blink::mojom::FileChooserParams::Mode dialog_mode_;
 
   // Maintain a list of active directory enumerations.  These could come from
   // the file select dialog or from drag-and-drop of directories, so there could

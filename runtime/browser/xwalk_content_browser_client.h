@@ -53,6 +53,8 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   ~XWalkContentBrowserClient() override;
 
   // ContentBrowserClient overrides.
+  network::mojom::NetworkContextPtr CreateNetworkContext(content::BrowserContext* context, bool in_memory,
+                                                         const base::FilePath& relative_partition_path) override;
   std::unique_ptr<content::BrowserMainParts> CreateBrowserMainParts(const content::MainFunctionParams& parameters)
       override;
   void AppendExtraCommandLineSwitches(base::CommandLine* command_line, int child_process_id) override;
