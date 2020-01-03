@@ -56,6 +56,7 @@
 #include "xwalk/runtime/common/xwalk_switches.h"
 #ifdef TENTA_CHROMIUM_BUILD
 //#include "host_resolver_tenta.h"
+#include "tenta_host_resolver.h"
 #include "xwalk/third_party/tenta/chromium_cache/chromium_cache_factory.h"
 
 namespace tenta_cache = tenta::fs::cache;
@@ -239,19 +240,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(
         new tenta_cache::ChromiumCacheFactory(nullptr));
 
-    LOG(ERROR) << "iotto " << __func__ << " FIX host resolver";
-//    //TODO (iotto): Remove backup, needed for speed comparison
-//    // or use when we'll have option for native host resolver
-//    std::unique_ptr<net::HostResolver> backup =
-//    net::HostResolver::CreateStandaloneContextResolver(nullptr /*netlog*/);
-//
-//    tenta::ext::HostResolverTenta * hrt = new tenta::ext::HostResolverTenta(
-//        std::move(backup));
-//    hrt->use_backup(false);
-//
-//    std::unique_ptr<net::HostResolver> host_resolver(hrt);
-
-    std::unique_ptr<net::HostResolver> host_resolver = net::HostResolver::CreateStandaloneResolver(nullptr /*netlog*/);
+    std::unique_ptr<net::HostResolver> host_resolver(new tenta::ext::TentaHostResolver());
+    //    = net::HostResolver::CreateStandaloneResolver(nullptr /*netlog*/);
 #else
     base::FilePath cache_path = base_path_.Append(FILE_PATH_LITERAL("Cache"));
 
