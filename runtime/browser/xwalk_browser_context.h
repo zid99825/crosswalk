@@ -43,9 +43,9 @@ namespace xwalk {
 
 class RuntimeDownloadManagerDelegate;
 
-namespace application {
-class ApplicationService;
-}
+//namespace application {
+//class ApplicationService;
+//}
 
 class XWalkBrowserContext
     : public content::BrowserContext,
@@ -95,13 +95,13 @@ class XWalkBrowserContext
   void UpdateAcceptLanguages(const std::string& accept_languages);
   void set_save_form_data(bool enable) { save_form_data_ = enable; }
   bool save_form_data() const { return save_form_data_; }
-  application::ApplicationService* application_service() const {
-    return application_service_;
-  }
-  void set_application_service(
-      application::ApplicationService* application_service) {
-    application_service_ = application_service;
-  }
+//  application::ApplicationService* application_service() const {
+//    return application_service_;
+//  }
+//  void set_application_service(
+//      application::ApplicationService* application_service) {
+//    application_service_ = application_service;
+//  }
 
   net::URLRequestContextGetter* url_request_getter() const {
       return url_request_getter_.get();
@@ -130,7 +130,7 @@ class XWalkBrowserContext
   // Reset visitedlink master and initialize it.
   void InitVisitedLinkMaster();
 
-  application::ApplicationService* application_service_;
+//  application::ApplicationService* application_service_;
   std::unique_ptr<RuntimeResourceContext> resource_context_;
   scoped_refptr<RuntimeDownloadManagerDelegate> download_manager_delegate_;
   scoped_refptr<RuntimeURLRequestContextGetter> url_request_getter_;

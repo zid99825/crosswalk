@@ -225,10 +225,10 @@ class XWalkPermissionManager::PendingRequest {
 };
 
 XWalkPermissionManager::XWalkPermissionManager(
-    application::ApplicationService* application_service)
+    /*application::ApplicationService* application_service*/)
     :
 //        content::PermissionManager(),
-      application_service_(application_service),
+//      application_service_(application_service),
       weak_ptr_factory_(this) {
 }
 
@@ -239,11 +239,11 @@ XWalkPermissionManager::~XWalkPermissionManager() {
 void XWalkPermissionManager::GetApplicationName(
     content::RenderFrameHost* render_frame_host,
     std::string* name) {
-  application::Application* app =
-      application_service_->GetApplicationByRenderHostID(
-      render_frame_host->GetProcess()->GetID());
-  if (app)
-    *name = app->data()->Name();
+//  application::Application* app =
+//      application_service_->GetApplicationByRenderHostID(
+//      render_frame_host->GetProcess()->GetID());
+//  if (app)
+//    *name = app->data()->Name();
 }
 
 int XWalkPermissionManager::RequestPermission(

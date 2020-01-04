@@ -74,41 +74,41 @@ constexpr char kThrottledErrorDescription[] = "Request throttled. Visit http://d
 
 xwalk::XWalkContentRendererClient* g_renderer_client;
 
-class XWalkFrameHelper
-    : public content::RenderFrameObserver,
-      public content::RenderFrameObserverTracker<XWalkFrameHelper> {
- public:
-  XWalkFrameHelper(
-      content::RenderFrame* render_frame,
-      extensions::XWalkExtensionRendererController* extension_controller)
-      : content::RenderFrameObserver(render_frame),
-        content::RenderFrameObserverTracker<XWalkFrameHelper>(render_frame),
-        extension_controller_(extension_controller) {}
-  ~XWalkFrameHelper() override {}
-
-  // RenderFrameObserver implementation.
-  void DidCreateScriptContext(v8::Handle<v8::Context> context,
-                              int world_id) override {
-    if (extension_controller_)
-      extension_controller_->DidCreateScriptContext(
-          render_frame()->GetWebFrame(), context);
-  }
-  void WillReleaseScriptContext(v8::Handle<v8::Context> context,
-                                int world_id) override {
-    if (extension_controller_)
-      extension_controller_->WillReleaseScriptContext(
-          render_frame()->GetWebFrame(), context);
-  }
-
-  void OnDestruct() override {
-    delete this;
-  }
-
- private:
-  extensions::XWalkExtensionRendererController* extension_controller_;
-
-  DISALLOW_COPY_AND_ASSIGN(XWalkFrameHelper);
-};
+//class XWalkFrameHelper
+//    : public content::RenderFrameObserver,
+//      public content::RenderFrameObserverTracker<XWalkFrameHelper> {
+// public:
+//  XWalkFrameHelper(
+//      content::RenderFrame* render_frame,
+//      extensions::XWalkExtensionRendererController* extension_controller)
+//      : content::RenderFrameObserver(render_frame),
+//        content::RenderFrameObserverTracker<XWalkFrameHelper>(render_frame),
+//        extension_controller_(extension_controller) {}
+//  ~XWalkFrameHelper() override {}
+//
+//  // RenderFrameObserver implementation.
+//  void DidCreateScriptContext(v8::Handle<v8::Context> context,
+//                              int world_id) override {
+//    if (extension_controller_)
+//      extension_controller_->DidCreateScriptContext(
+//          render_frame()->GetWebFrame(), context);
+//  }
+//  void WillReleaseScriptContext(v8::Handle<v8::Context> context,
+//                                int world_id) override {
+//    if (extension_controller_)
+//      extension_controller_->WillReleaseScriptContext(
+//          render_frame()->GetWebFrame(), context);
+//  }
+//
+//  void OnDestruct() override {
+//    delete this;
+//  }
+//
+// private:
+//  extensions::XWalkExtensionRendererController* extension_controller_;
+//
+//  DISALLOW_COPY_AND_ASSIGN(XWalkFrameHelper);
+//};
 
 }  // namespace
 
@@ -212,7 +212,7 @@ bool XWalkContentRendererClient::HandleNavigation(
 
 void XWalkContentRendererClient::RenderFrameCreated(
     content::RenderFrame* render_frame) {
-  new XWalkFrameHelper(render_frame, extension_controller_.get());
+//  new XWalkFrameHelper(render_frame, extension_controller_.get());
   new XWalkRenderFrameExt(render_frame);
 #if defined(OS_ANDROID)
   new XWalkPermissionClient(render_frame);
@@ -259,22 +259,22 @@ void XWalkContentRendererClient::RenderViewCreated(
 #endif
 }
 
-void XWalkContentRendererClient::DidCreateModuleSystem(
-    extensions::XWalkModuleSystem* module_system) {
-  std::unique_ptr<extensions::XWalkNativeModule> app_module(
-      new application::ApplicationNativeModule());
-  module_system->RegisterNativeModule("application", std::move(app_module));
-  std::unique_ptr<extensions::XWalkNativeModule> isolated_file_system_module(
-      new extensions::IsolatedFileSystem());
-  module_system->RegisterNativeModule("isolated_file_system",
-      std::move(isolated_file_system_module));
-  LOG(ERROR) << "iotto " << __func__ << " FIX sysapps_common";
-//  module_system->RegisterNativeModule("sysapps_common",
-//      extensions::CreateJSModuleFromResource(IDR_XWALK_SYSAPPS_COMMON_API));
-  module_system->RegisterNativeModule("widget_common",
-      extensions::CreateJSModuleFromResource(
-          IDR_XWALK_APPLICATION_WIDGET_COMMON_API));
-}
+//void XWalkContentRendererClient::DidCreateModuleSystem(
+//    extensions::XWalkModuleSystem* module_system) {
+//  std::unique_ptr<extensions::XWalkNativeModule> app_module(
+//      new application::ApplicationNativeModule());
+//  module_system->RegisterNativeModule("application", std::move(app_module));
+//  std::unique_ptr<extensions::XWalkNativeModule> isolated_file_system_module(
+//      new extensions::IsolatedFileSystem());
+//  module_system->RegisterNativeModule("isolated_file_system",
+//      std::move(isolated_file_system_module));
+//  LOG(ERROR) << "iotto " << __func__ << " FIX sysapps_common";
+////  module_system->RegisterNativeModule("sysapps_common",
+////      extensions::CreateJSModuleFromResource(IDR_XWALK_SYSAPPS_COMMON_API));
+//  module_system->RegisterNativeModule("widget_common",
+//      extensions::CreateJSModuleFromResource(
+//          IDR_XWALK_APPLICATION_WIDGET_COMMON_API));
+//}
 
 bool XWalkContentRendererClient::IsExternalPepperPlugin(
     const std::string& module_name) {

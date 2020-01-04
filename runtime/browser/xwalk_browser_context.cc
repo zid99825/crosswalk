@@ -250,7 +250,7 @@ content::SSLHostStateDelegate* XWalkBrowserContext::GetSSLHostStateDelegate() {
 
 content::PermissionControllerDelegate* XWalkBrowserContext::GetPermissionControllerDelegate() {
   if (!permission_manager_.get())
-    permission_manager_.reset(new XWalkPermissionManager(application_service_));
+    permission_manager_.reset(new XWalkPermissionManager(/*application_service_*/));
   return permission_manager_.get();
 }
 
@@ -295,12 +295,12 @@ net::URLRequestContextGetter* XWalkBrowserContext::CreateRequestContext(
   if (url_request_getter_)
     return url_request_getter_.get();
 
-  protocol_handlers->insert(
-      std::pair<std::string,
-          std::unique_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
-          application::kApplicationScheme,
-          application::CreateApplicationProtocolHandler(
-                                                        application_service_)));
+//  protocol_handlers->insert(
+//      std::pair<std::string,
+//          std::unique_ptr<net::URLRequestJobFactory::ProtocolHandler> >(
+//          application::kApplicationScheme,
+//          application::CreateApplicationProtocolHandler(
+//                                                        application_service_)));
 
   url_request_getter_ = new RuntimeURLRequestContextGetter(
       false, /* ignore_certificate_error = false */

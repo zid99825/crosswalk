@@ -30,9 +30,9 @@
 #include "ui/base/layout.h"
 #include "ui/base/l10n/l10n_util_android.h"
 #include "ui/base/resource/resource_bundle.h"
-#include "xwalk/extensions/browser/xwalk_extension_service.h"
-#include "xwalk/extensions/common/xwalk_extension.h"
-#include "xwalk/extensions/common/xwalk_extension_switches.h"
+//#include "xwalk/extensions/browser/xwalk_extension_service.h"
+//#include "xwalk/extensions/common/xwalk_extension.h"
+//#include "xwalk/extensions/common/xwalk_extension_switches.h"
 #include "xwalk/runtime/browser/android/cookie_manager.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
@@ -165,7 +165,8 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopStart() {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   // Disable ExtensionProcess for Android.
   // External extensions will run in the BrowserProcess (in process mode).
-  command_line->AppendSwitch(switches::kXWalkDisableExtensionProcess);
+  // TODO(iotto): remove extensions altogether
+//  command_line->AppendSwitch(switches::kXWalkDisableExtensionProcess);
   // Enable viewport.
   command_line->AppendSwitch(switches::kEnableViewport);
 
@@ -218,7 +219,7 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
   content::BrowserContext* context = xwalk_runner_->browser_context();
   TentaTabModelFactory::GetForContext(context);
 #endif
-  extension_service_ = xwalk_runner_->extension_service();
+//  extension_service_ = xwalk_runner_->extension_service();
 
   content::RenderFrameHost::AllowInjectingJavaScript();
 
@@ -240,44 +241,44 @@ void XWalkBrowserMainPartsAndroid::PostMainMessageLoopRun() {
 //  base::MessageLoopForUI::current()->Start();
 }
 
-void XWalkBrowserMainPartsAndroid::CreateInternalExtensionsForExtensionThread(
-    content::RenderProcessHost* host,
-    extensions::XWalkExtensionVector* extensions) {
-  // On Android part, the ownership of each extension object will be transferred
-  // to XWalkExtensionServer after this method is called. It is a rule enforced
-  // by extension system that XWalkExtensionServer must own the extension
-  // objects and extension instances.
-  extensions::XWalkExtensionVector::const_iterator it = extensions_.begin();
-  for (; it != extensions_.end(); ++it)
-    extensions->push_back(*it);
-}
+//void XWalkBrowserMainPartsAndroid::CreateInternalExtensionsForExtensionThread(
+//    content::RenderProcessHost* host,
+//    extensions::XWalkExtensionVector* extensions) {
+//  // On Android part, the ownership of each extension object will be transferred
+//  // to XWalkExtensionServer after this method is called. It is a rule enforced
+//  // by extension system that XWalkExtensionServer must own the extension
+//  // objects and extension instances.
+//  extensions::XWalkExtensionVector::const_iterator it = extensions_.begin();
+//  for (; it != extensions_.end(); ++it)
+//    extensions->push_back(*it);
+//}
 
-void XWalkBrowserMainPartsAndroid::RegisterExtension(
-    std::unique_ptr<XWalkExtension> extension) {
-  // Since the creation of extension object is driven by Java side, and each
-  // Java extension is backed by a native extension object. However, the Java
-  // object may be destroyed by Android lifecycle management without destroying
-  // the native side object. We keep the reference to native extension object
-  // to make sure we can reuse the native object if Java extension is re-created
-  // on resuming.
-  extensions_.push_back(extension.release());
-}
+//void XWalkBrowserMainPartsAndroid::RegisterExtension(
+//    std::unique_ptr<XWalkExtension> extension) {
+//  // Since the creation of extension object is driven by Java side, and each
+//  // Java extension is backed by a native extension object. However, the Java
+//  // object may be destroyed by Android lifecycle management without destroying
+//  // the native side object. We keep the reference to native extension object
+//  // to make sure we can reuse the native object if Java extension is re-created
+//  // on resuming.
+//  extensions_.push_back(extension.release());
+//}
 
-XWalkExtension* XWalkBrowserMainPartsAndroid::LookupExtension(
-    const std::string& name) {
-  extensions::XWalkExtensionVector::const_iterator it = extensions_.begin();
-  for (; it != extensions_.end(); ++it) {
-    XWalkExtension* extension = *it;
-    if (name == extension->name()) return extension;
-  }
+//XWalkExtension* XWalkBrowserMainPartsAndroid::LookupExtension(
+//    const std::string& name) {
+//  extensions::XWalkExtensionVector::const_iterator it = extensions_.begin();
+//  for (; it != extensions_.end(); ++it) {
+//    XWalkExtension* extension = *it;
+//    if (name == extension->name()) return extension;
+//  }
+//
+//  return NULL;
+//}
 
-  return NULL;
-}
-
-void XWalkBrowserMainPartsAndroid::RegisterExtensionInPath(
-    const std::string& path) {
-  extension_service_->RegisterExternalExtensionsForPath(
-      base::FilePath(path));
-}
+//void XWalkBrowserMainPartsAndroid::RegisterExtensionInPath(
+//    const std::string& path) {
+//  extension_service_->RegisterExternalExtensionsForPath(
+//      base::FilePath(path));
+//}
 
 }  // namespace xwalk

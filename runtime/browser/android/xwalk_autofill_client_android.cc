@@ -28,7 +28,7 @@ namespace xwalk {
 // autofill functionality at the java side. The java peer is owned by Java
 // XWalkContent. The native object only maintains a weak ref to it.
 XWalkAutofillClientAndroid::XWalkAutofillClientAndroid(WebContents* contents)
-  : AwXwalkAutofillClient(contents) {
+  : XWalkAutofillClient(contents) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> delegate;
   delegate.Reset(
@@ -40,7 +40,8 @@ XWalkAutofillClientAndroid::XWalkAutofillClientAndroid(WebContents* contents)
   java_ref_ = JavaObjectWeakGlobalRef(env, delegate.obj());
 }
 
-void XWalkAutofillClientAndroid::ShowAutofillPopupImpl(const gfx::RectF& element_bounds, bool is_rtl,
+void XWalkAutofillClientAndroid::ShowAutofillPopupImpl(const gfx::RectF& element_bounds,
+                                                       base::i18n::TextDirection text_direction,
                                                        const std::vector<autofill::Suggestion>& suggestions) {
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
@@ -75,7 +76,7 @@ void XWalkAutofillClientAndroid::ShowAutofillPopupImpl(const gfx::RectF& element
 
   view_android->SetAnchorRect(view, element_bounds);
 
-//  bool is_rtl = text_direction == base::i18n::RIGHT_TO_LEFT;
+  bool is_rtl = text_direction == base::i18n::RIGHT_TO_LEFT;
   Java_XWalkAutofillClientAndroid_showAutofillPopup(env, obj, view, is_rtl, data_array);
 }
 
@@ -87,15 +88,15 @@ void XWalkAutofillClientAndroid::HideAutofillPopupImpl() {
   Java_XWalkAutofillClientAndroid_hideAutofillPopup(env, obj);
 }
 
-//void XWalkAutofillClientAndroid::SuggestionSelected(JNIEnv* env,
-//                                                    jobject object,
-//                                                    jint position) {
-//  if (delegate_) {
-//    delegate_->DidAcceptSuggestion(suggestions_[position].value,
-//                                   suggestions_[position].frontend_id,
-//                                   position);
-//  }
-//}
+void XWalkAutofillClientAndroid::SuggestionSelected(JNIEnv* env,
+                                                    jobject object,
+                                                    jint position) {
+  if (delegate_) {
+    delegate_->DidAcceptSuggestion(suggestions_[position].value,
+                                   suggestions_[position].frontend_id,
+                                   position);
+  }
+}
 
 bool RegisterXWalkAutofillClient(JNIEnv* env) {
 //  return RegisterNativesImpl(env);

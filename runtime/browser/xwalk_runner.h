@@ -21,22 +21,22 @@ class XWalkTestSuiteInitializer;
 
 namespace xwalk {
 
-class ApplicationComponent;
+//class ApplicationComponent;
 class RemoteDebuggingServer;
-class SysAppsComponent;
+//class SysAppsComponent;
 class XWalkBrowserContext;
-class XWalkComponent;
+//class XWalkComponent;
 class XWalkContentBrowserClient;
-class XWalkAppExtensionBridge;
+//class XWalkAppExtensionBridge;
 
 namespace application {
 class Application;
 class ApplicationSystem;
 }
 
-namespace extensions {
-class XWalkExtensionService;
-}
+//namespace extensions {
+//class XWalkExtensionService;
+//}
 
 // Main object for the Browser Process execution in Crosswalk. It is created and
 // owned by XWalkMainDelegate. It's role is to own, setup and teardown all the
@@ -68,10 +68,10 @@ class XWalkRunner {
   //   object. Certain APIs doesn't allow us to pass the dependencies, so we
   //   need to reach them some way.
   XWalkBrowserContext* browser_context() { return browser_context_.get(); }
-  application::ApplicationSystem* app_system();
-  extensions::XWalkExtensionService* extension_service() {
-    return extension_service_.get();
-  }
+//  application::ApplicationSystem* app_system();
+//  extensions::XWalkExtensionService* extension_service() {
+//    return extension_service_.get();
+//  }
 
   // Constructs HttpAuthDynamicParams based on |local_state_|.
   network::mojom::HttpAuthDynamicParamsPtr CreateHttpAuthDynamicParams();
@@ -88,24 +88,24 @@ class XWalkRunner {
 
   // These two hooks should be used to add new port specific
   // components. Subclasses *must* call the base class implementation.
-  virtual void CreateComponents();
-  virtual void DestroyComponents();
+//  virtual void CreateComponents();
+//  virtual void DestroyComponents();
 
   // Should be used by CreateComponents() implementations.
-  void AddComponent(std::unique_ptr<XWalkComponent> component);
+//  void AddComponent(std::unique_ptr<XWalkComponent> component);
 
   // These specific factory functions are used to allow ports to customize
   // components.
-  virtual std::unique_ptr<ApplicationComponent> CreateAppComponent();
-  virtual std::unique_ptr<SysAppsComponent> CreateSysAppsComponent();
-  virtual std::unique_ptr<StorageComponent> CreateStorageComponent();
+//  virtual std::unique_ptr<ApplicationComponent> CreateAppComponent();
+//  virtual std::unique_ptr<SysAppsComponent> CreateSysAppsComponent();
+//  virtual std::unique_ptr<StorageComponent> CreateStorageComponent();
 
  protected:
   // These variables are used to export some values from the browser process
   // side to the extension side, such as application IDs and whatnot.
-  virtual void InitializeRuntimeVariablesForExtensions(
-      content::RenderProcessHost* host,
-      base::DictionaryValue::DictStorage* runtime_variables);
+//  virtual void InitializeRuntimeVariablesForExtensions(
+//      content::RenderProcessHost* host,
+//      base::DictionaryValue::DictStorage* runtime_variables);
   virtual void InitializeEnvironmentVariablesForGoogleAPIs(
       content::RenderProcessHost* host);
 
@@ -137,15 +137,15 @@ class XWalkRunner {
 
   std::unique_ptr<XWalkContentBrowserClient> content_browser_client_;
   std::unique_ptr<XWalkBrowserContext> browser_context_;
-  std::unique_ptr<extensions::XWalkExtensionService> extension_service_;
-  std::unique_ptr<XWalkAppExtensionBridge> app_extension_bridge_;
+//  std::unique_ptr<extensions::XWalkExtensionService> extension_service_;
+//  std::unique_ptr<XWalkAppExtensionBridge> app_extension_bridge_;
 
-  // XWalkRunner uses the XWalkComponent interface to be able to handle
-  // different subsystems and call them in specific situations, e.g. when
-  // extensions need to be created.
-  std::vector<XWalkComponent*> components_;
-
-  ApplicationComponent* app_component_;
+//  // XWalkRunner uses the XWalkComponent interface to be able to handle
+//  // different subsystems and call them in specific situations, e.g. when
+//  // extensions need to be created.
+//  std::vector<XWalkComponent*> components_;
+//
+//  ApplicationComponent* app_component_;
 
   // Remote debugger server.
   std::unique_ptr<RemoteDebuggingServer> remote_debugging_server_;

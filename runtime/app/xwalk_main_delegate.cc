@@ -104,9 +104,10 @@ int XWalkMainDelegate::RunProcess(const std::string& process_type,
     return 0;
   }
 
-  if (process_type == switches::kXWalkExtensionProcess) {
-    return XWalkExtensionProcessMain(main_function_params);
-  }
+  // TODO(iotto): fix or remove extensions
+//  if (process_type == switches::kXWalkExtensionProcess) {
+//    return XWalkExtensionProcessMain(main_function_params);
+//  }
   // Tell content to use default process main entries by returning -1.
   return -1;
 }

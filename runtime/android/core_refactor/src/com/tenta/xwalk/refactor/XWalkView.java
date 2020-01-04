@@ -258,7 +258,7 @@ public class XWalkView extends android.widget.FrameLayout {
     private Context mContext;
     private final XWalkHitTestResult mXWalkHitTestResult;
     private boolean mIsHidden;
-    private XWalkExternalExtensionManager mExternalExtensionManager;
+//    private XWalkExternalExtensionManager mExternalExtensionManager;
 
     /**
      * Normal reload mode as default.
@@ -1007,9 +1007,10 @@ public class XWalkView extends android.widget.FrameLayout {
         if (mContent == null)
             return false;
 
-        if (mExternalExtensionManager != null) {
-            mExternalExtensionManager.onNewIntent(intent);
-        }
+        // TODO(iotto): fix or remove
+//        if (mExternalExtensionManager != null) {
+//            mExternalExtensionManager.onNewIntent(intent);
+//        }
 
         return mContent.onNewIntent(intent);
     }
@@ -1927,25 +1928,24 @@ public class XWalkView extends android.widget.FrameLayout {
      * 
      * @return the external extension manager.
      */
-//    @XWalkAPI
-    public XWalkExternalExtensionManager getExtensionManager() {
-        if (mContent == null)
-            return null;
-        checkThreadSafety();
-        return mExternalExtensionManager;
-    }
-
-    /**
-     * XWalkExternalExtensionManagerInternal will call this function after its construction.
-     * 
-     * @hide
-     */
-    public void setExternalExtensionManager(XWalkExternalExtensionManager manager) {
-        if (mContent == null)
-            return;
-        checkThreadSafety();
-        mExternalExtensionManager = manager;
-    }
+    // TODO(iotto): fix or remove
+//    public XWalkExternalExtensionManager getExtensionManager() {
+//        if (mContent == null)
+//            return null;
+//        checkThreadSafety();
+//        return mExternalExtensionManager;
+//    }
+//    /**
+//     * XWalkExternalExtensionManagerInternal will call this function after its construction.
+//     * 
+//     * @hide
+//     */
+//    public void setExternalExtensionManager(XWalkExternalExtensionManager manager) {
+//        if (mContent == null)
+//            return;
+//        checkThreadSafety();
+//        mExternalExtensionManager = manager;
+//    }
 
     public void resetSwipeRefreshHandler() {
         if (mContent == null)

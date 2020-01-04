@@ -29,7 +29,7 @@ namespace xwalk {
 // success.
 
 // Note that |pickle| may be changed even if function returns false.
-void WriteToPickle(const content::WebContents& web_contents,
+void WriteToPickle(content::WebContents& web_contents,
                    base::Pickle* pickle);
 
 // |web_contents| will not be modified if function returns false.
@@ -49,10 +49,10 @@ void WriteHeaderToPickle(uint32_t state_version, base::Pickle* pickle);
 uint32_t RestoreHeaderFromPickle(base::PickleIterator* iterator)
     WARN_UNUSED_RESULT;
 bool IsSupportedVersion(uint32_t state_version) WARN_UNUSED_RESULT;
-void WriteNavigationEntryToPickle(const content::NavigationEntry& entry,
+void WriteNavigationEntryToPickle(content::NavigationEntry& entry,
                                   base::Pickle* pickle);
 void WriteNavigationEntryToPickle(uint32_t state_version,
-                                  const content::NavigationEntry& entry,
+                                  content::NavigationEntry& entry,
                                   base::Pickle* pickle);
 bool RestoreNavigationEntryFromPickle(base::PickleIterator* iterator,
                                       content::NavigationEntry* entry)

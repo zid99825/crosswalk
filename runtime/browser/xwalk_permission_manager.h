@@ -30,7 +30,7 @@ class LastRequestResultCache;
 class XWalkPermissionManager : public content::PermissionControllerDelegate {
  public:
   XWalkPermissionManager(
-      application::ApplicationService* application_service);
+      /*application::ApplicationService* application_service*/);
   ~XWalkPermissionManager() override;
 
   // PermissionManager implementation.
@@ -77,7 +77,7 @@ class XWalkPermissionManager : public content::PermissionControllerDelegate {
   std::unique_ptr<LastRequestResultCache> result_cache_;
   scoped_refptr<RuntimeGeolocationPermissionContext> geolocation_permission_context_;
   scoped_refptr<RuntimeNotificationPermissionContext> notification_permission_context_;
-  application::ApplicationService* application_service_;
+//  application::ApplicationService* application_service_;
   base::WeakPtrFactory<XWalkPermissionManager> weak_ptr_factory_;
   DISALLOW_COPY_AND_ASSIGN(XWalkPermissionManager);
 };

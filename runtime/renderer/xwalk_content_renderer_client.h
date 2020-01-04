@@ -33,8 +33,8 @@ class XWalkRenderThreadObserver;
 // When implementing a derived class, make sure to update
 // `in_process_browser_test.cc` and `xwalk_main_delegate.cc`.
 class XWalkContentRendererClient :
-    public content::ContentRendererClient,
-    public extensions::XWalkExtensionRendererController::Delegate {
+    public content::ContentRendererClient
+    /*,public extensions::XWalkExtensionRendererController::Delegate*/ {
  public:
   static XWalkContentRendererClient* Get();
 
@@ -75,9 +75,9 @@ class XWalkContentRendererClient :
 
  private:
   // XWalkExtensionRendererController::Delegate implementation.
-  void DidCreateModuleSystem(extensions::XWalkModuleSystem* module_system) override;
+//  void DidCreateModuleSystem(extensions::XWalkModuleSystem* module_system) override;
 
-  std::unique_ptr<extensions::XWalkExtensionRendererController> extension_controller_;
+//  std::unique_ptr<extensions::XWalkExtensionRendererController> extension_controller_;
 
   std::unique_ptr<visitedlink::VisitedLinkSlave> visited_link_slave_;
 

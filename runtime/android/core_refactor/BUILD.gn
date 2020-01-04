@@ -43,8 +43,8 @@ android_library("xwalk_refactor_java") {
     "src/com/tenta/xwalk/refactor/XWalkDevToolsServer.java",
     "src/com/tenta/xwalk/refactor/XWalkDownloadListenerImpl.java",
     "src/com/tenta/xwalk/refactor/XWalkDownloadListener.java",
-    "src/com/tenta/xwalk/refactor/XWalkExtension.java",
-    "src/com/tenta/xwalk/refactor/XWalkExternalExtensionManager.java",
+#todo(iotto):remove    "src/com/tenta/xwalk/refactor/XWalkExtension.java",
+#todo(iotto):remove    "src/com/tenta/xwalk/refactor/XWalkExternalExtensionManager.java",
     "src/com/tenta/xwalk/refactor/XWalkFindListener.java",
     "src/com/tenta/xwalk/refactor/XWalkFormDatabase.java",
     "src/com/tenta/xwalk/refactor/XWalkGeolocationPermissions.java",
@@ -57,7 +57,7 @@ android_library("xwalk_refactor_java") {
     "src/com/tenta/xwalk/refactor/XWalkJavascriptResultHandler.java",
 #    "src/com/tenta/xwalk/refactor/XWalkLaunchScreenManager.java",
 #    "src/com/tenta/xwalk/refactor/XWalkMediaPlayerResourceLoadingFilter.java",
-    "src/com/tenta/xwalk/refactor/XWalkNativeExtensionLoader.java",
+#todo(iotto):fix or remove    "src/com/tenta/xwalk/refactor/XWalkNativeExtensionLoader.java",
     "src/com/tenta/xwalk/refactor/XWalkNavigationHandler.java",
     "src/com/tenta/xwalk/refactor/XWalkNavigationHandlerImpl.java",
     "src/com/tenta/xwalk/refactor/XWalkNavigationHistory.java",
@@ -102,7 +102,7 @@ android_library("xwalk_refactor_java") {
     "//net/android:net_java",
     "//third_party/android_swipe_refresh:android_swipe_refresh_java",
     "//ui/android:ui_java",
-    "//xwalk/extensions/android:xwalk_core_extensions_java",
+#todo(iotto):remove    "//xwalk/extensions/android:xwalk_core_extensions_java",
   ]
   if (tenta_chromium_build) {
     deps += [

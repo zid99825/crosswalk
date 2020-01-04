@@ -28,8 +28,8 @@
 #include "ui/gl/gl_switches.h"
 #include "xwalk/application/browser/application.h"
 #include "xwalk/application/browser/application_system.h"
-#include "xwalk/extensions/browser/xwalk_extension_service.h"
-#include "xwalk/extensions/common/xwalk_extension_switches.h"
+//#include "xwalk/extensions/browser/xwalk_extension_service.h"
+//#include "xwalk/extensions/common/xwalk_extension_switches.h"
 #if defined(USE_GTK_UI)
 #include "xwalk/runtime/browser/ui/gtk2_ui.h"
 #endif
@@ -90,7 +90,7 @@ namespace xwalk {
 XWalkBrowserMainParts::XWalkBrowserMainParts(
     const content::MainFunctionParams& parameters)
     : xwalk_runner_(XWalkRunner::GetInstance()),
-      extension_service_(NULL),
+//      extension_service_(NULL),
       startup_url_(url::kAboutBlankURL),
       parameters_(parameters),
       run_default_message_loop_(true),
@@ -181,29 +181,29 @@ int XWalkBrowserMainParts::PreCreateThreads() {
   return service_manager::RESULT_CODE_NORMAL_EXIT;
 }
 
-void XWalkBrowserMainParts::RegisterExternalExtensions() {
-  base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
-  if (!cmd_line->HasSwitch(switches::kXWalkExternalExtensionsPath))
-    return;
-
-  if (!cmd_line->HasSwitch(
-          switches::kXWalkAllowExternalExtensionsForRemoteSources) &&
-      (!startup_url_.is_empty() && !startup_url_.SchemeIsFile())) {
-    VLOG(0) << "Unsupported scheme for external extensions: " <<
-          startup_url_.scheme();
-    return;
-  }
-
-  base::FilePath extensions_dir =
-      cmd_line->GetSwitchValuePath(switches::kXWalkExternalExtensionsPath);
-  if (!base::DirectoryExists(extensions_dir)) {
-    LOG(WARNING) << "Ignoring non-existent extension directory: "
-                 << extensions_dir.AsUTF8Unsafe();
-    return;
-  }
-
-  extension_service_->RegisterExternalExtensionsForPath(extensions_dir);
-}
+//void XWalkBrowserMainParts::RegisterExternalExtensions() {
+//  base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
+//  if (!cmd_line->HasSwitch(switches::kXWalkExternalExtensionsPath))
+//    return;
+//
+//  if (!cmd_line->HasSwitch(
+//          switches::kXWalkAllowExternalExtensionsForRemoteSources) &&
+//      (!startup_url_.is_empty() && !startup_url_.SchemeIsFile())) {
+//    VLOG(0) << "Unsupported scheme for external extensions: " <<
+//          startup_url_.scheme();
+//    return;
+//  }
+//
+//  base::FilePath extensions_dir =
+//      cmd_line->GetSwitchValuePath(switches::kXWalkExternalExtensionsPath);
+//  if (!base::DirectoryExists(extensions_dir)) {
+//    LOG(WARNING) << "Ignoring non-existent extension directory: "
+//                 << extensions_dir.AsUTF8Unsafe();
+//    return;
+//  }
+//
+//  extension_service_->RegisterExternalExtensionsForPath(extensions_dir);
+//}
 
 void XWalkBrowserMainParts::PreMainMessageLoopRun() {
   xwalk_runner_->PreMainMessageLoopRun();
@@ -214,10 +214,10 @@ void XWalkBrowserMainParts::PreMainMessageLoopRun() {
       XWalkDevToolsManagerDelegate::CreateHttpHandler(
           xwalk_runner_->browser_context()));
 */
-  extension_service_ = xwalk_runner_->extension_service();
-
-  if (extension_service_)
-    RegisterExternalExtensions();
+//  extension_service_ = xwalk_runner_->extension_service();
+//
+//  if (extension_service_)
+//    RegisterExternalExtensions();
 
 #if BUILDFLAG(ENABLE_NACL)
   std::unique_ptr<NaClBrowserDelegateImpl> delegate(new NaClBrowserDelegateImpl());
@@ -266,9 +266,9 @@ void XWalkBrowserMainParts::PreMainMessageLoopRun() {
     return;
   }
 
-  application::ApplicationSystem* app_system = xwalk_runner_->app_system();
-  run_default_message_loop_ = app_system->LaunchFromCommandLine(
-      *command_line, startup_url_);
+//  application::ApplicationSystem* app_system = xwalk_runner_->app_system();
+//  run_default_message_loop_ = app_system->LaunchFromCommandLine(
+//      *command_line, startup_url_);
   // If the |ui_task| is specified in main function parameter, it indicates
   // that we will run this UI task instead of running the the default main
   // message loop. See |content::BrowserTestBase::SetUp| for |ui_task| usage
@@ -293,14 +293,14 @@ void XWalkBrowserMainParts::PostMainMessageLoopRun() {
 //  devtools_http_handler_.reset();
 }
 
-void XWalkBrowserMainParts::CreateInternalExtensionsForUIThread(
-    content::RenderProcessHost* host,
-    extensions::XWalkExtensionVector* extensions) {
-}
-
-void XWalkBrowserMainParts::CreateInternalExtensionsForExtensionThread(
-    content::RenderProcessHost* host,
-    extensions::XWalkExtensionVector* extensions) {
-}
+//void XWalkBrowserMainParts::CreateInternalExtensionsForUIThread(
+//    content::RenderProcessHost* host,
+//    extensions::XWalkExtensionVector* extensions) {
+//}
+//
+//void XWalkBrowserMainParts::CreateInternalExtensionsForExtensionThread(
+//    content::RenderProcessHost* host,
+//    extensions::XWalkExtensionVector* extensions) {
+//}
 
 }  // namespace xwalk

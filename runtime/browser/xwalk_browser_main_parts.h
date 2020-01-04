@@ -11,9 +11,9 @@
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/common/main_function_params.h"
 #include "url/gurl.h"
-#include "xwalk/extensions/browser/xwalk_extension_service.h"
-#include "xwalk/extensions/common/xwalk_extension_permission_types.h"
-#include "xwalk/extensions/common/xwalk_extension_vector.h"
+//#include "xwalk/extensions/browser/xwalk_extension_service.h"
+//#include "xwalk/extensions/common/xwalk_extension_permission_types.h"
+//#include "xwalk/extensions/common/xwalk_extension_vector.h"
 
 namespace content {
 class RenderProcessHost;
@@ -33,9 +33,9 @@ namespace xwalk {
 
 class XWalkRunner;
 
-namespace extensions {
-class XWalkExtensionService;
-}
+//namespace extensions {
+//class XWalkExtensionService;
+//}
 
 class XWalkBrowserMainParts : public content::BrowserMainParts {
  public:
@@ -53,26 +53,26 @@ class XWalkBrowserMainParts : public content::BrowserMainParts {
   bool MainMessageLoopRun(int* result_code) override;
   void PostMainMessageLoopRun() override;
 
-  // Create all the extensions to be hooked into a new
-  // RenderProcessHost. Base class implementation should be called by
-  // subclasses overriding this..
-  virtual void CreateInternalExtensionsForUIThread(
-      content::RenderProcessHost* host,
-      extensions::XWalkExtensionVector* extensions);
-  virtual void CreateInternalExtensionsForExtensionThread(
-      content::RenderProcessHost* host,
-      extensions::XWalkExtensionVector* extensions);
+//  // Create all the extensions to be hooked into a new
+//  // RenderProcessHost. Base class implementation should be called by
+//  // subclasses overriding this..
+//  virtual void CreateInternalExtensionsForUIThread(
+//      content::RenderProcessHost* host,
+//      extensions::XWalkExtensionVector* extensions);
+//  virtual void CreateInternalExtensionsForExtensionThread(
+//      content::RenderProcessHost* host,
+//      extensions::XWalkExtensionVector* extensions);
 
   content::DevToolsHttpHandler* devtools_http_handler() {
     return devtools_http_handler_.get();
   }
 
  protected:
-  void RegisterExternalExtensions();
+//  void RegisterExternalExtensions();
 
   XWalkRunner* xwalk_runner_;
 
-  extensions::XWalkExtensionService* extension_service_;
+//  extensions::XWalkExtensionService* extension_service_;
 
   // Should be about:blank If no URL is specified in command line arguments.
   GURL startup_url_;

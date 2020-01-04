@@ -137,7 +137,7 @@ bool IsSupportedVersion(uint32_t state_version) {
          state_version == internal::AW_STATE_VERSION_DATA_URL;
 }
 
-void WriteNavigationEntryToPickle(const content::NavigationEntry& entry,
+void WriteNavigationEntryToPickle(content::NavigationEntry& entry,
                                   base::Pickle* pickle) {
   WriteNavigationEntryToPickle(AW_STATE_VERSION, entry, pickle);
 }

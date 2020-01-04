@@ -277,18 +277,18 @@ std::unique_ptr<content::BrowserMainParts> XWalkContentBrowserClient::CreateBrow
 // process we launch.
 void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
     base::CommandLine* command_line, int child_process_id) {
-  const base::CommandLine& browser_process_cmd_line =
-      *base::CommandLine::ForCurrentProcess();
-  const char* extra_switches[] = {
-    switches::kXWalkDisableExtensionProcess,
-#if BUILDFLAG(ENABLE_PLUGINS)
-    switches::kPpapiFlashPath,
-    switches::kPpapiFlashVersion
-#endif
-  };
-
-  command_line->CopySwitchesFrom(
-      browser_process_cmd_line, extra_switches, base::size(extra_switches));
+//  const base::CommandLine& browser_process_cmd_line =
+//      *base::CommandLine::ForCurrentProcess();
+//  const char* extra_switches[] = {
+////    switches::kXWalkDisableExtensionProcess,
+//#if BUILDFLAG(ENABLE_PLUGINS)
+//    switches::kPpapiFlashPath,
+//    switches::kPpapiFlashVersion
+//#endif
+//  };
+//
+//  command_line->CopySwitchesFrom(
+//      browser_process_cmd_line, extra_switches, base::size(extra_switches));
 }
 
 scoped_refptr<content::QuotaPermissionContext>
@@ -429,7 +429,8 @@ void XWalkContentBrowserClient::ResourceDispatcherHostCreated() {
 
 content::SpeechRecognitionManagerDelegate*
     XWalkContentBrowserClient::CreateSpeechRecognitionManagerDelegate() {
-  return new xwalk::XWalkSpeechRecognitionManagerDelegate();
+  return nullptr;
+//  return new xwalk::XWalkSpeechRecognitionManagerDelegate();
 }
 
 #if !defined(OS_ANDROID)

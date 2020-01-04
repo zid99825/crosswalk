@@ -8,13 +8,12 @@
 #include <string>
 
 #include "base/logging.h"
+#include "components/autofill/core/browser/ui/autofill_popup_delegate.h"
+#include "components/autofill/core/browser/ui/suggestion.h"
+#include "components/autofill/core/browser/webdata/autofill_webdata_service.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/pref_service_factory.h"
-#include "components/autofill/core/browser/autofill_popup_delegate.h"
-#include "components/autofill/core/browser/suggestion.h"
-#include "components/autofill/core/browser/webdata/autofill_webdata_service.h"
-#include "components/autofill/core/common/autofill_pref_names.h"
 #include "components/user_prefs/user_prefs.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/web_contents.h"
@@ -53,7 +52,19 @@ syncer::SyncService* XWalkAutofillClient::GetSyncService() {
   return nullptr;
 }
 
-IdentityProvider* XWalkAutofillClient::GetIdentityProvider() {
+signin::IdentityManager* XWalkAutofillClient::GetIdentityManager() {
+  return nullptr;
+}
+
+autofill::FormDataImporter* XWalkAutofillClient::GetFormDataImporter() {
+  return nullptr;
+}
+
+autofill::payments::PaymentsClient* XWalkAutofillClient::GetPaymentsClient() {
+  return nullptr;
+}
+
+autofill::StrikeDatabase* XWalkAutofillClient::GetStrikeDatabase() {
   return nullptr;
 }
 
@@ -65,46 +76,63 @@ ukm::UkmRecorder* XWalkAutofillClient::GetUkmRecorder() {
   return nullptr;
 }
 
+ukm::SourceId XWalkAutofillClient::GetUkmSourceId() {
+  // UKM recording is not supported for WebViews.
+  return ukm::kInvalidSourceId;
+}
+
 autofill::AddressNormalizer* XWalkAutofillClient::GetAddressNormalizer() {
   // TODO(iotto) : Implement
   LOG(WARNING) << __func__ << " not_implemented";
   return nullptr;
 }
 
+security_state::SecurityLevel
+XWalkAutofillClient::GetSecurityLevelForUmaHistograms() {
+  // The metrics are not recorded for Android webview, so return the count value
+  // which will not be recorded.
+  return security_state::SecurityLevel::SECURITY_LEVEL_COUNT;
+}
 
 autofill::PersonalDataManager* XWalkAutofillClient::GetPersonalDataManager() {
   return nullptr;
 }
 
-scoped_refptr<autofill::AutofillWebDataService>
-XWalkAutofillClient::GetDatabase() {
-  xwalk::XWalkFormDatabaseService* service =
-      static_cast<xwalk::XWalkBrowserContext*>(
-          web_contents_->GetBrowserContext())->GetFormDatabaseService();
-  return service->get_autofill_webdata_service();
+autofill::AutocompleteHistoryManager*
+XWalkAutofillClient::GetAutocompleteHistoryManager() {
+  // TODO(iotto): implement
+  return nullptr;
+//  return AwBrowserContext::FromWebContents(web_contents_)
+//      ->GetAutocompleteHistoryManager();
 }
+
+//scoped_refptr<autofill::AutofillWebDataService>
+//XWalkAutofillClient::GetDatabase() {
+//  xwalk::XWalkFormDatabaseService* service =
+//      static_cast<xwalk::XWalkBrowserContext*>(
+//          web_contents_->GetBrowserContext())->GetFormDatabaseService();
+//  return service->get_autofill_webdata_service();
+//}
 
 void XWalkAutofillClient::HideAutofillPopup() {
   delegate_.reset();
   HideAutofillPopupImpl();
 }
 
-void XWalkAutofillClient::ShowAutofillPopup(
-    const gfx::RectF& element_bounds,
-    base::i18n::TextDirection text_direction,
-    const std::vector<autofill::Suggestion>& suggestions,
-    base::WeakPtr<autofill::AutofillPopupDelegate> delegate) {
+void XWalkAutofillClient::ShowAutofillPopup(const gfx::RectF& element_bounds, base::i18n::TextDirection text_direction,
+                                            const std::vector<autofill::Suggestion>& suggestions,
+                                            bool autoselect_first_suggestion,
+                                            autofill::PopupType popup_type,
+                                            base::WeakPtr<autofill::AutofillPopupDelegate> delegate) {
+  // TODO(iotto): check and fix!
   suggestions_ = suggestions;
   delegate_ = delegate;
 
   // Convert element_bounds to be in screen space.
   gfx::Rect client_area = web_contents_->GetContainerBounds();
-  gfx::RectF element_bounds_in_screen_space =
-      element_bounds + client_area.OffsetFromOrigin();
+  gfx::RectF element_bounds_in_screen_space = element_bounds + client_area.OffsetFromOrigin();
 
-  ShowAutofillPopupImpl(element_bounds_in_screen_space,
-                        text_direction,
-                        suggestions);
+  ShowAutofillPopupImpl(element_bounds_in_screen_space, text_direction, suggestions);
 }
 
 void XWalkAutofillClient::UpdateAutofillPopupDataListValues(
@@ -129,10 +157,10 @@ void XWalkAutofillClient::DidFillOrPreviewField(
     const base::string16& profile_full_name) {
 }
 
-void XWalkAutofillClient::DidInteractWithNonsecureCreditCardInput() {
-  // TODO(iotto) : Implement
-  LOG(WARNING) << __func__ << " not_implemented";
-}
+//void XWalkAutofillClient::DidInteractWithNonsecureCreditCardInput() {
+//  // TODO(iotto) : Implement
+//  LOG(WARNING) << __func__ << " not_implemented";
+//}
 
 bool XWalkAutofillClient::IsContextSecure() {
   content::SSLStatus ssl_status;
@@ -157,12 +185,13 @@ bool XWalkAutofillClient::ShouldShowSigninPromo() {
   return false;
 }
 
-/**
- *
- */
-bool XWalkAutofillClient::IsAutofillSupported() {
-  return false;
+bool XWalkAutofillClient::AreServerCardsSupported() {
+  return true;
 }
+
+//bool XWalkAutofillClient::IsAutofillSupported() {
+//  return false;
+//}
 
 /**
  *
@@ -184,7 +213,8 @@ void XWalkAutofillClient::SuggestionSelected(int position) {
   }
 }
 
-void XWalkAutofillClient::ShowAutofillSettings() {
+void XWalkAutofillClient::ShowAutofillSettings(bool show_credit_card_settings) {
+  // TODO(iotto): maybe implement
   NOTIMPLEMENTED();
 }
 
@@ -199,28 +229,63 @@ void XWalkAutofillClient::OnUnmaskVerificationResult(PaymentsRpcResult result) {
   NOTIMPLEMENTED();
 }
 
-void XWalkAutofillClient::ConfirmSaveCreditCardLocally(
-    const autofill::CreditCard& card,
-    const base::Closure& save_card_callback) {
+void XWalkAutofillClient::ShowLocalCardMigrationDialog(
+    base::OnceClosure show_migration_dialog_closure) {
   NOTIMPLEMENTED();
 }
 
-void XWalkAutofillClient::ConfirmSaveCreditCardToCloud(
-      const autofill::CreditCard& card,
-      std::unique_ptr<base::DictionaryValue> legal_message,
-      bool should_cvc_be_requested,
-      const base::Closure& callback) {
+void XWalkAutofillClient::ConfirmMigrateLocalCardToCloud(
+    std::unique_ptr<base::DictionaryValue> legal_message, const std::string& user_email,
+    const std::vector<autofill::MigratableCreditCard>& migratable_credit_cards,
+    LocalCardMigrationCallback start_migrating_cards_callback) {
   NOTIMPLEMENTED();
 }
 
-void XWalkAutofillClient::ConfirmCreditCardFillAssist(
-    const autofill::CreditCard& card,
-    const base::Closure& callback) {
+void XWalkAutofillClient::ShowLocalCardMigrationResults(
+    const bool has_server_error, const base::string16& tip_message,
+    const std::vector<autofill::MigratableCreditCard>& migratable_credit_cards,
+    MigrationDeleteCardCallback delete_local_card_callback) {
   NOTIMPLEMENTED();
 }
 
-void XWalkAutofillClient::LoadRiskData(
-    const base::Callback<void(const std::string&)>& callback) {
+void XWalkAutofillClient::ConfirmSaveAutofillProfile(const autofill::AutofillProfile& profile,
+                                                     base::OnceClosure callback) {
+  // Since there is no confirmation needed to save an Autofill Profile,
+  // running |callback| will proceed with saving |profile|.
+  std::move(callback).Run();
+}
+
+void XWalkAutofillClient::ConfirmSaveCreditCardLocally(const autofill::CreditCard& card,
+                                                       AutofillClient::SaveCreditCardOptions options,
+                                                       LocalSaveCardPromptCallback callback) {
+  NOTIMPLEMENTED();
+}
+
+void XWalkAutofillClient::ConfirmExpirationDateFixFlow(
+    const autofill::CreditCard& card, base::OnceCallback<void(const base::string16&, const base::string16&)> callback) {
+  NOTIMPLEMENTED();
+}
+
+void XWalkAutofillClient::ConfirmAccountNameFixFlow(base::OnceCallback<void(const base::string16&)> callback) {
+  NOTIMPLEMENTED();
+}
+
+void XWalkAutofillClient::ConfirmSaveCreditCardToCloud(const autofill::CreditCard& card,
+                                                       std::unique_ptr<base::DictionaryValue> legal_message,
+                                                       SaveCreditCardOptions options,
+                                                       UploadSaveCardPromptCallback callback) {
+  NOTIMPLEMENTED();
+}
+
+void XWalkAutofillClient::CreditCardUploadCompleted(bool card_saved) {
+  NOTIMPLEMENTED();
+}
+
+void XWalkAutofillClient::ConfirmCreditCardFillAssist(const autofill::CreditCard& card, base::OnceClosure callback) {
+  NOTIMPLEMENTED();
+}
+
+void XWalkAutofillClient::LoadRiskData(base::OnceCallback<void(const std::string&)> callback) {
   NOTIMPLEMENTED();
 }
 
@@ -233,10 +298,10 @@ void XWalkAutofillClient::ScanCreditCard(
   NOTIMPLEMENTED();
 }
 
-autofill::SaveCardBubbleController* XWalkAutofillClient::GetSaveCardBubbleController() {
-  // TODO (iotto) check if need to implement
-  NOTIMPLEMENTED();
-  return nullptr;
-}
+//autofill::SaveCardBubbleController* XWalkAutofillClient::GetSaveCardBubbleController() {
+//  // TODO (iotto) check if need to implement
+//  NOTIMPLEMENTED();
+//  return nullptr;
+//}
 
 }  // namespace xwalk

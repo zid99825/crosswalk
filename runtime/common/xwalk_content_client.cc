@@ -190,18 +190,18 @@ void XWalkContentClient::AddAdditionalSchemes(Schemes* schemes) {
 
   schemes->standard_schemes.push_back(app_scheme);
 */
-  schemes->standard_schemes.push_back(application::kApplicationScheme);
-  schemes->savable_schemes.push_back(application::kApplicationScheme);
-  schemes->secure_schemes.push_back(application::kApplicationScheme);
-
-// TODO see if further registration needed
-// content from  runtime/renderer/xwalk_content_renderer_client.cc
-/*  blink::WebString application_scheme(
-      blink::WebString::fromASCII(application::kApplicationScheme));
-  blink::WebSecurityPolicy::registerURLSchemeAsSecure(application_scheme);
-  blink::WebSecurityPolicy::registerURLSchemeAsCORSEnabled(application_scheme);
-*/
-  schemes->cors_enabled_schemes.push_back(application::kApplicationScheme);
+//  schemes->standard_schemes.push_back(application::kApplicationScheme);
+//  schemes->savable_schemes.push_back(application::kApplicationScheme);
+//  schemes->secure_schemes.push_back(application::kApplicationScheme);
+//
+//// TODO see if further registration needed
+//// content from  runtime/renderer/xwalk_content_renderer_client.cc
+///*  blink::WebString application_scheme(
+//      blink::WebString::fromASCII(application::kApplicationScheme));
+//  blink::WebSecurityPolicy::registerURLSchemeAsSecure(application_scheme);
+//  blink::WebSecurityPolicy::registerURLSchemeAsCORSEnabled(application_scheme);
+//*/
+//  schemes->cors_enabled_schemes.push_back(application::kApplicationScheme);
 #if defined(OS_ANDROID)
   schemes->local_schemes.push_back(xwalk::kContentScheme);
 /*  blink::WebString content_scheme(
