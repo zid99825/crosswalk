@@ -148,6 +148,15 @@ xwalk_dist_aar("xwalk_core_library") {
     "org/chromium/android_webview/*",
   ]
 
+  resource_included_patterns = [
+    "resource_zips/components/autofill/android/*",
+    "resource_zips/ui/android/*",
+    "resource_zips/content/public/android/*",
+    "resource_zips/media/base/android/*",
+    "resource_zips/components/embedder_support/android/*",
+    "*/xwalk/runtime/android/*",
+  ]
+
   if (v8_use_external_startup_data) {
     # TODO(gabor) -- do this when dist_aar can handle assets.
     # asset_sources = [

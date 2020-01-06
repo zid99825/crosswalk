@@ -528,6 +528,7 @@ template("xwalk_dist_aar") {
       "output",
       "android_manifest",
       "jar_excluded_patterns",
+      "resource_included_patterns",
     ])
     deps = _deps
     native_libraries_norebase = "@FileArg($_rebased_native_libraries_file)"
