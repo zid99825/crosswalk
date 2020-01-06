@@ -500,3 +500,36 @@ template("raw_resources") {
     generating_target_name = ":$_zip_target_name"
   }
 }
+
+# Augments dist_aar so that native_libraries are automagically determined from deps.
+template("xwalk_dist_aar") {
+  _deps = []
+  if (defined(invoker.deps)) {
+    _deps = invoker.deps
+  }
+
+  _native_libraries_target_name = "${target_name}_native_libraries"
+  _native_libraries_file = "$target_gen_dir/native_libraries.json"
+
+  generated_file(_native_libraries_target_name) {
+    deps = _deps
+    output_conversion = "json"
+    outputs = [ _native_libraries_file ]
+    data_keys = [ "shared_libraries" ]
+    walk_keys = [ "shared_libraries_barrier" ]
+    rebase = root_build_dir
+  }
+
+  _deps += [ ":$_native_libraries_target_name" ]
+  _rebased_native_libraries_file = rebase_path(_native_libraries_file, root_build_dir)
+
+  dist_aar(target_name) {
+    forward_variables_from(invoker, [
+      "output",
+      "android_manifest",
+      "jar_excluded_patterns",
+    ])
+    deps = _deps
+    native_libraries_norebase = "@FileArg($_rebased_native_libraries_file)"
+  }
+}

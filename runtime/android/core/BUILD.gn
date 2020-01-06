@@ -125,8 +125,8 @@ java_strings_grd("xwalk_app_strings_grd") {
   ]
 }
 
-dist_aar("xwalk_core_library") {
-  output= "$root_out_dir/xwalk_core_library.aar"
+xwalk_dist_aar("xwalk_core_library") {
+  output = "$root_out_dir/xwalk_core_library.aar"
   android_manifest = "//xwalk/build/android/xwalkcore_library_template/AndroidManifest.xml"
 
   deps = [
@@ -146,10 +146,6 @@ dist_aar("xwalk_core_library") {
     "play-services-*",
     "J/*",
     "org/chromium/android_webview/*",
-  ]
-
-  native_libraries = [
-    "$root_out_dir/libxwalkcore.so"
   ]
 
   if (v8_use_external_startup_data) {
