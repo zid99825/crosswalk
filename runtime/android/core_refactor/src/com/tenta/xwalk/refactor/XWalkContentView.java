@@ -5,32 +5,24 @@
 
 package com.tenta.xwalk.refactor;
 
-import org.chromium.components.embedder_support.view.ContentView;
-import org.chromium.content_public.browser.WebContents;
-
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.accessibility.AccessibilityNodeProvider;
+import android.view.MotionEvent;
+import android.view.ViewStructure;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewStructure;
+import org.chromium.components.embedder_support.view.ContentView;
+import org.chromium.content_public.browser.WebContents;
+import org.chromium.content_public.browser.WebContentsAccessibility;
 
 
 public class XWalkContentView extends ContentView {
-    private static final String TAG = "XWalkContentView";
     private XWalkView mXWalkView;
 
-    public static XWalkContentView createContentView(Context context, WebContents webContents,
-            XWalkView xwView) {
+    public static XWalkContentView createContentView(Context context, WebContents webContents, XWalkView xwView) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return new XWalkContentViewApi23(context, webContents, xwView);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            return new XWalkContentViewApi16(context, webContents, xwView);
         }
         return new XWalkContentView(context, webContents, xwView);
     }
@@ -50,17 +42,17 @@ public class XWalkContentView extends ContentView {
     }
 
     @Override
-    public boolean performLongClick(){
+    public boolean performLongClick() {
         return mXWalkView.performLongClickDelegate();
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // Give XWalkView a chance to handle touch event
-        if(mXWalkView.onTouchEventDelegate(event)) {
+        if (mXWalkView.onTouchEventDelegate(event)) {
             return true;
         }
-        return mContentViewCore.getWebContents().getEventForwarder().onTouchEvent(event);
+        return super.onTouchEvent(event);
     }
 
     @Override
@@ -102,44 +94,16 @@ public class XWalkContentView extends ContentView {
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
     }
 
-    // Imitate JellyBeanContentView
-    private static class XWalkContentViewApi16 extends XWalkContentView {
-        public XWalkContentViewApi16(Context context, WebContents webContents,
-                XWalkView xwView) {
-            super(context, webContents, xwView);
-        }
-
-        @Override
-        public boolean performAccessibilityAction(int action, Bundle arguments) {
-            if (mContentViewCore.supportsAccessibilityAction(action)) {
-                return mContentViewCore.performAccessibilityAction(action, arguments);
-            }
-
-            return super.performAccessibilityAction(action, arguments);
-        }
-
-        // Copy the implementation of JellyBeanContentView
-        @Override
-        public AccessibilityNodeProvider getAccessibilityNodeProvider() {
-            AccessibilityNodeProvider provider = mContentViewCore.getAccessibilityNodeProvider();
-            if (provider != null) {
-                return provider;
-            } else {
-                return super.getAccessibilityNodeProvider();
-            }
-        }
-    }
-
     // Imitate ContentView.ContentViewApi23
-    private static class XWalkContentViewApi23 extends XWalkContentViewApi16 {
-        public XWalkContentViewApi23(Context context, WebContents webContents,
-                XWalkView xwView) {
+    private static class XWalkContentViewApi23 extends XWalkContentView {
+        public XWalkContentViewApi23(Context context, WebContents webContents, XWalkView xwView) {
             super(context, webContents, xwView);
         }
 
         @Override
         public void onProvideVirtualStructure(final ViewStructure structure) {
-            super.onProvideVirtualStructure(structure);
+            WebContentsAccessibility wcax = getWebContentsAccessibility();
+            if (wcax != null) wcax.onProvideVirtualStructure(structure, false);
         }
     }
 }

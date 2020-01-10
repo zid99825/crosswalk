@@ -1,24 +1,19 @@
 
 package com.tenta.xwalk.refactor;
 
-import android.content.Context;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
-
 import org.chromium.content_public.browser.ActionModeCallbackHelper;
+import org.chromium.content_public.browser.SelectionPopupController;
+import org.chromium.content_public.browser.WebContents;
 
 public class XWalkActionModeCallback implements ActionMode.Callback {
-    private final Context mContext;
-    private final XWalkContent mXwalkContent;
     private final ActionModeCallbackHelper mHelper;
     private int mAllowedMenuItems;
 
-    public XWalkActionModeCallback(Context context, XWalkContent content,
-            ActionModeCallbackHelper helper) {
-        mContext = context;
-        mXwalkContent = content;
-        mHelper = helper;
+    public XWalkActionModeCallback(WebContents webContents) {
+        mHelper = SelectionPopupController.fromWebContents(webContents).getActionModeCallbackHelper();
         mHelper.setAllowedMenuItems(0); // No item is allowed by default for WebView.
     }
 
