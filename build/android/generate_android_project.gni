@@ -508,20 +508,56 @@ template("xwalk_dist_aar") {
     _deps = invoker.deps
   }
 
-  _native_libraries_target_name = "${target_name}_native_libraries"
-  _native_libraries_file = "$target_gen_dir/native_libraries.json"
+  #
+  # Generate native libraries json file as input for dist_aar
+  #
+  _native_libraries_json_target_name = "${target_name}_native_libraries_json"
+  _native_libraries_json_file = "$target_gen_dir/native_libraries.json"
 
-  generated_file(_native_libraries_target_name) {
+  generated_file(_native_libraries_json_target_name) {
     deps = _deps
     output_conversion = "json"
-    outputs = [ _native_libraries_file ]
+    outputs = [ _native_libraries_json_file ]
     data_keys = [ "shared_libraries" ]
     walk_keys = [ "shared_libraries_barrier" ]
     rebase = root_build_dir
   }
 
-  _deps += [ ":$_native_libraries_target_name" ]
-  _rebased_native_libraries_file = rebase_path(_native_libraries_file, root_build_dir)
+  _rebased_native_libraries_json_file = rebase_path(_native_libraries_json_file, root_build_dir)
+  _deps += [ ":$_native_libraries_json_target_name" ]
+
+  #
+  # Generate native libraries list file;
+  #   generate org.chromium.base.library_loader.NativeLibraries from the list as a srcjar;
+  #   build a jar from the srcjar as an input to dist_aar
+  #
+  _native_libraries_list_target_name = "${target_name}_native_libraries_list"
+  _native_libraries_list_file = "$target_gen_dir/native_libraries.list"
+
+  generated_file(_native_libraries_list_target_name) {
+    deps = _deps
+    outputs = [ _native_libraries_list_file ]
+    data_keys = [ "shared_libraries" ]
+    walk_keys = [ "shared_libraries_barrier" ]
+    rebase = root_build_dir
+  }
+
+  _native_libraries_gen_target_name = "${target_name}_native_libraries_gen"
+  write_native_libraries_java(_native_libraries_gen_target_name) {
+    deps = [":$_native_libraries_list_target_name"]
+    native_libraries_list_file = _native_libraries_list_file
+    use_final_fields = true
+  }
+
+  _native_libraries_jar_target_name = "${target_name}_native_libraries_javalib"
+  java_library(_native_libraries_jar_target_name) {
+    supports_android = true
+    srcjar_deps = [":$_native_libraries_gen_target_name"]
+  }
+
+  # Note: make the native libraries jar first in the order, 
+  # so that it takes precedence against the one from //base
+  _deps2 = [ ":$_native_libraries_jar_target_name" ] + _deps
 
   dist_aar(target_name) {
     forward_variables_from(invoker, [
@@ -530,7 +566,7 @@ template("xwalk_dist_aar") {
       "jar_excluded_patterns",
       "resource_included_patterns",
     ])
-    deps = _deps
-    native_libraries_norebase = "@FileArg($_rebased_native_libraries_file)"
+    deps = _deps2
+    native_libraries_norebase = "@FileArg($_rebased_native_libraries_json_file)"
   }
 }

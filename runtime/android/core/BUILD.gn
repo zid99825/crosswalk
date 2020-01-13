@@ -144,7 +144,6 @@ xwalk_dist_aar("xwalk_core_library") {
     "android/*",
     "META-INF/*",
     "play-services-*",
-    "J/*",
     "org/chromium/android_webview/*",
   ]
 
