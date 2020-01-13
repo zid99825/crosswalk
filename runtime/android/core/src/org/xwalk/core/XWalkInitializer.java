@@ -7,6 +7,7 @@ package org.xwalk.core;
 import android.content.Context;
 import android.util.Log;
 
+import org.chromium.base.ContextUtils;
 import org.xwalk.core.XWalkLibraryLoader.ActivateListener;
 import org.xwalk.core.XWalkLibraryLoader.DecompressListener;
 
@@ -170,6 +171,7 @@ public class XWalkInitializer {
         mContext = context;
 
         XWalkLibraryLoader.prepareToInit(mContext);
+        ContextUtils.initApplicationContext(context.getApplicationContext());
     }
 
     /**

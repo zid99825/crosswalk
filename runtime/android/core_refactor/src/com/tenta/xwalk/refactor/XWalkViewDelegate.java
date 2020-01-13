@@ -4,27 +4,17 @@
  
 package com.tenta.xwalk.refactor;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Locale;
-
+import android.app.Application;
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.AssetManager;
+import android.os.Build;
+import android.util.Log;
 import org.chromium.base.ApplicationStatus;
-import org.chromium.base.BuildConfig;
 import org.chromium.base.CommandLine;
-import org.chromium.base.ContextUtils;
-import org.chromium.base.LocaleUtils;
 import org.chromium.base.PathUtils;
-import org.chromium.ui.resources.ResourceExtractor;
-//import org.chromium.base.ResourceExtractor.ResourceEntry;
-//import org.chromium.base.ResourceExtractor.ResourceInterceptor;
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.library_loader.LibraryLoader;
@@ -33,21 +23,20 @@ import org.chromium.base.library_loader.ProcessInitException;
 import org.chromium.content_public.browser.BrowserStartupController;
 import org.chromium.content_public.browser.DeviceUtils;
 import org.chromium.content_public.browser.UiThreadTaskTraits;
-//import org.xwalk.core.internal.ResourceRewriter;
 import org.chromium.net.NetworkChangeNotifier;
 import org.chromium.net.NetworkChangeNotifierAutoDetect;
+import org.chromium.ui.resources.ResourceExtractor;
 
-import android.app.Activity;
-import android.app.Application;
-import android.app.Service;
-import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.res.AssetManager;
-import android.content.res.Resources.NotFoundException;
-import android.os.Build;
-import android.util.Log;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Locale;
+
+//import org.chromium.base.ResourceExtractor.ResourceEntry;
+//import org.chromium.base.ResourceExtractor.ResourceInterceptor;
+//import org.xwalk.core.internal.ResourceRewriter;
 
 @JNINamespace("xwalk")
 public class XWalkViewDelegate {
@@ -178,7 +167,6 @@ public class XWalkViewDelegate {
         Context context = libContext == null ? appContext
                 : new MixedContext(libContext, appContext);
 
-        ContextUtils.initApplicationContext(context);
         PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
         ApplicationStatus.initialize((Application) context.getApplicationContext());
 
