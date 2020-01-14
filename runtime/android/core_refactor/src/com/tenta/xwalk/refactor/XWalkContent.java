@@ -31,7 +31,17 @@ import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.components.embedder_support.view.ContentViewRenderView;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
-import org.chromium.content_public.browser.*;
+import org.chromium.content_public.browser.ContentViewStatics;
+import org.chromium.content_public.browser.GestureListenerManager;
+import org.chromium.content_public.browser.JavaScriptCallback;
+import org.chromium.content_public.browser.JavascriptInjector;
+import org.chromium.content_public.browser.LoadUrlParams;
+import org.chromium.content_public.browser.NavigationController;
+import org.chromium.content_public.browser.NavigationEntry;
+import org.chromium.content_public.browser.NavigationHistory;
+import org.chromium.content_public.browser.SelectionPopupController;
+import org.chromium.content_public.browser.WebContents;
+import org.chromium.content_public.browser.WebContentsInternals;
 import org.chromium.content_public.browser.navigation_controller.UserAgentOverrideOption;
 import org.chromium.ui.base.ActivityWindowAndroid;
 import org.chromium.ui.base.PageTransition;
@@ -78,7 +88,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private XWalkWebContentsDelegateAdapter mXWalkContentsDelegateAdapter;
     private XWalkSettings mSettings;
     private XWalkGeolocationPermissions mGeolocationPermissions;
-//    private XWalkLaunchScreenManager mLaunchScreenManager;
+    //    private XWalkLaunchScreenManager mLaunchScreenManager;
     private NavigationController mNavigationController;
     private WebContents mWebContents;
     private boolean mIsLoaded;
@@ -151,7 +161,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     // Tenta tailored
-    public XWalkContent(Context context, XWalkView xwView,final int zoneId, final int tabId) {
+    public XWalkContent(Context context, XWalkView xwView, final int zoneId, final int tabId) {
         this.zoneId = zoneId;
         this.tabId = tabId;
 
@@ -165,7 +175,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mIoThreadClient = new XWalkIoThreadClientImpl();
 
         // Initialize mWindow which is needed by content.
-        if ( WindowAndroid.activityFromContext(context) != null ) {
+        if (WindowAndroid.activityFromContext(context) != null) {
             final boolean listenToActivityState = true;
             mWindow = new ActivityWindowAndroid(context, listenToActivityState);
         } else {
@@ -213,7 +223,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
-            XWalkGetBitmapCallback callback) {
+                                        XWalkGetBitmapCallback callback) {
         if (mNativeContent == 0)
             return;
         // TODO(iotto)
@@ -329,7 +339,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         XWalkSettings.ZoomSupportChangeListener zoomListener = new XWalkSettings.ZoomSupportChangeListener() {
             @Override
             public void onGestureZoomSupportChanged(boolean supportsDoubleTapZoom,
-                    boolean supportsMultiTouchZoom) {
+                                                    boolean supportsMultiTouchZoom) {
                 GestureListenerManager gestureManager =
                         GestureListenerManager.fromWebContents(mWebContents);
                 gestureManager.updateDoubleTapSupport(supportsDoubleTapZoom);
@@ -409,7 +419,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     public void loadDataWithBaseURL(String baseUrl, String data, String mimeType, String encoding,
-            String historyUrl) {
+                                    String historyUrl) {
         if (mNativeContent == 0)
             return;
 
@@ -653,9 +663,9 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mNavigationController.clearHistory();
     }
 
-	public boolean removeHistoryEntryAt(int index) {
-		return (mNativeContent == 0) ? false : mNavigationController.removeEntryAtIndex(index);
-	}
+    public boolean removeHistoryEntryAt(int index) {
+        return (mNativeContent == 0) ? false : mNavigationController.removeEntryAtIndex(index);
+    }
 
     public boolean canGoBack() {
         return (mNativeContent == 0) ? false : mNavigationController.canGoBack();
@@ -749,7 +759,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         return ((color >> 24) & 0xFF) == 0xFF;
     }
 
-//    @CalledByNative
+    //    @CalledByNative
     public void setBackgroundColor(final int color) {
         if (mNativeContent == 0)
             return;
@@ -976,7 +986,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
      * @return
      */
     public int saveOldHistory(byte[] state, final String id,
-            final String encKey) {
+                              final String encKey) {
 
         if (mNativeContent == 0) {
             return metaFsError = MetaError.INVALID_POINTER;
@@ -1260,7 +1270,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
         @Override
         public void onReceivedResponseHeaders(XWalkContentsClient.WebResourceRequestInner request,
-                XWalkWebResourceResponse response) {
+                                              XWalkWebResourceResponse response) {
             mContentsClientBridge.getCallbackHelper().postOnReceivedResponseHeaders(request,
                     response);
         }
@@ -1311,7 +1321,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
     @CalledByNative
     private void updateHitTestData(int type, String extra, String href, String anchorText,
-            String imgSrc) {
+                                   String imgSrc) {
         mPossiblyStaleHitTestData.hitTestResultType = type;
         mPossiblyStaleHitTestData.hitTestResultExtraData = extra;
         mPossiblyStaleHitTestData.href = href;
@@ -1541,7 +1551,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
     @CalledByNative
     public void onFindResultReceived(int activeMatchOrdinal, int numberOfMatches,
-            boolean isDoneCounting) {
+                                     boolean isDoneCounting) {
         mContentsClientBridge.onFindResultReceived(activeMatchOrdinal, numberOfMatches,
                 isDoneCounting);
     }
@@ -1598,10 +1608,10 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private native long nativeReleasePopupXWalkContent(long nativeXWalkContent);
 
     private native void nativeSetJavaPeers(long nativeXWalkContent, XWalkContent xwalkContent,
-            XWalkWebContentsDelegateAdapter xwalkContentsDelegate,
-            XWalkContentsClientBridge contentsClientBridge,
-            XWalkContentsIoThreadClient ioThreadClient,
-            InterceptNavigationDelegate navigationInterceptionDelegate);
+                                           XWalkWebContentsDelegateAdapter xwalkContentsDelegate,
+                                           XWalkContentsClientBridge contentsClientBridge,
+                                           XWalkContentsIoThreadClient ioThreadClient,
+                                           InterceptNavigationDelegate navigationInterceptionDelegate);
 
     private native void nativeClearCache(long nativeXWalkContent, boolean includeDiskFiles);
 
@@ -1620,23 +1630,23 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private native int nativeGetRoutingID(long nativeXWalkContent);
 
     private native void nativeInvokeGeolocationCallback(long nativeXWalkContent, boolean value,
-            String requestingFrame);
+                                                        String requestingFrame);
 
     /****** MetaFS ********/
     private native int nativeSaveOldHistory(long nativeXWalkContent, byte[] state, final String id,
-            final String key);
+                                            final String key);
 
     private native int nativeSaveHistory(long nativeXWalkContent, String id, String key);
 
     private native int nativeRestoreHistory(long nativeXWalkContent, String id,
-            String key);
+                                            String key);
 
     private native int nativeNukeHistory(long nativeXWalkContent, String id, String key);
 
     /******* end MetaFs **********/
 
     private native int nativeReKeyHistory(long nativeXWalkContent, String oldKey,
-            String newKey);
+                                          String newKey);
 
     private native byte[] nativeGetState(long nativeXWalkContent);
 
@@ -1645,10 +1655,10 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private native void nativeSetBackgroundColor(long nativeXWalkContent, int color);
 
     private native void nativeSetOriginAccessWhitelist(long nativeXWalkContent, String url,
-            String patterns);
+                                                       String patterns);
 
     private native void nativeRequestNewHitTestDataAt(long nativeXWalkContent, float x, float y,
-            float touchMajor);
+                                                      float touchMajor);
 
     private native void nativeUpdateLastHitTestData(long nativeXWalkContent);
 
@@ -1690,7 +1700,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         }
     }
 
-  //--------------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------------
     // TODO(iotto): Implement or use the on in android_webview
 //    private class XWalkGestureStateListener implements GestureStateListener {
 //        @Override
