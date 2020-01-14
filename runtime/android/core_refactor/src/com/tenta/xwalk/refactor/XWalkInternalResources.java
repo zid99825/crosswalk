@@ -13,16 +13,14 @@ import java.lang.reflect.Modifier;
 class XWalkInternalResources {
     private static final String TAG = "XWalkInternalResources";
 
-    private static boolean loaded;// = false;
-    private final static String INTERNAL_RESOURCE_CLASSES[] = {
-        "org.chromium.components.web_contents_delegate_android.R",
-        "org.chromium.components.autofill.R",
-//        "org.chromium.android_webview.R",
-        "org.chromium.content.R",
-        "org.chromium.ui.R",
-//        "android.support.v7.appcompat.R",
-        "org.xwalk.core.internal.R",
-        "com.tenta.xwalk.refactor.R"
+    private static boolean loaded;
+    private final static String[] INTERNAL_RESOURCE_CLASSES = {
+            "org.chromium.components.embedder_support.delegate.R",
+            "org.chromium.components.autofill.R",
+            "org.chromium.media.R",
+            "org.chromium.content.R",
+            "org.chromium.ui.R",
+            "com.tenta.xwalk.refactor.R",
     };
     private final static String GENERATED_RESOURCE_CLASS = "org.xwalk.core.R";
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2013 Intel Corporation. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
- 
+
 package com.tenta.xwalk.refactor;
 
 import android.app.Application;
@@ -25,6 +25,7 @@ import org.chromium.content_public.browser.DeviceUtils;
 import org.chromium.content_public.browser.UiThreadTaskTraits;
 import org.chromium.net.NetworkChangeNotifier;
 import org.chromium.net.NetworkChangeNotifierAutoDetect;
+import org.chromium.ui.base.ResourceBundle;
 import org.chromium.ui.resources.ResourceExtractor;
 
 import java.io.BufferedReader;
@@ -44,11 +45,11 @@ public class XWalkViewDelegate {
     private static class XwalkRegistrationPolicy extends NetworkChangeNotifierAutoDetect.RegistrationPolicy {
 
         public void setNetworkUsable(boolean usable) {
-            if ( mNotifier != null ) {
+            if (mNotifier != null) {
                 mNotifier.setNetworkUsability(usable);
             }
         }
-        
+
         @Override
         protected void init(NetworkChangeNotifierAutoDetect notifier) {
             super.init(notifier);
@@ -194,25 +195,20 @@ public class XWalkViewDelegate {
         // is in the library apk if in shared apk mode.
         // ResourceExtractor.get();
         ResourceExtractor.get().setResultTraits(UiThreadTaskTraits.BOOTSTRAP);
+        ResourceBundle.setNoAvailableLocalePaks();
         org.chromium.base.Log.w("iotto", "getUiLocaleStringForCompressedPak");
         //ResourceExtractor.get().startExtractingResources(LocaleUtils.toLanguage(
 //        ChromeLocalizationUtils.getUiLocaleStringForCompressedPak()));
         ResourceExtractor.get().startExtractingResources("en");
-
-        // resourceExtractor.waitForCompletion();
+        ResourceExtractor.get().waitForCompletion();
+        XWalkInternalResources.resetIds(context.getApplicationContext());
 
         // final AssetManager mgr = context.getApplicationContext().getAssets();
         // displayFiles(mgr, "",0);
 
-        // XWalkInternalResources.resetIds(appContext);
-
         startBrowserProcess(context);
 
         XWalkPresentationHost.createInstanceOnce(context);
-        // ContextUtils.initApplicationContextForNative();
-
-        ResourceExtractor.get().waitForCompletion();
-        XWalkInternalResources.resetIds(context.getApplicationContext());
 
         // TODO(iotto): See AwContentsLifecycleNotifier.java
         ThreadUtils.runOnUiThreadBlocking(new Runnable() {
@@ -227,11 +223,11 @@ public class XWalkViewDelegate {
     }
 
     public static void setNetworkUsable(boolean usable) {
-        if ( NetworkChangeNotifier.isInitialized() ) {
+        if (NetworkChangeNotifier.isInitialized()) {
             sRegistrationPolicy.setNetworkUsable(usable);
         }
     }
-    
+
     // Keep this function to preserve backward compatibility.
     public static boolean loadXWalkLibrary(Context context) {
         return loadXWalkLibrary(context, null);
@@ -259,9 +255,7 @@ public class XWalkViewDelegate {
         // with System.loadLibrary("xwalkcore") above, but same library won't be loaded repeatedly.
         try {
             LibraryLoader libraryLoader = LibraryLoader.getInstance();
-                    //(LibraryProcessType.PROCESS_BROWSER);
             libraryLoader.ensureInitialized(LibraryProcessType.PROCESS_BROWSER);
-            // libraryLoader.ensureInitialized();
         } catch (ProcessInitException e) {
         }
 
@@ -415,7 +409,7 @@ public class XWalkViewDelegate {
      * build time (see XWALK-3569).
      */
     private static int getResourceId(final Context context, final String resourceName,
-            final String resourceType) {
+                                     final String resourceType) {
         int resourceId = context.getResources().getIdentifier(
                 resourceName, resourceType, context.getClass().getPackage().getName());
         if (resourceId == 0) {

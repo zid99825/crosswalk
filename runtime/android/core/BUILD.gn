@@ -137,7 +137,6 @@ xwalk_dist_aar("xwalk_core_library") {
   ]
 
   jar_excluded_patterns = [
-    "gen/*",
     "com/android/*",
     "com/google/*",
     "javax/*",
@@ -145,14 +144,16 @@ xwalk_dist_aar("xwalk_core_library") {
     "META-INF/*",
     "play-services-*",
     "org/chromium/android_webview/*",
+    "org/xwalk/core/R.class", # let the final apk generator create these
+    "org/xwalk/core/R\$*.class",
   ]
 
   resource_included_patterns = [
-    "resource_zips/components/autofill/android/*",
-    "resource_zips/ui/android/*",
-    "resource_zips/content/public/android/*",
-    "resource_zips/media/base/android/*",
-    "resource_zips/components/embedder_support/android/*",
+    #"*/components/autofill/android/*", # causes duplicates
+    "*/ui/android/*",
+    # "*/content/public/android/*", # causes duplicates
+    "*/media/base/android/*",
+    "*/components/embedder_support/android/*",
     "*/xwalk/runtime/android/*",
   ]
 
