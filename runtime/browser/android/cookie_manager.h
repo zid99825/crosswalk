@@ -6,16 +6,19 @@
 #define XWALK_RUNTIME_BROWSER_ANDROID_COOKIE_MANAGER_H_
 
 #include <jni.h>
+#include "base/memory/scoped_refptr.h"
 
+namespace base {
+class SingleThreadTaskRunner;
+}
 namespace net {
 class CookieStore;
 }  // namespace net
 
 namespace xwalk {
 
+scoped_refptr<base::SingleThreadTaskRunner> GetCookieStoreTaskRunner();
 net::CookieStore* GetCookieStore();
-
-bool RegisterCookieManager(JNIEnv* env);
 
 }  // namespace xwalk
 

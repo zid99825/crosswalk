@@ -867,14 +867,6 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
 #endif // TENTA_CHROMIUM_BUILD
 }
 
-/**
- * TODO(iotto) : Deprecated remove!
- */
-jint XWalkContent::ReKeyHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& oldKey,
-                                const JavaParamRef<jstring>& newKey) {
-  return -1;
-}
-
 /************ End MetaFS ****************/
 static jlong JNI_XWalkContent_Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   std::unique_ptr<WebContents> web_contents(

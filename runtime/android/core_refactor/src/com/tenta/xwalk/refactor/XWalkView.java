@@ -1112,25 +1112,6 @@ public class XWalkView extends android.widget.FrameLayout {
     }
 
     /**
-     * Rekey navigation history database. Change encryption key
-     * 
-     * @param oldKey Old Sqlite db encryption key
-     * @param newKey New Sqlite db encryption key
-     * @return true if success; false otherwise
-     */
-//    @XWalkAPI
-    public boolean rekeyHistory(final String oldKey, final String newKey) {
-        if (mContent == null) {
-            return false;
-        }
-        if (mContent.rekeyHistory(oldKey, newKey)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * Restore the state from the saved bundle data.
      * 
      * @param inState the state saved from saveState().

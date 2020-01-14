@@ -1018,21 +1018,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
     }
 
-    public boolean rekeyHistory(final String oldKey, final String newKey) {
-        if (mNativeContent == 0) {
-            metaFsError = MetaError.INVALID_POINTER; // ERR_INVALID_POINTER
-            return false;
-        }
-
-        int result = nativeReKeyHistory(mNativeContent, oldKey, newKey);
-        metaFsError = result;
-        if (result != MetaError.FS_OK) {
-            return false;
-        }
-
-        return true;
-    }
-
     /**
      * Bundle key for save/restore state
      *
@@ -1644,9 +1629,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private native int nativeNukeHistory(long nativeXWalkContent, String id, String key);
 
     /******* end MetaFs **********/
-
-    private native int nativeReKeyHistory(long nativeXWalkContent, String oldKey,
-                                          String newKey);
 
     private native byte[] nativeGetState(long nativeXWalkContent);
 

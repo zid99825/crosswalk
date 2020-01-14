@@ -311,7 +311,8 @@ abstract class XWalkContentsClient {
     public abstract boolean hasEnteredFullscreen();
 
     public abstract boolean shouldOverrideRunFileChooser(
-            int processId, int renderId, int mode, String acceptTypes, boolean capture);
+            int processId, int renderId, int mode, String acceptTypes, String title,
+            String defaultFilename, boolean capture);
 
     // TODO (michaelbai): Remove this method once the same method remove from
     // XWalkContentsClientAdapter.

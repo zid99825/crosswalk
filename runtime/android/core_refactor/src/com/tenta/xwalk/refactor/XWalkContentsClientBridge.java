@@ -686,7 +686,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     
     @Override
     public boolean shouldOverrideRunFileChooser(final int processId, final int renderId, final int modeFlags,
-            String acceptTypes, boolean capture) {
+            String acceptTypes, String title, String defaultFilename, boolean capture) {
         abstract class UriCallback implements ValueCallback<String[]> {
             boolean syncNullReceived;
             boolean syncCallFinished;
@@ -719,7 +719,8 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
                 }
             }
         };
-        mXWalkUIClient.openFileChooser(mXWalkView, uploadFile, acceptTypes, capture, modeFlags);
+        mXWalkUIClient.openFileChooser(mXWalkView, uploadFile, acceptTypes, title, defaultFilename,
+                capture, modeFlags);
         uploadFile.syncCallFinished = true;
         return !uploadFile.syncNullReceived;
     }

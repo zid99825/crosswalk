@@ -73,6 +73,7 @@ class RuntimeFileSelectHelper
   void RunFileChooser(content::RenderFrameHost* render_frame_host,
                       content::WebContents* web_contents,
                       const blink::mojom::::FileChooserParams& params);
+
   void RunFileChooserOnFileThread(
       const content::FileChooserParams& params);
   void RunFileChooserOnUIThread(

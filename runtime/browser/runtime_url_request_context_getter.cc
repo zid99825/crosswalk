@@ -54,6 +54,7 @@
 #include "xwalk/runtime/browser/runtime_network_delegate.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
+
 #ifdef TENTA_CHROMIUM_BUILD
 //#include "host_resolver_tenta.h"
 #include "tenta_host_resolver.h"
@@ -61,6 +62,7 @@
 
 namespace tenta_cache = tenta::fs::cache;
 #endif
+#include "meta_logging.h"
 
 #if defined(OS_ANDROID)
 //#include "net/proxy/proxy_config_service_android.h"
@@ -309,6 +311,8 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     // Give |storage_| ownership at the end in case it's |mapped_host_resolver|.
     storage_->set_host_resolver(std::move(host_resolver));
     network_session_context.host_resolver = url_request_context_->host_resolver();
+
+    TENTA_LOG(WARNING) << __func__ << " GetAHold of NetworkSession to flush all sockets when mimic changes!";
 
     storage_->set_http_network_session(
         base::WrapUnique(new net::HttpNetworkSession(network_session_params, network_session_context)));

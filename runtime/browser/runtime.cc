@@ -39,6 +39,7 @@
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_content_browser_client.h"
 #include "xwalk/runtime/browser/xwalk_content_settings.h"
+#include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
 #include "xwalk/runtime/common/xwalk_notification_types.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
@@ -60,7 +61,6 @@ Runtime* Runtime::Create(XWalkBrowserContext* browser_context,
   params.routing_id = MSG_ROUTING_NONE;
   std::unique_ptr<WebContents> web_contents(WebContents::Create(params));
 
- //TODO(iotto) have URL param and load url for debugger
   return new Runtime(std::move(web_contents));
 }
 
@@ -129,7 +129,6 @@ NativeAppWindow* Runtime::window() {
 }
 
 content::RenderProcessHost* Runtime::GetRenderProcessHost() {
-  // TODO(iotto) : Test if it's ok!
   return web_contents_->GetMainFrame()->GetProcess();
 }
 
@@ -165,7 +164,6 @@ void Runtime::LoadingStateChanged(content::WebContents* source,
 
 void Runtime::EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL&,
                                         const blink::WebFullscreenOptions& options) {
-  // TODO(iotto): Check and fix
   fullscreen_options_ |= FULLSCREEN_FOR_TAB;
   if (ui_delegate_)
     ui_delegate_->SetFullscreen(true);
@@ -225,7 +223,6 @@ content::KeyboardEventProcessingResult Runtime::PreHandleKeyboardEvent(
 bool Runtime::HandleKeyboardEvent(
       content::WebContents* source,
       const content::NativeWebKeyboardEvent& event) {
-  //TODO(iotto): Implement
 
   return false; // not handled
 }
@@ -237,13 +234,8 @@ void Runtime::WebContentsCreated(
     const std::string& frame_name,
     const GURL& target_url,
     content::WebContents* new_contents) {
-  LOG(ERROR) << "iotto " << __func__ << " REFACTOR! unique ptr";
-//  AwContentsIoThreadClient::RegisterPendingContents(new_contents);
-
-//  if (observer_)
-//    observer_->OnNewRuntimeAdded(new Runtime(new_contents));
-//  else
-//    LOG(WARNING) << "New web contents is left unhandled.";
+  // handled in xwalkContent:SetJavaPeers
+//  XWalkContentsIoThreadClient::RegisterPendingContents(new_contents);
 }
 
 void Runtime::DidNavigateMainFramePostCommit(

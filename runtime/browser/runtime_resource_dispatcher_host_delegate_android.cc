@@ -123,10 +123,6 @@ IoThreadClientThrottle::~IoThreadClientThrottle() {
 
 std::unique_ptr<XWalkContentsIoThreadClient>
 IoThreadClientThrottle::GetIoThreadClient() const {
-  // TODO(iotto) : Implement! see android_webview/browser/aw_contents_io_thread_client.cc
-//  if (content::ResourceRequestInfo::OriginatedFromServiceWorker(request_))
-//    return XWalkContentsIoThreadClient::GetServiceWorkerIoThreadClient();
-
   if (render_process_id_ == -1 || render_frame_id_ == -1) {
     content::ResourceRequestInfo* resourceRequestInfo = content::ResourceRequestInfo::ForRequest(request_);
     if (resourceRequestInfo == nullptr) {
@@ -350,7 +346,6 @@ void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(net::URLReq
     return;
   }
 
-  // TODO(iotto) : May be removed in the future
   if (request_info->GetResourceType() == content::ResourceType::kMainFrame) {
     // Check for x-auto-login header.
     android_webview::HeaderData header_data;

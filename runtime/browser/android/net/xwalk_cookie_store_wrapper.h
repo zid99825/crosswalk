@@ -19,7 +19,7 @@
 #include "net/cookies/cookie_constants.h"
 #include "net/cookies/cookie_monster_change_dispatcher.h"
 #include "net/cookies/cookie_store.h"
-
+#include "xwalk/runtime/browser/android/net/xwalk_cookie_change_dispatcher_wrapper.h"
 
 namespace xwalk {
 
@@ -72,18 +72,7 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
   net::CookieChangeDispatcher& GetChangeDispatcher() override;
   void SetCookieableSchemes(const std::vector<std::string>& schemes, SetCookieableSchemesCallback callback) override;
 
-  // TODO(iotto): Implement! see net/cookies/cookie_change_dispatcher.h
-//  std::unique_ptr<CookieChangedSubscription> AddCallbackForCookie(
-//      const GURL& url,
-//      const std::string& name,
-//      const CookieChangedCallback& callback) override;
-//
-//  std::unique_ptr<CookieChangedSubscription> AddCallbackForAllChanges(
-//        const CookieChangedCallback& callback) override;
-
-//  bool IsEphemeral() override;
-
-  void TriggerCookieFetch();
+  void TriggerCookieFetch() override;
 
  private:
   // Used by CreateWrappedCallback below. Takes an arugment of Type and posts
@@ -123,7 +112,7 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
   void RunClosureCallback(base::OnceClosure callback);
 
   scoped_refptr<base::SingleThreadTaskRunner> client_task_runner_;
-  net::CookieMonsterChangeDispatcher change_dispatcher_;
+  XWalkCookieChangeDispatcherWrapper _change_dispatcher;
   base::WeakPtrFactory<XWalkCookieStoreWrapper> weak_factory_;
 };
 

@@ -235,13 +235,14 @@ class CookieManager {
                            const net::CookieStatusList& excluded_list);
 
 #ifdef TENTA_CHROMIUM_BUILD
-  void TriggerCookieFetchAsyncHelper(base::WaitableEvent* completion);
   void NukeDomainAsyncHelper(const std::string& domain, base::WaitableEvent* completion);
   void SetDbKeyAsyncHelper(const std::string& dbKey, base::WaitableEvent* completion);
   void RekeyDbAsyncHelper(const std::string& oldKey, const std::string& newKey, int* resultHolder, base::WaitableEvent* completion);
   void SetZoneAsyncHelper(const std::string& zone, base::WaitableEvent* completion);
   void SetZoneDoneDelete(const std::string& zone, uint32_t num_deleted);
   void PageLoadStartedAsyncHelper(const std::string& loadingUrl, base::WaitableEvent* completion);
+  void ResetAsyncHelper(base::WaitableEvent* completion);
+  void ResetCookiesRemoved(base::WaitableEvent* completion, uint32_t num_deleted);
 #endif
 
 // This protects the following two bools, as they're used on multiple threads.
@@ -284,8 +285,7 @@ CookieManager::CookieManager()
   // make MessageLoopForIO type!
   base::Thread::Options op(base::MessageLoop::TYPE_IO, 0 /*default stack size*/);
   cookie_store_client_thread_.StartWithOptions(op);
-//  cookie_store_task_runner_ = cookie_store_client_thread_.task_runner();
-  cookie_store_task_runner_ = base::CreateSingleThreadTaskRunnerWithTraits({content::BrowserThread::IO});
+  cookie_store_task_runner_ = cookie_store_client_thread_.task_runner();
 
   cookie_store_backend_thread_.Start();
   TENTA_LOG_COOKIE(INFO) << __func__ << " thread_id=" << cookie_store_client_thread_.GetThreadId();
@@ -337,7 +337,6 @@ net::CookieStore* CookieManager::GetCookieStore() {
                                              true /* restore_old_session_cookies */,
                                              true /* persist_session_cookies */,
                                              nullptr /* storage_policy */);
-    // TODO(iotto) : If not set will be posted to BrowerThread::IO
     cookie_config.client_task_runner = cookie_store_task_runner_;
 
     cookie_config.background_task_runner = cookie_store_backend_thread_.task_runner();
@@ -748,36 +747,16 @@ void CookieManager::SetZoneAsyncHelper(const std::string& zone, base::WaitableEv
 
     GetCookieStore()->DeleteAllAsync(
         base::BindOnce(&CookieManager::SetZoneDoneDelete, base::Unretained(this), zone));
-//    RemoveAllCookieAsyncHelper(nullptr);
-//    ExecCookieTask(base::Bind(&CookieManager::RemoveAllCookieAsyncHelper, base::Unretained(this)),
-//                   true /*wait 'till finish*/);
-    // TODO(iotto): do we need to postTask, since we're setting just a flag
-    // then we might need synchronization
-//    GetCookieStore()->TriggerCookieFetch();
-//    TriggerCookieFetchAsyncHelper(nullptr);
-//    ExecCookieTask(base::Bind(&CookieManager::TriggerCookieFetchAsyncHelper, base::Unretained(this)), false);
-//    _tenta_store->ZoneSwitching(false);  // done switching zone
-
   }
 }
 
 void CookieManager::SetZoneDoneDelete(const std::string& zone, uint32_t num_deleted) {
   TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone << " num_deleted=" << num_deleted;
 
-  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT TriggerCookieFetch";
-//  GetCookieStore()->TriggerCookieFetch();
+  GetCookieStore()->TriggerCookieFetch();
   _tenta_store->ZoneSwitching(false);  // done switching zone
 }
 
-/**
- *
- */
-void CookieManager::TriggerCookieFetchAsyncHelper(base::WaitableEvent* completion) {
-  TENTA_LOG_COOKIE(INFO) << __func__;
-
-  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT TriggerCookieFetch";
-//  GetCookieStore()->TriggerCookieFetch();
-}
 #endif // TENTA_CHROMIUM_BUILD
 
 int CookieManager::NukeDomain(const std::string& domain) {
@@ -819,17 +798,28 @@ void CookieManager::PageLoadStartedAsyncHelper(const std::string& loadingUrl, ba
 #endif // TENTA_CHROMIUM_BUILD
 
 void CookieManager::Reset() {
-  // TODO(iotto) : Move this too to cookie thread
-  LOG(WARNING) << __func__ << " move_to_cookie_thread";
 #ifdef TENTA_CHROMIUM_BUILD
-  GetCookieStore();
-  _tenta_store->ZoneSwitching(true);
-  ExecCookieTask(base::Bind(&CookieManager::RemoveAllCookieAsyncHelper, base::Unretained(this)),
-  true /*wait 'till finish*/);
-  _tenta_store->Reset();
+
+  ExecCookieTask(base::Bind(&CookieManager::ResetAsyncHelper, base::Unretained(this)),
+                 true /*wait 'till finish*/);
 #endif
 }
 
+void CookieManager::ResetAsyncHelper(base::WaitableEvent* completion) {
+  GetCookieStore();
+  _tenta_store->ZoneSwitching(true);
+  GetCookieStore()->DeleteAllAsync(
+      base::BindOnce(&CookieManager::ResetCookiesRemoved, base::Unretained(this), completion));
+}
+
+void CookieManager::ResetCookiesRemoved(base::WaitableEvent* completion, uint32_t num_deleted) {
+  _tenta_store->Reset();
+  if ( completion != nullptr ) {
+    completion->Signal();
+  }
+}
+
+/*********** Java/Jni ****************/
 static void JNI_XWalkCookieManager_SetAcceptCookie(JNIEnv* env, const JavaParamRef<jobject>& obj,
                                                            jboolean accept) {
   CookieManager::GetInstance()->SetAcceptCookie(accept);
@@ -936,10 +926,6 @@ scoped_refptr<base::SingleThreadTaskRunner> GetCookieStoreTaskRunner() {
 
 net::CookieStore* GetCookieStore() {
   return CookieManager::GetInstance()->GetCookieStore();
-}
-
-bool RegisterCookieManager(JNIEnv* env) {
-  return false;
 }
 
 }  // namespace xwalk

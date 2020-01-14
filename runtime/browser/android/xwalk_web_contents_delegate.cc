@@ -159,21 +159,19 @@ void XWalkWebContentsDelegate::RunFileChooser(content::RenderFrameHost* render_f
 
   file_select_listener_ = std::move(listener);
 
-  Java_XWalkWebContentsDelegate_shouldOverrideRunFileChooser(
-      env,
-      java_delegate,
+  jboolean result = Java_XWalkWebContentsDelegate_shouldOverrideRunFileChooser(
+      env, java_delegate,
       render_frame_host->GetProcess()->GetID(),
       render_frame_host->GetRoutingID(),
       mode_flags,
-      ConvertUTF16ToJavaString(
-          env, base::JoinString(params.accept_types, base::ASCIIToUTF16(","))),
-          // TODO(iotto): Default file name
-//          params.title.empty() ? nullptr
-//                                     : ConvertUTF16ToJavaString(env, params.title),
-//                params.default_file_name.empty()
-//                    ? nullptr
-//                    : ConvertUTF8ToJavaString(env, params.default_file_name.value()),
+      ConvertUTF16ToJavaString(env, base::JoinString(params.accept_types, base::ASCIIToUTF16(","))),
+      params.title.empty() ? nullptr : ConvertUTF16ToJavaString(env, params.title),
+      params.default_file_name.empty() ? nullptr : ConvertUTF8ToJavaString(env, params.default_file_name.value()),
       params.use_media_capture);
+
+  if (!result) {
+    listener->FileSelectionCanceled();
+  }
 }
 
 std::unique_ptr<content::FileSelectListener>

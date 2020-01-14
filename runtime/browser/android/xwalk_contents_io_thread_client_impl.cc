@@ -442,10 +442,4 @@ void XWalkContentsIoThreadClientImpl::OnReceivedResponseHeaders(
       jstringArray_response_header_values);
 }
 
-bool RegisterXWalkContentsIoThreadClientImpl(JNIEnv* env) {
-  //TODO(iotto) remove registration too
-//  return RegisterNativesImpl(env);
-  return true;
-}
-
 }  // namespace xwalk

@@ -611,52 +611,6 @@ static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, int proce
   DVLOG(0) << "File Chooser result: mode = " << mode
            << ", file paths = " << base::JoinString(file_path_str, ":");
   listener->FileSelected(std::move(files), base_dir, mode);
-
-
-
-
-
-  LOG(ERROR) << "iotto " << __func__ << " FIX/MOVE to xwalk_web_contents_delegate";
-//  content::RenderFrameHost* rfh = content::RenderFrameHost::FromID(process_id, render_id);
-//  if (!rfh)
-//    return;
-//
-//  std::vector<std::string> file_path_str;
-//  std::vector<std::string> display_name_str;
-//  // Note file_paths maybe NULL, but this will just yield a zero-length vector.
-//  base::android::AppendJavaStringArrayToStringVector(env, file_paths, &file_path_str);
-//  base::android::AppendJavaStringArrayToStringVector(env, display_names, &display_name_str);
-//  std::vector<content::FileChooserFileInfo> files;
-//  files.reserve(file_path_str.size());
-//  for (size_t i = 0; i < file_path_str.size(); ++i) {
-//    GURL url(file_path_str[i]);
-//    if (!url.is_valid()) {
-//      TENTA_LOG_NET(WARNING) << __func__ << " invalid_url=" << file_path_str[i];
-//      continue;
-//    }
-//    base::FilePath path(
-//        url.SchemeIsFile() ?
-//            net::UnescapeURLComponent(
-//                url.path(), net::UnescapeRule::SPACES | net::UnescapeRule::URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS) :
-//            file_path_str[i]);
-//    content::FileChooserFileInfo file_info;
-//    file_info.file_path = path;
-//    if (!display_name_str[i].empty())
-//      file_info.display_name = display_name_str[i];
-//    TENTA_LOG_NET(INFO) << __func__ << " new_file=" << path;
-//    files.push_back(file_info);
-//  }
-//  FileChooserParams::Mode mode = static_cast<content::FileChooserParams::Mode>(mode_flags);
-////  if (mode_flags & kFileChooserModeOpenFolder) {
-////    mode = FileChooserParams::UploadFolder;
-////  } else if (mode_flags & kFileChooserModeOpenMultiple) {
-////    mode = FileChooserParams::OpenMultiple;
-////  } else {
-////    mode = FileChooserParams::Open;
-////  }
-//  TENTA_LOG_NET(INFO) << __func__ << " mode=" << mode << " files_cnt=" << files.size() << " file paths="
-//                      << base::JoinString(file_path_str, ":");
-//  rfh->FilesSelectedInChooser(files, mode);
 }
 
 void XWalkContentsClientBridge::DownloadIcon(JNIEnv* env, jobject obj, jstring url) {

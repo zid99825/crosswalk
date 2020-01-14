@@ -55,7 +55,7 @@ abstract class XWalkWebContentsDelegate extends WebContentsDelegateAndroid {
     @CalledByNative
     public abstract boolean shouldOverrideRunFileChooser(
             int processId, int renderId, int mode,
-            String acceptTypes, boolean capture);
+            String acceptTypes, String title, String defaultFilename, boolean capture);
 
     @CalledByNative
     public void updatePreferredSize(int widthCss, int heightCss) {

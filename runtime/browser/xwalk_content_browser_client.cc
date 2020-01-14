@@ -14,6 +14,7 @@
 #include "base/memory/ptr_util.h"
 #include "base/path_service.h"
 #include "components/nacl/common/buildflags.h"
+#include "components/version_info/version_info.h"
 #include "content/public/browser/browser_child_process_host.h"
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/browser/browser_ppapi_host.h"
@@ -94,7 +95,6 @@
 #endif
 
 #if defined(OS_ANDROID)
-// TODO(iotto): Fix if we need it
 //#include "xwalk/runtime/browser/xwalk_presentation_service_delegate_android.h"
 #elif defined(OS_WIN)
 #include "xwalk/runtime/browser/xwalk_presentation_service_delegate_win.h"
@@ -109,7 +109,6 @@ namespace {
 // The application-wide singleton of ContentBrowserClient impl.
 XWalkContentBrowserClient* g_browser_client = nullptr;
 
-// TODO(iotto: ch77 Fix this
 //void PassMojoCookieManagerToAwCookieManager(
 //    const network::mojom::NetworkContextPtr& network_context) {
 //  // Get the CookieManager from the NetworkContext.
@@ -125,8 +124,7 @@ XWalkContentBrowserClient* g_browser_client = nullptr;
 }
 
 std::string GetProduct() {
-  // TODO(iotto) : Check out and use version_info::GetProductNameAndVersionForUserAgent();
-  return "Chrome/" CHROME_VERSION;
+  return version_info::GetProductNameAndVersionForUserAgent();
 }
 
 std::string GetUserAgent() {
@@ -231,7 +229,8 @@ void XWalkContentBrowserClient::OverrideWebkitPrefs(content::RenderViewHost* ren
 ////  prefs->accelerated_filters_enabled = true;
 }
 
-network::mojom::NetworkContextPtr XWalkContentBrowserClient::CreateNetworkContext(content::BrowserContext* context,
+network::mojom::NetworkContextPtr
+XWalkContentBrowserClient::CreateNetworkContext(content::BrowserContext* context,
     bool in_memory,
     const base::FilePath& relative_partition_path) {
   if (!base::FeatureList::IsEnabled(network::features::kNetworkService))
@@ -249,7 +248,7 @@ network::mojom::NetworkContextPtr XWalkContentBrowserClient::CreateNetworkContex
 #endif
   content::GetNetworkService()->CreateNetworkContext(
       MakeRequest(&network_context), std::move(context_params));
-  // TODO(iotto: ch77 Fix this
+//
 //  // Pass a CookieManager to the code supporting AwCookieManager.java (i.e., the
 //  // Cookies APIs).
 //  PassMojoCookieManagerToAwCookieManager(network_context);
@@ -629,7 +628,7 @@ bool XWalkContentBrowserClient::HandleExternalProtocol(const GURL& url,
     bool has_user_gesture,
     network::mojom::URLLoaderFactoryPtr* out_factory) {
 
-  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!!";
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!! url=" << url << " isMainFrame=" << is_main_frame;
 //  if (base::FeatureList::IsEnabled(network::features::kNetworkService)) {
 //    auto request = mojo::MakeRequest(out_factory);
 //    if (content::BrowserThread::CurrentlyOn(content::BrowserThread::IO)) {
