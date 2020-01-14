@@ -112,10 +112,6 @@ raw_resources("xwalk_core_raw_resources") {
     "//xwalk/experimental/launch_screen/launch_screen_api.js",
     "//xwalk/experimental/wifidirect/wifidirect_api.js",
   ]
-  if (icu_use_data_file) {
-    deps += [ "//third_party/icu:icudata" ]
-    sources += [ "$root_out_dir/icudtl.dat" ]
-  }
 }
 
 java_strings_grd("xwalk_app_strings_grd") {
@@ -125,6 +121,17 @@ java_strings_grd("xwalk_app_strings_grd") {
   ]
 }
 
+android_assets("xwalk_core_assets") {
+  if (icu_use_data_file) {
+    deps = [
+      "//third_party/icu:icudata"
+    ]
+    sources = [
+      "$root_out_dir/icudtl.dat"
+    ]
+  }
+}
+
 xwalk_dist_aar("xwalk_core_library") {
   output = "$root_out_dir/xwalk_core_library.aar"
   android_manifest = "//xwalk/build/android/xwalkcore_library_template/AndroidManifest.xml"
@@ -132,6 +139,7 @@ xwalk_dist_aar("xwalk_core_library") {
   deps = [
     ":xwalk_core_java",
     ":xwalk_core_raw_resources",
+    ":xwalk_core_assets",
     "//components/embedder_support/android:view",
     "//xwalk/runtime/app/android:libxwalkcore",
   ]
