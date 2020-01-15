@@ -135,6 +135,7 @@ android_assets("xwalk_core_assets") {
 xwalk_dist_aar("xwalk_core_library") {
   output = "$root_out_dir/xwalk_core_library.aar"
   android_manifest = "//xwalk/build/android/xwalkcore_library_template/AndroidManifest.xml"
+  version_number = "\"$chrome_version\""
 
   deps = [
     ":xwalk_core_java",

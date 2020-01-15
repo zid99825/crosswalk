@@ -544,6 +544,9 @@ template("xwalk_dist_aar") {
 
   _native_libraries_gen_target_name = "${target_name}_native_libraries_gen"
   write_native_libraries_java(_native_libraries_gen_target_name) {
+    forward_variables_from(invoker, [
+      "version_number"
+    ])
     deps = [":$_native_libraries_list_target_name"]
     native_libraries_list_file = _native_libraries_list_file
     use_final_fields = true
