@@ -66,7 +66,6 @@ public class XWalkViewDelegate {
     private static boolean sLibraryLoaded;// = false;
     private static boolean sLoadedByHoudini;// = false;
     private static String sDeviceAbi;
-    private static final String PRIVATE_DATA_DIRECTORY_SUFFIX = "xwalkcore";
     private static final String XWALK_CORE_EXTRACTED_DIR = "extracted_xwalkcore";
     private static final String META_XWALK_ENABLE_DOWNLOAD_MODE = "xwalk_enable_download_mode";
     private static final String META_XWALK_DOWNLOAD_MODE = "xwalk_download_mode";
@@ -167,9 +166,6 @@ public class XWalkViewDelegate {
 
         Context context = libContext == null ? appContext
                 : new MixedContext(libContext, appContext);
-
-        PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
-        ApplicationStatus.initialize((Application) context.getApplicationContext());
 
         // Initialize chromium resources. Assign them the correct ids in xwalk core.
         // XWalkInternalResources.resetIds(context);
