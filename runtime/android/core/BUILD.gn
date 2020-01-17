@@ -156,6 +156,7 @@ xwalk_dist_aar("xwalk_core_library") {
     "org/chromium/android_webview/*",
     "org/xwalk/core/R.class", # let the final apk generator create these
     "org/xwalk/core/R\$*.class",
+    "gen/_third_party/*",
   ]
 
   resource_included_patterns = [

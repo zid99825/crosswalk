@@ -9,6 +9,8 @@ import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 
 class XWalkInternalResources {
     private static final String TAG = "XWalkInternalResources";
@@ -28,44 +30,58 @@ class XWalkInternalResources {
     // Use reflection to iterate over the target class is to avoid hardcode.
     private static void doResetIds(Context context) {
         // internal classes are loaded with the same classLoader of XWalkInternalResources
-        ClassLoader classLoader = XWalkInternalResources.class.getClassLoader();
-        ClassLoader appClassLoader = context.getApplicationContext().getClassLoader();
-        for (String resourceClass : INTERNAL_RESOURCE_CLASSES) {
+        final ClassLoader classLoader = XWalkInternalResources.class.getClassLoader();
+        final ClassLoader appClassLoader = context.getApplicationContext().getClassLoader();
+        final Map<String, Class<?>> generatedInnerClazzs = new HashMap<>();
+        for (final String resourceClass : INTERNAL_RESOURCE_CLASSES) {
             try {
-                Class<?> internalResource = classLoader.loadClass(resourceClass);
-                Class<?>[] innerClazzs = internalResource.getClasses();
+                final Class<?> internalResource = classLoader.loadClass(resourceClass);
+                final Class<?>[] innerClazzs = internalResource.getClasses();
                 for (Class<?> innerClazz : innerClazzs) {
-                    Class<?> generatedInnerClazz;
-                    String generatedInnerClassName = innerClazz.getName().replace(
-                            resourceClass, GENERATED_RESOURCE_CLASS);
-                    try {
-                        generatedInnerClazz = appClassLoader.loadClass(generatedInnerClassName);
-                    } catch (ClassNotFoundException e) {
-                        Log.w(TAG, generatedInnerClassName + " (generatedInnerClassName) is not found.");
+                    final Field[] fields = innerClazz.getFields();
+                    if (fields.length == 0) {
                         continue;
                     }
-                    Field[] fields = innerClazz.getFields();
-                    for (Field field : fields) {
+
+                    final Class<?> generatedInnerClazz;
+                    final String generatedInnerClassName = innerClazz.getName().replace(
+                            resourceClass, GENERATED_RESOURCE_CLASS);
+                    if (generatedInnerClazzs.containsKey(generatedInnerClassName)) {
+                        generatedInnerClazz = generatedInnerClazzs.get(generatedInnerClassName);
+                    } else {
+                        try {
+                            generatedInnerClazz = appClassLoader.loadClass(generatedInnerClassName);
+                        } catch (ClassNotFoundException e) {
+                            Log.w(TAG, String.format("%s not found, needed by %s",
+                                    generatedInnerClassName, resourceClass));
+                            continue;
+                        }
+                        generatedInnerClazzs.put(generatedInnerClassName, generatedInnerClazz);
+                    }
+
+                    for (final Field field : fields) {
                         // It's final means we are probably not used as library project.
                         if (Modifier.isFinal(field.getModifiers())) field.setAccessible(true);
                         try {
-                            int value = generatedInnerClazz.getField(field.getName()).getInt(null);
-                            field.setInt(null, value);
-                        } catch (IllegalAccessException e) {
-                            Log.w(TAG, generatedInnerClazz.getName() + "." +
-                                    field.getName() + " (IllegalAccessException) is not accessable.");
-                        } catch (IllegalArgumentException e) {
-                            Log.w(TAG, generatedInnerClazz.getName() + "." +
-                                    field.getName() + " (IllegalArgumentException) is not int.");
-                        } catch (NoSuchFieldException e) {
-                            Log.w(TAG, generatedInnerClazz.getName() + "." +
-                                    field.getName() + " (NoSuchFieldException) is not found.");
+                            final Field generatedField = generatedInnerClazz.getField(field.getName());
+                            if (isIntArray(generatedField.getType())) {
+                                // for example: styleable
+                                final Object value = generatedField.get(null);
+                                field.set(null, value);
+                            } else {
+                                final int value = generatedField.getInt(null);
+                                field.setInt(null, value);
+                            }
+                        } catch (IllegalAccessException | IllegalArgumentException | NoSuchFieldException e) {
+                            Log.w(TAG, String.format("%s.%s reset failed: %s - %s, needed by %s",
+                                    generatedInnerClazz.getName(), field.getName(),
+                                    e.getClass().getSimpleName(), e.getMessage(), resourceClass));
                         }
                         if (Modifier.isFinal(field.getModifiers())) field.setAccessible(false);
                     }
                 }
             } catch (ClassNotFoundException e) {
-                Log.w(TAG, resourceClass + " (resourceClass) is not found.");
+                Log.w(TAG, String.format("%s (resourceClass) is not found", resourceClass));
             }
         }
     }
@@ -75,5 +91,11 @@ class XWalkInternalResources {
             doResetIds(context);
             loaded = true;
         }
+    }
+
+    private static boolean isIntArray(final Class<?> type) {
+        if (!type.isArray()) return false;
+        final Class<?> componentType = type.getComponentType();
+        return componentType.isPrimitive() && int.class.isAssignableFrom(componentType);
     }
 }
