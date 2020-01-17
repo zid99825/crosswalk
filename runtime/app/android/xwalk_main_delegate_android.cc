@@ -25,9 +25,28 @@
 #include "ui/base/ui_base_switches.h"
 #include "xwalk/runtime/common/android/xwalk_globals_android.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
+#include "xwalk/runtime/common/xwalk_paths.h"
 #include "xwalk/runtime/common/xwalk_resource_delegate.h"
+#include "xwalk/runtime/gpu/xwalk_content_gpu_client.h"
 
 namespace xwalk {
+
+// TODO(iotto): Continue
+//namespace {
+//gpu::SyncPointManager* GetSyncPointManager() {
+//  DCHECK(DeferredGpuCommandService::GetInstance());
+//  return DeferredGpuCommandService::GetInstance()->sync_point_manager();
+//}
+//gpu::SharedImageManager* GetSharedImageManager() {
+//  DCHECK(DeferredGpuCommandService::GetInstance());
+//  const bool enable_shared_image =
+//      base::CommandLine::ForCurrentProcess()->HasSwitch(
+//          switches::kWebViewEnableSharedImage);
+//  return enable_shared_image
+//             ? DeferredGpuCommandService::GetInstance()->shared_image_manager()
+//             : nullptr;
+//}
+//}  // namespace
 
 XWalkMainDelegateAndroid::XWalkMainDelegateAndroid() {
 }
@@ -38,6 +57,14 @@ XWalkMainDelegateAndroid::~XWalkMainDelegateAndroid() {
 bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
   content_client_.reset(new XWalkContentClient);
   content::SetContentClient(content_client_.get());
+
+  logging::LoggingSettings settings;
+  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
+  logging::InitLogging(settings);
+  logging::SetLogItems(true /* Process ID */, true /* Thread ID */,
+                       true /* Timestamp */, false /* Tick count */);
+
+  RegisterPathProvider();
   return false;
 }
 
@@ -78,5 +105,13 @@ void XWalkMainDelegateAndroid::InitResourceBundle() {
   ui::ResourceBundle::GetSharedInstance().AddDataPackFromPath(
       pak_file, ui::SCALE_FACTOR_100P);
 }
+
+// TODO(iotto): Continue implementation
+//content::ContentGpuClient* XWalkMainDelegateAndroid::CreateContentGpuClient() {
+//  content_gpu_client_ = std::make_unique<XWalkContentGpuClient>(
+//      base::BindRepeating(&GetSyncPointManager),
+//      base::BindRepeating(&GetSharedImageManager));
+//  return content_gpu_client_.get();
+//}
 
 }  // namespace xwalk

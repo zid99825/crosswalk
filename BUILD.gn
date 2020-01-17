@@ -323,6 +323,8 @@ source_set("xwalk_runtime") {
     "runtime/common/xwalk_switches.h",
     "runtime/common/xwalk_system_locale.cc",
     "runtime/common/xwalk_system_locale.h",
+    "runtime/gpu/xwalk_content_gpu_client.cc",
+    "runtime/gpu/xwalk_content_gpu_client.h",
     "runtime/renderer/android/xwalk_permission_client.cc",
     "runtime/renderer/android/xwalk_permission_client.h",
     "runtime/renderer/android/xwalk_render_thread_observer.cc",

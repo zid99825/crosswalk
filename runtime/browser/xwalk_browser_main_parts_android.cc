@@ -216,8 +216,9 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopRun() {
 
 #ifdef TENTA_CHROMIUM_BUILD
   // create TentaTabModel for BrowserContext
-  content::BrowserContext* context = xwalk_runner_->browser_context();
+  XWalkBrowserContext* context = xwalk_runner_->browser_context();
   TentaTabModelFactory::GetForContext(context);
+  context->CreateUserPrefServiceIfNecessary();
 #endif
 //  extension_service_ = xwalk_runner_->extension_service();
 

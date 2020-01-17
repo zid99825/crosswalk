@@ -151,12 +151,6 @@ int XWalkBrowserMainParts::PreEarlyInitialization() {
 //        new AwNetworkChangeNotifierFactory());
 //  }
 //
-//  // Creates a SingleThreadTaskExecutor for Android WebView if doesn't exist.
-//  DCHECK(!main_task_executor_.get());
-//  if (!base::MessageLoopCurrent::IsSet()) {
-//    main_task_executor_ = std::make_unique<base::SingleThreadTaskExecutor>(
-//        base::MessagePump::Type::UI);
-//  }
 //
 //  browser_process_ = std::make_unique<AwBrowserProcess>(
 //      browser_client_->aw_feature_list_creator());

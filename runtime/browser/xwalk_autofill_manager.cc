@@ -39,6 +39,7 @@ XWalkAutofillManager::~XWalkAutofillManager() {
 XWalkAutofillManager::XWalkAutofillManager(
     content::WebContents* web_contents)
     : web_contents_(web_contents) {
+  LOG(ERROR) << "iotto " << __func__ << " FIX THIS";
 #if defined(OS_ANDROID)
   XWalkAutofillClientAndroid* autofill_manager_delegate =
       XWalkAutofillClientAndroid::FromWebContents(web_contents_);
@@ -71,6 +72,8 @@ void XWalkAutofillManager::UpdateRendererPreferences() {
 }
 
 void XWalkAutofillManager::InitAutofillIfNecessary(bool enabled) {
+  LOG(ERROR) << "iotto " << __func__ << " FIX THIS";
+  return;
   // Do not initialize if the feature is not enabled.
   if (!enabled)
     return;

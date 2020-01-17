@@ -66,6 +66,8 @@ bool XWalkMainDelegate::BasicStartupComplete(int* exit_code) {
 
   RegisterPathProvider();
 
+  // initlogging
+
   return false;
 }
 

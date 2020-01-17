@@ -13,6 +13,7 @@
 #include "base/files/file.h"
 #include "base/memory/ptr_util.h"
 #include "base/path_service.h"
+#include "components/autofill/content/browser/content_autofill_driver_factory.h"
 #include "components/nacl/common/buildflags.h"
 #include "components/version_info/version_info.h"
 #include "content/public/browser/browser_child_process_host.h"
@@ -327,6 +328,35 @@ void XWalkContentBrowserClient::RenderProcessWillLaunch(content::RenderProcessHo
 #endif
 }
 
+bool XWalkContentBrowserClient::IsHandledURL(const GURL& url) {
+  if (!url.is_valid()) {
+    // We handle error cases.
+    return true;
+  }
+
+  const std::string scheme = url.scheme();
+  // See CreateJobFactory in aw_url_request_context_getter.cc for the
+  // list of protocols that are handled.
+  // TODO(mnaganov): Make this automatic.
+  static const char* const kProtocolList[] = {
+    url::kDataScheme,
+    url::kBlobScheme,
+    url::kFileSystemScheme,
+//    content::kChromeUIScheme,
+    url::kContentScheme,
+  };
+//  if (scheme == url::kFileScheme) {
+//    // Return false for the "special" file URLs, so they can be loaded
+//    // even if access to file: scheme is not granted to the child process.
+//    return !IsAndroidSpecialFileUrl(url);
+//  }
+  for (size_t i = 0; i < base::size(kProtocolList); ++i) {
+    if (scheme == kProtocolList[i])
+      return true;
+  }
+  return net::URLRequest::IsHandledProtocol(scheme);
+}
+
 content::MediaObserver* XWalkContentBrowserClient::GetMediaObserver() {
   return XWalkMediaCaptureDevicesDispatcher::GetInstance();
 }
@@ -496,6 +526,14 @@ XWalkContentBrowserClient::GetDevToolsManagerDelegate() {
   return new XWalkDevToolsManagerDelegate(xwalk_runner_->browser_context());
 }
 
+void XWalkContentBrowserClient::OpenURL(content::SiteInstance* site_instance,
+    const content::OpenURLParams& params,
+    base::OnceCallback<void(content::WebContents*)> callback) {
+
+  LOG(WARNING) << "iotto " << __func__ << " CHECK/IMPLEMENT";
+  std::move(callback).Run(nullptr);
+}
+
 content::ControllerPresentationServiceDelegate* XWalkContentBrowserClient::
     GetControllerPresentationServiceDelegate(content::WebContents* web_contents) {
 
@@ -575,6 +613,23 @@ void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
 
   frame_interfaces_->TryBindInterface(interface_name, &interface_pipe,
       render_frame_host);
+}
+
+bool XWalkContentBrowserClient::BindAssociatedInterfaceRequestFromFrame(
+    content::RenderFrameHost* render_frame_host,
+    const std::string& interface_name,
+    mojo::ScopedInterfaceEndpointHandle* handle) {
+
+  if (interface_name == autofill::mojom::AutofillDriver::Name_) {
+    autofill::ContentAutofillDriverFactory::BindAutofillDriver(
+        mojo::PendingAssociatedReceiver<autofill::mojom::AutofillDriver>(
+            std::move(*handle)),
+        render_frame_host);
+    return true;
+  }
+
+  LOG(INFO) << "iotto " << __func__ << " interface=" << interface_name;
+  return false;
 }
 
 void XWalkContentBrowserClient::ExposeInterfacesToFrame(

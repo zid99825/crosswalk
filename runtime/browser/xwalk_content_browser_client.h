@@ -62,9 +62,13 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   content::WebContentsViewDelegate* GetWebContentsViewDelegate(content::WebContents* web_contents) override;
   void RenderProcessWillLaunch(content::RenderProcessHost* host,
                                service_manager::mojom::ServiceRequest* service_request) override;
+  bool IsHandledURL(const GURL& url) override;
   content::MediaObserver* GetMediaObserver() override;
   void BindInterfaceRequestFromFrame(content::RenderFrameHost* render_frame_host, const std::string& interface_name,
                                      mojo::ScopedMessagePipeHandle interface_pipe) override;
+  bool BindAssociatedInterfaceRequestFromFrame(
+      content::RenderFrameHost* render_frame_host, const std::string& interface_name,
+      mojo::ScopedInterfaceEndpointHandle* handle) override;
   bool WillCreateRestrictedCookieManager(
       network::mojom::RestrictedCookieManagerRole role, content::BrowserContext* browser_context,
       const url::Origin& origin,
@@ -129,7 +133,9 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
       std::vector<std::string>* additional_schemes) override;
 
   content::DevToolsManagerDelegate* GetDevToolsManagerDelegate() override;
-
+  void OpenURL(content::SiteInstance* site_instance,
+               const content::OpenURLParams& params,
+               base::OnceCallback<void(content::WebContents*)> callback) override;
 #if defined(OS_ANDROID)
   void GetAdditionalMappedFilesForChildProcess(
       const base::CommandLine& command_line,

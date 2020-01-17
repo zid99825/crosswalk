@@ -29,6 +29,10 @@
 #include "base/strings/string_split.h"
 #endif
 
+namespace autofill {
+class AutocompleteHistoryManager;
+}
+
 namespace content {
 class DownloadManagerDelegate;
 }
@@ -91,6 +95,7 @@ class XWalkBrowserContext
       const std::string& pkg_id);
   void InitFormDatabaseService();
   XWalkFormDatabaseService* GetFormDatabaseService();
+  autofill::AutocompleteHistoryManager* GetAutocompleteHistoryManager();
   void CreateUserPrefServiceIfNecessary();
   void UpdateAcceptLanguages(const std::string& accept_languages);
   void set_save_form_data(bool enable) { save_form_data_ = enable; }

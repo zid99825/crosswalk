@@ -14,8 +14,10 @@
 #include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/render_view_host.h"
+#include "content/public/browser/renderer_preferences_util.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/web_preferences.h"
+#include "third_party/blink/public/mojom/renderer_preferences.mojom.h"
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkSettings_jni.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
@@ -154,21 +156,31 @@ XWalkSettings::XWalkSettings(JNIEnv* env,
                              content::WebContents* web_contents)
     : WebContentsObserver(web_contents),
       xwalk_settings_(env, obj),
-      _javascript_can_open_windows_automatically(false) {
+      _javascript_can_open_windows_automatically(false),
+      renderer_prefs_initialized_(false) {
 
+  LOG(INFO) << "iotto " << __func__;
   web_contents->SetUserData(kXWalkSettingsUserDataKey,
                             std::make_unique<XWalkSettingsUserData>(this));
 }
 
 XWalkSettings::~XWalkSettings() {
-    JNIEnv* env = base::android::AttachCurrentThread();
-    ScopedJavaLocalRef<jobject> scoped_obj = xwalk_settings_.get(env);
-    if (!scoped_obj.obj()) return;
-    Java_XWalkSettings_nativeXWalkSettingsGone(
-        env, scoped_obj, reinterpret_cast<intptr_t>(this));
+  if (web_contents()) {
+    web_contents()->SetUserData(kXWalkSettingsUserDataKey, NULL);
+  }
+
+  JNIEnv* env = base::android::AttachCurrentThread();
+  ScopedJavaLocalRef<jobject> scoped_obj = xwalk_settings_.get(env);
+  if (!scoped_obj.obj())
+    return;
+  Java_XWalkSettings_nativeXWalkSettingsGone(env, scoped_obj, reinterpret_cast<intptr_t>(this));
 }
 
 void XWalkSettings::Destroy(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj) {
+  delete this;
+}
+
+void XWalkSettings::WebContentsDestroyed() {
   delete this;
 }
 
@@ -201,7 +213,7 @@ void XWalkSettings::UpdateEverythingLocked(JNIEnv* env, const JavaParamRef<jobje
   UpdateUserAgent(env, obj);
   ResetScrollAndScaleState(env, obj);
   UpdateFormDataPreferences(env, obj);
-//  UpdateRendererPreferencesLocked(env, obj);
+  UpdateRendererPreferencesLocked(env, obj);
 //  UpdateOffscreenPreRasterLocked(env, obj);
 }
 
@@ -232,30 +244,6 @@ void XWalkSettings::PopulateWebPreferences(content::WebPreferences* webPrefs) {
   // Grab the lock and call PopulateWebPreferencesLocked.
   Java_XWalkSettings_populateWebPreferences(env, scoped_obj, reinterpret_cast<jlong>(webPrefs));
 
-//
-//
-//  if (!web_contents())
-//    return;
-//  XWalkRenderViewHostExt* render_view_host_ext = GetXWalkRenderViewHostExt();
-//  if (!render_view_host_ext)
-//    return;
-//
-//  JNIEnv* env = base::android::AttachCurrentThread();
-//  if (!field_ids_)
-//    field_ids_.reset(new FieldIds(env));
-//
-//  content::RenderViewHost* render_view_host = web_contents()->GetRenderViewHost();
-//  if (!render_view_host)
-//    return;
-//
-//  // TODO(iotto) : Use java lock to guard settings
-//  PopulateFixedWebPreferences(webPrefs);
-//
-//  ScopedJavaLocalRef<jobject> obj = xwalk_settings_.get(env);
-//  if (!obj.obj())
-//    return;
-//
-//  webPrefs->text_autosizing_enabled = Java_XWalkSettings_getTextAutosizingEnabledLocked(env, obj);
 }
 
 void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
@@ -342,8 +330,7 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
 
   web_prefs->supports_multiple_windows = Java_XWalkSettings_getSupportMultipleWindowsLocked(env, obj);
 
-//  web_prefs->plugins_enabled =
-//      !Java_AwSettings_getPluginsDisabledLocked(env, obj);
+  web_prefs->plugins_enabled = false;
 
   web_prefs->application_cache_enabled = Java_XWalkSettings_getAppCacheEnabledLocked(env, obj);
 
@@ -375,7 +362,6 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
   // Please see the corresponding Blink settings for bug references.
   web_prefs->support_deprecated_target_density_dpi = support_quirks;
   web_prefs->use_legacy_background_size_shorthand_behavior = support_quirks;
-//  web_prefs->viewport_meta_layout_size_quirk = support_quirks;
   web_prefs->viewport_meta_merge_content_quirk = support_quirks;
   web_prefs->viewport_meta_non_user_scalable_quirk = support_quirks;
   web_prefs->viewport_meta_zero_values_quirk = support_quirks;
@@ -401,8 +387,6 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
     // Using 100M instead of max int to avoid overflows.
     web_prefs->minimum_accelerated_2d_canvas_size = 100 * 1000 * 1000;
   }
-  web_prefs->webgl1_enabled = web_prefs->webgl1_enabled && enable_supported_hardware_accelerated_features;
-  web_prefs->webgl2_enabled = web_prefs->webgl2_enabled && enable_supported_hardware_accelerated_features;
 //  // If strict mixed content checking is enabled then running should not be
 //    // allowed.
 //    DCHECK(!Java_AwSettings_getUseStricMixedContentCheckingLocked(env, obj) ||
@@ -424,7 +408,7 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
       Java_XWalkSettings_getDoNotUpdateSelectionOnMutatingSelectionRange(env, obj);
 
   // default true
-//    web_prefs->css_hex_alpha_color_enabled =
+    web_prefs->css_hex_alpha_color_enabled = true;
 //        Java_AwSettings_getCSSHexAlphaColorEnabledLocked(env, obj);
 
   // Keep spellcheck disabled on html elements unless the spellcheck="true"
@@ -433,8 +417,34 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
   web_prefs->spellcheck_enabled_by_default = false;
 
   // default true
-//    web_prefs->scroll_top_left_interop_enabled =
+  web_prefs->scroll_top_left_interop_enabled = false;
 //        Java_AwSettings_getScrollTopLeftInteropEnabledLocked(env, obj);
+
+  LOG(WARNING) << __func__ << " force_dark_mode";
+//  switch (Java_AwSettings_getForceDarkModeLocked(env, obj)) {
+//    case ForceDarkMode::FORCE_DARK_OFF:
+//      web_prefs->force_dark_mode_enabled = false;
+//      break;
+//    case ForceDarkMode::FORCE_DARK_ON:
+//      web_prefs->force_dark_mode_enabled = true;
+//      break;
+//    case ForceDarkMode::FORCE_DARK_AUTO: {
+//      AwContents* contents = AwContents::FromWebContents(web_contents());
+//      web_prefs->force_dark_mode_enabled =
+//          contents && contents->GetViewTreeForceDarkState();
+//      break;
+//    }
+//  }
+
+  // Blink's behavior is that if the preferred color scheme matches the
+  // supported color scheme, then force dark will be disabled, otherwise
+  // the preferred color scheme will be reset to no preference. Therefore
+  // when enabling force dark, we also set the preferred color scheme to
+  // dark so that dark themed content will be preferred over force darkening.
+  web_prefs->preferred_color_scheme =
+      web_prefs->force_dark_mode_enabled
+          ? blink::PreferredColorScheme::kDark
+          : blink::PreferredColorScheme::kNoPreference;
 }
 
 void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobject>& obj) {
@@ -552,13 +562,55 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobj
 }
 
 void XWalkSettings::UpdateFormDataPreferences(JNIEnv* env, const JavaParamRef<jobject>& obj) {
-  if (!web_contents()) return;
+  if (!web_contents())
+    return;
   XWalkContent* content = XWalkContent::FromWebContents(web_contents());
-  if (!content) return;
-  content->SetSaveFormData(
-      Java_XWalkSettings_getSaveFormDataLocked(env, obj));
+  if (!content)
+    return;
+  content->SetSaveFormData(Java_XWalkSettings_getSaveFormDataLocked(env, obj));
 }
 
+void XWalkSettings::UpdateRendererPreferencesLocked(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  if (!web_contents())
+    return;
+
+  bool update_prefs = false;
+  blink::mojom::RendererPreferences* prefs =
+      web_contents()->GetMutableRendererPrefs();
+
+  if (!renderer_prefs_initialized_) {
+    content::UpdateFontRendererPreferencesFromSystemSettings(prefs);
+    renderer_prefs_initialized_ = true;
+    update_prefs = true;
+  }
+
+  // TODO(iotto): Use and implement
+//  if (prefs->accept_languages.compare(AwContentBrowserClient::GetAcceptLangsImpl()))
+  {
+//    prefs->accept_languages = AwContentBrowserClient::GetAcceptLangsImpl();
+    prefs->accept_languages = "en-US";
+    update_prefs = true;
+  }
+
+  content::RenderViewHost* host = web_contents()->GetRenderViewHost();
+  if (update_prefs && host)
+    host->SyncRendererPrefs();
+
+  // TODO(iotto):
+//  if (update_prefs &&
+//      base::FeatureList::IsEnabled(network::features::kNetworkService)) {
+//    // make sure to update accept languages when the network service is enabled
+//    AwBrowserContext* aw_browser_context =
+//        AwBrowserContext::FromWebContents(web_contents());
+//    // AndroidWebview does not use per-site storage partitions.
+//    content::StoragePartition* storage_partition =
+//        content::BrowserContext::GetDefaultStoragePartition(aw_browser_context);
+//    std::string expanded_language_list =
+//        net::HttpUtil::ExpandLanguageList(prefs->accept_languages);
+//    storage_partition->GetNetworkContext()->SetAcceptLanguage(
+//        net::HttpUtil::GenerateAcceptLanguageHeader(expanded_language_list));
+//  }
+}
 /**
  *
  */
@@ -589,6 +641,8 @@ void XWalkSettings::RenderFrameForInterstitialPageCreated(content::RenderFrameHo
 }
 
 void XWalkSettings::UpdateAcceptLanguages(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  LOG(INFO) << "iotto " << __func__;
+
   PrefService* pref_service = GetPrefs();
   if (!pref_service) return;
   pref_service->SetString(

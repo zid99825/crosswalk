@@ -235,7 +235,8 @@ XWalkContent::XWalkContent(std::unique_ptr<content::WebContents> web_contents)
     : web_contents_(std::move(web_contents)),
       _zone_id(0),
       _tab_id(0) {
-  xwalk_autofill_manager_.reset(new XWalkAutofillManager(web_contents_.get()));
+  LOG(ERROR) << "iotto " << __func__ << " FIX AUTOFILL!";
+//  xwalk_autofill_manager_.reset(new XWalkAutofillManager(web_contents_.get()));
   XWalkContentLifecycleNotifier::OnXWalkViewCreated();
 }
 
@@ -250,13 +251,14 @@ void XWalkContent::SetXWalkAutofillClient(const base::android::JavaRef<jobject>&
 
 void XWalkContent::SetSaveFormData(bool enabled) {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  xwalk_autofill_manager_->InitAutofillIfNecessary(enabled);
-  // We need to check for the existence, since autofill_manager_delegate
-  // may not be created when the setting is false.
-  XWalkAutofillClientAndroid *client = XWalkAutofillClientAndroid::FromWebContents(
-      web_contents_.get());
-  if (client != nullptr )
-    client->SetSaveFormData(enabled);
+  LOG(ERROR) << "iotto " << __func__ << " FIX AUTOFILL!";
+//  xwalk_autofill_manager_->InitAutofillIfNecessary(enabled);
+//  // We need to check for the existence, since autofill_manager_delegate
+//  // may not be created when the setting is false.
+//  XWalkAutofillClientAndroid *client = XWalkAutofillClientAndroid::FromWebContents(
+//      web_contents_.get());
+//  if (client != nullptr )
+//    client->SetSaveFormData(enabled);
 }
 
 XWalkContent::~XWalkContent() {

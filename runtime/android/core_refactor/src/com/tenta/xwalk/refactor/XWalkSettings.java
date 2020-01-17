@@ -86,8 +86,8 @@ public class XWalkSettings {
     private boolean mJavaScriptCanOpenWindowsAutomatically = true;
     private int mCacheMode = WebSettings.LOAD_DEFAULT;
     private boolean mSupportMultipleWindows;// = false;
-    private boolean mAppCacheEnabled = true;
-    private boolean mDomStorageEnabled = true;
+    private boolean mAppCacheEnabled;// = false;
+    private boolean mDomStorageEnabled;// = false;
     private boolean mDatabaseEnabled = true;
     private boolean mUseWideViewport;// = false;
     private boolean mZeroLayoutHeightDisablesViewportQuirk;

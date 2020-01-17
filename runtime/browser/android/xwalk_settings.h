@@ -39,12 +39,15 @@ class XWalkSettings : public content::WebContentsObserver {
   void UpdateWebkitPreferences(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateAcceptLanguages(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateFormDataPreferences(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateRendererPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
 
   bool GetJavaScriptCanOpenWindowsAutomatically();
   void PopulateWebPreferences(content::WebPreferences* webPrefs);
 
  private:
   struct FieldIds;
+
+  void WebContentsDestroyed() override;
 
   XWalkRenderViewHostExt* GetXWalkRenderViewHostExt();
   void UpdateEverything();
@@ -62,6 +65,7 @@ class XWalkSettings : public content::WebContentsObserver {
   JavaObjectWeakGlobalRef xwalk_settings_;
 
   bool _javascript_can_open_windows_automatically;
+  bool renderer_prefs_initialized_;
 };
 
 bool RegisterXWalkSettings(JNIEnv* env);

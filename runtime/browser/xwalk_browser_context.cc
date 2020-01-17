@@ -329,6 +329,7 @@ void XWalkBrowserContext::CreateUserPrefServiceIfNecessary() {
   if (user_pref_service_)
     return;
 
+  LOG(INFO) << "iotto " << __func__;
   PrefRegistrySimple* pref_registry = new PrefRegistrySimple();
   pref_registry->RegisterStringPref("intl.accept_languages", "");
 

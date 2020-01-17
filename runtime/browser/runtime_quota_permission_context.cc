@@ -12,6 +12,7 @@ void RuntimeQuotaPermissionContext::RequestQuotaPermission(
       const content::StorageQuotaParams& params,
       int render_process_id,
       const PermissionCallback& callback) {
+  LOG(WARNING) << "iotto " << __func__ << " CHECK!";
   // TODO(wang16): Handle request according to app's manifest declaration.
   callback.Run(content::QuotaPermissionContext::QUOTA_PERMISSION_RESPONSE_ALLOW);
 }

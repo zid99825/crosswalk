@@ -214,6 +214,8 @@ void XWalkContentRendererClient::RenderFrameCreated(
     content::RenderFrame* render_frame) {
 //  new XWalkFrameHelper(render_frame, extension_controller_.get());
   new XWalkRenderFrameExt(render_frame);
+  // TODO(iotto):
+//  new JsJavaConfigurator(render_frame);
 #if defined(OS_ANDROID)
   new XWalkPermissionClient(render_frame);
 #endif
@@ -247,7 +249,8 @@ void XWalkContentRendererClient::RenderFrameCreated(
 //      new autofill::PasswordAutofillAgent(render_frame);
 //  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr);
 #ifdef TENTA_CHROMIUM_BUILD
-  new ::tenta::ext::TentaNetErrorHelper(render_frame);
+  LOG(ERROR) << "iotto " << __func__ << " Check fix netErrorHelper";
+//  new ::tenta::ext::TentaNetErrorHelper(render_frame);
 #endif
 }
 
@@ -380,9 +383,10 @@ void XWalkContentRendererClient::PrepareErrorPage(content::RenderFrame* render_f
                                                   bool ignoring_cache,
                                                   std::string* error_html) {
 #ifdef TENTA_CHROMIUM_BUILD
-  ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(
-      error_page::Error::NetError(web_error.url(), web_error.reason(), web_error.has_copy_in_cache()),
-      http_method == "POST", ignoring_cache, error_html);
+  LOG(ERROR) << "iotto " << __func__ << " FIX";
+//  ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(
+//      error_page::Error::NetError(web_error.url(), web_error.reason(), web_error.has_copy_in_cache()),
+//      http_method == "POST", ignoring_cache, error_html);
 #endif
 }
 
@@ -392,8 +396,9 @@ void XWalkContentRendererClient::PrepareErrorPageForHttpStatusError(content::Ren
                                                                     bool ignoring_cache,
                                                                     int http_status, std::string* error_html) {
 #ifdef TENTA_CHROMIUM_BUILD
-  ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(
-      error_page::Error::HttpError(unreachable_url, http_status), http_method == "POST", ignoring_cache, error_html);
+  LOG(ERROR) << "iotto " << __func__ << " FIX";
+//  ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(
+//      error_page::Error::HttpError(unreachable_url, http_status), http_method == "POST", ignoring_cache, error_html);
 #endif
 }
 
