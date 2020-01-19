@@ -429,9 +429,7 @@ bool XWalkContentsClientBridge::RewriteUrlIfNeeded(const std::string& url,
 
   if ( did_rewrite == true && new_url != nullptr) {
     base::android::ConvertJavaStringToUTF8(env, jurl.obj(), new_url);
-#if TENTA_LOG_NET_ENABLE == 1
-    LOG(INFO) << "GOT rewritten from:" << url << " to:" << *new_url;
-#endif
+    TENTA_LOG_NET(INFO) << __func__ << " GOT rewritten from:" << url << " to:" << *new_url;
     return did_rewrite;
   }
 

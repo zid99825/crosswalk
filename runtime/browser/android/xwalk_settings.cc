@@ -42,8 +42,9 @@ const void* const kXWalkSettingsUserDataKey = &kXWalkSettingsUserDataKey;
 
 void PopulateFixedWebPreferences(content::WebPreferences* webPrefs) {
   webPrefs->shrinks_standalone_images_to_fit = false;
-  webPrefs->should_clear_document_background = false;
+  webPrefs->should_clear_document_background = true;
   webPrefs->viewport_meta_enabled = true;
+  webPrefs->picture_in_picture_enabled = false;
 }
 
 jfieldID GetFieldID(JNIEnv* env,

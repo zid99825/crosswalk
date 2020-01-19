@@ -70,7 +70,7 @@ repack("xwalk_pak") {
 }
 
 repack("xwalk_resources_100_percent_pak") {
-  output = "$root_out_dir/xwalk_100_percent.pak"
+  output = "$root_out_dir/chrome_100_percent.pak"
   sources = [
     "$root_gen_dir/third_party/blink/public/resources/blink_scaled_resources_100_percent.pak",
     "$root_gen_dir/components/components_resources_100_percent.pak",

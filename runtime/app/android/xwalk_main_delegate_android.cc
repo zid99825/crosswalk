@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 
+#include "base/android/apk_assets.h"
 #include "base/android/locale_utils.h"
 #include "base/command_line.h"
 #include "base/cpu.h"
@@ -19,10 +20,12 @@
 #include "base/files/file.h"
 #include "base/posix/global_descriptors.h"
 #include "content/public/browser/browser_main_runner.h"
+#include "content/public/common/content_switches.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/resource/resource_bundle_android.h"
 #include "ui/base/ui_base_paths.h"
 #include "ui/base/ui_base_switches.h"
+#include "xwalk/runtime/common/android/xwalk_descriptors.h"
 #include "xwalk/runtime/common/android/xwalk_globals_android.h"
 #include "xwalk/runtime/common/xwalk_content_client.h"
 #include "xwalk/runtime/common/xwalk_paths.h"
@@ -31,6 +34,56 @@
 
 namespace xwalk {
 
+namespace {
+void InitIcuAndResourceBundleBrowserSide() {
+  // TODO(iotto): load manually instead of LOAD_COMMON_RESOURCES
+  // rename in resources Build.gn chrome_100 to xwalk_100
+//  void ResourceBundle::LoadCommonResources() {
+//    base::FilePath disk_path;
+//    base::PathService::Get(ui::DIR_RESOURCE_PAKS_ANDROID, &disk_path);
+//    disk_path = disk_path.AppendASCII("chrome_100_percent.pak");
+//    bool success =
+//        LoadFromApkOrFile("assets/chrome_100_percent.pak", &disk_path,
+//                          &g_chrome_100_percent_fd, &g_chrome_100_percent_region);
+//    DCHECK(success);
+//
+//    AddDataPackFromFileRegion(base::File(g_chrome_100_percent_fd),
+//                              g_chrome_100_percent_region, SCALE_FACTOR_100P);
+//  }
+  ui::SetLocalePaksStoredInApk(true);
+  std::string locale = ui::ResourceBundle::InitSharedInstanceWithLocale(
+      base::android::GetDefaultLocaleString(), NULL,
+      ui::ResourceBundle::LOAD_COMMON_RESOURCES);
+  if (locale.empty()) {
+    LOG(WARNING) << __func__ << " Failed to load locale .pak from apk.";
+  }
+  base::i18n::SetICUDefaultLocale(locale);
+
+  // Try to directly mmap the resources.pak from the apk. Fall back to load
+  // from file, using PATH_SERVICE, otherwise.
+  base::FilePath pak_file_path;
+  base::PathService::Get(ui::DIR_RESOURCE_PAKS_ANDROID, &pak_file_path);
+  pak_file_path = pak_file_path.AppendASCII("xwalk.pak");
+  ui::LoadMainAndroidPackFile("assets/xwalk.pak", pak_file_path);
+}
+
+void InitResourceBundleRendererSide() {
+  LOG(INFO) << "iotto " << __func__;
+  auto* global_descriptors = base::GlobalDescriptors::GetInstance();
+  int pak_fd = global_descriptors->Get(kXWalkMainPakDescriptor);
+  base::MemoryMappedFile::Region pak_region = global_descriptors->GetRegion(kXWalkMainPakDescriptor);
+  ui::ResourceBundle::InitSharedInstanceWithPakFileRegion(base::File(pak_fd), pak_region);
+
+  std::pair<int, ui::ScaleFactor> extra_paks[] = { { kXWalkMainPakDescriptor, ui::SCALE_FACTOR_NONE }, {
+      kXWalk100PakDescriptor, ui::SCALE_FACTOR_100P } };
+
+  for (const auto& pak_info : extra_paks) {
+    pak_fd = global_descriptors->Get(pak_info.first);
+    pak_region = global_descriptors->GetRegion(pak_info.first);
+    ui::ResourceBundle::GetSharedInstance().AddDataPackFromFileRegion(base::File(pak_fd), pak_region, pak_info.second);
+  }
+}
+}
 // TODO(iotto): Continue
 //namespace {
 //gpu::SyncPointManager* GetSyncPointManager() {
@@ -69,6 +122,7 @@ bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
 }
 
 void XWalkMainDelegateAndroid::PreSandboxStartup() {
+  LOG(INFO) << "iotto " << __func__;
 #if defined(ARCH_CPU_ARM_FAMILY)
   // Create an instance of the CPU class to parse /proc/cpuinfo and cache
   // cpu_brand info for ARM platform.
@@ -90,20 +144,57 @@ int XWalkMainDelegateAndroid::RunProcess(
   return -1;
 }
 
+// This function is called only on the browser process.
+void XWalkMainDelegateAndroid::PostEarlyInitialization(bool is_running_tests) {
+  InitIcuAndResourceBundleBrowserSide();
+}
+
 void XWalkMainDelegateAndroid::InitResourceBundle() {
-  ui::SetLocalePaksStoredInApk(true);
+//  AW style
+  const base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
 
-  base::FilePath pak_file;
-  base::FilePath pak_dir;
-  bool got_path = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &pak_dir);
-  DCHECK(got_path);
-  pak_dir = pak_dir.Append(FILE_PATH_LITERAL("paks"));
-  pak_file = pak_dir.Append(FILE_PATH_LITERAL(kXWalkPakFilePath));
+  std::string process_type = command_line.GetSwitchValueASCII(switches::kProcessType);
+  const bool is_browser_process = process_type.empty();
+  if (!is_browser_process) {
+    base::i18n::SetICUDefaultLocale(command_line.GetSwitchValueASCII(switches::kLang));
+  }
 
-  ui::ResourceBundle::InitSharedInstanceWithPakPath(pak_file);
-  pak_file = pak_dir.Append(FILE_PATH_LITERAL("xwalk_100_percent.pak"));
-  ui::ResourceBundle::GetSharedInstance().AddDataPackFromPath(
-      pak_file, ui::SCALE_FACTOR_100P);
+  if (process_type == switches::kRendererProcess) {
+    InitResourceBundleRendererSide();
+  }
+//
+//  // content_shell style
+//  // On Android, the renderer runs with a different UID and can never access
+//  // the file system. Use the file descriptor passed in at launch time.
+//  auto* global_descriptors = base::GlobalDescriptors::GetInstance();
+//  int pak_fd = global_descriptors->MaybeGet(kXWalkMainPakDescriptor);
+//  base::MemoryMappedFile::Region pak_region;
+//  if (pak_fd >= 0) {
+//    pak_region = global_descriptors->GetRegion(kXWalkMainPakDescriptor);
+//  } else {
+//    pak_fd =
+//        base::android::OpenApkAsset("assets/xwalk.pak", &pak_region);
+//    // Loaded from disk for browsertests.
+//    if (pak_fd < 0) {
+//      base::FilePath pak_file;
+//      bool r = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &pak_file);
+//      DCHECK(r);
+//      pak_file = pak_file.Append(FILE_PATH_LITERAL("paks"));
+//      pak_file = pak_file.Append(FILE_PATH_LITERAL("xwalk.pak"));
+//      int flags = base::File::FLAG_OPEN | base::File::FLAG_READ;
+//      pak_fd = base::File(pak_file, flags).TakePlatformFile();
+//      pak_region = base::MemoryMappedFile::Region::kWholeFile;
+//    }
+//    global_descriptors->Set(kXWalkMainPakDescriptor, pak_fd, pak_region);
+//  }
+//  LOG(WARNING) << "iotto " << __func__ << " FIX scale_factor_100p See crbug.com/330930";
+//  // This is clearly wrong. See crbug.com/330930
+//  ui::ResourceBundle::InitSharedInstanceWithPakFileRegion(base::File(pak_fd),
+//                                                          pak_region);
+//  ui::ResourceBundle::GetSharedInstance().AddDataPackFromFileRegion(
+//      base::File(pak_fd), pak_region, ui::SCALE_FACTOR_100P);
+//
+//
 }
 
 // TODO(iotto): Continue implementation

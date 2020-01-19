@@ -249,8 +249,7 @@ void XWalkContentRendererClient::RenderFrameCreated(
 //      new autofill::PasswordAutofillAgent(render_frame);
 //  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr);
 #ifdef TENTA_CHROMIUM_BUILD
-  LOG(ERROR) << "iotto " << __func__ << " Check fix netErrorHelper";
-//  new ::tenta::ext::TentaNetErrorHelper(render_frame);
+  new ::tenta::ext::TentaNetErrorHelper(render_frame);
 #endif
 }
 
@@ -300,71 +299,70 @@ void XWalkContentRendererClient::WillSendRequest(blink::WebLocalFrame* frame, ui
                                                  const blink::WebURL& url, const url::Origin* initiator_origin,
                                                  GURL* new_url,
                                                  bool* attach_same_site_cookies) {
-  LOG(ERROR) << "iotto " << __func__ << " CEHCK/FIX/IMPLEMENT";
-//  TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest doc_url="
-//               << frame->GetDocument().Url().GetString().Utf8() << " url="
-//               << url.GetString().Utf8();
-//#if defined(OS_ANDROID)
-//  content::RenderView* render_view =
-//      content::RenderView::FromWebView(frame->View());
-//  if ( render_view == nullptr ) {
-//    return false; // no overwrite
-//  }
-//
-//  content::RenderFrame* render_frame = render_view->GetMainRenderFrame();
-//  if ( render_frame == nullptr ) {
-//    return false; // no overwrite
-//  }
-//
-//  int render_frame_id = render_frame->GetRoutingID();
-//
-//  bool did_overwrite = false;
-//  std::string url_str = url.GetString().Utf8();
-//  std::string new_url_str;
-//
-//  RenderThread::Get()->Send(new XWalkViewHostMsg_WillSendRequest(render_frame_id,
-//                                                                 url_str,
-//                                                                 transition_type,
-//                                                                 &new_url_str,
-//                                                                 &did_overwrite));
-//
-//  if ( did_overwrite ) {
-//    *new_url = GURL(new_url_str);
-//    TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest did_overwrite";
-//  }
+  TENTA_LOG_NET(INFO) << __func__ << " doc_url="
+               << frame->GetDocument().Url().GetString().Utf8() << " url="
+               << url.GetString().Utf8();
+#if defined(OS_ANDROID)
+  content::RenderView* render_view =
+      content::RenderView::FromWebView(frame->View());
+  if ( render_view == nullptr ) {
+    return; // no overwrite
+  }
+
+  content::RenderFrame* render_frame = render_view->GetMainRenderFrame();
+  if ( render_frame == nullptr ) {
+    return; // no overwrite
+  }
+
+  int render_frame_id = render_frame->GetRoutingID();
+
+  bool did_overwrite = false;
+  std::string url_str = url.GetString().Utf8();
+  std::string new_url_str;
+
+  RenderThread::Get()->Send(new XWalkViewHostMsg_WillSendRequest(render_frame_id,
+                                                                 url_str,
+                                                                 transition_type,
+                                                                 &new_url_str,
+                                                                 &did_overwrite));
+
+  if ( did_overwrite ) {
+    *new_url = GURL(new_url_str);
+    TENTA_LOG_NET(INFO) << "XWalkContentRendererClient::WillSendRequest did_overwrite";
+  }
 //  return did_overwrite;
-//#else
-//  // TODO(iotto) for other than android implement
-///*  if (!xwalk_render_thread_observer_->IsWarpMode() &&
-//      !xwalk_render_thread_observer_->IsCSPMode())
-//    return false;
-//
-//  GURL origin_url(frame->document().url());
-//  GURL app_url(xwalk_render_thread_observer_->app_url());
-//  // if under CSP mode.
-//  if (xwalk_render_thread_observer_->IsCSPMode()) {
-//    if (!origin_url.is_empty() && origin_url != first_party_for_cookies &&
-//        !xwalk_render_thread_observer_->CanRequest(app_url, url)) {
-//      LOG(INFO) << "[BLOCK] allow-navigation: " << url.spec();
-//      content::RenderThread::Get()->Send(new ViewMsg_OpenLinkExternal(url));
-//      *new_url = GURL();
-//      return true;
-//    }
-//    return false;
-//  }
-//
-//  // if under WARP mode.
-//  if (url.GetOrigin() == app_url.GetOrigin() ||
-//      xwalk_render_thread_observer_->CanRequest(app_url, url)) {
-//    DLOG(INFO) << "[PASS] " << origin_url.spec() << " request " << url.spec();
-//    return false;
-//  }
-//
-//  LOG(INFO) << "[BLOCK] " << origin_url.spec() << " request " << url.spec();
-//  *new_url = GURL();
-//  return true;
-//*/
-//#endif
+#else
+  // TODO(iotto) for other than android implement
+/*  if (!xwalk_render_thread_observer_->IsWarpMode() &&
+      !xwalk_render_thread_observer_->IsCSPMode())
+    return false;
+
+  GURL origin_url(frame->document().url());
+  GURL app_url(xwalk_render_thread_observer_->app_url());
+  // if under CSP mode.
+  if (xwalk_render_thread_observer_->IsCSPMode()) {
+    if (!origin_url.is_empty() && origin_url != first_party_for_cookies &&
+        !xwalk_render_thread_observer_->CanRequest(app_url, url)) {
+      LOG(INFO) << "[BLOCK] allow-navigation: " << url.spec();
+      content::RenderThread::Get()->Send(new ViewMsg_OpenLinkExternal(url));
+      *new_url = GURL();
+      return true;
+    }
+    return false;
+  }
+
+  // if under WARP mode.
+  if (url.GetOrigin() == app_url.GetOrigin() ||
+      xwalk_render_thread_observer_->CanRequest(app_url, url)) {
+    DLOG(INFO) << "[PASS] " << origin_url.spec() << " request " << url.spec();
+    return false;
+  }
+
+  LOG(INFO) << "[BLOCK] " << origin_url.spec() << " request " << url.spec();
+  *new_url = GURL();
+  return true;
+*/
+#endif
 }
 
 void XWalkContentRendererClient::GetErrorDescription(const blink::WebURLError& web_error,
@@ -383,10 +381,12 @@ void XWalkContentRendererClient::PrepareErrorPage(content::RenderFrame* render_f
                                                   bool ignoring_cache,
                                                   std::string* error_html) {
 #ifdef TENTA_CHROMIUM_BUILD
-  LOG(ERROR) << "iotto " << __func__ << " FIX";
-//  ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(
-//      error_page::Error::NetError(web_error.url(), web_error.reason(), web_error.has_copy_in_cache()),
-//      http_method == "POST", ignoring_cache, error_html);
+  ::tenta::ext::TentaNetErrorHelper* helper = ::tenta::ext::TentaNetErrorHelper::Get(render_frame);
+  if (helper) {
+    helper->GetErrorHTML(
+        error_page::Error::NetError(web_error.url(), web_error.reason(), web_error.has_copy_in_cache()),
+        http_method == "POST", ignoring_cache, error_html);
+  }
 #endif
 }
 
@@ -396,9 +396,11 @@ void XWalkContentRendererClient::PrepareErrorPageForHttpStatusError(content::Ren
                                                                     bool ignoring_cache,
                                                                     int http_status, std::string* error_html) {
 #ifdef TENTA_CHROMIUM_BUILD
-  LOG(ERROR) << "iotto " << __func__ << " FIX";
-//  ::tenta::ext::TentaNetErrorHelper::Get(render_frame)->GetErrorHTML(
-//      error_page::Error::HttpError(unreachable_url, http_status), http_method == "POST", ignoring_cache, error_html);
+  ::tenta::ext::TentaNetErrorHelper* helper = ::tenta::ext::TentaNetErrorHelper::Get(render_frame);
+  if ( helper) {
+    helper->GetErrorHTML(
+        error_page::Error::HttpError(unreachable_url, http_status), http_method == "POST", ignoring_cache, error_html);
+  }
 #endif
 }
 

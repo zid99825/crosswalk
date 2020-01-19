@@ -195,6 +195,9 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     network_delegate_.reset(new RuntimeNetworkDelegate);
     url_request_context_->set_network_delegate(network_delegate_.get());
 
+    // TODO(iotto): Make this configurable
+    url_request_context_->set_check_cleartext_permitted(true);
+
     std::map<std::string, std::string> network_quality_estimator_params;
     // TODO(iotto): Setup estimator network params
 //    variations::GetVariationParams(kNetworkQualityEstimatorFieldTrialName,

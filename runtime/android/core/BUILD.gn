@@ -103,12 +103,9 @@ android_resources("xwalk_core_java_resources") {
 
 raw_resources("xwalk_core_raw_resources") {
   deps = [
-    "//xwalk/resources:xwalk_pak",
-    "//xwalk/resources:xwalk_resources_100_percent_pak",
+    
   ]
   sources = [
-    "$root_out_dir//xwalk.pak",
-    "$root_out_dir//xwalk_100_percent.pak",
     "//xwalk/experimental/launch_screen/launch_screen_api.js",
     "//xwalk/experimental/wifidirect/wifidirect_api.js",
   ]
@@ -124,10 +121,14 @@ java_strings_grd("xwalk_app_strings_grd") {
 android_assets("xwalk_core_assets") {
   if (icu_use_data_file) {
     deps = [
-      "//third_party/icu:icudata"
+      "//third_party/icu:icudata",
+      "//xwalk/resources:xwalk_pak",
+      "//xwalk/resources:xwalk_resources_100_percent_pak",
     ]
     sources = [
-      "$root_out_dir/icudtl.dat"
+      "$root_out_dir/icudtl.dat",
+      "$root_out_dir/xwalk.pak",
+      "$root_out_dir/chrome_100_percent.pak",
     ]
   }
 }

@@ -140,7 +140,7 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
   void GetAdditionalMappedFilesForChildProcess(
       const base::CommandLine& command_line,
       int child_process_id,
-      content::PosixFileDescriptorInfo* mappings) override {}
+      content::PosixFileDescriptorInfo* mappings) override;
 #elif defined(OS_POSIX) && !defined(OS_MACOSX)
   void GetAdditionalMappedFilesForChildProcess(
       const base::CommandLine& command_line,

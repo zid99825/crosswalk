@@ -30,6 +30,7 @@ int RuntimeNetworkDelegate::OnBeforeURLRequest(
     net::URLRequest* request,
     net::CompletionOnceCallback callback,
     GURL* new_url) {
+  LOG(WARNING) << "iotto " << __func__ << " move WillSendRequest here!";
   return net::OK;
 }
 
