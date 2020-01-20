@@ -571,5 +571,6 @@ template("xwalk_dist_aar") {
     ])
     deps = _deps2
     native_libraries_norebase = "@FileArg($_rebased_native_libraries_json_file)"
+    r_text_renumber = true
   }
 }

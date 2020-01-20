@@ -160,9 +160,9 @@ xwalk_dist_aar("xwalk_core_library") {
   ]
 
   resource_included_patterns = [
-    #"*/components/autofill/android/*", # causes duplicates
+    "*/components/autofill/android/*",
     "*/ui/android/*",
-    # "*/content/public/android/*", # causes duplicates
+    "*/content/public/android/*",
     "*/media/base/android/*",
     "*/components/embedder_support/android/*",
     "*/xwalk/runtime/android/*",
