@@ -37,7 +37,7 @@
 #include "net/http/http_cache.h"
 #include "net/http/http_network_session.h"
 #include "net/http/http_server_properties_impl.h"
-//#include "net/proxy/proxy_service.h"
+#include "net/proxy_resolution/proxy_resolution_service.h"
 //#include "net/ssl/channel_id_service.h"
 //#include "net/ssl/default_channel_id_store.h"
 #include "net/ssl/ssl_config_service_defaults.h"
@@ -65,7 +65,7 @@ namespace tenta_cache = tenta::fs::cache;
 #include "meta_logging.h"
 
 #if defined(OS_ANDROID)
-//#include "net/proxy/proxy_config_service_android.h"
+#include "net/proxy_resolution/proxy_config_service_android.h"
 #include "xwalk/runtime/browser/android/cookie_manager.h"
 #include "xwalk/runtime/browser/android/net/android_protocol_handler.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
@@ -86,6 +86,14 @@ using content::BrowserThread;
 namespace xwalk {
 
 namespace {
+
+// On apps targeting API level O or later, check cleartext is enforced.
+bool g_check_cleartext_permitted = true; // TODO(iotto): Make configurable
+
+
+const char kProxyServerSwitch[] = "proxy-server";
+const char kProxyBypassListSwitch[] = "proxy-bypass-list";
+
 
 // Field trial for network quality estimator. Seeds RTT and downstream
 // throughput observations with values that correspond to the connection type
@@ -169,19 +177,18 @@ RuntimeURLRequestContextGetter::RuntimeURLRequestContextGetter(
 
   std::swap(protocol_handlers_, *protocol_handlers);
 
-  // TODO(iotto): Remove
 //  // We must create the proxy config service on the UI loop on Linux because it
 //  // must synchronously run on the glib message loop. This will be passed to
 //  // the URLRequestContextStorage on the IO thread in GetURLRequestContext().
-//#if defined(OS_ANDROID)
-//  proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(io_task_runner);
-//  net::ProxyConfigServiceAndroid* android_config_service =
-//      static_cast<net::ProxyConfigServiceAndroid*>(proxy_config_service_.get());
-//  android_config_service->set_exclude_pac_url(true);
-//#else
-//  proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(
-//      io_task_runner, file_task_runner);
-//#endif
+#if defined(OS_ANDROID)
+  proxy_config_service_ = net::ProxyResolutionService::CreateSystemProxyConfigService(io_task_runner);
+  net::ProxyConfigServiceAndroid* android_config_service =
+      static_cast<net::ProxyConfigServiceAndroid*>(proxy_config_service_.get());
+  android_config_service->set_exclude_pac_url(true);
+#else
+  proxy_config_service_ = net::ProxyService::CreateSystemProxyConfigService(
+      io_task_runner, file_task_runner);
+#endif
 }
 
 RuntimeURLRequestContextGetter::~RuntimeURLRequestContextGetter() {
@@ -196,7 +203,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     url_request_context_->set_network_delegate(network_delegate_.get());
 
     // TODO(iotto): Make this configurable
-    url_request_context_->set_check_cleartext_permitted(true);
+    url_request_context_->set_check_cleartext_permitted(g_check_cleartext_permitted);
 
     std::map<std::string, std::string> network_quality_estimator_params;
     // TODO(iotto): Setup estimator network params
@@ -217,6 +224,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
         new net::URLRequestContextStorage(url_request_context_.get()));
 #if defined(OS_ANDROID)
     storage_->set_cookie_store(base::WrapUnique(new XWalkCookieStoreWrapper));
+//    storage_->set_cookie_store(content::CreateCookieStore(content::CookieStoreConfig(), nullptr));
     LOG(WARNING) << "iotto " << __func__ << " set_network_quality_estimator!";
 //    url_request_context_->set_network_quality_estimator(_network_quality_estimator.get());
 #else
@@ -245,8 +253,16 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     std::unique_ptr<tenta_cache::ChromiumCacheFactory> main_backend(
         new tenta_cache::ChromiumCacheFactory(nullptr));
 
-    std::unique_ptr<net::HostResolver> host_resolver(new tenta::ext::TentaHostResolver());
-    //    = net::HostResolver::CreateStandaloneResolver(nullptr /*netlog*/);
+//    base::FilePath cache_path = base_path_.Append(FILE_PATH_LITERAL("Cache"));
+//    std::unique_ptr<net::HttpCache::DefaultBackend> main_backend(
+//        new net::HttpCache::DefaultBackend(
+//            net::DISK_CACHE, net::CACHE_BACKEND_DEFAULT, cache_path,
+//            GetDiskCacheSize()));
+
+
+    std::unique_ptr<net::HostResolver> host_resolver
+    (new tenta::ext::TentaHostResolver());
+//        = net::HostResolver::CreateStandaloneResolver(nullptr /*netlog*/);
 #else
     base::FilePath cache_path = base_path_.Append(FILE_PATH_LITERAL("Cache"));
 
@@ -276,27 +292,18 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     storage_->set_ct_policy_enforcer(
         base::WrapUnique(new IgnoresCTPolicyEnforcer));
 
-    // TODO(iotto): Remove
-//#if defined(OS_ANDROID)
-//    // Android provides a local HTTP proxy that handles all the proxying.
-//    // Create the proxy without a resolver since we rely
-//    // on this local HTTP proxy.
-//    storage_->set_proxy_service(
-//        net::ProxyService::CreateWithoutProxyResolver(
-//            std::move(proxy_config_service_), NULL));
-//#else
-//    storage_->set_proxy_service(
-//        net::ProxyService::CreateUsingSystemProxyResolver(
-//            std::move(proxy_config_service_),
-//            0,
-//            NULL));
-//#endif
     storage_->set_ssl_config_service(base::WrapUnique(new net::SSLConfigServiceDefaults()));
     storage_->set_http_auth_handler_factory(
         net::HttpAuthHandlerFactory::CreateDefault());
     storage_->set_http_server_properties(
         std::unique_ptr < net::HttpServerProperties
             > (new net::HttpServerPropertiesImpl));
+
+    std::unique_ptr<net::ProxyResolutionService> pr_service = net::ProxyResolutionService::CreateDirect();
+//    std::unique_ptr<net::ProxyResolutionService> pr_service = net::ProxyResolutionService::CreateWithoutProxyResolver(
+//        std::move(proxy_config_service_), NULL);
+    pr_service->set_quick_check_enabled(false);
+    storage_->set_proxy_resolution_service(std::move(pr_service));
 
     net::HttpNetworkSession::Params network_session_params;
     net::HttpNetworkSession::Context network_session_context;
@@ -309,11 +316,14 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     network_session_context.http_auth_handler_factory = url_request_context_->http_auth_handler_factory();
     network_session_context.http_server_properties = url_request_context_->http_server_properties();
     network_session_context.network_quality_estimator = url_request_context_->network_quality_estimator();
+
     network_session_params.ignore_certificate_errors = ignore_certificate_errors_;
+    network_session_params.enable_quic = false;
 
     // Give |storage_| ownership at the end in case it's |mapped_host_resolver|.
     storage_->set_host_resolver(std::move(host_resolver));
     network_session_context.host_resolver = url_request_context_->host_resolver();
+    network_session_context.proxy_resolution_service = url_request_context_->proxy_resolution_service();
 
     TENTA_LOG(WARNING) << __func__ << " GetAHold of NetworkSession to flush all sockets when mimic changes!";
 
@@ -324,6 +334,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
             new net::HttpCache(storage_->http_network_session(),
                                std::move(main_backend),
                                true /* is_main_cache; set_up_quic_server_info */)));
+
 #if defined(OS_ANDROID)
     std::unique_ptr<XWalkURLRequestJobFactory> job_factory_impl(
         new XWalkURLRequestJobFactory);

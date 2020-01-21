@@ -198,9 +198,9 @@ dist_aar("xwalk_core_library2") {
     "$root_out_dir/xwalk.pak",
     "$root_out_dir/xwalk_100_percent.pak",
   ]
-  native_libraries = [
-    "$root_out_dir/libxwalkcore.so"
-  ]
+#  native_libraries = [
+#    "$root_out_dir/libxwalkcore.so"
+#  ]
   #TODO(iotto): removed
 #  js_bindings = [
 #    "//xwalk/experimental/launch_screen/launch_screen_api.js",
