@@ -79,33 +79,54 @@ class XWalkCookieStoreWrapper : public net::CookieStore {
   // a task to |task_runner| to invoke |callback| with that argument. If
   // |weak_cookie_store| is deleted before the task is run, the task will not
   // be run.
-  template <class Type>
-  static void RunCallbackOnClientThread(
-      base::TaskRunner* task_runner,
-      base::WeakPtr<XWalkCookieStoreWrapper> weak_cookie_store,
-      base::OnceCallback<void(Type)> callback,
-      Type argument) {
+  template<class Type>
+  static void RunCallbackOnClientThread(base::TaskRunner* task_runner,
+                                        base::WeakPtr<XWalkCookieStoreWrapper> weak_cookie_store,
+                                        base::OnceCallback<void(Type)> callback, Type argument) {
     task_runner->PostTask(
-        FROM_HERE,
-        base::BindOnce(&XWalkCookieStoreWrapper::RunClosureCallback,
-                   weak_cookie_store, base::BindOnce(std::move(callback), argument)));
+    FROM_HERE,
+    base::BindOnce(&XWalkCookieStoreWrapper::RunClosureCallback,
+        weak_cookie_store, base::BindOnce(std::move(callback), argument)));
   }
 
   // Returns a base::Callback that takes an argument of Type and posts a task to
   // the |client_task_runner_| to invoke |callback| with that argument.
   template <class Type>
-  base::OnceCallback<void(Type)> CreateWrappedCallback(
-      base::OnceCallback<void(Type)> callback) {
+  base::OnceCallback<void(Type)> CreateWrappedCallback( base::OnceCallback<void(Type)> callback) {
     if (callback.is_null())
-      return callback;
+    return callback;
     return base::BindOnce(&XWalkCookieStoreWrapper::RunCallbackOnClientThread<Type>,
-                      base::RetainedRef(client_task_runner_),
-                      weak_factory_.GetWeakPtr(), std::move(callback));
+    base::RetainedRef(client_task_runner_),
+    weak_factory_.GetWeakPtr(), std::move(callback));
   }
 
-  // Returns a base::Closure that posts a task to the |client_task_runner_| to
-  // invoke |callback|.
-  base::Closure CreateWrappedClosureCallback(const base::Closure& callback);
+  // These are the same as above, but specifically for GetCookieListCallback,
+  // which has two arguments
+  static void RunGetCookieListCallbackOnClientThread(
+  base::TaskRunner* task_runner,
+  base::WeakPtr<XWalkCookieStoreWrapper> weak_cookie_store,
+  net::CookieStore::GetCookieListCallback callback,
+  const net::CookieList& cookies,
+  const net::CookieStatusList& excluded_cookies) {
+    task_runner->PostTask(
+    FROM_HERE,
+    base::BindOnce(
+        &XWalkCookieStoreWrapper::RunClosureCallback, weak_cookie_store,
+        base::BindOnce(std::move(callback), cookies, excluded_cookies)));
+  }
+  net::CookieStore::GetCookieListCallback CreateWrappedGetCookieListCallback(
+  net::CookieStore::GetCookieListCallback callback) {
+    if (callback.is_null())
+    return callback;
+    return base::BindOnce(
+    &XWalkCookieStoreWrapper::RunGetCookieListCallbackOnClientThread,
+    base::RetainedRef(client_task_runner_), weak_factory_.GetWeakPtr(),
+    std::move(callback));
+  }
+
+  // Returns a base::OnceClosure that posts a task to the |client_task_runner_|
+  // to invoke |callback|.
+  base::OnceClosure CreateWrappedClosureCallback(base::OnceClosure callback);
 
   // Runs |callback|. Used to prevent callbacks from being invoked after the
   // XWalkCookieStoreWrapper has been destroyed.

@@ -201,9 +201,6 @@ XWalkContentBrowserClient::CreateNetworkContext(content::BrowserContext* context
   network::mojom::NetworkContextPtr network_context;
   network::mojom::NetworkContextParamsPtr context_params =
       aw_context->GetNetworkContextParams(in_memory, relative_partition_path);
-#if DCHECK_IS_ON()
-  g_created_network_context_params = true;
-#endif
   content::GetNetworkService()->CreateNetworkContext(
       MakeRequest(&network_context), std::move(context_params));
 //
@@ -251,6 +248,18 @@ void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
 scoped_refptr<content::QuotaPermissionContext>
 XWalkContentBrowserClient::CreateQuotaPermissionContext() {
   return new RuntimeQuotaPermissionContext();
+}
+
+content::GeneratedCodeCacheSettings
+XWalkContentBrowserClient::GetGeneratedCodeCacheSettings(
+    content::BrowserContext* context) {
+  // If we pass 0 for size, disk_cache will pick a default size using the
+  // heuristics based on available disk size. These are implemented in
+  // disk_cache::PreferredCacheSize in net/disk_cache/cache_util.cc.
+//  return content::GeneratedCodeCacheSettings(true, 0, context->GetPath());
+  base::FilePath path(context->GetPath());
+  // TODO(iotto): disabled Code Cache
+  return content::GeneratedCodeCacheSettings(false, 0, path);
 }
 
 content::WebContentsViewDelegate*
@@ -562,6 +571,7 @@ void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
     content::RenderFrameHost* render_frame_host,
     const std::string& interface_name,
     mojo::ScopedMessagePipeHandle interface_pipe) {
+  LOG(INFO) << "iotto " << __func__ << " interface=" << interface_name;
   if (!frame_interfaces_) {
     frame_interfaces_ = std::make_unique<
     service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();

@@ -171,6 +171,7 @@ void InitXwalkLogging(const base::CommandLine& command_line,
   logging::LogEventProvider::Initialize(kXwalkTraceProviderName);
 #endif
 
+  LOG(INFO) << "iotto " << __func__;
   xwalk_logging_initialized_ = true;
 }
 

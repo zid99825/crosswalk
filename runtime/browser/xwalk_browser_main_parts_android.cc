@@ -30,6 +30,7 @@
 #include "ui/base/layout.h"
 #include "ui/base/l10n/l10n_util_android.h"
 #include "ui/base/resource/resource_bundle.h"
+#include "ui/display/display_switches.h"
 //#include "xwalk/extensions/browser/xwalk_extension_service.h"
 //#include "xwalk/extensions/common/xwalk_extension.h"
 //#include "xwalk/extensions/common/xwalk_extension_switches.h"
@@ -39,6 +40,11 @@
 #include "xwalk/runtime/common/xwalk_runtime_features.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "gpu/config/gpu_switches.h"
+
+
+#include "ui/gl/gl_implementation.h"
+#include "ui/gl/gl_switches.h"
+
 
 #ifdef TENTA_CHROMIUM_BUILD
 #include "browser/tenta_tab_model.h"
@@ -190,6 +196,15 @@ void XWalkBrowserMainPartsAndroid::PreMainMessageLoopStart() {
   // for Chrome to aggressively persist DOM Storage to minimize data loss.
   // http://crbug.com/479767
   command_line->AppendSwitch(switches::kEnableAggressiveDOMStorageFlushing);
+
+  // TODO(iotto): My ... to be removed
+//  command_line->AppendSwitch(cc::switches::kShowFPSCounter);
+  if (!command_line->HasSwitch(switches::kForceDisplayColorProfile)) {
+    command_line->AppendSwitchASCII(switches::kForceDisplayColorProfile,
+                                   "srgb");
+  }
+
+  command_line->AppendSwitch(switches::kEnablePartialRaster);
 
   XWalkBrowserMainParts::PreMainMessageLoopStart();
 

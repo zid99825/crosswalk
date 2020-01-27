@@ -19,8 +19,10 @@
 #include "base/path_service.h"
 #include "base/files/file.h"
 #include "base/posix/global_descriptors.h"
+#include "cc/base/switches.h"
 #include "content/public/browser/browser_main_runner.h"
 #include "content/public/common/content_switches.h"
+#include "gpu/config/gpu_switches.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/resource/resource_bundle_android.h"
 #include "ui/base/ui_base_paths.h"
@@ -108,15 +110,25 @@ XWalkMainDelegateAndroid::~XWalkMainDelegateAndroid() {
 }
 
 bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
+  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+
+  command_line.AppendSwitch(cc::switches::kDisableCheckerImaging);
+
+  // Always disable the unsandbox GPU process for DX12 and Vulkan Info
+  // collection to avoid interference. This GPU process is launched 15
+  // seconds after chrome starts.
+  command_line.AppendSwitch(switches::kDisableGpuProcessForDX12VulkanInfoCollection);
+
   content_client_.reset(new XWalkContentClient);
   content::SetContentClient(content_client_.get());
 
-  logging::LoggingSettings settings;
-  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
-  logging::InitLogging(settings);
-  logging::SetLogItems(true /* Process ID */, true /* Thread ID */,
-                       true /* Timestamp */, false /* Tick count */);
+//  logging::LoggingSettings settings;
+//  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
+//  logging::InitLogging(settings);
+//  logging::SetLogItems(true /* Process ID */, true /* Thread ID */,
+//                       true /* Timestamp */, false /* Tick count */);
 
+  // command_line.AppendSwitch(switches::kEnablePartialRaster);
   RegisterPathProvider();
   return false;
 }
@@ -162,39 +174,6 @@ void XWalkMainDelegateAndroid::InitResourceBundle() {
   if (process_type == switches::kRendererProcess) {
     InitResourceBundleRendererSide();
   }
-//
-//  // content_shell style
-//  // On Android, the renderer runs with a different UID and can never access
-//  // the file system. Use the file descriptor passed in at launch time.
-//  auto* global_descriptors = base::GlobalDescriptors::GetInstance();
-//  int pak_fd = global_descriptors->MaybeGet(kXWalkMainPakDescriptor);
-//  base::MemoryMappedFile::Region pak_region;
-//  if (pak_fd >= 0) {
-//    pak_region = global_descriptors->GetRegion(kXWalkMainPakDescriptor);
-//  } else {
-//    pak_fd =
-//        base::android::OpenApkAsset("assets/xwalk.pak", &pak_region);
-//    // Loaded from disk for browsertests.
-//    if (pak_fd < 0) {
-//      base::FilePath pak_file;
-//      bool r = base::PathService::Get(base::DIR_ANDROID_APP_DATA, &pak_file);
-//      DCHECK(r);
-//      pak_file = pak_file.Append(FILE_PATH_LITERAL("paks"));
-//      pak_file = pak_file.Append(FILE_PATH_LITERAL("xwalk.pak"));
-//      int flags = base::File::FLAG_OPEN | base::File::FLAG_READ;
-//      pak_fd = base::File(pak_file, flags).TakePlatformFile();
-//      pak_region = base::MemoryMappedFile::Region::kWholeFile;
-//    }
-//    global_descriptors->Set(kXWalkMainPakDescriptor, pak_fd, pak_region);
-//  }
-//  LOG(WARNING) << "iotto " << __func__ << " FIX scale_factor_100p See crbug.com/330930";
-//  // This is clearly wrong. See crbug.com/330930
-//  ui::ResourceBundle::InitSharedInstanceWithPakFileRegion(base::File(pak_fd),
-//                                                          pak_region);
-//  ui::ResourceBundle::GetSharedInstance().AddDataPackFromFileRegion(
-//      base::File(pak_fd), pak_region, ui::SCALE_FACTOR_100P);
-//
-//
 }
 
 // TODO(iotto): Continue implementation

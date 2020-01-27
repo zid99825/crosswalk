@@ -88,7 +88,7 @@ namespace xwalk {
 namespace {
 
 // On apps targeting API level O or later, check cleartext is enforced.
-bool g_check_cleartext_permitted = true; // TODO(iotto): Make configurable
+bool g_check_cleartext_permitted = false; // TODO(iotto): Make configurable
 
 
 const char kProxyServerSwitch[] = "proxy-server";

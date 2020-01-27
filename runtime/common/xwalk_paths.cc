@@ -192,7 +192,7 @@ bool PathProvider(int key, base::FilePath* path) {
       }
       return true;
 #else
-      return PathService::Get(base::DIR_EXE, path);
+      return base::PathService::Get(base::DIR_EXE, path);
 #endif  // defined(OS_MACOSX)
 #endif  // NDEBUG
     case xwalk::DIR_INTERNAL_PLUGINS:

@@ -257,6 +257,7 @@ class CookieManager {
   base::Thread cookie_store_client_thread_;
   base::Thread cookie_store_backend_thread_;
 
+
   scoped_refptr<base::SingleThreadTaskRunner> cookie_store_task_runner_;
   std::unique_ptr<net::CookieStore> cookie_store_;
 
@@ -282,7 +283,6 @@ CookieManager::CookieManager()
       cookie_store_created_(false),
       cookie_store_client_thread_("CookieMonsterClient"),
       cookie_store_backend_thread_("CookieMonsterBackend") {
-  // make MessageLoopForIO type!
   base::Thread::Options op(base::MessageLoop::TYPE_IO, 0 /*default stack size*/);
   cookie_store_client_thread_.StartWithOptions(op);
   cookie_store_task_runner_ = cookie_store_client_thread_.task_runner();

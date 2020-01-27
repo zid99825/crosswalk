@@ -59,6 +59,7 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
       override;
   void AppendExtraCommandLineSwitches(base::CommandLine* command_line, int child_process_id) override;
   scoped_refptr<content::QuotaPermissionContext> CreateQuotaPermissionContext() override;
+  content::GeneratedCodeCacheSettings GetGeneratedCodeCacheSettings(content::BrowserContext* context) override;
   content::WebContentsViewDelegate* GetWebContentsViewDelegate(content::WebContents* web_contents) override;
   void RenderProcessWillLaunch(content::RenderProcessHost* host,
                                service_manager::mojom::ServiceRequest* service_request) override;
