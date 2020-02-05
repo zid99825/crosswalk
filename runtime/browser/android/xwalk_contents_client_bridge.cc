@@ -389,9 +389,7 @@ bool XWalkContentsClientBridge::ShouldOverrideUrlLoading(
 bool XWalkContentsClientBridge::RewriteUrlIfNeeded(const std::string& url,
                                  ui::PageTransition transition_type,
                                  std::string* new_url) {
-#if TENTA_LOG_NET_ENABLE == 1
-  LOG(INFO) << "XWalkContentsClientBridge::RewriteUrlIfNeeded " << url << " transition_type=" << transition_type;
-#endif
+  TENTA_LOG_NET(INFO) << __func__ << " url=" << url << " transition_type=" << transition_type;
 
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);

@@ -226,8 +226,12 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
     public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
                                         final XWalkGetBitmapCallback callback) {
-        if (mNativeContent == 0 || callback == null)
+        if ( callback == null )
             return;
+        if (mNativeContent == 0 ) {
+            callback.onFinishGetBitmap(null, MetaError.INVALID_POINTER);
+            return;
+        }
         
         nativeCaptureBitmapWithParams(mNativeContent, scale, new Callback<Bitmap>() {
             @Override

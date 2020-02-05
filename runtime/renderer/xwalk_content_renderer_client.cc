@@ -17,7 +17,7 @@
 #include "components/error_page/common/error.h"
 #include "components/error_page/common/localized_error.h"
 #include "components/nacl/common/buildflags.h"
-#include "components/web_cache/renderer/web_cache_impl.h"
+//#include "components/web_cache/renderer/web_cache_impl.h"
 #include "content/public/common/service_manager_connection.h"
 #include "content/public/common/simple_connection_filter.h"
 #include "content/public/common/url_loader_throttle.h"

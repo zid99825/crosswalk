@@ -1287,8 +1287,10 @@ public class XWalkView extends android.widget.FrameLayout {
 //    @XWalkAPI
     public void captureBitmapWithParams(float scale, Rect srcRect,
             XWalkGetBitmapCallback callback) {
-        if (mContent == null)
+        if (mContent == null) {
+            callback.onFinishGetBitmap(null, MetaError.INVALID_POINTER);
             return;
+        }
         checkThreadSafety();
         mContent.captureBitmapWithParams(Bitmap.Config.ARGB_8888, scale, srcRect, callback);
     }

@@ -135,25 +135,13 @@ IoThreadClientThrottle::GetIoThreadClient() const {
 }
 
 void IoThreadClientThrottle::WillStartRequest(bool* defer) {
-  if (render_frame_id_ < 1) {
-    // OPTIONS is used for preflighted requests which are generated internally.
-    DCHECK_EQ("OPTIONS", request_->method());
-    return;
-  }
-  DCHECK(render_process_id_);
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  // valid render_frame_id_ implies nonzero render_processs_id_
+  DCHECK((render_frame_id_ < 1) || (render_process_id_ != 0));
+
   if (!MaybeDeferRequest(defer)) {
     MaybeBlockRequest();
   }
-}
-
-void IoThreadClientThrottle::WillRedirectRequest(
-    const net::RedirectInfo& redirect_info,
-    bool* defer) {
-  WillStartRequest(defer);
-}
-
-const char* IoThreadClientThrottle::GetNameForLogging() {
-  return "IoThreadClientThrottle";
 }
 
 bool IoThreadClientThrottle::MaybeDeferRequest(bool* defer) {
@@ -168,6 +156,16 @@ bool IoThreadClientThrottle::MaybeDeferRequest(bool* defer) {
         render_process_id_, render_frame_id_, this);
   }
   return *defer;
+}
+
+void IoThreadClientThrottle::WillRedirectRequest(
+    const net::RedirectInfo& redirect_info,
+    bool* defer) {
+  WillStartRequest(defer);
+}
+
+const char* IoThreadClientThrottle::GetNameForLogging() {
+  return "IoThreadClientThrottle";
 }
 
 void IoThreadClientThrottle::OnIoThreadClientReady(int new_render_process_id,
@@ -242,59 +240,43 @@ RuntimeResourceDispatcherHostDelegateAndroid::
 }
 
 void RuntimeResourceDispatcherHostDelegateAndroid::RequestBeginning(
-    net::URLRequest* request,
-    content::ResourceContext* resource_context,
-    content::AppCacheService* appcache_service,
-    content::ResourceType resource_type,
-    std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
-  content::ResourceRequestInfo* request_info =
-      content::ResourceRequestInfo::ForRequest(request);
+    net::URLRequest* request, content::ResourceContext* resource_context, content::AppCacheService* appcache_service,
+    content::ResourceType resource_type, std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
 
-//  // If io_client is NULL, then the browser side objects have already been
-//  // destroyed, so do not do anything to the request. Conversely if the
-//  // request relates to a not-yet-created popup window, then the client will
-//  // be non-NULL but PopupPendingAssociation() will be set.
-//  std::unique_ptr<XWalkContentsIoThreadClient> io_client =
-//      XWalkContentsIoThreadClient::FromID(
-//          request_info->GetChildID(), request_info->GetRenderFrameID());
-//  if (!io_client)
-//    return;
+  content::ResourceRequestInfo* request_info = content::ResourceRequestInfo::ForRequest(request);
 
-  int render_process_id = request_info->GetChildID();
-  int render_frame_id = request_info->GetRenderFrameID();
+  std::unique_ptr<IoThreadClientThrottle> ioThreadThrottle =
+      std::make_unique<IoThreadClientThrottle>(request_info->GetChildID(),
+                                               request_info->GetRenderFrameID(),
+                                               request);
 
-  throttles->push_back(base::WrapUnique<IoThreadClientThrottle>(new IoThreadClientThrottle(
-      render_process_id, render_frame_id, request)));
-
-  bool is_main_frame = resource_type == content::ResourceType::kMainFrame;
-  if (!is_main_frame) {
-    content::RenderFrameHost* render_frame_host = content::RenderFrameHost::FromID(render_process_id, render_frame_id);
-    if (!render_frame_host)
-      return;
-
-    content::WebContents* web_contents = content::WebContents::FromRenderFrameHost(render_frame_host);
-
-    InterceptNavigationDelegate* intercept_navigation_delegate = InterceptNavigationDelegate::Get(web_contents);
-
-    if (intercept_navigation_delegate) {
-      intercept_navigation_delegate->UpdateLastUserGestureCarryoverTimestamp();
-    }
-  }
-
-  // TODO(iotto) : Add do not track header here!
-//  if (!request->is_pending()) {
-//    net::HttpRequestHeaders headers;
-//    headers.CopyFrom(request->extra_request_headers());
-//    bool is_off_the_record = io_data->IsOffTheRecord();
-//    bool is_signed_in =
-//        !is_off_the_record &&
-//        !io_data->google_services_account_id()->GetValue().empty();
-//    variations::AppendVariationHeaders(
-//        request->url(), is_off_the_record, is_signed_in,
-//        !is_off_the_record && io_data->GetMetricsEnabledStateOnIOThread(),
-//        &headers);
-//    request->SetExtraRequestHeaders(headers);
+  // TODO(iotto): Implement
+//  if (ioThreadThrottle->GetSafeBrowsingEnabled()) {
+//    DCHECK(!base::FeatureList::IsEnabled(network::features::kNetworkService));
+//    if (!base::FeatureList::IsEnabled(
+//            safe_browsing::kCheckByURLLoaderThrottle)) {
+//      content::ResourceThrottle* throttle =
+//          MaybeCreateAwSafeBrowsingResourceThrottle(
+//              request, resource_type,
+//              AwBrowserProcess::GetInstance()->GetSafeBrowsingDBManager(),
+//              AwBrowserProcess::GetInstance()->GetSafeBrowsingUIManager(),
+//              AwBrowserProcess::GetInstance()
+//                  ->GetSafeBrowsingWhitelistManager());
+//      if (throttle == nullptr) {
+//        // Should not happen
+//        DLOG(WARNING) << "Failed creating safebrowsing throttle";
+//      } else {
+//        throttles->push_back(base::WrapUnique(throttle));
+//      }
+//    }
 //  }
+
+  // We always push the throttles here. Checking the existence of io_client
+  // is racy when a popup window is created. That is because RequestBeginning
+  // is called whether or not requests are blocked via BlockRequestForRoute()
+  // however io_client may or may not be ready at the time depending on whether
+  // webcontents is created.
+  throttles->push_back(std::move(ioThreadThrottle));
 
   // TODO(iotto) : Implement
 //  throttles->push_back(
