@@ -159,11 +159,15 @@ class XWalkContent :
   void FindAllAsync(JNIEnv* env, const JavaParamRef<jobject>& obj, const JavaParamRef<jstring>& search_string);
   void FindNext(JNIEnv* env, const JavaParamRef<jobject>& obj, jboolean forward);
   void ClearMatches(JNIEnv* env, const JavaParamRef<jobject>& obj);
+  void CaptureBitmapWithParams(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, float scale,
+                               const base::android::JavaParamRef<jobject>& callback);
 
   // FindHelper::Listener implementation.
   void OnFindResultReceived(int active_ordinal, int match_count, bool finished) override;
 
  private:
+  void OnDidCaptureBitmap(const base::android::JavaRef<jobject>& obj, const base::android::JavaRef<jobject>& callback,
+                          float scale, const SkBitmap& bitmap);
 #ifdef TENTA_CHROMIUM_BUILD
   // TentaNetErrorClient::Listener
   void OnOpenDnsSettings(const GURL& failedUrl) override;
@@ -196,6 +200,7 @@ class XWalkContent :
 
   int _zone_id;
   int _tab_id; // curent webview ID
+  base::WeakPtrFactory<XWalkContent> _weak_ptr_factory {this};
 };
 
 }  // namespace xwalk

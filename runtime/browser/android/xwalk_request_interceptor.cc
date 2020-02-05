@@ -59,6 +59,7 @@ net::URLRequestJob* XWalkRequestInterceptor::MaybeInterceptRequest(
     net::NetworkDelegate* network_delegate) const {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
 
+  LOG(INFO) << "iotto " << __func__;
   // See if we've already found out the xwalk_web_resource_response for this
   // request.
   // This is done not only for efficiency reasons, but also for correctness

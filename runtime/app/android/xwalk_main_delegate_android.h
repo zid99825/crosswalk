@@ -18,6 +18,8 @@ class ContentClient;
 
 namespace xwalk {
 
+class XWalkContentGpuClient;
+
 class XWalkMainDelegateAndroid : public XWalkMainDelegate {
  public:
   XWalkMainDelegateAndroid();
@@ -30,11 +32,14 @@ class XWalkMainDelegateAndroid : public XWalkMainDelegate {
       const content::MainFunctionParams& main_function_params) override;
 
   void PostEarlyInitialization(bool is_running_tests) override;
+  content::ContentGpuClient* CreateContentGpuClient() override;
+
   void InitResourceBundle();
 
  private:
   std::unique_ptr<content::BrowserMainRunner> browser_runner_;
   std::unique_ptr<content::ContentClient> content_client_;
+  std::unique_ptr<XWalkContentGpuClient> content_gpu_client_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkMainDelegateAndroid);
 };

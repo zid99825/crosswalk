@@ -242,4 +242,10 @@ std::string XWalkContentClient::GetProcessTypeNameInEnglish(int type) {
   return "Unknown";
 }
 
+media::MediaDrmBridgeClient* XWalkContentClient::GetMediaDrmBridgeClient() {
+  LOG(ERROR) << "iotto " << __func__;
+  return nullptr;
+}
+
+
 }  // namespace xwalk

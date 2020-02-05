@@ -10,7 +10,6 @@
 
 namespace xwalk {
 
-// XWalk implementation of blink::WebPermissionClient.
 class XWalkPermissionClient : public content::RenderFrameObserver,
                               public blink::WebContentSettingsClient {
  public:
@@ -21,6 +20,11 @@ class XWalkPermissionClient : public content::RenderFrameObserver,
 
   // content::RenderFrameObserver implementation.
   void OnDestruct() override;
+
+  // blink::WebContentSettingsClient
+  bool AllowDatabase() override;
+  bool AllowIndexedDB(const blink::WebSecurityOrigin&) override;
+  bool AllowStorage(bool local) override;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkPermissionClient);
 };

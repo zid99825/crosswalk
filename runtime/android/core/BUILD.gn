@@ -154,6 +154,7 @@ xwalk_dist_aar("xwalk_core_library") {
     ":xwalk_core_assets",
     "//components/embedder_support/android:view",
     "//xwalk/runtime/app/android:libxwalkcore",
+    "//xwalk/resources:locale_pak_assets",
   ]
 
   jar_excluded_patterns = [
@@ -177,6 +178,7 @@ xwalk_dist_aar("xwalk_core_library") {
     "*/components/embedder_support/android/*",
     "*/xwalk/runtime/android/*",
   ]
+#todo(iotto): Fix to generate  locale_config_java_packages = [ "org.xwalk.core" ]
 }
 
 #generate_android_project("xwalk_core_library") {

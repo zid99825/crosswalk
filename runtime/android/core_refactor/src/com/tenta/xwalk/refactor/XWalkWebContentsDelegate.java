@@ -61,7 +61,7 @@ abstract class XWalkWebContentsDelegate extends WebContentsDelegateAndroid {
     public void updatePreferredSize(int widthCss, int heightCss) {
     }
 
-    @CalledByNative
+//    @CalledByNative
     public void toggleFullscreen(boolean enterFullscreen) {
     }
 

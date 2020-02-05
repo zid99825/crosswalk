@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "base/android/callback_android.h"
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
 #include "base/android/locale_utils.h"
@@ -33,11 +34,13 @@
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
+#include "content/public/browser/render_widget_host_view.h"
 #include "content/public/browser/ssl_status.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/url_constants.h"
 #include "net/cert/x509_certificate.h"
 #include "net/cert/x509_util.h"
+#include "ui/gfx/android/java_bitmap.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "xwalk/application/common/application_manifest_constants.h"
 #include "xwalk/application/common/manifest.h"
@@ -1034,6 +1037,34 @@ void XWalkContent::FindNext(JNIEnv* env, const JavaParamRef<jobject>& obj, jbool
 void XWalkContent::ClearMatches(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   GetFindHelper()->ClearMatches();
+}
+
+void XWalkContent::CaptureBitmapWithParams(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
+                                           float scale, const base::android::JavaParamRef<jobject>& jcallback) {
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!";
+  content::RenderWidgetHostView* rwhv = web_contents_->GetRenderWidgetHostView();
+  if ( rwhv) {
+    base::OnceCallback<void(const SkBitmap&)> result_callback = base::BindOnce(
+        &XWalkContent::OnDidCaptureBitmap, _weak_ptr_factory.GetWeakPtr(),
+        base::android::ScopedJavaGlobalRef<jobject>(env, obj),
+        base::android::ScopedJavaGlobalRef<jobject>(env, jcallback), scale);
+    rwhv->CopyFromSurface(gfx::Rect(), gfx::Size(0, 0), std::move(result_callback));
+  } else {
+    base::android::RunObjectCallbackAndroid(jcallback, ScopedJavaLocalRef<jobject>());
+  }
+}
+
+void XWalkContent::OnDidCaptureBitmap(const base::android::JavaRef<jobject>& obj, const base::android::JavaRef<jobject>& callback,
+                          float scale, const SkBitmap& bitmap) {
+  TENTA_LOG(WARNING) << __func__ << " TODO(iotto): scale parameter ignored! Fix it!";
+
+  if (!bitmap.drawsNothing()) {
+    ScopedJavaLocalRef<jobject> jbitmap = gfx::ConvertToJavaBitmap(&bitmap);
+    base::android::RunObjectCallbackAndroid(callback, jbitmap);
+    return;
+  }
+  // If readback failed, call empty callback
+  base::android::RunObjectCallbackAndroid(callback, ScopedJavaLocalRef<jobject>());
 }
 
 void XWalkContent::OnFindResultReceived(int active_ordinal, int match_count, bool finished) {

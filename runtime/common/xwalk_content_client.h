@@ -39,6 +39,8 @@ class XWalkContentClient : public content::ContentClient {
       std::set<GURL>* origins) override;*/
   std::string GetProcessTypeNameInEnglish(int type) override;
 
+  media::MediaDrmBridgeClient* GetMediaDrmBridgeClient() override;
+
  private:
   DISALLOW_COPY_AND_ASSIGN(XWalkContentClient);
 };

@@ -34,6 +34,11 @@
 #include "xwalk/runtime/common/xwalk_resource_delegate.h"
 #include "xwalk/runtime/gpu/xwalk_content_gpu_client.h"
 
+#include "media/base/media_switches.h"
+#include "ui/display/display_switches.h"
+#include "ui/gl/gl_implementation.h"
+#include "ui/gl/gl_switches.h"
+
 namespace xwalk {
 
 namespace {
@@ -53,8 +58,10 @@ void InitIcuAndResourceBundleBrowserSide() {
 //                              g_chrome_100_percent_region, SCALE_FACTOR_100P);
 //  }
   ui::SetLocalePaksStoredInApk(true);
+  std::string default_locale(base::android::GetDefaultLocaleString());
+  LOG(INFO) << "iotto " << __func__ << " defaultLocale=" << default_locale;
   std::string locale = ui::ResourceBundle::InitSharedInstanceWithLocale(
-      base::android::GetDefaultLocaleString(), NULL,
+      default_locale, NULL,
       ui::ResourceBundle::LOAD_COMMON_RESOURCES);
   if (locale.empty()) {
     LOG(WARNING) << __func__ << " Failed to load locale .pak from apk.";
@@ -72,8 +79,9 @@ void InitIcuAndResourceBundleBrowserSide() {
 void InitResourceBundleRendererSide() {
   LOG(INFO) << "iotto " << __func__;
   auto* global_descriptors = base::GlobalDescriptors::GetInstance();
-  int pak_fd = global_descriptors->Get(kXWalkMainPakDescriptor);
-  base::MemoryMappedFile::Region pak_region = global_descriptors->GetRegion(kXWalkMainPakDescriptor);
+  int pak_fd = global_descriptors->Get(kXWalkLocalePakDescriptor);
+  LOG(INFO) << "iotto " << __func__ << " packfd=" << pak_fd;
+  base::MemoryMappedFile::Region pak_region = global_descriptors->GetRegion(kXWalkLocalePakDescriptor);
   ui::ResourceBundle::InitSharedInstanceWithPakFileRegion(base::File(pak_fd), pak_region);
 
   std::pair<int, ui::ScaleFactor> extra_paks[] = { { kXWalkMainPakDescriptor, ui::SCALE_FACTOR_NONE }, {
@@ -84,6 +92,9 @@ void InitResourceBundleRendererSide() {
     pak_region = global_descriptors->GetRegion(pak_info.first);
     ui::ResourceBundle::GetSharedInstance().AddDataPackFromFileRegion(base::File(pak_fd), pak_region, pak_info.second);
   }
+
+  LOG(INFO) << "iotto " << __func__ << " done";
+
 }
 }
 // TODO(iotto): Continue
@@ -110,14 +121,93 @@ XWalkMainDelegateAndroid::~XWalkMainDelegateAndroid() {
 }
 
 bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
-  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+//  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+//
+//  command_line.AppendSwitch(cc::switches::kEnableGpuBenchmarking);
+////  command_line.AppendSwitch(cc::switches::kShowCompositedLayerBorders);
+////
+////      command_line.AppendSwitch(switches::kEnableLogging);
+////      command_line.AppendSwitch(switches::kAllowFileAccessFromFiles);
+////      // only default to a software GL if the flag isn't already specified.
+//
+//  // will cause crash
+////      if (!command_line.HasSwitch(switches::kUseGpuInTests) &&
+////          !command_line.HasSwitch(switches::kUseGL)) {
+////        command_line.AppendSwitchASCII(
+////            switches::kUseGL,
+////            gl::GetGLImplementationName(gl::GetSoftwareGLImplementation()));
+////      }
+//      command_line.AppendSwitchASCII(
+//          switches::kTouchEventFeatureDetection,
+//          switches::kTouchEventFeatureDetectionEnabled);
+//
+//      // screws up display
+////      if (!command_line.HasSwitch(switches::kForceDeviceScaleFactor))
+////        command_line.AppendSwitchASCII(switches::kForceDeviceScaleFactor, "1.0");
+//
+//      if (!command_line.HasSwitch(switches::kAutoplayPolicy)) {
+//        command_line.AppendSwitchASCII(
+//            switches::kAutoplayPolicy,
+//            switches::autoplay::kNoUserGestureRequiredPolicy);
+//      }
+//
+//      // causes blank page
+////      if (!command_line.HasSwitch(switches::kEnableThreadedCompositing)) {
+////        command_line.AppendSwitch(switches::kDisableThreadedCompositing);
+////        command_line.AppendSwitch(cc::switches::kDisableThreadedAnimation);
+////      }
+//
+//      // With display compositor pixel dumps, we ensure that we complete all
+//      // stages of compositing before draw. We also can't have checker imaging,
+//      // since it's imcompatible with single threaded compositor and display
+//      // compositor pixel dumps.
+//      //
+//      // TODO(crbug.com/894613) Add kRunAllCompositorStagesBeforeDraw back here
+//      // once you figure out why it causes so much web test flakiness.
+//      // command_line.AppendSwitch(switches::kRunAllCompositorStagesBeforeDraw);
+//
+//      command_line.AppendSwitch(cc::switches::kDisableCheckerImaging);
+//
+//      command_line.AppendSwitch(switches::kMuteAudio);
+//
+//      command_line.AppendSwitch(switches::kEnablePreciseMemoryInfo);
+//
+////      command_line.AppendSwitchASCII(network::switches::kHostResolverRules,
+////                                     "MAP nonexistent.*.test ~NOTFOUND,"
+////                                     "MAP *.test. 127.0.0.1,"
+////                                     "MAP *.test 127.0.0.1");
+//
+////      command_line.AppendSwitch(switches::kEnablePartialRaster);
+//
+//      command_line.AppendSwitch(switches::kEnableWebAuthTestingAPI);
+//
+//      if (!command_line.HasSwitch(switches::kForceGpuRasterization) &&
+//          !command_line.HasSwitch(switches::kEnableGpuRasterization)) {
+//        command_line.AppendSwitch(switches::kDisableGpuRasterization);
+//      }
+//
+//      // If the virtual test suite didn't specify a display color space, then
+//      // force sRGB.
+//      if (!command_line.HasSwitch(switches::kForceDisplayColorProfile)) {
+//        command_line.AppendSwitchASCII(switches::kForceDisplayColorProfile,
+//                                       "srgb");
+//      }
+//
+//      // We want stable/baseline results when running web tests.
+////      command_line.AppendSwitch(switches::kDisableSkiaRuntimeOpts);
+//
+////      command_line.AppendSwitch(switches::kDisallowNonExactResourceReuse);
+//
+//      // Always run with fake media devices.
+////      command_line.AppendSwitch(switches::kUseFakeUIForMediaStream);
+//      command_line.AppendSwitch(switches::kUseFakeDeviceForMediaStream);
+//
+//      // Always disable the unsandbox GPU process for DX12 and Vulkan Info
+//      // collection to avoid interference. This GPU process is launched 15
+//      // seconds after chrome starts.
+////      command_line.AppendSwitch(
+////          switches::kDisableGpuProcessForDX12VulkanInfoCollection);
 
-  command_line.AppendSwitch(cc::switches::kDisableCheckerImaging);
-
-  // Always disable the unsandbox GPU process for DX12 and Vulkan Info
-  // collection to avoid interference. This GPU process is launched 15
-  // seconds after chrome starts.
-  command_line.AppendSwitch(switches::kDisableGpuProcessForDX12VulkanInfoCollection);
 
   content_client_.reset(new XWalkContentClient);
   content::SetContentClient(content_client_.get());
@@ -176,12 +266,12 @@ void XWalkMainDelegateAndroid::InitResourceBundle() {
   }
 }
 
-// TODO(iotto): Continue implementation
-//content::ContentGpuClient* XWalkMainDelegateAndroid::CreateContentGpuClient() {
+content::ContentGpuClient* XWalkMainDelegateAndroid::CreateContentGpuClient() {
+  content_gpu_client_ = std::make_unique<XWalkContentGpuClient>();
 //  content_gpu_client_ = std::make_unique<XWalkContentGpuClient>(
 //      base::BindRepeating(&GetSyncPointManager),
 //      base::BindRepeating(&GetSharedImageManager));
-//  return content_gpu_client_.get();
-//}
+  return content_gpu_client_.get();
+}
 
 }  // namespace xwalk

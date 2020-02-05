@@ -5,7 +5,9 @@
 package com.tenta.xwalk.refactor;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
@@ -22,8 +24,10 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
 
     private XWalkContentsClient mXWalkContentsClient;
     private XWalkContent mXwalkContent;
+    private Context mContext;
 
-    public XWalkWebContentsDelegateAdapter(XWalkContentsClient client, XWalkContent content) {
+    public XWalkWebContentsDelegateAdapter(Context context, XWalkContentsClient client, XWalkContent content) {
+        mContext = context;
         mXWalkContentsClient = client;
         mXwalkContent = content;
     }
@@ -100,10 +104,38 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
 
     @Override
     public void handleKeyboardEvent(KeyEvent event) {
+        handleMediaKey(event);
         // Handle the event here when necessary and return if so.
         if (mXWalkContentsClient != null) mXWalkContentsClient.onUnhandledKeyEvent(event);
     }
 
+    /**
+     * Redispatches unhandled media keys. This allows bluetooth headphones with play/pause or
+     * other buttons to function correctly.
+     */
+    private void handleMediaKey(KeyEvent e) {
+        switch (e.getKeyCode()) {
+            case KeyEvent.KEYCODE_MUTE:
+            case KeyEvent.KEYCODE_HEADSETHOOK:
+            case KeyEvent.KEYCODE_MEDIA_PLAY:
+            case KeyEvent.KEYCODE_MEDIA_PAUSE:
+            case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+            case KeyEvent.KEYCODE_MEDIA_STOP:
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+            case KeyEvent.KEYCODE_MEDIA_REWIND:
+            case KeyEvent.KEYCODE_MEDIA_RECORD:
+            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+            case KeyEvent.KEYCODE_MEDIA_CLOSE:
+            case KeyEvent.KEYCODE_MEDIA_EJECT:
+            case KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK:
+                AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+                am.dispatchMediaKeyEvent(e);
+                break;
+            default:
+                break;
+        }
+    }
     @Override
     public boolean addMessageToConsole(int level, String message, int lineNumber,
             String sourceId) {
@@ -158,4 +190,15 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
         return false;
     }
     
+    @Override
+    public void enterFullscreenModeForTab(boolean prefersNavigationBar) {
+        super.enterFullscreenModeForTab(prefersNavigationBar);
+        org.chromium.base.Log.w("iotto", "enterFullscreenModeForTab prefersNavigationBar=%b" , prefersNavigationBar);
+    }
+    
+    @Override
+    public void exitFullscreenModeForTab() {
+        super.exitFullscreenModeForTab();
+        org.chromium.base.Log.w("iotto", "exitFullscreenModeForTab");
+    }
 }

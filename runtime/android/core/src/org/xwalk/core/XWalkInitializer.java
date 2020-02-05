@@ -172,12 +172,14 @@ public class XWalkInitializer {
     public XWalkInitializer(XWalkInitListener listener, Context context) {
         mInitListener = listener;
         mContext = context;
+        boolean isBrowserProcess = !ContextUtils.getProcessName().contains(":");
 
         // do early Chromium init things
         ContextUtils.initApplicationContext(context.getApplicationContext());
-        PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
-        ApplicationStatus.initialize((Application) context.getApplicationContext());
-
+        if ( isBrowserProcess ) {
+            PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
+            ApplicationStatus.initialize((Application) context.getApplicationContext());
+        }
         XWalkLibraryLoader.prepareToInit(mContext);
     }
 

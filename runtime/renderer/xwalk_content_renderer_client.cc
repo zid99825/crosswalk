@@ -13,9 +13,11 @@
 #include "content/public/renderer/render_frame_observer_tracker.h"
 #include "content/public/renderer/render_thread.h"
 #include "content/public/renderer/render_view.h"
+#include "components/cdm/renderer/external_clear_key_key_system_properties.h"
 #include "components/error_page/common/error.h"
 #include "components/error_page/common/localized_error.h"
 #include "components/nacl/common/buildflags.h"
+#include "components/web_cache/renderer/web_cache_impl.h"
 #include "content/public/common/service_manager_connection.h"
 #include "content/public/common/simple_connection_filter.h"
 #include "content/public/common/url_loader_throttle.h"
@@ -61,6 +63,11 @@
 //chromium
 #include "ui/base/resource/resource_bundle.h"
 #include "third_party/zlib/google/compression_utils.h"
+#endif
+
+#if BUILDFLAG(ENABLE_MOJO_CDM)
+#include "base/feature_list.h"
+#include "media/base/media_switches.h"
 #endif
 
 using content::RenderThread;
@@ -117,6 +124,7 @@ XWalkContentRendererClient* XWalkContentRendererClient::Get() {
 }
 
 XWalkContentRendererClient::XWalkContentRendererClient() {
+  LOG(INFO) << "iotto " << __func__ << " this=" << this;
   DCHECK(!g_renderer_client);
   g_renderer_client = this;
 }
@@ -126,6 +134,8 @@ XWalkContentRendererClient::~XWalkContentRendererClient() {
 }
 
 void XWalkContentRendererClient::RenderThreadStarted() {
+//  web_cache_impl_.reset(new web_cache::WebCacheImpl());
+
   content::RenderThread* thread = content::RenderThread::Get();
 
   xwalk_render_thread_observer_.reset(new XWalkRenderThreadObserver);
@@ -405,9 +415,10 @@ void XWalkContentRendererClient::PrepareErrorPageForHttpStatusError(content::Ren
 }
 
 void XWalkContentRendererClient::AddSupportedKeySystems(
-    std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) {
+    std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems_properties) {
 #if defined(OS_ANDROID)
-  cdm::AddAndroidWidevine(key_systems);
+  cdm::AddAndroidWidevine(key_systems_properties);
+  cdm::AddAndroidPlatformKeySystems(key_systems_properties);
 #endif  // defined(OS_ANDROID)
 }
 

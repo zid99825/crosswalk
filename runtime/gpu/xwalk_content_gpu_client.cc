@@ -15,16 +15,25 @@ XWalkContentGpuClient::XWalkContentGpuClient(const GetSyncPointManagerCallback& 
       shared_image_manager_callback_(shared_image_manager_callback) {
 }
 
+XWalkContentGpuClient::XWalkContentGpuClient() {
+}
+
 XWalkContentGpuClient::~XWalkContentGpuClient() {
   // TODO Auto-generated destructor stub
 }
 
 gpu::SyncPointManager* XWalkContentGpuClient::GetSyncPointManager() {
-  return sync_point_manager_callback_.Run();
+  if (!sync_point_manager_callback_.is_null())
+    return sync_point_manager_callback_.Run();
+
+  return nullptr;
 }
 
 gpu::SharedImageManager* XWalkContentGpuClient::GetSharedImageManager() {
-  return shared_image_manager_callback_.Run();
+  if (!shared_image_manager_callback_.is_null())
+    return shared_image_manager_callback_.Run();
+
+  return nullptr;
 }
 
 } /* namespace xwalk */

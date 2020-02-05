@@ -24,6 +24,8 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 import com.tenta.metafs.MetaError;
+
+import org.chromium.base.Callback;
 import org.chromium.base.Log;
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.UserDataHost;
@@ -170,7 +172,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mXWalkView = xwView;
         mViewContext = mXWalkView.getContext();
         mContentsClientBridge = new XWalkContentsClientBridge(mXWalkView);
-        mXWalkContentsDelegateAdapter = new XWalkWebContentsDelegateAdapter(mContentsClientBridge,
+        mXWalkContentsDelegateAdapter = new XWalkWebContentsDelegateAdapter(context,mContentsClientBridge,
                 this);
         mIoThreadClient = new XWalkIoThreadClientImpl();
 
@@ -223,11 +225,23 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
-                                        XWalkGetBitmapCallback callback) {
-        if (mNativeContent == 0)
+                                        final XWalkGetBitmapCallback callback) {
+        if (mNativeContent == 0 || callback == null)
             return;
+        
+        nativeCaptureBitmapWithParams(mNativeContent, scale, new Callback<Bitmap>() {
+            @Override
+            public void onResult(Bitmap result) {
+                int errCode = 0;
+                if ( result == null ) {
+                    errCode = -1;
+                }
+                callback.onFinishGetBitmap(result, errCode);
+            }
+            
+        });
         // TODO(iotto)
-        Log.wtf("iotto", "TODO(iotto): implement");
+        Log.wtf("iotto", "captureBitmapWithParams: implement");
 //        mXWalkGetBitmapCallback = callback;
 //        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
 //        // mWebContents.getContentBitmapAsync(config, scale, srcRect,
@@ -273,16 +287,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
         SelectionPopupController controller = SelectionPopupController.fromWebContents(mWebContents);
         controller.setActionModeCallback(new XWalkActionModeCallback(mWebContents));
-
-        // TODO(iotto): 
-//        // Initialize ContentView.
-//        mContentViewCore = (ContentViewCoreImpl) ContentViewCore.create(mViewContext, getChromeVersion());
-//                //new ContentViewCore(mViewContext, "Crosswalk");
-//        mContentView = XWalkContentView.createContentView(mViewContext, mWebContents,
-//                mXWalkView);
-//        // TODO(iotto) create propper delegate
-//        mContentViewCore.initialize(ViewAndroidDelegate.createBasicDelegate(mContentView),
-//                mContentView, mWebContents, mWindow);
 
         // TODO(iotto) : implement
 //        if (mAutofillProvider != null) {
@@ -489,7 +493,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
                 break;
             case XWalkView.RELOAD_NORMAL:
             default:
-                mNavigationController.reload(true);
+                mNavigationController.loadIfNecessary();
         }
         mIsLoaded = true;
     }
@@ -1653,6 +1657,8 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private native void nativeFindNext(long nativeXWalkContent, boolean forward);
 
     private native void nativeClearMatches(long nativeXWalkContent);
+    
+    private native void nativeCaptureBitmapWithParams(long nativeXWalkContent, float scale, Callback<Bitmap> callback);
 
     // inner classes
     private static class WebContentsInternalsHolder implements WebContents.InternalsHolder {

@@ -14,8 +14,10 @@
 #include "base/files/file.h"
 #include "base/strings/string16.h"
 #include "content/public/renderer/content_renderer_client.h"
+#include "media/mojo/buildflags.h"
 #include "ui/base/page_transition_types.h"
 #include "xwalk/extensions/renderer/xwalk_extension_renderer_controller.h"
+
 #if defined(OS_ANDROID)
 #include "xwalk/runtime/renderer/android/xwalk_render_thread_observer.h"
 #else
@@ -24,6 +26,10 @@
 
 namespace visitedlink {
 class VisitedLinkSlave;
+}
+
+namespace web_cache {
+class WebCacheImpl;
 }
 
 namespace xwalk {
@@ -91,6 +97,8 @@ class XWalkContentRendererClient :
                                           const std::string& http_method,
                                           bool ignoring_cache,
                                           int http_status, std::string* error_html) override;
+
+//  std::unique_ptr<web_cache::WebCacheImpl> web_cache_impl_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkContentRendererClient)
   ;

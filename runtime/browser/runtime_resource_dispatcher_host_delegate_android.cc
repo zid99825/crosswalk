@@ -215,6 +215,7 @@ bool IoThreadClientThrottle::ShouldBlockRequest() {
     SetCacheControlFlag(request_, net::LOAD_ONLY_FROM_CACHE | net::LOAD_SKIP_CACHE_VALIDATION);
   } else {
     XWalkContentsIoThreadClient::CacheMode cache_mode = io_client->GetCacheMode();
+    LOG(WARNING) << "iotto " << __func__ << "check cache mode=" << cache_mode << " request_cache_mode=" << request_->load_flags();
     switch (cache_mode) {
       case XWalkContentsIoThreadClient::LOAD_CACHE_ELSE_NETWORK:
         SetCacheControlFlag(request_, net::LOAD_SKIP_CACHE_VALIDATION);
@@ -376,6 +377,7 @@ RemovePendingThrottleOnIoThread(
 void RuntimeResourceDispatcherHostDelegateAndroid::OnIoThreadClientReady(
     int new_render_process_id,
     int new_render_frame_id) {
+//  LOG(ERROR) << "iotto " << __func__ << " reinstate";
   base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::IO},
       base::BindOnce(
           &RuntimeResourceDispatcherHostDelegateAndroid::

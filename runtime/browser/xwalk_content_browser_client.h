@@ -57,7 +57,11 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
                                                          const base::FilePath& relative_partition_path) override;
   std::unique_ptr<content::BrowserMainParts> CreateBrowserMainParts(const content::MainFunctionParams& parameters)
       override;
+  void RunServiceInstance(const service_manager::Identity& identity,
+                          mojo::PendingReceiver<service_manager::mojom::Service>* receiver) override;
   void AppendExtraCommandLineSwitches(base::CommandLine* command_line, int child_process_id) override;
+  std::string GetApplicationLocale() override;
+  std::string GetAcceptLangs(content::BrowserContext* context) override;
   scoped_refptr<content::QuotaPermissionContext> CreateQuotaPermissionContext() override;
   content::GeneratedCodeCacheSettings GetGeneratedCodeCacheSettings(content::BrowserContext* context) override;
   content::WebContentsViewDelegate* GetWebContentsViewDelegate(content::WebContents* web_contents) override;
@@ -156,11 +160,10 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
 
 #if defined(OS_ANDROID)
   RuntimeResourceDispatcherHostDelegate* resource_dispatcher_host_delegate() {
+//    return nullptr;
     return resource_dispatcher_host_delegate_.get();
   }
 #endif
-
-  std::string GetApplicationLocale() override;
 
   std::string GetProduct() override;
   std::string GetUserAgent() override;
@@ -215,6 +218,8 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
 
   XWalkBrowserMainParts* main_parts_;
 
+//  std::unique_ptr<content::ResourceDispatcherHostDelegate>
+//      resource_dispatcher_host_delegate_;
   std::unique_ptr<RuntimeResourceDispatcherHostDelegate>
       resource_dispatcher_host_delegate_;
 

@@ -36,6 +36,7 @@
 #include "content/public/common/web_preferences.h"
 #include "gin/v8_initializer.h"
 #include "gin/public/isolate_holder.h"
+#include "media/mojo/buildflags.h"
 #include "net/ssl/ssl_info.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "ppapi/host/ppapi_host.h"
@@ -102,6 +103,11 @@
 //#include "xwalk/runtime/browser/xwalk_presentation_service_delegate_android.h"
 #elif defined(OS_WIN)
 #include "xwalk/runtime/browser/xwalk_presentation_service_delegate_win.h"
+#endif
+
+#if BUILDFLAG(ENABLE_MOJO_MEDIA_IN_BROWSER_PROCESS)
+#include "media/mojo/interfaces/constants.mojom.h"      // nogncheck
+#include "media/mojo/services/media_service_factory.h"  // nogncheck
 #endif
 
 #include "meta_logging.h"
@@ -178,12 +184,15 @@ void XWalkContentBrowserClient::GetAdditionalMappedFilesForChildProcess(
     int child_process_id,
     content::PosixFileDescriptorInfo* mappings) {
 
-      base::MemoryMappedFile::Region region;
-      int fd = ui::GetMainAndroidPackFd(&region);
-      mappings->ShareWithRegion(kXWalkMainPakDescriptor, fd, region);
+  base::MemoryMappedFile::Region region;
+  int fd = ui::GetMainAndroidPackFd(&region);
+  mappings->ShareWithRegion(kXWalkMainPakDescriptor, fd, region);
 
-      fd = ui::GetCommonResourcesPackFd(&region);
-      mappings->ShareWithRegion(kXWalk100PakDescriptor, fd, region);
+  fd = ui::GetCommonResourcesPackFd(&region);
+  mappings->ShareWithRegion(kXWalk100PakDescriptor, fd, region);
+
+  fd = ui::GetLocalePackFd(&region);
+  mappings->ShareWithRegion(kXWalkLocalePakDescriptor, fd, region);
 }
 #endif //defined(OS_ANDROID)
 
@@ -227,6 +236,18 @@ std::unique_ptr<content::BrowserMainParts> XWalkContentBrowserClient::CreateBrow
   return ret_val;
 }
 
+void XWalkContentBrowserClient::RunServiceInstance(const service_manager::Identity& identity,
+    mojo::PendingReceiver<service_manager::mojom::Service>* receiver) {
+  LOG(INFO) << "iotto " << __func__ << " identity=" << identity.name();
+#if BUILDFLAG(ENABLE_MOJO_MEDIA_IN_BROWSER_PROCESS)
+  LOG(INFO) << "iotto " << __func__ << " running identity=" << identity.name();
+  if (identity.name() == media::mojom::kMediaServiceName) {
+    service_manager::Service::RunAsyncUntilTermination(
+        media::CreateMediaService(std::move(*receiver)));
+  }
+#endif
+}
+
 // This allow us to append extra command line switches to the child
 // process we launch.
 void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
@@ -243,6 +264,18 @@ void XWalkContentBrowserClient::AppendExtraCommandLineSwitches(
 //
 //  command_line->CopySwitchesFrom(
 //      browser_process_cmd_line, extra_switches, base::size(extra_switches));
+}
+
+std::string XWalkContentBrowserClient::GetApplicationLocale() {
+  #if defined(OS_ANDROID)
+    return base::android::GetDefaultLocaleString();
+  #else
+    return content::ContentBrowserClient::GetApplicationLocale();
+  #endif
+}
+std::string XWalkContentBrowserClient::GetAcceptLangs(content::BrowserContext* context) {
+  LOG(WARNING) << "iotto " << __func__ << " Implement!";
+  return "en-US";
 }
 
 scoped_refptr<content::QuotaPermissionContext>
@@ -415,6 +448,13 @@ content::BrowserPpapiHost*
 
 #if defined(OS_ANDROID) || defined(OS_LINUX)
 void XWalkContentBrowserClient::ResourceDispatcherHostCreated() {
+//  resource_dispatcher_host_delegate_.reset(
+//      new content::ResourceDispatcherHostDelegate());
+//  content::ResourceDispatcherHost::Get()->SetDelegate(
+//      resource_dispatcher_host_delegate_.get());
+//
+//  LOG(WARNING) << "iotto " << __func__ << " reinstate ResourceDispatcherHostDelegate";
+
   resource_dispatcher_host_delegate_ =
       (RuntimeResourceDispatcherHostDelegate::Create());
   content::ResourceDispatcherHost::Get()->SetDelegate(
@@ -520,14 +560,6 @@ content::ControllerPresentationServiceDelegate* XWalkContentBrowserClient::
 //#else
 //  return nullptr;
 //#endif
-}
-
-std::string XWalkContentBrowserClient::GetApplicationLocale() {
-#if defined(OS_ANDROID)
-  return base::android::GetDefaultLocaleString();
-#else
-  return content::ContentBrowserClient::GetApplicationLocale();
-#endif
 }
 
 

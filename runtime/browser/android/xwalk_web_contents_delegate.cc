@@ -28,6 +28,8 @@
 //#include "xwalk/runtime/browser/runtime_file_select_helper.h"
 #include "xwalk/runtime/browser/runtime_javascript_dialog_manager.h"
 
+#include "components/viz/common/surfaces/surface_id.h"
+
 #include "meta_logging.h"
 #if defined(TENTA_CHROMIUM_BUILD)
 #include "xwalk/third_party/tenta/chromium_cache/meta_cache_backend.h"
@@ -311,20 +313,25 @@ void XWalkWebContentsDelegate::ShowRepostFormWarningDialog(WebContents* source) 
 
 void XWalkWebContentsDelegate::EnterFullscreenModeForTab(content::WebContents* web_contents, const GURL& origin,
                                                          const blink::WebFullscreenOptions& options) {
-  JNIEnv* env = AttachCurrentThread();
-  ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
-  if (obj.is_null())
-    return;
-  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj, true);
+  LOG(INFO) << "iotto " << __func__;
+//  JNIEnv* env = AttachCurrentThread();
+//  ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
+//  if (obj.is_null())
+//    return;
+//  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj, true);
+  WebContentsDelegateAndroid::EnterFullscreenModeForTab(web_contents, origin,
+                                                        options);
   web_contents->GetRenderViewHost()->GetWidget()->SynchronizeVisualProperties();
 }
 
 void XWalkWebContentsDelegate::ExitFullscreenModeForTab(content::WebContents* web_contents) {
-  JNIEnv* env = AttachCurrentThread();
-  ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
-  if (obj.is_null())
-    return;
-  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj, false);
+  LOG(INFO) << "iotto " << __func__;
+//  JNIEnv* env = AttachCurrentThread();
+//  ScopedJavaLocalRef<jobject> obj = GetJavaDelegate(env);
+//  if (obj.is_null())
+//    return;
+//  Java_XWalkWebContentsDelegate_toggleFullscreen(env, obj, false);
+  WebContentsDelegateAndroid::ExitFullscreenModeForTab(web_contents);
   web_contents->GetRenderViewHost()->GetWidget()->SynchronizeVisualProperties();
 }
 
@@ -398,6 +405,7 @@ void XWalkWebContentsDelegate::LoadingStateChanged(content::WebContents* source,
 }
 
 void XWalkWebContentsDelegate::SetOverlayMode(bool useOverlayMode) {
+  LOG(INFO) << "iotto " << __func__ << " mode=" << useOverlayMode;
   JNIEnv* env = AttachCurrentThread();
 
   ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
@@ -406,6 +414,14 @@ void XWalkWebContentsDelegate::SetOverlayMode(bool useOverlayMode) {
   } else {
     TENTA_LOG_CACHE(ERROR) << __func__ << " null_java_delegate";
   }
+}
+
+content::PictureInPictureResult XWalkWebContentsDelegate::EnterPictureInPicture(content::WebContents* web_contents,
+                                                                                const viz::SurfaceId& surfaceId,
+                                                                                const gfx::Size& natural_size) {
+
+  LOG(INFO) << "iotto " << __func__ << " surface=" << surfaceId.ToString();
+  return content::PictureInPictureResult::kSuccess;
 }
 
 bool RegisterXWalkWebContentsDelegate(JNIEnv* env) {

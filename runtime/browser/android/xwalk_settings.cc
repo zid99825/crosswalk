@@ -245,6 +245,7 @@ void XWalkSettings::PopulateWebPreferences(content::WebPreferences* webPrefs) {
   // Grab the lock and call PopulateWebPreferencesLocked.
   Java_XWalkSettings_populateWebPreferences(env, scoped_obj, reinterpret_cast<jlong>(webPrefs));
 
+  LOG(INFO) << "iotto " << __func__ << " accelerated_video_decode_enabled=" << webPrefs->accelerated_video_decode_enabled;
 }
 
 void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,
@@ -409,7 +410,7 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
       Java_XWalkSettings_getDoNotUpdateSelectionOnMutatingSelectionRange(env, obj);
 
   // default true
-    web_prefs->css_hex_alpha_color_enabled = true;
+    web_prefs->css_hex_alpha_color_enabled = false;
 //        Java_AwSettings_getCSSHexAlphaColorEnabledLocked(env, obj);
 
   // Keep spellcheck disabled on html elements unless the spellcheck="true"

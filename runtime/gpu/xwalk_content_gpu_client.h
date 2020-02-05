@@ -21,6 +21,7 @@ class XWalkContentGpuClient : public content::ContentGpuClient {
 
   XWalkContentGpuClient(const GetSyncPointManagerCallback& sync_point_manager_callback,
                         const GetSharedImageManagerCallback& shared_image_manager_callback);
+  XWalkContentGpuClient();
   ~XWalkContentGpuClient() override;
 
   // content::ContentGpuClient implementation.

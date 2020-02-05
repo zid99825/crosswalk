@@ -177,8 +177,12 @@ public class XWalkViewDelegate {
         // the CommandLine object before XWalkViewContent is created, here will create
         // the object to guarantee the CommandLine object is not null and the
         // consequent prodedure does not crash.
+        final String[] cmdLineOptions = readCommandLine(context.getApplicationContext());
+        
         if (!CommandLine.isInitialized()) {
-            CommandLine.init(readCommandLine(context.getApplicationContext()));
+            CommandLine.init(cmdLineOptions);
+        } else {
+            CommandLine.getInstance().appendSwitchesAndArguments(cmdLineOptions);
         }
 
         try {
@@ -191,8 +195,8 @@ public class XWalkViewDelegate {
         // is in the library apk if in shared apk mode.
         // ResourceExtractor.get();
         ResourceExtractor.get().setResultTraits(UiThreadTaskTraits.BOOTSTRAP);
-        ResourceBundle.setNoAvailableLocalePaks();
-        org.chromium.base.Log.w("iotto", "getUiLocaleStringForCompressedPak");
+        ResourceBundle.setAvailablePakLocales(new String[] {}, new String[]{"en-US"});
+//        ResourceBundle.setNoAvailableLocalePaks();
         //ResourceExtractor.get().startExtractingResources(LocaleUtils.toLanguage(
 //        ChromeLocalizationUtils.getUiLocaleStringForCompressedPak()));
         ResourceExtractor.get().startExtractingResources("en");
@@ -285,16 +289,16 @@ public class XWalkViewDelegate {
                         XWalkPreferences
                                 .getStringValue(XWalkPreferences.PROFILE_NAME));
 
-                if (XWalkPreferences
-                        .getValue(XWalkPreferences.ANIMATABLE_XWALK_VIEW) &&
-                        !CommandLine.getInstance()
-                                .hasSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION)) {
-                    CommandLine.getInstance().appendSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION);
-                }
+//                if (XWalkPreferences
+//                        .getValue(XWalkPreferences.ANIMATABLE_XWALK_VIEW) &&
+//                        !CommandLine.getInstance()
+//                                .hasSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION)) {
+//                    CommandLine.getInstance().appendSwitch(XWalkSwitches.DISABLE_GPU_RASTERIZATION);
+//                }
 
                 try {
                     BrowserStartupController.get(LibraryProcessType.PROCESS_BROWSER)
-                            .startBrowserProcessesSync(true);
+                            .startBrowserProcessesSync(false);
                 } catch (ProcessInitException e) {
                     throw new RuntimeException("Cannot initialize Crosswalk Core", e);
                 }

@@ -75,6 +75,8 @@ class XWalkWebContentsDelegate
   void LoadingStateChanged(content::WebContents* source, bool to_different_document) override;
 
   void SetOverlayMode(bool useOverlayMode) override;
+  content::PictureInPictureResult EnterPictureInPicture(content::WebContents* web_contents, const viz::SurfaceId&,
+                                                        const gfx::Size& natural_size) override;
 
   std::unique_ptr<content::FileSelectListener> TakeFileSelectListener();
  private:

@@ -5,6 +5,8 @@
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//third_party/ffmpeg/ffmpeg_options.gni")
+import("//media/media_options.gni")
+import("//mojo/public/tools/bindings/mojom.gni")
 import("//xwalk/build/version.gni")
 import("//xwalk/build/xwalk.gni")
 import("//xwalk/build/tenta.gni")
@@ -415,6 +417,7 @@ source_set("xwalk_runtime") {
     "//gin",
     "//ipc",
     "//media",
+    "//media/mojo:buildflags",
     "//net",
     "//net:net_resources",
     "//ppapi/buildflags",
@@ -457,7 +460,12 @@ source_set("xwalk_runtime") {
 #       "//xwalk/runtime/android/empty_tenta",
     ]
   }
-                             
+  if (mojo_media_host == "browser") {
+    deps += [
+      "//media/mojo/interfaces:constants",
+      "//media/mojo/services",
+    ]
+  }
   if (is_android) {
     deps += [
       "//content/public/android:content_java",

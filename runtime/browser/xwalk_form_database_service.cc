@@ -30,16 +30,18 @@ namespace xwalk {
 
 XWalkFormDatabaseService::XWalkFormDatabaseService(const base::FilePath path) {
   CHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
-  _db_task_runner = base::CreateSingleThreadTaskRunnerWithTraits({base::MayBlock()});
+  auto ui_task_runner = base::ThreadTaskRunnerHandle::Get();
+  _db_task_runner = base::CreateSingleThreadTaskRunnerWithTraits( { base::MayBlock(), base::TaskPriority::USER_VISIBLE,
+      base::TaskShutdownBehavior::BLOCK_SHUTDOWN });
   web_database_ = new WebDatabaseService(path.Append(kWebDataFilename),
-                                         base::CreateSingleThreadTaskRunnerWithTraits({content::BrowserThread::UI}),
+                                         ui_task_runner,
                                          _db_task_runner);
   web_database_->AddTable(
       std::unique_ptr<WebDatabaseTable>(new autofill::AutofillTable()));
   web_database_->LoadDatabase();
   autofill_data_ = new autofill::AutofillWebDataService(
       web_database_,
-      base::CreateSingleThreadTaskRunnerWithTraits({content::BrowserThread::UI}),
+      ui_task_runner,
       _db_task_runner,
       base::Bind(&DatabaseErrorCallback));
   autofill_data_->Init();

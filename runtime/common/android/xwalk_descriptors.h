@@ -11,7 +11,8 @@
 #include "content/public/common/content_descriptors.h"
 
 enum {
-  kXWalkMainPakDescriptor = kContentIPCDescriptorMax + 1,
+  kXWalkLocalePakDescriptor = kContentIPCDescriptorMax + 1,
+  kXWalkMainPakDescriptor,
   kXWalk100PakDescriptor
 };
 

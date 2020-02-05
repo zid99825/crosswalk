@@ -24,4 +24,16 @@ void XWalkPermissionClient::OnDestruct() {
   delete this;
 }
 
+bool XWalkPermissionClient::AllowDatabase() {
+  return true;
+}
+
+bool XWalkPermissionClient::AllowIndexedDB(const blink::WebSecurityOrigin&) {
+  return true;
+}
+
+bool XWalkPermissionClient::AllowStorage(bool local) {
+  return true;
+}
+
 }  // namespace xwalk

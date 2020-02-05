@@ -87,13 +87,13 @@ public class XWalkSettings {
     private int mCacheMode = WebSettings.LOAD_DEFAULT;
     private boolean mSupportMultipleWindows;// = false;
     private boolean mAppCacheEnabled;// = false;
-    private boolean mDomStorageEnabled;// = false;
+    private boolean mDomStorageEnabled = true;
     private boolean mDatabaseEnabled = true;
     private boolean mUseWideViewport;// = false;
     private boolean mZeroLayoutHeightDisablesViewportQuirk;
     private boolean mForceZeroLayoutHeight;
     private boolean mLoadWithOverviewMode;// = false;
-    private boolean mMediaPlaybackRequiresUserGesture;// = false;
+    private boolean mMediaPlaybackRequiresUserGesture = true;
     private String mDefaultVideoPosterURL;
     private final boolean mPasswordEchoEnabled;
 

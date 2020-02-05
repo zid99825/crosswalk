@@ -201,6 +201,7 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
     url_request_context_.reset(new net::URLRequestContext());
     network_delegate_.reset(new RuntimeNetworkDelegate);
     url_request_context_->set_network_delegate(network_delegate_.get());
+    url_request_context_->set_enable_brotli(true);
 
     // TODO(iotto): Make this configurable
     url_request_context_->set_check_cleartext_permitted(g_check_cleartext_permitted);
@@ -214,11 +215,13 @@ net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
 //
 //    network_quality_estimator_params["effective_connection_type_algorithm"] = "TransportRTTOrDownstreamThroughput";
 
-    network_quality_tracker_ = std::make_unique<network::NetworkQualityTracker>(
-        base::BindRepeating(&content::GetNetworkService));
-
-    network_quality_observer_ =
-        content::CreateNetworkQualityObserver(network_quality_tracker_.get());
+    // TODO(iotto): Create on UI thread?!
+    // see comment in content/browser/network_service_instance_impl.cc:182
+//    network_quality_tracker_ = std::make_unique<network::NetworkQualityTracker>(
+//        base::BindRepeating(&content::GetNetworkService));
+//
+//    network_quality_observer_ =
+//        content::CreateNetworkQualityObserver(network_quality_tracker_.get());
 
     storage_.reset(
         new net::URLRequestContextStorage(url_request_context_.get()));
