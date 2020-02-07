@@ -627,12 +627,14 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     public void onPause() {
+        Log.d("iotto", "onPause nativeContent=%s webContents=%s", mNativeContent, mWebContents);
         if (mNativeContent == 0)
             return;
         mWebContents.onHide();
     }
 
     public void onResume() {
+        Log.d("iotto", "onResume nativeContent=%s webContents=%s", mNativeContent, mWebContents);
         if (mNativeContent == 0)
             return;
         mWebContents.onShow();

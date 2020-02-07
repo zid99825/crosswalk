@@ -404,6 +404,14 @@ void XWalkWebContentsDelegate::LoadingStateChanged(content::WebContents* source,
 #endif
 }
 
+bool XWalkWebContentsDelegate::ShouldResumeRequestsForCreatedWindow() {
+  TENTA_LOG(INFO) << "iotto " << __func__;
+  // Always return false here since we need to defer loading the created window
+  // until after we have attached a new delegate to the new webcontents (which
+  // happens asynchronously).
+  return false;
+}
+
 void XWalkWebContentsDelegate::SetOverlayMode(bool useOverlayMode) {
   LOG(INFO) << "iotto " << __func__ << " mode=" << useOverlayMode;
   JNIEnv* env = AttachCurrentThread();

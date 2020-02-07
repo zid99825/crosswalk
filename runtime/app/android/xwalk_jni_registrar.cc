@@ -17,7 +17,6 @@
 #include "xwalk/runtime/browser/android/xwalk_content.h"
 #include "xwalk/runtime/browser/android/xwalk_content_lifecycle_notifier.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
-#include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client_impl.h"
 #include "xwalk/runtime/browser/android/xwalk_dev_tools_server.h"
 #include "xwalk/runtime/browser/android/xwalk_http_auth_handler.h"
 #include "xwalk/runtime/browser/android/xwalk_path_helper.h"

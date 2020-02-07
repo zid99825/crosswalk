@@ -94,11 +94,13 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
 
     @Override
     public void rendererUnresponsive() {
+        org.chromium.base.Log.d("iotto", "rendererUnresponsive");
         if (mXWalkContentsClient != null) mXWalkContentsClient.onRendererUnresponsive();
     }
 
     @Override
     public void rendererResponsive() {
+        org.chromium.base.Log.d("iotto", "rendererUnresponsive");
         if (mXWalkContentsClient != null) mXWalkContentsClient.onRendererResponsive();
     }
 

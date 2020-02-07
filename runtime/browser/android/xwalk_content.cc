@@ -50,7 +50,7 @@
 #include "xwalk/runtime/browser/android/xwalk_autofill_client_android.h"
 #include "xwalk/runtime/browser/android/xwalk_content_lifecycle_notifier.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
-#include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client_impl.h"
+#include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
 #include "xwalk/runtime/browser/android/xwalk_web_contents_delegate.h"
 #include "xwalk/runtime/browser/runtime_resource_dispatcher_host_delegate_android.h"
 #include "xwalk/runtime/browser/xwalk_autofill_manager.h"
@@ -283,7 +283,7 @@ void XWalkContent::SetJavaPeers(
 
   web_contents_->SetUserData(kXWalkContentUserDataKey, std::make_unique<XWalkContentUserData>(this));
 
-  XWalkContentsIoThreadClientImpl::RegisterPendingContents(web_contents_.get());
+  XWalkContentsIoThreadClient::RegisterPendingContents(web_contents_.get());
 
 #ifdef TENTA_CHROMIUM_BUILD
   _zone_id = Java_XWalkContent_getZoneId(env, obj);
@@ -308,7 +308,7 @@ void XWalkContent::SetJavaPeers(
 
   XWalkContentsClientBridge::Associate(web_contents_.get(),
                                            contents_client_bridge_.get());
-  XWalkContentsIoThreadClientImpl::Associate(web_contents_.get(), io_thread_client);
+  XWalkContentsIoThreadClient::Associate(web_contents_.get(), io_thread_client);
 
   for (content::RenderFrameHost* rfh : web_contents_->GetAllFrames()) {
     int render_process_id = rfh->GetProcess()->GetID();

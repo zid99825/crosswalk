@@ -186,7 +186,7 @@ void XwalkProxyingRestrictedCookieManager::CreateAndBindOnIoThread(
 bool XwalkProxyingRestrictedCookieManager::AllowCookies(
     const GURL& url,
     const GURL& site_for_cookies) const {
-  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!";
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!" << " url=" << url.spec();
   // see: android_webview/browser/network_service/aw_proxying_restricted_cookie_manager.cc
   return true;
 //  if (is_service_worker_) {

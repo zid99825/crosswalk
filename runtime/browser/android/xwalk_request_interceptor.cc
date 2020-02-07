@@ -76,6 +76,7 @@ net::URLRequestJob* XWalkRequestInterceptor::MaybeInterceptRequest(
 
   if (!xwalk_web_resource_response)
     return nullptr;
+  LOG(WARNING) << "iotto " << __func__ << " job_created";
   return XWalkWebResourceResponse::CreateJobFor(
     std::move(xwalk_web_resource_response), request, network_delegate);
 }

@@ -8,8 +8,13 @@
 #include <memory>
 #include <string>
 
+#include "base/android/scoped_java_ref.h"
 
 class GURL;
+
+namespace content {
+class WebContents;
+}
 
 namespace net {
 class HttpResponseHeaders;
@@ -46,15 +51,18 @@ class XWalkContentsIoThreadClient {
     LOAD_CACHE_ONLY = 3,
   };
 
-  virtual ~XWalkContentsIoThreadClient() {}
+  // Either |pending_associate| is true or |jclient| holds a non-null
+  // Java object.
+  XWalkContentsIoThreadClient(bool pending_associate, const base::android::JavaRef<jobject>& jclient);
+  ~XWalkContentsIoThreadClient();
 
-  // Returns whether this is a new pop up that is still waiting for association
-  // with the java counter part.
-  virtual bool PendingAssociation() const = 0;
+  // Called when XWalkContent is created before there is a Java client.
+  static void RegisterPendingContents(content::WebContents* web_contents);
 
-  // Retrieve CacheMode setting value of this XWalkContent.
-  // This method is called on the IO thread only.
-  virtual CacheMode GetCacheMode() const = 0;
+  // Associates the |jclient| instance (which must implement the
+  // XWalkContentsIoThreadClient Java interface) with the |web_contents|.
+  // This should be called at most once per |web_contents|.
+  static void Associate(content::WebContents* web_contents, const base::android::JavaRef<jobject>& jclient);
 
   // This will attempt to fetch the XWalkContentsIoThreadClient for the given
   // |render_process_id|, |render_frame_id| pair.
@@ -67,30 +75,39 @@ class XWalkContentsIoThreadClient {
   static std::unique_ptr<XWalkContentsIoThreadClient> FromID(int frame_tree_node_id);
 
   // Called on the IO thread when a subframe is created.
-  static void SubFrameCreated(int render_process_id,
-                              int parent_render_frame_id,
-                              int child_render_frame_id);
+  static void SubFrameCreated(int render_process_id, int parent_render_frame_id, int child_render_frame_id);
+
+  // Returns whether this is a new pop up that is still waiting for association
+  // with the java counter part.
+  bool PendingAssociation() const;
+
+  // Retrieve CacheMode setting value of this XWalkContent.
+  // This method is called on the IO thread only.
+  CacheMode GetCacheMode() const;
 
   // This method is called on the IO thread only.
-  virtual std::unique_ptr<XWalkWebResourceResponse> ShouldInterceptRequest(
-      const GURL& location,
-      const net::URLRequest* request) = 0;
+  std::unique_ptr<XWalkWebResourceResponse> ShouldInterceptRequest(const GURL& location,
+                                                                   const net::URLRequest* request);
 
   // Retrieve the AllowContentAccess setting value of this XWalkContent.
   // This method is called on the IO thread only.
-  virtual bool ShouldBlockContentUrls() const = 0;
+  bool ShouldBlockContentUrls() const;
 
   // Retrieve the AllowFileAccess setting value of this XWalkContent.
   // This method is called on the IO thread only.
-  virtual bool ShouldBlockFileUrls() const = 0;
+  bool ShouldBlockFileUrls() const;
 
   // Retrieve the BlockNetworkLoads setting value of this XWalkContent.
   // This method is called on the IO thread only.
-  virtual bool ShouldBlockNetworkLoads() const = 0;
+  bool ShouldBlockNetworkLoads() const;
 
-  virtual void OnReceivedResponseHeaders(
-    const net::URLRequest* request,
-    const net::HttpResponseHeaders* response_headers) = 0;
+  void OnReceivedResponseHeaders(const net::URLRequest* request, const net::HttpResponseHeaders* response_headers);
+
+ private:
+  bool pending_association_;
+  base::android::ScopedJavaGlobalRef<jobject> java_object_;
+
+  DISALLOW_COPY_AND_ASSIGN(XWalkContentsIoThreadClient);
 };
 
 }  // namespace xwalk

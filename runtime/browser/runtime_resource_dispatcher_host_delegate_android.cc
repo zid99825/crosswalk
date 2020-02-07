@@ -242,6 +242,8 @@ RuntimeResourceDispatcherHostDelegateAndroid::
 void RuntimeResourceDispatcherHostDelegateAndroid::RequestBeginning(
     net::URLRequest* request, content::ResourceContext* resource_context, content::AppCacheService* appcache_service,
     content::ResourceType resource_type, std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
+//  LOG(WARNING) << "iotto " << __func__ << " reinstate";
+//  return;
 
   content::ResourceRequestInfo* request_info = content::ResourceRequestInfo::ForRequest(request);
 
@@ -292,6 +294,8 @@ void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
       bool must_download,
       bool is_new_request,
       std::vector<std::unique_ptr<content::ResourceThrottle>>* throttles) {
+//  LOG(WARNING) << "iotto " << __func__ << " reinstate";
+//  return;
 
   GURL url(request->url());
   std::string user_agent;
@@ -323,6 +327,8 @@ void RuntimeResourceDispatcherHostDelegateAndroid::DownloadStarting(
 
 void RuntimeResourceDispatcherHostDelegateAndroid::OnResponseStarted(net::URLRequest* request, content::ResourceContext* resource_context,
                                                                      network::ResourceResponse* response) {
+//  LOG(WARNING) << "iotto " << __func__ << " reinstate";
+//  return;
   content::ResourceRequestInfo* request_info = content::ResourceRequestInfo::ForRequest(request);
   if (!request_info) {
     DLOG(FATAL) << "Started request without associated info: " << request->url();

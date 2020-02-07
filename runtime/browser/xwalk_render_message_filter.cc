@@ -9,6 +9,7 @@
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
 #include "xwalk/runtime/common/android/xwalk_render_view_messages.h"
+#include "meta_logging.h"
 #endif
 
 #include "xwalk/runtime/common/xwalk_common_messages.h"
@@ -57,9 +58,7 @@ bool XWalkRenderMessageFilter::OnMessageReceived(
 }
 
 void XWalkRenderMessageFilter::OnOpenLinkExternal(const GURL& url) {
-#if TENTA_LOG_ENABLE == 1
-  LOG(INFO) << "OpenLinkExternal: " << url.spec();
-#endif
+  TENTA_LOG_NET(WARNING) << "OpenLinkExternal: " << url.spec();
   platform_util::OpenExternal(url);
 }
 
@@ -77,6 +76,8 @@ void XWalkRenderMessageFilter::OnShouldOverrideUrlLoading(int render_frame_id,
                                                           bool is_redirect,
                                                           bool is_main_frame,
                                                           bool* ignore_navigation) {
+//  LOG(WARNING) << "iotto " << __func__ << " reinstate";
+//  return;
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   *ignore_navigation = false;
   XWalkContentsClientBridge* client =
@@ -105,6 +106,8 @@ void XWalkRenderMessageFilter::OnWillSendRequest(int render_frame_id, const std:
                                                  bool* did_overwrite) {
   // TODO(iotto) check new_url/did_overwrite for null
   *did_overwrite = false;
+//  LOG(ERROR) << "iotto " << __func__ << " Move to runtime_network_delegate!";
+//  return;
   XWalkContentsClientBridge* client =
       XWalkContentsClientBridge::FromRenderFrameID(process_id_, render_frame_id);
 

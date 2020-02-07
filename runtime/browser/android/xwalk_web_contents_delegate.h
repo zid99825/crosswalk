@@ -73,7 +73,7 @@ class XWalkWebContentsDelegate
 
   void NavigationStateChanged(content::WebContents* source, content::InvalidateTypes changed_flags) override;
   void LoadingStateChanged(content::WebContents* source, bool to_different_document) override;
-
+  bool ShouldResumeRequestsForCreatedWindow() override;
   void SetOverlayMode(bool useOverlayMode) override;
   content::PictureInPictureResult EnterPictureInPicture(content::WebContents* web_contents, const viz::SurfaceId&,
                                                         const gfx::Size& natural_size) override;
