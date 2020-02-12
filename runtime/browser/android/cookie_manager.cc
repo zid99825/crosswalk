@@ -37,7 +37,6 @@
 #include "net/cookies/cookie_options.h"
 #include "net/cookies/cookie_store.h"
 #include "net/cookies/cookie_util.h"
-#include "net/url_request/url_request_context.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkCookieManager_jni.h"
 #include "xwalk/runtime/browser/android/scoped_allow_wait_for_legacy_web_view_api.h"

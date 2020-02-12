@@ -83,6 +83,24 @@ executable("xwalk") {
   }
 }
 
+source_set("xwalk_cookies") {
+  sources = [
+    "runtime/browser/android/cookie_manager.cc",
+    "runtime/browser/android/cookie_manager.h",
+    "runtime/browser/android/net/xwalk_cookie_change_dispatcher_wrapper.cc",
+    "runtime/browser/android/net/xwalk_cookie_change_dispatcher_wrapper.h",
+    "runtime/browser/android/net/xwalk_cookie_store_wrapper.cc",
+    "runtime/browser/android/net/xwalk_cookie_store_wrapper.h",
+  ]
+  if ( tenta_chromium_build ) {
+    deps = [
+      "//third_party/boringssl",
+      "//xwalk/runtime/android/empty_tenta",
+      "//xwalk/third_party/tenta/crosswalk_extensions:cookie_store",
+    ]
+  }
+}
+
 source_set("xwalk_runtime") {
   sources = [
     "//extensions/common/constants.cc",
@@ -93,8 +111,6 @@ source_set("xwalk_runtime") {
     "runtime/app/android/xwalk_main_delegate_android.h",
     "runtime/app/xwalk_main_delegate.cc",
     "runtime/app/xwalk_main_delegate.h",
-    "runtime/browser/android/cookie_manager.cc",
-    "runtime/browser/android/cookie_manager.h",
     "runtime/browser/android/find_helper.cc",
     "runtime/browser/android/find_helper.h",
     "runtime/browser/android/net/android_protocol_handler.cc",
@@ -109,10 +125,6 @@ source_set("xwalk_runtime") {
     "runtime/browser/android/net/input_stream_reader.h",
     "runtime/browser/android/net/url_constants.cc",
     "runtime/browser/android/net/url_constants.h",
-    "runtime/browser/android/net/xwalk_cookie_change_dispatcher_wrapper.cc",
-    "runtime/browser/android/net/xwalk_cookie_change_dispatcher_wrapper.h",
-    "runtime/browser/android/net/xwalk_cookie_store_wrapper.cc",
-    "runtime/browser/android/net/xwalk_cookie_store_wrapper.h",
     "runtime/browser/android/net/xwalk_url_request_job_factory.cc",
     "runtime/browser/android/net/xwalk_url_request_job_factory.h",
     "runtime/browser/android/net_disk_cache_remover.cc",
@@ -380,6 +392,7 @@ source_set("xwalk_runtime") {
     "XWALK_VERSION=\"$xwalk_version\"",
   ]
   deps = [
+    ":xwalk_cookies",
 #     ":generate_upstream_blink_version",
 #    "//android_webview:common",
     "//build/util:webkit_version",
