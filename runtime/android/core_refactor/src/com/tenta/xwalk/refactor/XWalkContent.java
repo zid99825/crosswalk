@@ -17,7 +17,9 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.View.OnTouchListener;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.webkit.JavascriptInterface;
@@ -33,6 +35,7 @@ import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.components.embedder_support.view.ContentViewRenderView;
 import org.chromium.components.navigation_interception.InterceptNavigationDelegate;
+import org.chromium.content_public.browser.ChildProcessImportance;
 import org.chromium.content_public.browser.ContentViewStatics;
 import org.chromium.content_public.browser.GestureListenerManager;
 import org.chromium.content_public.browser.JavaScriptCallback;
@@ -285,8 +288,8 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mContentView = XWalkContentView.createContentView(mViewContext, mWebContents, mXWalkView);
 
         mWebContentsInternalsHolder = new WebContentsInternalsHolder(this);
-        mWebContents.initialize(getChromeVersion(),
-                ViewAndroidDelegate.createBasicDelegate(mContentView), mContentView, mWindow,
+        mWebContents.initialize(getChromeVersion(), new ViewAndroidDelegateInternal(mContentView),
+                /*ViewAndroidDelegate.createBasicDelegate(mContentView),*/ mContentView, mWindow,
                 mWebContentsInternalsHolder);
 
         SelectionPopupController controller = SelectionPopupController.fromWebContents(mWebContents);
@@ -361,6 +364,25 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
                 mContentsClientBridge.getInterceptNavigationDelegate());
     }
 
+    /**
+     * 
+     * @author iotto
+     *
+     */
+    private class ViewAndroidDelegateInternal extends ViewAndroidDelegate {
+
+        protected ViewAndroidDelegateInternal(ViewGroup containerView) {
+            super(containerView);
+        }
+
+        @Override
+        public View acquireView() {
+            final View retVal = super.acquireView();
+            Log.d("iotto", "acquireView %s", retVal);
+            return retVal;
+        }
+    }
+    
     // TODO(iotto): Fix popup support!
     public void supplyContentsForPopup(XWalkContent newContents) {
         Log.e("iotto", "Fix: supplyContentsForPopup");
@@ -626,20 +648,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mContentsClientBridge.setNotificationService(service);
     }
 
-    public void onPause() {
-        Log.d("iotto", "onPause nativeContent=%s webContents=%s", mNativeContent, mWebContents);
-        if (mNativeContent == 0)
-            return;
-        mWebContents.onHide();
-    }
-
-    public void onResume() {
-        Log.d("iotto", "onResume nativeContent=%s webContents=%s", mNativeContent, mWebContents);
-        if (mNativeContent == 0)
-            return;
-        mWebContents.onShow();
-    }
-
     public boolean onNewIntent(Intent intent) {
         if (mNativeContent == 0)
             return false;
@@ -702,6 +710,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     public void stopLoading() {
+        Log.d("iotto", "stopLoading nativeContent=%s webContents=%s", mNativeContent, mWebContents);
         if (mNativeContent == 0)
             return;
         mWebContents.stop();
@@ -724,6 +733,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     // details in content_view_statics.cc.
     // We need follow up after upstream updates that.
     public void pauseTimers() {
+        Log.d("iotto", "pauseTimers nativeContent=%s webContents=%s", mNativeContent, mWebContents);
         if (timerPaused || (mNativeContent == 0))
             return;
         ContentViewStatics.setWebKitSharedTimersSuspended(true);
@@ -731,12 +741,86 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     public void resumeTimers() {
+        Log.d("iotto", "resumeTimers nativeContent=%s webContents=%s", mNativeContent, mWebContents);
         if (!timerPaused || (mNativeContent == 0))
             return;
         ContentViewStatics.setWebKitSharedTimersSuspended(false);
         timerPaused = false;
     }
 
+    private boolean mIsPaused;
+    // Visiblity state of |mWebContents|.
+    private boolean mIsContentVisible;
+    private boolean mRendererPriorityWaivedWhenNotVisible = true;
+//    private @RendererPriority int mRendererPriority = RendererPriority.INITIAL;
+    
+    public void onPause() {
+        Log.d("iotto", "onPause nativeContent=%s webContents=%s", mNativeContent, mWebContents);
+        if (mNativeContent == 0)
+            return;
+        // TODO(iotto): Implement the isDestroyed
+        if (mIsPaused /*|| isDestroyed(NO_WARN)*/) return;
+        mIsPaused = true;
+//        nativeSetIsPaused(mNativeContent, mIsPaused);
+
+        // Geolocation is paused/resumed via the page visibility mechanism.
+        updateWebContentsVisibility();
+
+//        mWebContents.onHide();
+    }
+
+    public void onResume() {
+        Log.d("iotto", "onResume nativeContent=%s webContents=%s", mNativeContent, mWebContents);
+        if (mNativeContent == 0)
+            return;
+     // TODO(iotto): Implement the isDestroyed
+        if (!mIsPaused /*|| isDestroyed(NO_WARN)*/) return;
+        mIsPaused = false;
+//        nativeSetIsPaused(mNativeAwContents, mIsPaused);
+        updateWebContentsVisibility();
+//        mWebContents.onShow();
+    }
+
+    private void updateWebContentsVisibility() {
+//        mIsUpdateVisibilityTaskPending = false;
+//        if (isDestroyed(NO_WARN)) return;
+        boolean contentVisible = !mIsPaused; 
+                //nativeIsVisible(mNativeAwContents);
+
+        if (contentVisible && !mIsContentVisible) {
+            mWebContents.onShow();
+        } else if (!contentVisible && mIsContentVisible) {
+            mWebContents.onHide();
+        }
+        mIsContentVisible = contentVisible;
+        updateChildProcessImportance();
+    }
+    
+    private void updateChildProcessImportance() {
+        @ChildProcessImportance
+        int effectiveImportance = ChildProcessImportance.IMPORTANT;
+        if (mRendererPriorityWaivedWhenNotVisible && !mIsContentVisible) {
+            effectiveImportance = ChildProcessImportance.NORMAL;
+        }
+//        } else {
+//            switch (mRendererPriority) {
+//                case RendererPriority.INITIAL:
+//                case RendererPriority.HIGH:
+//                    effectiveImportance = ChildProcessImportance.IMPORTANT;
+//                    break;
+//                case RendererPriority.LOW:
+//                    effectiveImportance = ChildProcessImportance.MODERATE;
+//                    break;
+//                case RendererPriority.WAIVED:
+//                    effectiveImportance = ChildProcessImportance.NORMAL;
+//                    break;
+//                default:
+//                    assert false;
+//            }
+//        }
+        mWebContents.setImportance(effectiveImportance);
+    }
+    
     public String getOriginalUrl() {
         if (mNativeContent == 0)
             return null;

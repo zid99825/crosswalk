@@ -329,9 +329,7 @@ net::CookieStore* CookieManager::GetCookieStore() {
 
     FilePath cookie_store_path = user_data_dir.Append(FILE_PATH_LITERAL("Cookies"));
 
-#if TENTA_LOG_COOKIE_ENABLE == 1
-    LOG(INFO) << "!!! " << __func__ << " cookie_store_path=" << cookie_store_path.value();
-#endif
+    TENTA_LOG_COOKIE(INFO) << "!!! " << __func__ << " cookie_store_path=" << cookie_store_path.value();
     content::CookieStoreConfig cookie_config(cookie_store_path,
                                              true /* restore_old_session_cookies */,
                                              true /* persist_session_cookies */,
@@ -736,16 +734,21 @@ void CookieManager::SetZoneAsyncHelper(const std::string& zone, base::WaitableEv
   TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone;
 
   GetCookieStore();
-  if (_tenta_store->zone().empty()) {  // nothing is loaded so safe to just set the zone
+  std::string current_zone(_tenta_store->zone());
+  if (current_zone.empty()) {  // nothing is loaded so safe to just set the zone
+    TENTA_LOG_COOKIE(INFO) << __func__ << " empty_zone newZone=" << zone;
     _tenta_store->ZoneSwitching(true);  // zone switch started
     _tenta_store->ZoneChanged(zone);
     _tenta_store->ZoneSwitching(false);  // done switching zone
-  } else if (_tenta_store->zone().compare(zone) != 0) {
+  } else if (current_zone.compare(zone) != 0) {
+    TENTA_LOG_COOKIE(INFO) << __func__ << " different_zone newZone=" << zone;
     _tenta_store->ZoneSwitching(true);  // zone switch started
     _tenta_store->ZoneChanged(zone);
 
     GetCookieStore()->DeleteAllAsync(
         base::BindOnce(&CookieManager::SetZoneDoneDelete, base::Unretained(this), zone));
+  } else {
+    TENTA_LOG_COOKIE(INFO) << __func__ << " zones_match zone=" << zone;
   }
 }
 

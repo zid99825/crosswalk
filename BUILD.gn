@@ -107,6 +107,8 @@ source_set("xwalk_runtime") {
     "//extensions/common/constants.h",
     "//extensions/common/url_pattern.cc",
     "//extensions/common/url_pattern.h",
+    "//android_webview/browser/scoped_add_feature_flags.cc",
+    "//android_webview/browser/scoped_add_feature_flags.h",
     "runtime/app/android/xwalk_main_delegate_android.cc",
     "runtime/app/android/xwalk_main_delegate_android.h",
     "runtime/app/xwalk_main_delegate.cc",

@@ -34,7 +34,13 @@
 #include "xwalk/runtime/common/xwalk_resource_delegate.h"
 #include "xwalk/runtime/gpu/xwalk_content_gpu_client.h"
 
+#include "android_webview/browser/scoped_add_feature_flags.h"
+#include "components/viz/common/features.h"
+#include "content/public/common/content_features.h"
+#include "gpu/command_buffer/service/gpu_switches.h"
+#include "gpu/config/gpu_finch_features.h"
 #include "media/base/media_switches.h"
+#include "third_party/blink/public/common/features.h"
 #include "ui/display/display_switches.h"
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/gl_switches.h"
@@ -121,104 +127,112 @@ XWalkMainDelegateAndroid::~XWalkMainDelegateAndroid() {
 }
 
 bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
-//  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
-//
-//  command_line.AppendSwitch(cc::switches::kEnableGpuBenchmarking);
-////  command_line.AppendSwitch(cc::switches::kShowCompositedLayerBorders);
-////
-////      command_line.AppendSwitch(switches::kEnableLogging);
-////      command_line.AppendSwitch(switches::kAllowFileAccessFromFiles);
-////      // only default to a software GL if the flag isn't already specified.
-//
-//  // will cause crash
-////      if (!command_line.HasSwitch(switches::kUseGpuInTests) &&
-////          !command_line.HasSwitch(switches::kUseGL)) {
-////        command_line.AppendSwitchASCII(
-////            switches::kUseGL,
-////            gl::GetGLImplementationName(gl::GetSoftwareGLImplementation()));
-////      }
-//      command_line.AppendSwitchASCII(
-//          switches::kTouchEventFeatureDetection,
-//          switches::kTouchEventFeatureDetectionEnabled);
-//
-//      // screws up display
-////      if (!command_line.HasSwitch(switches::kForceDeviceScaleFactor))
-////        command_line.AppendSwitchASCII(switches::kForceDeviceScaleFactor, "1.0");
-//
-//      if (!command_line.HasSwitch(switches::kAutoplayPolicy)) {
-//        command_line.AppendSwitchASCII(
-//            switches::kAutoplayPolicy,
-//            switches::autoplay::kNoUserGestureRequiredPolicy);
-//      }
-//
-//      // causes blank page
-////      if (!command_line.HasSwitch(switches::kEnableThreadedCompositing)) {
-////        command_line.AppendSwitch(switches::kDisableThreadedCompositing);
-////        command_line.AppendSwitch(cc::switches::kDisableThreadedAnimation);
-////      }
-//
-//      // With display compositor pixel dumps, we ensure that we complete all
-//      // stages of compositing before draw. We also can't have checker imaging,
-//      // since it's imcompatible with single threaded compositor and display
-//      // compositor pixel dumps.
-//      //
-//      // TODO(crbug.com/894613) Add kRunAllCompositorStagesBeforeDraw back here
-//      // once you figure out why it causes so much web test flakiness.
-//      // command_line.AppendSwitch(switches::kRunAllCompositorStagesBeforeDraw);
-//
-//      command_line.AppendSwitch(cc::switches::kDisableCheckerImaging);
-//
-//      command_line.AppendSwitch(switches::kMuteAudio);
-//
-//      command_line.AppendSwitch(switches::kEnablePreciseMemoryInfo);
-//
-////      command_line.AppendSwitchASCII(network::switches::kHostResolverRules,
-////                                     "MAP nonexistent.*.test ~NOTFOUND,"
-////                                     "MAP *.test. 127.0.0.1,"
-////                                     "MAP *.test 127.0.0.1");
-//
-////      command_line.AppendSwitch(switches::kEnablePartialRaster);
-//
-//      command_line.AppendSwitch(switches::kEnableWebAuthTestingAPI);
-//
-//      if (!command_line.HasSwitch(switches::kForceGpuRasterization) &&
-//          !command_line.HasSwitch(switches::kEnableGpuRasterization)) {
-//        command_line.AppendSwitch(switches::kDisableGpuRasterization);
-//      }
-//
-//      // If the virtual test suite didn't specify a display color space, then
-//      // force sRGB.
-//      if (!command_line.HasSwitch(switches::kForceDisplayColorProfile)) {
-//        command_line.AppendSwitchASCII(switches::kForceDisplayColorProfile,
-//                                       "srgb");
-//      }
-//
-//      // We want stable/baseline results when running web tests.
-////      command_line.AppendSwitch(switches::kDisableSkiaRuntimeOpts);
-//
-////      command_line.AppendSwitch(switches::kDisallowNonExactResourceReuse);
-//
-//      // Always run with fake media devices.
-////      command_line.AppendSwitch(switches::kUseFakeUIForMediaStream);
-//      command_line.AppendSwitch(switches::kUseFakeDeviceForMediaStream);
-//
-//      // Always disable the unsandbox GPU process for DX12 and Vulkan Info
-//      // collection to avoid interference. This GPU process is launched 15
-//      // seconds after chrome starts.
-////      command_line.AppendSwitch(
-////          switches::kDisableGpuProcessForDX12VulkanInfoCollection);
-
 
   content_client_.reset(new XWalkContentClient);
   content::SetContentClient(content_client_.get());
 
-//  logging::LoggingSettings settings;
-//  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
-//  logging::InitLogging(settings);
-//  logging::SetLogItems(true /* Process ID */, true /* Thread ID */,
-//                       true /* Timestamp */, false /* Tick count */);
+  base::CommandLine* cl = base::CommandLine::ForCurrentProcess();
 
-  // command_line.AppendSwitch(switches::kEnablePartialRaster);
+  // WebView uses the Android system's scrollbars and overscroll glow.
+  cl->AppendSwitch(switches::kDisableOverscrollEdgeEffect);
+
+  // Pull-to-refresh should never be a default WebView action.
+  cl->AppendSwitch(switches::kDisablePullToRefreshEffect);
+
+  // Not yet supported in single-process mode.
+  cl->AppendSwitch(switches::kDisableSharedWorkers);
+
+  // File system API not supported (requires some new API; internal bug 6930981)
+  cl->AppendSwitch(switches::kDisableFileSystem);
+
+  // Web Notification API and the Push API are not supported (crbug.com/434712)
+  cl->AppendSwitch(switches::kDisableNotifications);
+
+  // WebRTC hardware decoding is not supported, internal bug 15075307
+  cl->AppendSwitch(switches::kDisableWebRtcHWDecoding);
+
+  // Check damage in OnBeginFrame to prevent unnecessary draws.
+  cl->AppendSwitch(cc::switches::kCheckDamageEarly);
+
+  // This is needed for sharing textures across the different GL threads.
+  cl->AppendSwitch(switches::kEnableThreadedTextureMailboxes);
+
+  // WebView does not yet support screen orientation locking.
+  cl->AppendSwitch(switches::kDisableScreenOrientationLock);
+
+  // WebView does not currently support Web Speech Synthesis API,
+  // but it does support Web Speech Recognition API (crbug.com/487255).
+  cl->AppendSwitch(switches::kDisableSpeechSynthesisAPI);
+
+  // WebView does not currently support the Permissions API (crbug.com/490120)
+  cl->AppendSwitch(switches::kDisablePermissionsAPI);
+
+  // WebView does not (yet) save Chromium data during shutdown, so add setting
+  // for Chrome to aggressively persist DOM Storage to minimize data loss.
+  // http://crbug.com/479767
+  cl->AppendSwitch(switches::kEnableAggressiveDOMStorageFlushing);
+
+  // Webview does not currently support the Presentation API, see
+  // https://crbug.com/521319
+  cl->AppendSwitch(switches::kDisablePresentationAPI);
+
+  // WebView doesn't support Remote Playback API for the same reason as the
+  // Presentation API, see https://crbug.com/521319.
+  cl->AppendSwitch(switches::kDisableRemotePlaybackAPI);
+
+  // WebView does not support MediaSession API since there's no UI for media
+  // metadata and controls.
+  cl->AppendSwitch(switches::kDisableMediaSessionAPI);
+
+  {
+      android_webview::ScopedAddFeatureFlags features(cl);
+
+//  #if BUILDFLAG(ENABLE_SPELLCHECK)
+//      features.EnableIfNotSet(spellcheck::kAndroidSpellCheckerNonLowEnd);
+//  #endif  // ENABLE_SPELLCHECK
+
+//      features.EnableIfNotSet(
+//          autofill::features::kAutofillSkipComparingInferredLabels);
+//
+//      if (cl->HasSwitch(switches::kWebViewLogJsConsoleMessages)) {
+//        features.EnableIfNotSet(::features::kLogJsConsoleMessages);
+//      }
+//
+//      features.DisableIfNotSet(::features::kWebPayments);
+//
+//      // WebView does not and should not support WebAuthN.
+//      features.DisableIfNotSet(::features::kWebAuth);
+
+      // WebView isn't compatible with OOP-D.
+//      features.DisableIfNotSet(::features::kVizDisplayCompositor);
+
+      // WebView does not support AndroidOverlay yet for video overlays.
+      features.DisableIfNotSet(media::kUseAndroidOverlay);
+
+      // WebView doesn't support embedding CompositorFrameSinks which is needed
+      // for UseSurfaceLayerForVideo feature. https://crbug.com/853832
+      features.EnableIfNotSet(media::kDisableSurfaceLayerForVideo);
+
+      // WebView does not support EME persistent license yet, because it's not
+      // clear on how user can remove persistent media licenses from UI.
+      features.DisableIfNotSet(media::kMediaDrmPersistentLicense);
+
+//      features.DisableIfNotSet(
+//          autofill::features::kAutofillRestrictUnownedFieldsToFormlessCheckout);
+
+      features.DisableIfNotSet(::features::kBackgroundFetch);
+
+      features.DisableIfNotSet(::features::kAndroidSurfaceControl);
+
+      // TODO(https://crbug.com/963653): SmsReceiver is not yet supported on
+      // WebView.
+      features.DisableIfNotSet(::features::kSmsReceiver);
+
+      // WebView relies on tweaking the size heuristic to dynamically enable
+      // or disable accelerated cavnas 2d.
+      features.DisableIfNotSet(blink::features::kAlwaysAccelerateCanvas);
+    }
+
   RegisterPathProvider();
   return false;
 }
