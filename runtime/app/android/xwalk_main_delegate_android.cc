@@ -186,25 +186,25 @@ bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
 
   {
       android_webview::ScopedAddFeatureFlags features(cl);
-
-//  #if BUILDFLAG(ENABLE_SPELLCHECK)
-//      features.EnableIfNotSet(spellcheck::kAndroidSpellCheckerNonLowEnd);
-//  #endif  // ENABLE_SPELLCHECK
-
-//      features.EnableIfNotSet(
-//          autofill::features::kAutofillSkipComparingInferredLabels);
+//o
+////  #if BUILDFLAG(ENABLE_SPELLCHECK)
+////      features.EnableIfNotSet(spellcheck::kAndroidSpellCheckerNonLowEnd);
+////  #endif  // ENABLE_SPELLCHECK
 //
-//      if (cl->HasSwitch(switches::kWebViewLogJsConsoleMessages)) {
-//        features.EnableIfNotSet(::features::kLogJsConsoleMessages);
-//      }
+////      features.EnableIfNotSet(
+////          autofill::features::kAutofillSkipComparingInferredLabels);
+////
+////      if (cl->HasSwitch(switches::kWebViewLogJsConsoleMessages)) {
+////        features.EnableIfNotSet(::features::kLogJsConsoleMessages);
+////      }
+////
+////      features.DisableIfNotSet(::features::kWebPayments);
+////
+////      // WebView does not and should not support WebAuthN.
+////      features.DisableIfNotSet(::features::kWebAuth);
 //
-//      features.DisableIfNotSet(::features::kWebPayments);
-//
-//      // WebView does not and should not support WebAuthN.
-//      features.DisableIfNotSet(::features::kWebAuth);
-
-      // WebView isn't compatible with OOP-D.
-//      features.DisableIfNotSet(::features::kVizDisplayCompositor);
+//      // WebView isn't compatible with OOP-D.
+////      features.DisableIfNotSet(::features::kVizDisplayCompositor);
 
       // WebView does not support AndroidOverlay yet for video overlays.
       features.DisableIfNotSet(media::kUseAndroidOverlay);

@@ -195,12 +195,12 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
     @Override
     public void enterFullscreenModeForTab(boolean prefersNavigationBar) {
         super.enterFullscreenModeForTab(prefersNavigationBar);
-        org.chromium.base.Log.w("iotto", "enterFullscreenModeForTab prefersNavigationBar=%b" , prefersNavigationBar);
+        if (mXWalkContentsClient != null) mXWalkContentsClient.onToggleFullscreen(true);
     }
     
     @Override
     public void exitFullscreenModeForTab() {
         super.exitFullscreenModeForTab();
-        org.chromium.base.Log.w("iotto", "exitFullscreenModeForTab");
+        if (mXWalkContentsClient != null) mXWalkContentsClient.onToggleFullscreen(false);
     }
 }
