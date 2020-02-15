@@ -83,6 +83,7 @@
 #include "content/public/browser/navigation_throttle.h"
 #include "xwalk/runtime/browser/android/xwalk_http_auth_handler.h"
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
+#include "xwalk/runtime/browser/android/xwalk_content.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
 #include "xwalk/runtime/browser/android/xwalk_settings.h"
 #include "xwalk/runtime/browser/android/xwalk_web_contents_view_delegate.h"
@@ -149,6 +150,20 @@ std::string GetUserAgent() {
 // static
 XWalkContentBrowserClient* XWalkContentBrowserClient::Get() {
   return g_browser_client;
+}
+
+// TODO(yirui): can use similar logic as in PrependToAcceptLanguagesIfNecessary
+// in chrome/browser/android/preferences/pref_service_bridge.cc
+// static
+std::string XWalkContentBrowserClient::GetAcceptLangsImpl() {
+  // Start with the current locale(s) in BCP47 format.
+  std::string locales_string = XWalkContent::GetLocaleList();
+
+  // If accept languages do not contain en-US, add in en-US which will be
+  // used with a lower q-value.
+  if (locales_string.find("en-US") == std::string::npos)
+    locales_string += ",en-US";
+  return locales_string;
 }
 
 XWalkContentBrowserClient::XWalkContentBrowserClient(XWalkRunner* xwalk_runner)
@@ -274,8 +289,8 @@ std::string XWalkContentBrowserClient::GetApplicationLocale() {
   #endif
 }
 std::string XWalkContentBrowserClient::GetAcceptLangs(content::BrowserContext* context) {
-  LOG(WARNING) << "iotto " << __func__ << " Implement!";
-  return "en-US";
+  // TODO(iotto): Maybe handle for other than ANDROID
+  return GetAcceptLangsImpl();
 }
 
 scoped_refptr<content::QuotaPermissionContext>

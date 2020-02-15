@@ -5,9 +5,11 @@
 
 package com.tenta.xwalk.refactor;
 
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.net.http.SslCertificate;
@@ -28,6 +30,7 @@ import android.widget.FrameLayout;
 import com.tenta.metafs.MetaError;
 
 import org.chromium.base.Callback;
+import org.chromium.base.LocaleUtils;
 import org.chromium.base.Log;
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.UserDataHost;
@@ -74,6 +77,8 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private static String TAG = "XWalkContent";
     private static Class<? extends Annotation> javascriptInterfaceClass;
 
+    private static String sCurrentLocales = "";
+    
     // A holder of objects passed from WebContents and should be owned by AwContents that may
     // have direct or indirect reference back to WebView. They are used internally by
     // WebContents but all the references can create a new gc root that can keep WebView
@@ -108,7 +113,8 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     long mNativeContent;
     private final int mAppTargetSdkVersion;
     private JavascriptInjector mJavascriptInjector;
-
+    private ComponentCallbacks2 mComponentCallbacks;
+    
     // TODO(iotto): Continue!
     private final UserDataHost mUserDataHost = new UserDataHost();
 
@@ -204,28 +210,35 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         return mUserDataHost;
     }
 
+    /**
+     * Set current locales to native. Propagates this information to the Accept-Language header for
+     * subsequent requests. Note that this will affect <b>all</b> AwContents, not just this
+     * instance, as all WebViews share the same NetworkContext/UrlRequestContextGetter.
+     */
+    public void updateDefaultLocale() {
+        String locales = LocaleUtils.getDefaultLocaleListString();
+        if (!sCurrentLocales.equals(locales)) {
+            sCurrentLocales = locales;
+
+            // We cannot use the first language in sCurrentLocales for the UI language even on
+            // Android N. LocaleUtils.getDefaultLocaleString() is capable for UI language but
+            // it is not guaranteed to be listed at the first of sCurrentLocales. Therefore,
+            // both values are passed to native.
+            nativeUpdateDefaultLocale(LocaleUtils.getDefaultLocaleString(), sCurrentLocales);
+            mSettings.updateAcceptLanguages();
+        }
+    }
+    
+    @Deprecated
     private void initCaptureBitmapAsync() {
-        //TODO(iotto)
-        Log.wtf("iotto", "TODO(iotto): implement");
-//        mGetBitmapCallback = new ContentBitmapCallback() {
-//            @Override
-//            public void onFinishGetBitmap(Bitmap bitmap, int response) {
-//                if (mXWalkGetBitmapCallback == null)
-//                    return;
-//                mXWalkGetBitmapCallback.onFinishGetBitmap(bitmap, response);
-//            }
-//        };
+        // TODO(iotto): Remove, not used anymore
     }
 
+    @Deprecated
     public void captureBitmapAsync(XWalkGetBitmapCallback callback) {
         if (mNativeContent == 0)
             return;
-        // TODO(iotto)
-        Log.wtf("iotto", "TODO(iotto): implement");
-//        mXWalkGetBitmapCallback = callback;
-//        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
-//        // mWebContents.getContentBitmapAsync(Bitmap.Config.ARGB_8888, 1.0f, new Rect(),
-//        // mGetBitmapCallback);
+        // TODO(iotto): Remove, Use the WithParams version
     }
 
     public void captureBitmapWithParams(Bitmap.Config config, float scale, Rect srcRect,
@@ -248,12 +261,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
             }
             
         });
-        // TODO(iotto)
-        Log.wtf("iotto", "captureBitmapWithParams: implement");
-//        mXWalkGetBitmapCallback = callback;
-//        mWebContents.getContentBitmapAsync(0, 0, mGetBitmapCallback);
-//        // mWebContents.getContentBitmapAsync(config, scale, srcRect,
-//        // mGetBitmapCallback);
     }
 
     private void setNativeContent(long newNativeContent) {
@@ -341,6 +348,8 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mContentsClientBridge.setDIPScale(mDIPScale);
         mSettings.setDIPScale(mDIPScale);
 
+        updateDefaultLocale();
+        
         String language = Locale.getDefault().toString().replaceAll("_", "-")
                 .toLowerCase(Locale.getDefault());
         if (language.isEmpty())
@@ -362,6 +371,9 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         nativeSetJavaPeers(mNativeContent, this, mXWalkContentsDelegateAdapter,
                 mContentsClientBridge, mIoThreadClient,
                 mContentsClientBridge.getInterceptNavigationDelegate());
+        
+        mComponentCallbacks = new XWalkComponentCallbacks();
+        mViewContext.registerComponentCallbacks(mComponentCallbacks);
     }
 
     /**
@@ -382,6 +394,37 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
             return retVal;
         }
     }
+    
+    /**
+     * 
+     * @author iotto
+     *
+     */
+    private class XWalkComponentCallbacks implements ComponentCallbacks2 {
+        @Override
+        public void onTrimMemory(final int level) {
+            Log.w(TAG, "TrimMemoryLevel=%d", level);
+//            boolean visibleRectEmpty = getGlobalVisibleRect().isEmpty();
+//            final boolean visible = mIsViewVisible && mIsWindowVisible && !visibleRectEmpty;
+//            ThreadUtils.runOnUiThreadBlocking(() -> {
+//                if (isDestroyed(NO_WARN)) return;
+//                if (level >= TRIM_MEMORY_MODERATE) {
+//                    if (mDrawFunctor != null) {
+//                        mDrawFunctor.trimMemory();
+//                    }
+//                }
+//                nativeTrimMemory(mNativeAwContents, level, visible);
+//            });
+        }
+
+        @Override
+        public void onLowMemory() {}
+
+        @Override
+        public void onConfigurationChanged(Configuration configuration) {
+            updateDefaultLocale();
+        }
+    };
     
     // TODO(iotto): Fix popup support!
     public void supplyContentsForPopup(XWalkContent newContents) {
@@ -1676,7 +1719,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     private native long nativeInit();
-
+    private static native void nativeUpdateDefaultLocale(String locale, String localeList);
     private static native void nativeDestroy(long nativeXWalkContent);
 
     private native WebContents nativeGetWebContents(long nativeXWalkContent);

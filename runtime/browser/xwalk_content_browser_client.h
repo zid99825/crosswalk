@@ -41,7 +41,11 @@ class XWalkDevToolsManagerDelegate;
 
 class XWalkContentBrowserClient : public content::ContentBrowserClient {
  public:
+  // TODO(iotto): Get rid of this, shoudn't be static
   static XWalkContentBrowserClient* Get();
+
+  // This is what AwContentBrowserClient::GetAcceptLangs uses.
+  static std::string GetAcceptLangsImpl();
 
   // Called by WebContents to override the WebKit preferences that are used by
   // the renderer. The content layer will add its own settings, and then it's up

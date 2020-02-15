@@ -54,11 +54,13 @@ class XWalkContent :
 #endif
 {
  public:
-  explicit XWalkContent(std::unique_ptr<content::WebContents> web_contents);
-  ~XWalkContent() override;
-
+  static std::string GetLocale();
+  static std::string GetLocaleList();
   static XWalkContent* FromID(int render_process_id, int render_view_id);
   static XWalkContent* FromWebContents(content::WebContents* web_contents);
+
+  explicit XWalkContent(std::unique_ptr<content::WebContents> web_contents);
+  ~XWalkContent() override;
 
   base::android::ScopedJavaLocalRef<jobject> GetWebContents(JNIEnv* env, jobject obj);
   void SetPendingWebContentsForPopup(std::unique_ptr<content::WebContents> pending);

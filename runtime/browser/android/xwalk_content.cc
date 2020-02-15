@@ -93,6 +93,16 @@ namespace keys = xwalk::application_manifest_keys;
 namespace xwalk {
 
 namespace {
+std::string* g_locale() {
+  static base::NoDestructor<std::string> locale;
+  return locale.get();
+}
+
+std::string* g_locale_list() {
+  static base::NoDestructor<std::string> locale_list;
+  return locale_list.get();
+}
+
 const int cBlkSize = 4 * 1024;
 
 const void* kXWalkContentUserDataKey = &kXWalkContentUserDataKey;
@@ -216,6 +226,35 @@ class XWalkContentUserData :
 //}
 
 }  // namespace
+
+static jlong JNI_XWalkContent_Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  std::unique_ptr<WebContents> web_contents(
+      content::WebContents::Create(content::WebContents::CreateParams(XWalkRunner::GetInstance()->browser_context())));
+  return reinterpret_cast<intptr_t>(new XWalkContent(std::move(web_contents)));
+}
+
+static ScopedJavaLocalRef<jstring> JNI_XWalkContent_GetChromeVersion(
+    JNIEnv* env) {
+  LOG(INFO) << "ChromeVersion=" << version_info::GetVersionNumber();
+  return base::android::ConvertUTF8ToJavaString(env, version_info::GetVersionNumber());
+}
+
+// static
+void JNI_XWalkContent_UpdateDefaultLocale(JNIEnv* env, const JavaParamRef<jstring>& locale,
+                                          const JavaParamRef<jstring>& locale_list) {
+  *g_locale() = ConvertJavaStringToUTF8(env, locale);
+  *g_locale_list() = ConvertJavaStringToUTF8(env, locale_list);
+}
+
+// static
+std::string XWalkContent::GetLocale() {
+  return *g_locale();
+}
+
+// static
+std::string XWalkContent::GetLocaleList() {
+  return *g_locale_list();
+}
 
 // static
 XWalkContent* XWalkContent::FromID(int render_process_id, int render_view_id) {
@@ -431,12 +470,6 @@ void XWalkContent::UpdateLastHitTestData(JNIEnv* env, const base::android::JavaP
 
 ScopedJavaLocalRef<jstring> XWalkContent::GetVersion(JNIEnv* env, jobject obj) {
   return base::android::ConvertUTF8ToJavaString(env, XWALK_VERSION);
-}
-
-static ScopedJavaLocalRef<jstring> JNI_XWalkContent_GetChromeVersion(
-    JNIEnv* env) {
-  LOG(INFO) << "GetChromeVersion=" << version_info::GetVersionNumber();
-  return base::android::ConvertUTF8ToJavaString(env, version_info::GetVersionNumber());
 }
 
 void XWalkContent::SetJsOnlineProperty(JNIEnv* env, jobject obj, jboolean network_up) {
@@ -873,12 +906,6 @@ jint XWalkContent::NukeHistory(JNIEnv* env, const JavaParamRef<jobject>& obj, co
 }
 
 /************ End MetaFS ****************/
-static jlong JNI_XWalkContent_Init(JNIEnv* env, const JavaParamRef<jobject>& obj) {
-  std::unique_ptr<WebContents> web_contents(
-      content::WebContents::Create(content::WebContents::CreateParams(XWalkRunner::GetInstance()->browser_context())));
-  return reinterpret_cast<intptr_t>(new XWalkContent(std::move(web_contents)));
-}
-
 namespace {
 
 void ShowGeolocationPromptHelperTask(const JavaObjectWeakGlobalRef& java_ref, const GURL& origin) {

@@ -15,15 +15,19 @@
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/renderer_preferences_util.h"
+#include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/web_preferences.h"
+#include "net/http/http_util.h"
+#include "services/network/public/cpp/features.h"
 #include "third_party/blink/public/mojom/renderer_preferences.mojom.h"
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkSettings_jni.h"
-#include "xwalk/runtime/browser/xwalk_browser_context.h"
-#include "xwalk/runtime/common/xwalk_content_client.h"
-#include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/browser/android/renderer_host/xwalk_render_view_host_ext.h"
 #include "xwalk/runtime/browser/android/xwalk_content.h"
+#include "xwalk/runtime/browser/xwalk_browser_context.h"
+#include "xwalk/runtime/browser/xwalk_content_browser_client.h"
+#include "xwalk/runtime/common/xwalk_content_client.h"
+#include "xwalk/runtime/common/xwalk_switches.h"
 
 using base::android::CheckException;
 using base::android::ConvertJavaStringToUTF16;
@@ -599,11 +603,9 @@ void XWalkSettings::UpdateRendererPreferencesLocked(JNIEnv* env, const JavaParam
     update_prefs = true;
   }
 
-  // TODO(iotto): Use and implement
-//  if (prefs->accept_languages.compare(AwContentBrowserClient::GetAcceptLangsImpl()))
+  if (prefs->accept_languages.compare(XWalkContentBrowserClient::GetAcceptLangsImpl()))
   {
-//    prefs->accept_languages = AwContentBrowserClient::GetAcceptLangsImpl();
-    prefs->accept_languages = "en-US";
+    prefs->accept_languages = XWalkContentBrowserClient::GetAcceptLangsImpl();
     update_prefs = true;
   }
 
@@ -611,20 +613,15 @@ void XWalkSettings::UpdateRendererPreferencesLocked(JNIEnv* env, const JavaParam
   if (update_prefs && host)
     host->SyncRendererPrefs();
 
-  // TODO(iotto):
-//  if (update_prefs &&
-//      base::FeatureList::IsEnabled(network::features::kNetworkService)) {
-//    // make sure to update accept languages when the network service is enabled
-//    AwBrowserContext* aw_browser_context =
-//        AwBrowserContext::FromWebContents(web_contents());
-//    // AndroidWebview does not use per-site storage partitions.
-//    content::StoragePartition* storage_partition =
-//        content::BrowserContext::GetDefaultStoragePartition(aw_browser_context);
-//    std::string expanded_language_list =
-//        net::HttpUtil::ExpandLanguageList(prefs->accept_languages);
-//    storage_partition->GetNetworkContext()->SetAcceptLanguage(
-//        net::HttpUtil::GenerateAcceptLanguageHeader(expanded_language_list));
-//  }
+  if (update_prefs && base::FeatureList::IsEnabled(network::features::kNetworkService)) {
+    // make sure to update accept languages when the network service is enabled
+    XWalkBrowserContext* browser_context = XWalkBrowserContext::FromWebContents(web_contents());
+    // AndroidWebview does not use per-site storage partitions.
+    content::StoragePartition* storage_partition = content::BrowserContext::GetDefaultStoragePartition(browser_context);
+    std::string expanded_language_list = net::HttpUtil::ExpandLanguageList(prefs->accept_languages);
+    storage_partition->GetNetworkContext()->SetAcceptLanguage(
+        net::HttpUtil::GenerateAcceptLanguageHeader(expanded_language_list));
+  }
 }
 /**
  *

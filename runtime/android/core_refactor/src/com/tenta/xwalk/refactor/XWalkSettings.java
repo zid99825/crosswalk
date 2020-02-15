@@ -1155,6 +1155,16 @@ public class XWalkSettings {
         }
     }
 
+    public void updateAcceptLanguages() {
+        synchronized (mXWalkSettingsLock) {
+            mEventHandler.runOnUiThreadBlockingAndLocked(() -> {
+                if (mNativeXWalkSettings != 0) {
+                    nativeUpdateRendererPreferencesLocked(mNativeXWalkSettings);
+                }
+            });
+        }
+    }
+    
     /**
      * Get the accept languages of XWalkView.
      * 
@@ -1656,6 +1666,8 @@ public class XWalkSettings {
     private native void nativeUpdateUserAgent(long nativeXWalkSettings);
 
     private native void nativeUpdateWebkitPreferencesLocked(long nativeXWalkSettings);
+    
+    private native void nativeUpdateRendererPreferencesLocked(long nativeXWalkSettings);
     
     private native void nativeUpdateCookiePolicyLocked(long nativeXWalkSettings);
 
