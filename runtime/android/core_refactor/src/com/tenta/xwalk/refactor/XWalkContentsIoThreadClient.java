@@ -31,6 +31,9 @@ public abstract class XWalkContentsIoThreadClient {
     @CalledByNative
     public abstract boolean shouldBlockNetworkLoads();
 
+    @CalledByNative
+    public abstract boolean shouldAcceptThirdPartyCookies();
+    
     public abstract XWalkWebResourceResponse shouldInterceptRequest(
         XWalkContentsClient.WebResourceRequestInner request);
 

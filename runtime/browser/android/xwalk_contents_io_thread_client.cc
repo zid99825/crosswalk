@@ -411,6 +411,15 @@ bool XWalkContentsIoThreadClient::ShouldBlockNetworkLoads() const {
       env, java_object_);
 }
 
+bool XWalkContentsIoThreadClient::ShouldAcceptThirdPartyCookies() const {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  if (java_object_.is_null())
+    return false;
+
+  JNIEnv* env = AttachCurrentThread();
+  return Java_XWalkContentsIoThreadClient_shouldAcceptThirdPartyCookies(env, java_object_);
+}
+
 void XWalkContentsIoThreadClient::OnReceivedResponseHeaders(
     const net::URLRequest* request,
     const net::HttpResponseHeaders* response_headers) {

@@ -102,8 +102,7 @@ RuntimeNetworkDelegate::AuthRequiredResponse RuntimeNetworkDelegate::OnAuthRequi
 bool RuntimeNetworkDelegate::OnCanGetCookies(
     const net::URLRequest& request, const net::CookieList& cookie_list, bool allowed_from_caller) {
 #if defined(OS_ANDROID)
-  return allowed_from_caller && XWalkCookieAccessPolicy::GetInstance()->OnCanGetCookies(
-    request, cookie_list);
+  return allowed_from_caller && XWalkCookieAccessPolicy::GetInstance()->AllowCookies(request);
 #else
   return true;
 #endif
@@ -112,9 +111,7 @@ bool RuntimeNetworkDelegate::OnCanGetCookies(
 bool RuntimeNetworkDelegate::OnCanSetCookie(const net::URLRequest& request, const net::CanonicalCookie& cookie,
                                             net::CookieOptions* options, bool allowed_from_caller) {
 #if defined(OS_ANDROID)
-  return allowed_from_caller && XWalkCookieAccessPolicy::GetInstance()->OnCanSetCookie(request,
-                                                                cookie,
-                                                                options);
+  return allowed_from_caller && XWalkCookieAccessPolicy::GetInstance()->AllowCookies(request);
 #else
   return true;
 #endif

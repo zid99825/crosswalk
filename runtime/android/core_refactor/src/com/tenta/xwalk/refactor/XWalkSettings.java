@@ -13,6 +13,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.provider.Settings;
+import android.util.Log;
 import android.webkit.WebSettings;
 
 import org.chromium.base.annotations.CalledByNative;
@@ -96,7 +97,9 @@ public class XWalkSettings {
     private boolean mMediaPlaybackRequiresUserGesture = true;
     private String mDefaultVideoPosterURL;
     private final boolean mPasswordEchoEnabled;
-
+    // Although this bit is stored on AwSettings it is actually controlled via the CookieManager.
+    private boolean mAcceptThirdPartyCookies;
+    
     // Not accessed by the native side.
     private boolean mBlockNetworkLoads; // Default depends on permission of embedding APK.
     private boolean mAllowContentUrlAccess = true;
@@ -155,25 +158,31 @@ public class XWalkSettings {
     // Class to handle messages to be processed on the UI thread.
     @SuppressLint("HandlerLeak")
     private class EventHandler {
-        // Message id for updating Webkit preferences
-        private static final int UPDATE_WEBKIT_PREFERENCES = 0;
+        // Message id for running a Runnable with mXWalkSettingsLock held.
+        private static final int RUN_RUNNABLE_BLOCKING = 0;
+        
         // Actual UI thread handler
         private Handler mHandler;
 
+        // Synchronization flag.
+        private boolean mSynchronizationPending;
+        
         EventHandler() {
         }
 
+        @SuppressLint("HandlerLeak")
         void bindUiThread() {
-            if (mHandler != null)
-                return;
+            if (mHandler != null) return;
             mHandler = new Handler(ThreadUtils.getUiThreadLooper()) {
                 @Override
                 public void handleMessage(Message msg) {
                     switch (msg.what) {
-                        case UPDATE_WEBKIT_PREFERENCES:
+                        case RUN_RUNNABLE_BLOCKING:
                             synchronized (mXWalkSettingsLock) {
-                                updateWebkitPreferencesOnUiThread();
-                                mIsUpdateWebkitPrefsMessagePending = false;
+                                if (mNativeXWalkSettings != 0) {
+                                    ((Runnable) msg.obj).run();
+                                }
+                                mSynchronizationPending = false;
                                 mXWalkSettingsLock.notifyAll();
                             }
                             break;
@@ -181,43 +190,40 @@ public class XWalkSettings {
                 }
             };
         }
-
-        void maybeRunOnUiThreadBlocking(Runnable r) {
-            if (mHandler != null) {
-                ThreadUtils.runOnUiThreadBlocking(r);
+        
+        void runOnUiThreadBlockingAndLocked(Runnable r) {
+            assert Thread.holdsLock(mXWalkSettingsLock);
+            if (mHandler == null)
+                return;
+            if (ThreadUtils.runningOnUiThread()) {
+                r.run();
+            } else {
+                assert !mSynchronizationPending;
+                mSynchronizationPending = true;
+                mHandler.sendMessage(Message.obtain(null, RUN_RUNNABLE_BLOCKING, r));
+                try {
+                    while (mSynchronizationPending) {
+                        mXWalkSettingsLock.wait();
+                    }
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Interrupted waiting a Runnable to complete", e);
+                    mSynchronizationPending = false;
+                }
             }
         }
-
+        
         void maybePostOnUiThread(Runnable r) {
             if (mHandler != null) {
                 mHandler.post(r);
             }
         }
-
-        private void updateWebkitPreferencesLocked() {
-            assert Thread.holdsLock(mXWalkSettingsLock);
-            if (mNativeXWalkSettings == 0)
-                return;
-            if (mHandler == null)
-                return;
-            if (ThreadUtils.runningOnUiThread()) {
-                updateWebkitPreferencesOnUiThread();
-            } else {
-                // We're being called on a background thread, so post a message.
-                if (mIsUpdateWebkitPrefsMessagePending) {
-                    return;
-                }
-                mIsUpdateWebkitPrefsMessagePending = true;
-                mHandler.sendMessage(Message.obtain(null, UPDATE_WEBKIT_PREFERENCES));
-                // We must block until the settings have been sync'd to native to
-                // ensure that they have taken effect.
-                try {
-                    while (mIsUpdateWebkitPrefsMessagePending) {
-                        mXWalkSettingsLock.wait();
-                    }
-                } catch (InterruptedException e) {
-                }
-            }
+        
+        void updateWebkitPreferencesLocked() {
+            runOnUiThreadBlockingAndLocked(() -> updateWebkitPreferencesOnUiThreadLocked());
+        }
+        
+        void updateCookiePolicyLocked() {
+            runOnUiThreadBlockingAndLocked(() -> updateCookiePolicyOnUiThreadLocked());
         }
     }
 
@@ -225,14 +231,6 @@ public class XWalkSettings {
         public void onGestureZoomSupportChanged(
                 boolean supportsDoubleTapZoom, boolean supportsMultiTouchZoom);
     }
-
-//    // Never use this constructor.
-//    // It is only used in XWalkSettingsBridge.
-//    XWalkSettings() {
-//        mContext = null;
-//        mEventHandler = null;
-//        mPasswordEchoEnabled = false;
-//    }
 
     public XWalkSettings(Context context, WebContents webContents,
             boolean isAccessFromFileURLsGrantedByDefault) {
@@ -378,6 +376,33 @@ public class XWalkSettings {
         }
     }
 
+    /**
+     * Enable/disable third party cookies for an AwContents
+     * @param accept true if we should accept third party cookies
+     */
+    public void setAcceptThirdPartyCookies(boolean accept) {
+        synchronized (mXWalkSettingsLock) {
+            mAcceptThirdPartyCookies = accept;
+            mEventHandler.updateCookiePolicyLocked();
+        }
+    }
+    
+    /**
+     * Return whether third party cookies are enabled for an AwContents
+     * @return true if accept third party cookies
+     */
+    public boolean getAcceptThirdPartyCookies() {
+        synchronized (mXWalkSettingsLock) {
+            return mAcceptThirdPartyCookies;
+        }
+    }
+
+    @CalledByNative
+    private boolean getAcceptThirdPartyCookiesLocked() {
+        assert Thread.holdsLock(mXWalkSettingsLock);
+        return mAcceptThirdPartyCookies;
+    }
+    
     /**
      * Enables or disables file access within XWalkView. File access is enabled by default. Note
      * that this enables or disables file system access only. Assets and resources are still
@@ -884,7 +909,7 @@ public class XWalkSettings {
         return mAppCacheEnabled;
         
         // TODO(iotto): From AwSettings
-//        assert Thread.holdsLock(mAwSettingsLock);
+//        assert Thread.holdsLock(mXWalkSettingsLock);
 //        if (!mAppCacheEnabled) {
 //            return false;
 //        }
@@ -1051,7 +1076,7 @@ public class XWalkSettings {
                 mUserAgent = userAgent;
             }
             if (!oldUserAgent.equals(mUserAgent)) {
-                mEventHandler.maybeRunOnUiThreadBlocking(new Runnable() {
+                mEventHandler.runOnUiThreadBlockingAndLocked(new Runnable() {
                     @Override
                     public void run() {
                         if (mNativeXWalkSettings != 0) {
@@ -1092,13 +1117,22 @@ public class XWalkSettings {
         }
     }
 
-    private void updateWebkitPreferencesOnUiThread() {
+    private void updateWebkitPreferencesOnUiThreadLocked() {
+        assert mEventHandler.mHandler != null;
+        ThreadUtils.assertOnUiThread();
         if (mNativeXWalkSettings != 0) {
-            ThreadUtils.assertOnUiThread();
-            nativeUpdateWebkitPreferences(mNativeXWalkSettings);
+            nativeUpdateWebkitPreferencesLocked(mNativeXWalkSettings);
         }
     }
 
+    private void updateCookiePolicyOnUiThreadLocked() {
+        assert mEventHandler.mHandler != null;
+        ThreadUtils.assertOnUiThread();
+        if (mNativeXWalkSettings != 0) {
+            nativeUpdateCookiePolicyLocked(mNativeXWalkSettings);
+        }
+    }
+    
     /**
      * Set the accept languages of XWalkView.
      * 
@@ -1110,7 +1144,7 @@ public class XWalkSettings {
             if (mAcceptLanguages != null && mAcceptLanguages.equals(acceptLanguages))
                 return;
             mAcceptLanguages = acceptLanguages;
-            mEventHandler.maybeRunOnUiThreadBlocking(new Runnable() {
+            mEventHandler.runOnUiThreadBlockingAndLocked(new Runnable() {
                 @Override
                 public void run() {
                     if (mNativeXWalkSettings != 0) {
@@ -1144,7 +1178,7 @@ public class XWalkSettings {
             if (mAutoCompleteEnabled == enable)
                 return;
             mAutoCompleteEnabled = enable;
-            mEventHandler.maybeRunOnUiThreadBlocking(new Runnable() {
+            mEventHandler.runOnUiThreadBlockingAndLocked(new Runnable() {
                 @Override
                 public void run() {
                     if (mNativeXWalkSettings != 0) {
@@ -1199,7 +1233,7 @@ public class XWalkSettings {
             if (mInitialPageScalePercent == scaleInPercent)
                 return;
             mInitialPageScalePercent = scaleInPercent;
-            mEventHandler.maybeRunOnUiThreadBlocking(new Runnable() {
+            mEventHandler.runOnUiThreadBlockingAndLocked(new Runnable() {
                 @Override
                 public void run() {
                     if (mNativeXWalkSettings != 0) {
@@ -1571,7 +1605,7 @@ public class XWalkSettings {
             if (mLoadWithOverviewMode == overview)
                 return;
             mLoadWithOverviewMode = overview;
-            mEventHandler.maybeRunOnUiThreadBlocking(new Runnable() {
+            mEventHandler.runOnUiThreadBlockingAndLocked(new Runnable() {
                 @Override
                 public void run() {
                     if (mNativeXWalkSettings != 0) {
@@ -1621,7 +1655,9 @@ public class XWalkSettings {
 
     private native void nativeUpdateUserAgent(long nativeXWalkSettings);
 
-    private native void nativeUpdateWebkitPreferences(long nativeXWalkSettings);
+    private native void nativeUpdateWebkitPreferencesLocked(long nativeXWalkSettings);
+    
+    private native void nativeUpdateCookiePolicyLocked(long nativeXWalkSettings);
 
     private native void nativeUpdateAcceptLanguages(long nativeXWalkSettings);
 

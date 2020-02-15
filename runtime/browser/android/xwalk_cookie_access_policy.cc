@@ -8,9 +8,18 @@
 
 #include "base/logging.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/render_frame_host.h"
+#include "content/public/browser/resource_request_info.h"
+#include "content/public/browser/websocket_handshake_request_info.h"
+#include "net/base/static_cookie_policy.h"
+#include "net/url_request/url_request.h"
+#include "services/network/public/cpp/features.h"
+#include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
 
 using base::AutoLock;
 using content::BrowserThread;
+using content::ResourceRequestInfo;
+using content::WebSocketHandshakeRequestInfo;
 
 namespace xwalk {
 
@@ -22,7 +31,7 @@ XWalkCookieAccessPolicy::~XWalkCookieAccessPolicy() {
 }
 
 XWalkCookieAccessPolicy::XWalkCookieAccessPolicy()
-    : allow_access_(true) {
+    : accept_cookies_(true) {
 }
 
 XWalkCookieAccessPolicy* XWalkCookieAccessPolicy::GetInstance() {
@@ -31,61 +40,86 @@ XWalkCookieAccessPolicy* XWalkCookieAccessPolicy::GetInstance() {
 
 bool XWalkCookieAccessPolicy::GetGlobalAllowAccess() {
   AutoLock lock(lock_);
-  return allow_access_;
+  return accept_cookies_;
 }
 
 void XWalkCookieAccessPolicy::SetGlobalAllowAccess(bool allow) {
   AutoLock lock(lock_);
-  allow_access_ = allow;
+  accept_cookies_ = allow;
 }
 
-bool XWalkCookieAccessPolicy::OnCanGetCookies(
-    const net::URLRequest& request,
-    const net::CookieList& cookie_list) {
-  LOG(WARNING) << "iotto " << __func__ << " IMPLEMENT";
-//  see: android_webview/browser/aw_cookie_access_policy.cc
-//  bool third_party = GetShouldAcceptThirdPartyCookies(request);
-//  return CanAccessCookies(request.url(), request.site_for_cookies(),
-//                          third_party);
-  return GetGlobalAllowAccess();
-}
-
-bool XWalkCookieAccessPolicy::OnCanSetCookie(
-    const net::URLRequest& request,
-    const net::CanonicalCookie& cookie,
-    net::CookieOptions* options) {
-  LOG(WARNING) << "iotto " << __func__ << " IMPLEMENT";
-  return GetGlobalAllowAccess();
-}
-
-bool XWalkCookieAccessPolicy::AllowGetCookie(
-    const GURL& url,
-    const GURL& first_party,
-    const net::CookieList& cookie_list,
-    content::ResourceContext* context,
-    int render_process_id,
-    int render_frame_id) {
-  return GetGlobalAllowAccess();
-}
-
-bool XWalkCookieAccessPolicy::AllowSetCookie(
-    const GURL& url,
-    const GURL& first_party,
-    const net::CanonicalCookie& cookie,
-    content::ResourceContext* context,
+bool XWalkCookieAccessPolicy::GetShouldAcceptThirdPartyCookies(
     int render_process_id,
     int render_frame_id,
-    const net::CookieOptions& options) {
+    int frame_tree_node_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  std::unique_ptr<XWalkContentsIoThreadClient> io_thread_client =
+      (frame_tree_node_id != content::RenderFrameHost::kNoFrameTreeNodeId)
+          ? XWalkContentsIoThreadClient::FromID(frame_tree_node_id)
+          : XWalkContentsIoThreadClient::FromID(render_process_id,
+                                             render_frame_id);
 
-/* TODO(iotto) : snippet from ./browser/aw_cookie_access_policy.cc
- *   bool global = GetShouldAcceptCookies();
- *   bool thirdParty = GetShouldAcceptThirdPartyCookies(
-      render_process_id, render_frame_id,
-      content::RenderFrameHost::kNoFrameTreeNodeId);
-      return AwStaticCookiePolicy(global, thirdParty).AllowSet(url, first_party);
- *
- */
-  return GetGlobalAllowAccess();
+  if (!io_thread_client) {
+    return false;
+  }
+  return io_thread_client->ShouldAcceptThirdPartyCookies();
+}
+
+bool XWalkCookieAccessPolicy::GetShouldAcceptThirdPartyCookies(const net::URLRequest& request) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  int child_id = 0;
+  int render_frame_id = 0;
+  int frame_tree_node_id = content::RenderFrameHost::kNoFrameTreeNodeId;
+  ResourceRequestInfo* info = ResourceRequestInfo::ForRequest(&request);
+  if (info) {
+    child_id = info->GetChildID();
+    render_frame_id = info->GetRenderFrameID();
+    frame_tree_node_id = info->GetFrameTreeNodeId();
+  } else {
+    WebSocketHandshakeRequestInfo* websocket_info = WebSocketHandshakeRequestInfo::ForRequest(&request);
+    if (!websocket_info)
+      return false;
+    child_id = websocket_info->GetChildId();
+    render_frame_id = websocket_info->GetRenderFrameId();
+  }
+  return GetShouldAcceptThirdPartyCookies(child_id, render_frame_id, frame_tree_node_id);
+}
+
+bool XWalkCookieAccessPolicy::AllowCookies(const net::URLRequest& request) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  DCHECK(!base::FeatureList::IsEnabled(network::features::kNetworkService));
+  bool third_party = GetShouldAcceptThirdPartyCookies(request);
+  return CanAccessCookies(request.url(), request.site_for_cookies(), third_party);
+}
+
+bool XWalkCookieAccessPolicy::AllowCookies(const GURL& url, const GURL& first_party, int render_process_id,
+                                           int render_frame_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  bool third_party = GetShouldAcceptThirdPartyCookies(render_process_id, render_frame_id,
+                                                      content::RenderFrameHost::kNoFrameTreeNodeId);
+  return CanAccessCookies(url, first_party, third_party);
+}
+
+bool XWalkCookieAccessPolicy::CanAccessCookies(const GURL& url,
+                                            const GURL& site_for_cookies,
+                                            bool accept_third_party_cookies) {
+  if (!accept_cookies_)
+    return false;
+
+  if (accept_third_party_cookies)
+    return true;
+
+  // File URLs are a special case. We want file URLs to be able to set cookies
+  // but (for the purpose of cookies) Chrome considers different file URLs to
+  // come from different origins so we use the 'allow all' cookie policy for
+  // file URLs.
+  if (url.SchemeIsFile())
+    return true;
+
+  // Otherwise, block third-party cookies.
+  return net::StaticCookiePolicy(
+             net::StaticCookiePolicy::BLOCK_ALL_THIRD_PARTY_COOKIES)
+             .CanAccessCookies(url, site_for_cookies) == net::OK;
 }
 
 }  // namespace xwalk

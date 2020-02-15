@@ -158,9 +158,9 @@ XWalkSettings::XWalkSettings(JNIEnv* env,
     : WebContentsObserver(web_contents),
       xwalk_settings_(env, obj),
       _javascript_can_open_windows_automatically(false),
-      renderer_prefs_initialized_(false) {
+      renderer_prefs_initialized_(false),
+      allow_third_party_cookies_(false) {
 
-  LOG(INFO) << "iotto " << __func__;
   web_contents->SetUserData(kXWalkSettingsUserDataKey,
                             std::make_unique<XWalkSettingsUserData>(this));
 }
@@ -175,6 +175,10 @@ XWalkSettings::~XWalkSettings() {
   if (!scoped_obj.obj())
     return;
   Java_XWalkSettings_nativeXWalkSettingsGone(env, scoped_obj, reinterpret_cast<intptr_t>(this));
+}
+
+bool XWalkSettings::GetAllowThirdPartyCookies() {
+  return allow_third_party_cookies_;
 }
 
 void XWalkSettings::Destroy(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj) {
@@ -210,7 +214,7 @@ void XWalkSettings::UpdateEverything() {
 
 void XWalkSettings::UpdateEverythingLocked(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   UpdateInitialPageScale(env, obj);
-  UpdateWebkitPreferences(env, obj);
+  UpdateWebkitPreferencesLocked(env, obj);
   UpdateUserAgent(env, obj);
   ResetScrollAndScaleState(env, obj);
   UpdateFormDataPreferences(env, obj);
@@ -449,7 +453,7 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
           : blink::PreferredColorScheme::kNoPreference;
 }
 
-void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+void XWalkSettings::UpdateWebkitPreferencesLocked(JNIEnv* env, const JavaParamRef<jobject>& obj) {
 
   if (!web_contents()) return;
   XWalkRenderViewHostExt* render_view_host_ext = GetXWalkRenderViewHostExt();
@@ -561,6 +565,15 @@ void XWalkSettings::UpdateWebkitPreferences(JNIEnv* env, const JavaParamRef<jobj
 //  prefs.viewport_meta_enabled = env->GetBooleanField(obj, field_ids_->viewport_meta_enabled);
 //
 //  render_view_host->UpdateWebkitPreferences(prefs);
+}
+
+void XWalkSettings::UpdateCookiePolicyLocked(JNIEnv* env,
+                                          const JavaParamRef<jobject>& obj) {
+  if (!web_contents())
+    return;
+
+  allow_third_party_cookies_ =
+      Java_XWalkSettings_getAcceptThirdPartyCookiesLocked(env, obj);
 }
 
 void XWalkSettings::UpdateFormDataPreferences(JNIEnv* env, const JavaParamRef<jobject>& obj) {

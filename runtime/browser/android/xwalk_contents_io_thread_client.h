@@ -101,6 +101,9 @@ class XWalkContentsIoThreadClient {
   // This method is called on the IO thread only.
   bool ShouldBlockNetworkLoads() const;
 
+  // Retrieve the AcceptThirdPartyCookies setting value of this AwContents.
+  bool ShouldAcceptThirdPartyCookies() const;
+
   void OnReceivedResponseHeaders(const net::URLRequest* request, const net::HttpResponseHeaders* response_headers);
 
  private:

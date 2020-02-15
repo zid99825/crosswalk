@@ -29,6 +29,8 @@ class XWalkSettings : public content::WebContentsObserver {
 
   static XWalkSettings* FromWebContents(content::WebContents* web_contents);
 
+  bool GetAllowThirdPartyCookies();
+
   // Called from Java.
   void Destroy(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void PopulateWebPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj, jlong webPrefsPtr);
@@ -36,7 +38,8 @@ class XWalkSettings : public content::WebContentsObserver {
   void UpdateEverythingLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateInitialPageScale(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateUserAgent(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
-  void UpdateWebkitPreferences(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateWebkitPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
+  void UpdateCookiePolicyLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateAcceptLanguages(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateFormDataPreferences(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
   void UpdateRendererPreferencesLocked(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj);
@@ -66,6 +69,7 @@ class XWalkSettings : public content::WebContentsObserver {
 
   bool _javascript_can_open_windows_automatically;
   bool renderer_prefs_initialized_;
+  bool allow_third_party_cookies_;
 };
 
 bool RegisterXWalkSettings(JNIEnv* env);

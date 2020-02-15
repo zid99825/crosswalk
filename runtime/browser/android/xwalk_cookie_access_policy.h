@@ -34,36 +34,30 @@ class XWalkCookieAccessPolicy {
   bool GetGlobalAllowAccess();
   void SetGlobalAllowAccess(bool allow);
 
-  // These are the functions called when operating over cookies from the
-  // network. See NetworkDelegate for further descriptions.
-  bool OnCanGetCookies(const net::URLRequest& request,
-                       const net::CookieList& cookie_list);
-  bool OnCanSetCookie(const net::URLRequest& request,
-                      const net::CanonicalCookie& cookie,
-                      net::CookieOptions* options);
+  // Can we read/write third party cookies?
+  // |render_process_id| and |render_frame_id| must be valid.
+  // Navigation requests are not associated with a renderer process. In this
+  // case, |frame_tree_node_id| must be valid instead. Can only be called from
+  // the IO thread.
+  bool GetShouldAcceptThirdPartyCookies(int render_process_id, int render_frame_id, int frame_tree_node_id);
+  bool GetShouldAcceptThirdPartyCookies(const net::URLRequest& request);
 
-  // These are the functions called when operating over cookies from the
-  // renderer. See ContentBrowserClient for further descriptions.
-  bool AllowGetCookie(const GURL& url,
-                      const GURL& first_party,
-                      const net::CookieList& cookie_list,
-                      content::ResourceContext* context,
-                      int render_process_id,
-                      int render_frame_id);
-  bool AllowSetCookie(const GURL& url,
-                      const GURL& first_party,
-                      const net::CanonicalCookie& cookie,
-                      content::ResourceContext* context,
-                      int render_process_id,
-                      int render_frame_id,
-                      const net::CookieOptions& options);
+  // Whether or not to allow cookies to bet sent or set for |request|. Can only
+  // be called from the IO thread.
+  bool AllowCookies(const net::URLRequest& request);
+
+  // Whether or not to allow cookies for requests with these parameters.
+  bool AllowCookies(const GURL& url, const GURL& first_party, int render_process_id, int render_frame_id);
 
  private:
   friend struct base::LazyInstanceTraitsBase<XWalkCookieAccessPolicy>;
 
   XWalkCookieAccessPolicy();
   ~XWalkCookieAccessPolicy();
-  bool allow_access_;
+
+  bool CanAccessCookies(const GURL& url, const GURL& site_for_cookies, bool accept_third_party_cookies);
+
+  bool accept_cookies_;
   base::Lock lock_;
 
   DISALLOW_COPY_AND_ASSIGN(XWalkCookieAccessPolicy);

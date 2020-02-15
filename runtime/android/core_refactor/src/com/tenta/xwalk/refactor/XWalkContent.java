@@ -1340,6 +1340,11 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         }
 
         @Override
+        public boolean shouldAcceptThirdPartyCookies() {
+            return mSettings.getAcceptThirdPartyCookies();
+        }
+        
+        @Override
         public void onReceivedResponseHeaders(XWalkContentsClient.WebResourceRequestInner request,
                                               XWalkWebResourceResponse response) {
             mContentsClientBridge.getCallbackHelper().postOnReceivedResponseHeaders(request,

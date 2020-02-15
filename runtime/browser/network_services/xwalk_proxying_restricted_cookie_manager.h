@@ -55,9 +55,9 @@ class XwalkProxyingRestrictedCookieManager : public network::mojom::RestrictedCo
                                       network::mojom::RestrictedCookieManagerRequest request);
 
   network::mojom::RestrictedCookieManagerPtr underlying_restricted_cookie_manager_;
-//  bool is_service_worker_;
-//  int process_id_;
-//  int frame_id_;
+  bool is_service_worker_;
+  int process_id_;
+  int frame_id_;
 
   base::WeakPtrFactory<XwalkProxyingRestrictedCookieManager> weak_factory_;
 
