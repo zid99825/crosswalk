@@ -33,6 +33,8 @@ void XWalkWebContentsViewDelegate::ShowContextMenu(
 //      content_view_core->ShowPastePopup(params);
 //    }
 //  }
+
+  content::WebContents::FromRenderFrameHost(render_frame_host)->NotifyContextMenuClosed(params.custom_context);
 }
 
 content::WebDragDestDelegate*

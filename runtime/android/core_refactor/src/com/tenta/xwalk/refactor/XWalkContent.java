@@ -44,6 +44,7 @@ import org.chromium.content_public.browser.LoadUrlParams;
 import org.chromium.content_public.browser.NavigationController;
 import org.chromium.content_public.browser.NavigationEntry;
 import org.chromium.content_public.browser.NavigationHistory;
+import org.chromium.content_public.browser.SelectionClient;
 import org.chromium.content_public.browser.SelectionPopupController;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.WebContentsInternals;
@@ -102,7 +103,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private XWalkGetBitmapCallback mXWalkGetBitmapCallback;
     private final HitTestData mPossiblyStaleHitTestData = new HitTestData();
     // Controls overscroll pull-to-refresh behavior.
-//    private SwipeRefreshHandler mSwipeRefreshHandler;
+    private SwipeRefreshHandler mSwipeRefreshHandler;
     private int metaFsError;
     long mNativeContent;
     private final int mAppTargetSdkVersion;
@@ -294,6 +295,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
         SelectionPopupController controller = SelectionPopupController.fromWebContents(mWebContents);
         controller.setActionModeCallback(new XWalkActionModeCallback(mWebContents));
+        controller.setSelectionClient(SelectionClient.createSmartSelectionClient(mWebContents));
 
         // TODO(iotto) : implement
 //        if (mAutofillProvider != null) {
@@ -315,11 +317,9 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         // For addJavascriptInterface
         mContentsClientBridge.installWebContentsObserver(mWebContents);
 
-        Log.e("iotto", "Fix swipe refresh handler");
-        // TODO(iotto): Fix swipe refresh handler
 //        // For swipe-to-refresh
-//        mSwipeRefreshHandler = new SwipeRefreshHandler(mViewContext);
-//        mSwipeRefreshHandler.setContentViewCore(mContentViewCore);
+        mSwipeRefreshHandler = new SwipeRefreshHandler(mViewContext);
+        mSwipeRefreshHandler.initForWebContents(mWebContents, mContentView);
 
         // Set the third argument isAccessFromFileURLsGrantedByDefault to false,
         // so that
@@ -1175,33 +1175,27 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
      * Reset swipe-to-refresh handler.
      */
     void resetSwipeRefreshHandler() {
-        // TODO(iotto)
-        Log.e("iotto", "resetSwipeRefreshHandler should be implemented in Android");
-//        // When the dialog is visible, keeping the refresh animation active
-//        // in the background is distracting and unnecessary (and likely to
-//        // jank when the dialog is shown).
-//        if (mSwipeRefreshHandler != null) {
-//            mSwipeRefreshHandler.reset();
-//        }
+        // When the dialog is visible, keeping the refresh animation active
+        // in the background is distracting and unnecessary (and likely to
+        // jank when the dialog is shown).
+        if (mSwipeRefreshHandler != null) {
+            mSwipeRefreshHandler.reset();
+        }
     }
 
     /**
      * Stop swipe-to-refresh animation.
      */
     void stopSwipeRefreshHandler() {
-        // TODO(iotto)
-        Log.e("iotto", "resetSwipeRefreshHandler should be implemented in Android");
-//        if (mSwipeRefreshHandler != null) {
-//            mSwipeRefreshHandler.didStopRefreshing();
-//        }
+        if (mSwipeRefreshHandler != null) {
+            mSwipeRefreshHandler.didStopRefreshing();
+        }
     }
 
     void enableSwipeRefresh(boolean enable) {
-        // TODO(iotto)
-        Log.e("iotto", "resetSwipeRefreshHandler should be implemented in Android");
-//        if (mSwipeRefreshHandler != null) {
-//            mSwipeRefreshHandler.setEnabled(enable);
-//        }
+        if (mSwipeRefreshHandler != null) {
+            mSwipeRefreshHandler.setEnabled(enable);
+        }
     }
 
     public void destroy() {
@@ -1216,12 +1210,10 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mXWalkView.removeView(mContentViewRenderView);
         mContentViewRenderView.setCurrentWebContents(null);
 
-        // TODO(iotto)
-        Log.e("iotto", "resetSwipeRefreshHandler should be implemented in Android");
-//        if (mSwipeRefreshHandler != null) {
-//            mSwipeRefreshHandler.setContentViewCore(null);
-//            mSwipeRefreshHandler = null;
-//        }
+        if (mSwipeRefreshHandler != null) {
+            mSwipeRefreshHandler.cleanupForWebContents(mWebContents);
+            mSwipeRefreshHandler = null;
+        }
 
         // Destroy the native resources.
         mXWalkCleanupReference.cleanupNow();

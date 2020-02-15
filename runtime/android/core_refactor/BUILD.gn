@@ -24,7 +24,7 @@ android_library("xwalk_refactor_java") {
     "src/com/tenta/xwalk/refactor/ReflectMethod.java",
     "src/com/tenta/xwalk/refactor/RewriteUrlValue.java",
     "src/com/tenta/xwalk/refactor/SslUtil.java",
-#    "src/com/tenta/xwalk/refactor/SwipeRefreshHandler.java",
+    "src/com/tenta/xwalk/refactor/SwipeRefreshHandler.java",
     "src/com/tenta/xwalk/refactor/UrlUtilities.java",
     "src/com/tenta/xwalk/refactor/XWalkActionModeCallback.java",
     "src/com/tenta/xwalk/refactor/XWalkAutofillClientAndroid.java",
