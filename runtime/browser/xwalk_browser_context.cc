@@ -472,10 +472,10 @@ network::mojom::NetworkContextParamsPtr XWalkBrowserContext::GetNetworkContextPa
   // WebView does not support ftp yet.
   context_params->enable_ftp_url_support = false;
 
-  context_params->enable_brotli = false;
+  context_params->enable_brotli = true;
       //base::FeatureList::IsEnabled(android_webview::features::kWebViewBrotliSupport);
 
-  context_params->check_clear_text_permitted = true;
+  context_params->check_clear_text_permitted = false;
       //AwContentBrowserClient::get_check_cleartext_permitted();
 
   // Update the cors_exempt_header_list to include internally-added headers, to
