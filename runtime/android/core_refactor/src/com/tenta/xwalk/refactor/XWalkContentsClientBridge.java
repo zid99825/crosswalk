@@ -713,7 +713,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
                 }
             }
         };
-        mXWalkUIClient.openFileChooser(mXWalkView, uploadFile, acceptTypes, capture, modeFlags);
+        mXWalkUIClient.openFileChooser(mXWalkView, uploadFile, acceptTypes, "TODO title", "TODO defaultFilename", capture, modeFlags);
         uploadFile.syncCallFinished = true;
         return !uploadFile.syncNullReceived;
     }
