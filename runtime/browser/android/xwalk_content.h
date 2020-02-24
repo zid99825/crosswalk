@@ -45,6 +45,7 @@ class FsDelegateSqlite;
 class XWalkAutofillManager;
 class XWalkWebContentsDelegate;
 class XWalkContentsClientBridge;
+class JsJavaConfiguratorHost;
 
 class XWalkContent :
     public FindHelper::Listener
@@ -170,6 +171,9 @@ class XWalkContent :
  private:
   void OnDidCaptureBitmap(const base::android::JavaRef<jobject>& obj, const base::android::JavaRef<jobject>& callback,
                           float scale, const SkBitmap& bitmap);
+
+  JsJavaConfiguratorHost* GetJsJavaConfiguratorHost();
+
 #ifdef TENTA_CHROMIUM_BUILD
   // TentaNetErrorClient::Listener
   void OnOpenDnsSettings(const GURL& failedUrl) override;
@@ -191,6 +195,7 @@ class XWalkContent :
   std::unique_ptr<content::WebContents> web_contents_;
   std::unique_ptr<XWalkContent> pending_contents_;
   std::unique_ptr<FindHelper> find_helper_;
+  std::unique_ptr<JsJavaConfiguratorHost> js_java_configurator_host_;
 
   // GURL is supplied by the content layer as requesting frame.
   // Callback is supplied by the content layer, and is invoked with the result

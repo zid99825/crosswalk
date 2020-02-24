@@ -457,6 +457,16 @@ void XWalkSettings::PopulateWebPreferencesLocked(JNIEnv* env, const base::androi
           : blink::PreferredColorScheme::kNoPreference;
 }
 
+bool XWalkSettings::GetAllowFileAccess() {
+  // TODO(timvolodine): cache this lazily on update, crbug.com/949590
+  JNIEnv* env = base::android::AttachCurrentThread();
+  CHECK(env);
+  ScopedJavaLocalRef<jobject> scoped_obj = xwalk_settings_.get(env);
+  if (scoped_obj.is_null())
+    return true;
+  return Java_XWalkSettings_getAllowFileAccess(env, scoped_obj);
+}
+
 void XWalkSettings::UpdateWebkitPreferencesLocked(JNIEnv* env, const JavaParamRef<jobject>& obj) {
 
   if (!web_contents()) return;

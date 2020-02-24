@@ -9,6 +9,8 @@
 #include <string>
 
 #include "base/android/scoped_java_ref.h"
+#include "base/callback_forward.h"
+#include "base/task/post_task.h"
 
 class GURL;
 
@@ -24,6 +26,7 @@ class URLRequest;
 namespace xwalk {
 
 class XWalkWebResourceResponse;
+struct XWalkWebResourceRequest;
 
 // This class provides a means of calling Java methods on an instance that has
 // a 1:1 relationship with a WebContents instance directly from the IO thread.
@@ -89,6 +92,10 @@ class XWalkContentsIoThreadClient {
   std::unique_ptr<XWalkWebResourceResponse> ShouldInterceptRequest(const GURL& location,
                                                                    const net::URLRequest* request);
 
+  // This method is called on the IO thread only.
+  using ShouldInterceptRequestResultCallback = base::OnceCallback<void(std::unique_ptr<XWalkWebResourceResponse>)>;
+  void ShouldInterceptRequestAsync(XWalkWebResourceRequest request, ShouldInterceptRequestResultCallback callback);
+
   // Retrieve the AllowContentAccess setting value of this XWalkContent.
   // This method is called on the IO thread only.
   bool ShouldBlockContentUrls() const;
@@ -109,6 +116,9 @@ class XWalkContentsIoThreadClient {
  private:
   bool pending_association_;
   base::android::ScopedJavaGlobalRef<jobject> java_object_;
+  base::android::ScopedJavaGlobalRef<jobject> bg_thread_client_object_;
+  scoped_refptr<base::SequencedTaskRunner> sequenced_task_runner_ = base::CreateSequencedTaskRunnerWithTraits( {
+      base::MayBlock() });
 
   DISALLOW_COPY_AND_ASSIGN(XWalkContentsIoThreadClient);
 };

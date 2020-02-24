@@ -31,7 +31,9 @@ class XWalkCookieAccessPolicy {
 
   // These manage the global access state shared across requests regardless of
   // source (i.e. network or JavaScript).
-  bool GetGlobalAllowAccess();
+  bool GetShouldAcceptCookies();
+//  bool GetGlobalAllowAccess();
+
   void SetGlobalAllowAccess(bool allow);
 
   // Can we read/write third party cookies?

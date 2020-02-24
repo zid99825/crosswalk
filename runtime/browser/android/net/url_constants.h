@@ -7,6 +7,8 @@
 #ifndef XWALK_RUNTIME_BROWSER_ANDROID_NET_URL_CONSTANTS_H_
 #define XWALK_RUNTIME_BROWSER_ANDROID_NET_URL_CONSTANTS_H_
 
+#include "url/gurl.h"
+
 namespace xwalk {
 
 extern const char kAppScheme[];
@@ -14,6 +16,8 @@ extern const char kContentScheme[];
 // Special Android file paths.
 extern const char kAndroidAssetPath[];
 extern const char kAndroidResourcePath[];
+
+bool IsAndroidSpecialFileUrl(const GURL& url);
 
 }  // namespace xwalk
 

@@ -73,11 +73,18 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
                                service_manager::mojom::ServiceRequest* service_request) override;
   bool IsHandledURL(const GURL& url) override;
   content::MediaObserver* GetMediaObserver() override;
+  base::Optional<service_manager::Manifest> GetServiceManifestOverlay(base::StringPiece name) override;
   void BindInterfaceRequestFromFrame(content::RenderFrameHost* render_frame_host, const std::string& interface_name,
                                      mojo::ScopedMessagePipeHandle interface_pipe) override;
   bool BindAssociatedInterfaceRequestFromFrame(
       content::RenderFrameHost* render_frame_host, const std::string& interface_name,
       mojo::ScopedInterfaceEndpointHandle* handle) override;
+  bool WillCreateURLLoaderFactory(content::BrowserContext* browser_context, content::RenderFrameHost* frame,
+                                  int render_process_id, bool is_navigation, bool is_download,
+                                  const url::Origin& request_initiator,
+                                  mojo::PendingReceiver<network::mojom::URLLoaderFactory>* factory_receiver,
+                                  network::mojom::TrustedURLLoaderHeaderClientPtrInfo* header_client,
+                                  bool* bypass_redirect_checks) override;
   bool WillCreateRestrictedCookieManager(
       network::mojom::RestrictedCookieManagerRole role, content::BrowserContext* browser_context,
       const url::Origin& origin,
@@ -96,7 +103,6 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
       net::SSLCertRequestInfo* cert_request_info,
       net::ClientCertIdentityList client_certs,
       std::unique_ptr<content::ClientCertificateDelegate> delegate) override;
-
   content::SpeechRecognitionManagerDelegate*
       CreateSpeechRecognitionManagerDelegate() override;
 
@@ -186,13 +192,12 @@ class XWalkContentBrowserClient : public content::ContentBrowserClient {
                                                               bool first_auth_attempt,
                                                               LoginAuthRequiredCallback auth_required_callback)
                                                                   override;
-  bool HandleExternalProtocol(
-      const GURL& url, content::ResourceRequestInfo::WebContentsGetter web_contents_getter, int child_id,
-      content::NavigationUIData* navigation_data,
-      bool is_main_frame,
-      ui::PageTransition page_transition,
-      bool has_user_gesture,
-      network::mojom::URLLoaderFactoryPtr* out_factory) override;
+  bool HandleExternalProtocol(const GURL& url, content::ResourceRequestInfo::WebContentsGetter web_contents_getter,
+                              int child_id, content::NavigationUIData* navigation_data, bool is_main_frame,
+                              ui::PageTransition page_transition, bool has_user_gesture,
+                              network::mojom::URLLoaderFactoryPtr* out_factory) override;
+  void RegisterNonNetworkSubresourceURLLoaderFactories(int render_process_id, int render_frame_id,
+                                                       NonNetworkURLLoaderFactoryMap* factories) override;
 
   // TODO(iotto) : Implement for geolocation
 //  // Allows the embedder to provide a URLRequestContextGetter to use for network

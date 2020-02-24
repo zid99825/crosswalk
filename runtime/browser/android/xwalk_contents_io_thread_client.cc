@@ -12,6 +12,7 @@
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
 #include "base/android/jni_weak_ref.h"
+#include "base/bind.h"
 #include "base/lazy_instance.h"
 #include "base/synchronization/lock.h"
 #include "content/public/browser/browser_thread.h"
@@ -27,6 +28,7 @@
 #include "net/url_request/url_request.h"
 #include "url/gurl.h"
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContentsIoThreadClient_jni.h"
+#include "xwalk/runtime/browser/android/xwalk_web_resource_request.h"
 #include "xwalk/runtime/browser/android/xwalk_web_resource_response_impl.h"
 
 using base::android::AttachCurrentThread;
@@ -243,6 +245,10 @@ struct WebResourceRequest {
   }
 };
 
+std::unique_ptr<XWalkWebResourceResponse> ReturnNull() {
+  return std::unique_ptr<XWalkWebResourceResponse>();
+}
+
 }  // namespace
 
 // XWalkContentsIoThreadClient -------------------------------------------
@@ -381,6 +387,24 @@ XWalkContentsIoThreadClient::ShouldInterceptRequest(
       new XWalkWebResourceResponseImpl(ret));
 }
 
+void XWalkContentsIoThreadClient::ShouldInterceptRequestAsync(XWalkWebResourceRequest request,
+                                                              ShouldInterceptRequestResultCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  base::OnceCallback<std::unique_ptr<XWalkWebResourceResponse>()> get_response = base::BindOnce(&ReturnNull);
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT url=" << request.url;
+//  JNIEnv* env = AttachCurrentThread();
+//  if (bg_thread_client_object_.is_null() && !java_object_.is_null()) {
+//    bg_thread_client_object_.Reset(Java_XWalkContentsIoThreadClient_getBackgroundThreadClient(env, java_object_));
+//  }
+//  if (!bg_thread_client_object_.is_null()) {
+//    get_response = base::BindOnce(&RunShouldInterceptRequest, std::move(request),
+//                                  JavaObjectWeakGlobalRef(env, bg_thread_client_object_.obj()));
+//  }
+  base::PostTaskAndReplyWithResult(sequenced_task_runner_.get(), FROM_HERE,
+  std::move(get_response),
+  std::move(callback));
+}
+
 bool XWalkContentsIoThreadClient::ShouldBlockContentUrls() const {
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
   if (java_object_.is_null())
@@ -392,6 +416,7 @@ bool XWalkContentsIoThreadClient::ShouldBlockContentUrls() const {
 }
 
 bool XWalkContentsIoThreadClient::ShouldBlockFileUrls() const {
+  LOG(INFO) << "iotto " << __func__;
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
   if (java_object_.is_null())
     return false;

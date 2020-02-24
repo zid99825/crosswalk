@@ -13,25 +13,31 @@
 #include "base/files/file.h"
 #include "base/memory/ptr_util.h"
 #include "base/path_service.h"
+#include "base/task/post_task.h"
 #include "components/autofill/content/browser/content_autofill_driver_factory.h"
 #include "components/nacl/common/buildflags.h"
 #include "components/version_info/version_info.h"
 #include "content/public/browser/browser_child_process_host.h"
 #include "content/public/browser/browser_main_parts.h"
 #include "content/public/browser/browser_ppapi_host.h"
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
 #include "content/public/browser/child_process_data.h"
 #include "content/public/browser/client_certificate_delegate.h"
+#include "content/public/browser/file_url_loader.h"
 #include "content/public/browser/network_service_instance.h"
 #include "content/public/browser/presentation_service_delegate.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/resource_context.h"
 #include "content/public/browser/resource_dispatcher_host.h"
+#include "content/public/browser/shared_cors_origin_access_list.h"
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_descriptors.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/main_function_params.h"
+#include "content/public/common/service_names.mojom.h"
 #include "content/public/common/user_agent.h"
 #include "content/public/common/web_preferences.h"
 #include "gin/v8_initializer.h"
@@ -54,6 +60,7 @@
 #include "xwalk/runtime/browser/speech/speech_recognition_manager_delegate.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_browser_main_parts.h"
+#include "xwalk/runtime/browser/xwalk_content_overlay_manifests.h"
 #include "xwalk/runtime/browser/xwalk_platform_notification_service.h"
 #include "xwalk/runtime/browser/xwalk_render_message_filter.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
@@ -61,6 +68,7 @@
 #include "xwalk/runtime/common/xwalk_switches.h"
 #include "xwalk/runtime/browser/devtools/xwalk_devtools_manager_delegate.h"
 #include "xwalk/runtime/browser/network_services/xwalk_proxying_restricted_cookie_manager.h"
+#include "xwalk/runtime/browser/network_services/xwalk_proxying_url_loader_factory.h"
 
 #if BUILDFLAG(ENABLE_NACL)
 #include "components/nacl/browser/nacl_browser.h"
@@ -81,6 +89,7 @@
 #include "components/navigation_interception/intercept_navigation_delegate.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/navigation_throttle.h"
+#include "xwalk/runtime/browser/android/net/url_constants.h"
 #include "xwalk/runtime/browser/android/xwalk_http_auth_handler.h"
 #include "xwalk/runtime/browser/android/xwalk_cookie_access_policy.h"
 #include "xwalk/runtime/browser/android/xwalk_content.h"
@@ -112,6 +121,8 @@
 #endif
 
 #include "meta_logging.h"
+
+using content::WebContents;
 
 namespace xwalk {
 
@@ -343,6 +354,7 @@ void XWalkContentBrowserClient::RenderProcessWillLaunch(content::RenderProcessHo
 }
 
 bool XWalkContentBrowserClient::IsHandledURL(const GURL& url) {
+  LOG(INFO) << "iotto " << __func__ << " url=" << url;
   if (!url.is_valid()) {
     // We handle error cases.
     return true;
@@ -359,11 +371,13 @@ bool XWalkContentBrowserClient::IsHandledURL(const GURL& url) {
 //    content::kChromeUIScheme,
     url::kContentScheme,
   };
-//  if (scheme == url::kFileScheme) {
-//    // Return false for the "special" file URLs, so they can be loaded
-//    // even if access to file: scheme is not granted to the child process.
-//    return !IsAndroidSpecialFileUrl(url);
-//  }
+  if (scheme == url::kFileScheme) {
+    // Return false for the "special" file URLs, so they can be loaded
+    // even if access to file: scheme is not granted to the child process.
+    bool ret_val = !IsAndroidSpecialFileUrl(url);
+    LOG(INFO) << "iotto " << __func__ << " isHandledFileScheme=" << ret_val << " url=" << url;
+    return true;
+  }
   for (size_t i = 0; i < base::size(kProtocolList); ++i) {
     if (scheme == kProtocolList[i])
       return true;
@@ -602,7 +616,7 @@ XWalkContentBrowserClient::CreateThrottlesForNavigation(
     throttles.push_back(
         navigation_interception::InterceptNavigationDelegate::CreateThrottleFor(
             navigation_handle, navigation_interception::SynchronyMode::kSync));
-    LOG(WARNING) << "iotto " << __func__ << " IMPLEMENT";
+    TENTA_LOG(WARNING) << __func__ << " maybe IMPLEMENT";
 //    throttles.push_back(std::make_unique<PolicyBlacklistNavigationThrottle>(
 //        navigation_handle, AwBrowserContext::FromWebContents(
 //                               navigation_handle->GetWebContents())));
@@ -611,9 +625,18 @@ XWalkContentBrowserClient::CreateThrottlesForNavigation(
 }
 #endif // OS_ANDROID
 
-/**
- *
- */
+base::Optional<service_manager::Manifest>
+XWalkContentBrowserClient::GetServiceManifestOverlay(base::StringPiece name) {
+  LOG(INFO) << "iotto " << __func__ << " manifest=" << name;
+  if (name == content::mojom::kBrowserServiceName)
+    return GetContentBrowserOverlayManifest();
+  if (name == content::mojom::kRendererServiceName)
+    return GetContentRendererOverlayManifest();
+//  if (name == content::mojom::kUtilityServiceName)
+//    return GetAWContentUtilityOverlayManifest();
+  return base::nullopt;
+}
+
 void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
     content::RenderFrameHost* render_frame_host,
     const std::string& interface_name,
@@ -633,7 +656,7 @@ bool XWalkContentBrowserClient::BindAssociatedInterfaceRequestFromFrame(
     content::RenderFrameHost* render_frame_host,
     const std::string& interface_name,
     mojo::ScopedInterfaceEndpointHandle* handle) {
-
+  LOG(INFO) << "iotto " << __func__ << " interface=" << interface_name;
   if (interface_name == autofill::mojom::AutofillDriver::Name_) {
     autofill::ContentAutofillDriverFactory::BindAutofillDriver(
         mojo::PendingAssociatedReceiver<autofill::mojom::AutofillDriver>(
@@ -642,7 +665,6 @@ bool XWalkContentBrowserClient::BindAssociatedInterfaceRequestFromFrame(
     return true;
   }
 
-  LOG(INFO) << "iotto " << __func__ << " interface=" << interface_name;
   return false;
 }
 
@@ -650,6 +672,37 @@ void XWalkContentBrowserClient::ExposeInterfacesToFrame(
     service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>*
     registry) {
 
+}
+
+bool XWalkContentBrowserClient::WillCreateURLLoaderFactory(
+    content::BrowserContext* browser_context,
+    content::RenderFrameHost* frame,
+    int render_process_id,
+    bool is_navigation,
+    bool is_download,
+    const url::Origin& request_initiator,
+    mojo::PendingReceiver<network::mojom::URLLoaderFactory>* factory_receiver,
+    network::mojom::TrustedURLLoaderHeaderClientPtrInfo* header_client,
+    bool* bypass_redirect_checks) {
+
+  LOG(ERROR) << "iotto " << __func__ << " Implement" << " request_initiator=" << request_initiator.GetURL().spec();
+//  return false;
+
+  DCHECK(base::FeatureList::IsEnabled(network::features::kNetworkService));
+  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+
+  auto proxied_receiver = std::move(*factory_receiver);
+  network::mojom::URLLoaderFactoryPtrInfo target_factory_info;
+  *factory_receiver = mojo::MakeRequest(&target_factory_info);
+  int process_id = is_navigation ? 0 : render_process_id;
+
+  // Android WebView has one non off-the-record browser context.
+  base::PostTaskWithTraits(
+      FROM_HERE, {content::BrowserThread::IO},
+      base::BindOnce(&XWalkProxyingURLLoaderFactory::CreateProxy, process_id,
+                     std::move(proxied_receiver),
+                     std::move(target_factory_info)));
+  return true;
 }
 
 bool XWalkContentBrowserClient::WillCreateRestrictedCookieManager(
@@ -723,6 +776,21 @@ bool XWalkContentBrowserClient::HandleExternalProtocol(const GURL& url,
 //    NOTREACHED();
 //  }
   return false;
+}
+
+void XWalkContentBrowserClient::RegisterNonNetworkSubresourceURLLoaderFactories(
+    int render_process_id, int render_frame_id, NonNetworkURLLoaderFactoryMap* factories) {
+  LOG(INFO) << "iotto " << __func__;
+  WebContents* web_contents = content::WebContents::FromRenderFrameHost(
+      content::RenderFrameHost::FromID(render_process_id, render_frame_id));
+  XWalkSettings* xwalk_settings = XWalkSettings::FromWebContents(web_contents);
+
+  if (xwalk_settings && xwalk_settings->GetAllowFileAccess()) {
+    XWalkBrowserContext* browser_context = XWalkBrowserContext::FromWebContents(web_contents);
+    auto file_factory = CreateFileURLLoaderFactory(browser_context->GetPath(),
+                                                   browser_context->GetSharedCorsOriginAccessList());
+    factories->emplace(url::kFileScheme, std::move(file_factory));
+  }
 }
 
 }  // namespace xwalk

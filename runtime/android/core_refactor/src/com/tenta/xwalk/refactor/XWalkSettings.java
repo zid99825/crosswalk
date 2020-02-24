@@ -426,6 +426,7 @@ public class XWalkSettings {
      * @return true if this XWalkView supports file access.
      * @since 7.0
      */
+    @CalledByNative
     public boolean getAllowFileAccess() {
         synchronized (mXWalkSettingsLock) {
             return mAllowFileUrlAccess;

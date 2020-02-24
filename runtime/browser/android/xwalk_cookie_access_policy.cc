@@ -38,7 +38,7 @@ XWalkCookieAccessPolicy* XWalkCookieAccessPolicy::GetInstance() {
   return g_lazy_instance.Pointer();
 }
 
-bool XWalkCookieAccessPolicy::GetGlobalAllowAccess() {
+bool XWalkCookieAccessPolicy::GetShouldAcceptCookies() {
   AutoLock lock(lock_);
   return accept_cookies_;
 }

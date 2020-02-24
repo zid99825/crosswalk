@@ -195,6 +195,7 @@ RuntimeURLRequestContextGetter::~RuntimeURLRequestContextGetter() {
 }
 
 net::URLRequestContext* RuntimeURLRequestContextGetter::GetURLRequestContext() {
+  LOG(INFO) << "iotto " << __func__;
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
 
   if (!url_request_context_) {

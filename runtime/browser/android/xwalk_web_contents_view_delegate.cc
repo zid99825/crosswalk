@@ -34,7 +34,7 @@ void XWalkWebContentsViewDelegate::ShowContextMenu(
 //    }
 //  }
 
-  content::WebContents::FromRenderFrameHost(render_frame_host)->NotifyContextMenuClosed(params.custom_context);
+//  content::WebContents::FromRenderFrameHost(render_frame_host)->NotifyContextMenuClosed(params.custom_context);
 }
 
 content::WebDragDestDelegate*

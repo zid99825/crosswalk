@@ -115,6 +115,12 @@ source_set("xwalk_runtime") {
     "runtime/app/xwalk_main_delegate.h",
     "runtime/browser/android/find_helper.cc",
     "runtime/browser/android/find_helper.h",
+    "runtime/browser/android/js_java_interaction/js_api_handler_factory.cc",
+    "runtime/browser/android/js_java_interaction/js_api_handler_factory.h",
+    "runtime/browser/android/js_java_interaction/js_api_handler.cc",
+    "runtime/browser/android/js_java_interaction/js_api_handler.h",
+    "runtime/browser/android/js_java_interaction/js_java_configurator_host.cc",
+    "runtime/browser/android/js_java_interaction/js_java_configurator_host.h",
     "runtime/browser/android/net/android_protocol_handler.cc",
     "runtime/browser/android/net/android_protocol_handler.h",
     "runtime/browser/android/net/android_stream_reader_url_request_job.cc",
@@ -146,9 +152,6 @@ source_set("xwalk_runtime") {
     "runtime/browser/android/xwalk_content_lifecycle_notifier.h",
     "runtime/browser/android/xwalk_contents_client_bridge.cc",
     "runtime/browser/android/xwalk_contents_client_bridge.h",
-# TODO(iotto): Remove next two lines
-#    "runtime/browser/android/xwalk_contents_client_bridge_base.cc",
-#    "runtime/browser/android/xwalk_contents_client_bridge_base.h",
     "runtime/browser/android/xwalk_contents_io_thread_client.h",
     "runtime/browser/android/xwalk_contents_io_thread_client.cc",
     "runtime/browser/android/xwalk_cookie_access_policy.cc",
@@ -178,6 +181,8 @@ source_set("xwalk_runtime") {
     "runtime/browser/android/xwalk_web_contents_delegate.h",
     "runtime/browser/android/xwalk_web_contents_view_delegate.cc",
     "runtime/browser/android/xwalk_web_contents_view_delegate.h",
+    "runtime/browser/android/xwalk_web_resource_request.cc",
+    "runtime/browser/android/xwalk_web_resource_request.h",
     "runtime/browser/android/xwalk_web_resource_response.cc",
     "runtime/browser/android/xwalk_web_resource_response.h",
     "runtime/browser/android/xwalk_web_resource_response_impl.cc",
@@ -194,8 +199,12 @@ source_set("xwalk_runtime") {
     "runtime/browser/image_util.h",
     "runtime/browser/media/media_capture_devices_dispatcher.cc",
     "runtime/browser/media/media_capture_devices_dispatcher.h",
+    "runtime/browser/network_services/xwalk_net_helpers.cc",
+    "runtime/browser/network_services/xwalk_net_helpers.h",
     "runtime/browser/network_services/xwalk_proxying_restricted_cookie_manager.cc",
     "runtime/browser/network_services/xwalk_proxying_restricted_cookie_manager.h",
+    "runtime/browser/network_services/xwalk_proxying_url_loader_factory.cc",
+    "runtime/browser/network_services/xwalk_proxying_url_loader_factory.h",
     "runtime/browser/runtime.cc",
     "runtime/browser/runtime.h",
     "runtime/browser/runtime_download_manager_delegate.cc",
@@ -255,8 +264,6 @@ source_set("xwalk_runtime") {
     "runtime/browser/xwalk_application_mac.mm",
     "runtime/browser/xwalk_autofill_client.cc",
     "runtime/browser/xwalk_autofill_client.h",
-#    "runtime/browser/aw_xwalk_autofill_client.cc",
-#    "runtime/browser/aw_xwalk_autofill_client.h",
     "runtime/browser/xwalk_autofill_manager.cc",
     "runtime/browser/xwalk_autofill_manager.h",
     "runtime/browser/xwalk_browser_context.cc",
@@ -270,6 +277,8 @@ source_set("xwalk_runtime") {
 #todo(iotto):remove    "runtime/browser/xwalk_component.h",
     "runtime/browser/xwalk_content_browser_client.cc",
     "runtime/browser/xwalk_content_browser_client.h",
+    "runtime/browser/xwalk_content_overlay_manifests.cc",
+    "runtime/browser/xwalk_content_overlay_manifests.h",
     "runtime/browser/xwalk_content_settings.cc",
     "runtime/browser/xwalk_content_settings.h",
     "runtime/browser/xwalk_form_database_service.cc",
@@ -340,6 +349,10 @@ source_set("xwalk_runtime") {
     "runtime/common/xwalk_system_locale.h",
     "runtime/gpu/xwalk_content_gpu_client.cc",
     "runtime/gpu/xwalk_content_gpu_client.h",
+    "runtime/renderer/android/js_java_interaction/js_binding.cc",
+    "runtime/renderer/android/js_java_interaction/js_binding.h",
+    "runtime/renderer/android/js_java_interaction/js_java_configurator.cc",
+    "runtime/renderer/android/js_java_interaction/js_java_configurator.h",
     "runtime/renderer/android/xwalk_permission_client.cc",
     "runtime/renderer/android/xwalk_permission_client.h",
     "runtime/renderer/android/xwalk_render_thread_observer.cc",
@@ -397,6 +410,7 @@ source_set("xwalk_runtime") {
     ":xwalk_cookies",
 #     ":generate_upstream_blink_version",
 #    "//android_webview:common",
+    ":js_api_mojom",
     "//build/util:webkit_version",
     "//base",
     "//base:base_static",
@@ -598,6 +612,17 @@ source_set("xwalk_runtime") {
       "//ui/wm",
     ]
   }
+}
+
+mojom("js_api_mojom") {
+  sources = [
+    "runtime/common/js_java_interaction/interfaces.mojom",
+  ]
+
+  public_deps = [
+    "//mojo/public/mojom/base",
+    "//services/network/public/mojom:mojom",
+  ]
 }
 
 # While we could just call lastchange.py here and generate the header

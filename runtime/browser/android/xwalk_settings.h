@@ -46,6 +46,7 @@ class XWalkSettings : public content::WebContentsObserver {
 
   bool GetJavaScriptCanOpenWindowsAutomatically();
   void PopulateWebPreferences(content::WebPreferences* webPrefs);
+  bool GetAllowFileAccess();
 
  private:
   struct FieldIds;

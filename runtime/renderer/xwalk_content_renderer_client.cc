@@ -45,6 +45,7 @@
 #include "components/cdm/renderer/android_key_systems.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
 #include "xwalk/runtime/common/android/xwalk_render_view_messages.h"
+#include "xwalk/runtime/renderer/android/js_java_interaction/js_java_configurator.h"
 #include "xwalk/runtime/renderer/android/xwalk_permission_client.h"
 #include "xwalk/runtime/renderer/android/xwalk_render_thread_observer.h"
 #include "xwalk/runtime/renderer/android/xwalk_render_frame_ext.h"
@@ -224,8 +225,7 @@ void XWalkContentRendererClient::RenderFrameCreated(
     content::RenderFrame* render_frame) {
 //  new XWalkFrameHelper(render_frame, extension_controller_.get());
   new XWalkRenderFrameExt(render_frame);
-  // TODO(iotto):
-//  new JsJavaConfigurator(render_frame);
+  new JsJavaConfigurator(render_frame);
 #if defined(OS_ANDROID)
   new XWalkPermissionClient(render_frame);
 #endif
@@ -424,7 +424,7 @@ void XWalkContentRendererClient::AddSupportedKeySystems(
 
 bool XWalkContentRendererClient::ShouldReportDetailedMessageForSource(const base::string16& source) {
   TENTA_LOG_NET(INFO) << __func__ << " src=" << source;
-  return false;
+  return true;
 }
 
 bool XWalkContentRendererClient::HasErrorPage(int http_status_code) {

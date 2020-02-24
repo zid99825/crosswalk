@@ -27,6 +27,7 @@
 #include "xwalk/runtime/common/xwalk_runtime_features.h"
 #include "xwalk/runtime/common/xwalk_switches.h"
 
+#include "meta_logging.h"
 #if defined(OS_WIN)
 #include "xwalk/runtime/browser/xwalk_runner_win.h"
 #endif
@@ -69,7 +70,7 @@ XWalkRunner* XWalkRunner::GetInstance() {
 //}
 
 network::mojom::HttpAuthDynamicParamsPtr XWalkRunner::CreateHttpAuthDynamicParams() {
-  LOG(WARNING) << "iotto " << __func__ << " FIX/IMPLEMENT";
+  TENTA_LOG(WARNING) << __func__ << " FIX/IMPLEMENT";
   network::mojom::HttpAuthDynamicParamsPtr auth_dynamic_params = network::mojom::HttpAuthDynamicParams::New();
 
 //  auth_dynamic_params->server_whitelist = local_state()->GetString(prefs::kAuthServerWhitelist);

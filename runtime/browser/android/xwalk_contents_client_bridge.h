@@ -45,6 +45,8 @@ class SkBitmap;
 
 namespace xwalk {
 
+struct XWalkWebResourceRequest;
+
 // A class that handles the Java<->Native communication for the
 // XWalkContentsClient. XWalkContentsClientBridge is created and owned by
 // native XWalkViewContents class and it only has a weak reference to the
@@ -56,6 +58,19 @@ namespace xwalk {
 class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
  public:
   using CertErrorCallback = base::OnceCallback<void(content::CertificateRequestResultType)>;
+  // Used to package up information needed by OnReceivedHttpError for transfer
+  // between IO and UI threads.
+  struct HttpErrorInfo {
+    HttpErrorInfo();
+    ~HttpErrorInfo();
+
+    int status_code;
+    std::string status_text;
+    std::string mime_type;
+    std::string encoding;
+    std::vector<std::string> response_header_names;
+    std::vector<std::string> response_header_values;
+  };
 
   // Adds the handler to the UserData registry.
   static void Associate(content::WebContents* web_contents, XWalkContentsClientBridge* handler);
@@ -71,7 +86,6 @@ class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
                             content::WebContents* web_contents);
   ~XWalkContentsClientBridge() override;
 
-  // XWalkContentsClientBridge implementation
   void AllowCertificateError(int cert_error, net::X509Certificate* cert, const GURL& request_url,
                              CertErrorCallback callback, bool* cancel_request);
 
@@ -94,6 +108,15 @@ class XWalkContentsClientBridge : public XWalkIconHelper::Listener {
                    const std::string& mime_type, int64_t content_length);
 
   void NewLoginRequest(const std::string& realm, const std::string& account, const std::string& args);
+
+  // Called when a resource loading error has occured (e.g. an I/O error,
+  // host name lookup failure etc.)
+  void OnReceivedError(const XWalkWebResourceRequest& request, int error_code, bool safebrowsing_hit);
+  // Called when a response from the server is received with status code >= 400.
+  void OnReceivedHttpError(const XWalkWebResourceRequest& request, std::unique_ptr<HttpErrorInfo> error_info);
+
+  // This should be called from IO thread.
+  static std::unique_ptr<HttpErrorInfo> ExtractHttpErrorInfo(const net::HttpResponseHeaders* response_headers);
 
   // Methods called from Java.
   void ProceedSslError(JNIEnv* env, jobject obj, jboolean proceed, jint id);

@@ -45,6 +45,7 @@
 
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContentsClientBridge_jni.h"
 #include "xwalk/runtime/browser/android/xwalk_web_contents_delegate.h"
+#include "xwalk/runtime/browser/android/xwalk_web_resource_request.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertJavaStringToUTF16;
@@ -470,6 +471,33 @@ void XWalkContentsClientBridge::NewLoginRequest(const std::string& realm, const 
     jaccount = ConvertUTF8ToJavaString(env, account);
 
   Java_XWalkContentsClientBridge_onReceivedLoginRequest(env, obj, jrealm, jaccount, jargs);
+}
+
+void XWalkContentsClientBridge::OnReceivedError(const XWalkWebResourceRequest& request, int error_code, bool safebrowsing_hit) {
+  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!";
+}
+
+void XWalkContentsClientBridge::OnReceivedHttpError(const XWalkWebResourceRequest& request, std::unique_ptr<HttpErrorInfo> error_info) {
+   LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!";
+}
+
+//static
+std::unique_ptr<XWalkContentsClientBridge::HttpErrorInfo> XWalkContentsClientBridge::ExtractHttpErrorInfo(
+    const net::HttpResponseHeaders* response_headers) {
+  auto http_error_info = std::make_unique<HttpErrorInfo>();
+  {
+    size_t headers_iterator = 0;
+    std::string header_name, header_value;
+    while (response_headers->EnumerateHeaderLines(&headers_iterator, &header_name, &header_value)) {
+      http_error_info->response_header_names.push_back(header_name);
+      http_error_info->response_header_values.push_back(header_value);
+    }
+  }
+
+  response_headers->GetMimeTypeAndCharset(&http_error_info->mime_type, &http_error_info->encoding);
+  http_error_info->status_code = response_headers->response_code();
+  http_error_info->status_text = response_headers->GetStatusText();
+  return http_error_info;
 }
 
 void XWalkContentsClientBridge::ConfirmJsResult(JNIEnv* env,

@@ -369,7 +369,7 @@ void CookieManager::SetAcceptCookie(bool accept) {
 }
 
 bool CookieManager::AcceptCookie() {
-  return XWalkCookieAccessPolicy::GetInstance()->GetGlobalAllowAccess();
+  return XWalkCookieAccessPolicy::GetInstance()->GetShouldAcceptCookies();
 }
 
 void CookieManager::SetCookie(const GURL& host, const std::string& cookie_value) {

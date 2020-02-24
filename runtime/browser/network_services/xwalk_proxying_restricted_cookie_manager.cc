@@ -190,7 +190,7 @@ bool XwalkProxyingRestrictedCookieManager::AllowCookies(
   if (is_service_worker_) {
     // Service worker cookies are always first-party, so only need to check
     // the global toggle.
-    return XWalkCookieAccessPolicy::GetInstance()->GetGlobalAllowAccess();
+    return XWalkCookieAccessPolicy::GetInstance()->GetShouldAcceptCookies();
   } else {
     return XWalkCookieAccessPolicy::GetInstance()->AllowCookies(
         url, site_for_cookies, process_id_, frame_id_);

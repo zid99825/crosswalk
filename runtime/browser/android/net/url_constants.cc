@@ -21,4 +21,13 @@ const char kContentScheme[] = "content";
 const char kAndroidAssetPath[] = "/android_asset/";
 const char kAndroidResourcePath[] = "/android_res/";
 
+bool IsAndroidSpecialFileUrl(const GURL& url) {
+  if (!url.is_valid() || !url.SchemeIsFile() || !url.has_path())
+    return false;
+  return base::StartsWith(url.path(), kAndroidAssetPath,
+                          base::CompareCase::SENSITIVE) ||
+         base::StartsWith(url.path(), kAndroidResourcePath,
+                          base::CompareCase::SENSITIVE);
+}
+
 }  // namespace xwalk

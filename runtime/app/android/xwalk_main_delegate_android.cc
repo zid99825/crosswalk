@@ -22,6 +22,7 @@
 #include "cc/base/switches.h"
 #include "content/public/browser/browser_main_runner.h"
 #include "content/public/common/content_switches.h"
+#include "components/autofill/core/common/autofill_features.h"
 #include "gpu/config/gpu_switches.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/resource/resource_bundle_android.h"
@@ -185,8 +186,8 @@ bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
 ////      features.EnableIfNotSet(spellcheck::kAndroidSpellCheckerNonLowEnd);
 ////  #endif  // ENABLE_SPELLCHECK
 //
-////      features.EnableIfNotSet(
-////          autofill::features::kAutofillSkipComparingInferredLabels);
+      features.EnableIfNotSet(
+          autofill::features::kAutofillSkipComparingInferredLabels);
 ////
 ////      if (cl->HasSwitch(switches::kWebViewLogJsConsoleMessages)) {
 ////        features.EnableIfNotSet(::features::kLogJsConsoleMessages);
@@ -201,7 +202,7 @@ bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
 ////      features.DisableIfNotSet(::features::kVizDisplayCompositor);
 
       // WebView does not support AndroidOverlay yet for video overlays.
-      features.DisableIfNotSet(media::kUseAndroidOverlay);
+//      features.DisableIfNotSet(media::kUseAndroidOverlay);
 
       // WebView doesn't support embedding CompositorFrameSinks which is needed
       // for UseSurfaceLayerForVideo feature. https://crbug.com/853832
@@ -211,8 +212,8 @@ bool XWalkMainDelegateAndroid::BasicStartupComplete(int* exit_code) {
       // clear on how user can remove persistent media licenses from UI.
       features.DisableIfNotSet(media::kMediaDrmPersistentLicense);
 
-//      features.DisableIfNotSet(
-//          autofill::features::kAutofillRestrictUnownedFieldsToFormlessCheckout);
+      features.DisableIfNotSet(
+          autofill::features::kAutofillRestrictUnownedFieldsToFormlessCheckout);
 
       features.DisableIfNotSet(::features::kBackgroundFetch);
 

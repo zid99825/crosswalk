@@ -45,6 +45,7 @@
 #include "xwalk/application/common/application_manifest_constants.h"
 #include "xwalk/application/common/manifest.h"
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContent_jni.h"
+#include "xwalk/runtime/browser/android/js_java_interaction/js_java_configurator_host.h"
 #include "xwalk/runtime/browser/android/net_disk_cache_remover.h"
 #include "xwalk/runtime/browser/android/state_serializer.h"
 #include "xwalk/runtime/browser/android/xwalk_autofill_client_android.h"
@@ -360,6 +361,9 @@ void XWalkContent::SetJavaPeers(
   web_contents_->SetDelegate(web_contents_delegate_.get());
 
   render_view_host_ext_.reset(new XWalkRenderViewHostExt(web_contents_.get()));
+
+  // TODO(iotto): Continue implementation
+  GetJsJavaConfiguratorHost();
 }
 
 base::android::ScopedJavaLocalRef<jobject> XWalkContent::GetWebContents(JNIEnv* env, jobject obj) {
@@ -474,6 +478,15 @@ ScopedJavaLocalRef<jstring> XWalkContent::GetVersion(JNIEnv* env, jobject obj) {
 
 void XWalkContent::SetJsOnlineProperty(JNIEnv* env, jobject obj, jboolean network_up) {
   render_view_host_ext_->SetJsOnlineProperty(network_up);
+}
+
+JsJavaConfiguratorHost* XWalkContent::GetJsJavaConfiguratorHost() {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  if (!js_java_configurator_host_.get()) {
+    js_java_configurator_host_ =
+        std::make_unique<JsJavaConfiguratorHost>(web_contents_.get());
+  }
+  return js_java_configurator_host_.get();
 }
 
 jboolean XWalkContent::SetManifest(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj,

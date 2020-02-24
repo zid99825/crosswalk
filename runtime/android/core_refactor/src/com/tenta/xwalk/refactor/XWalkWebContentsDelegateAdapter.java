@@ -141,6 +141,7 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
     @Override
     public boolean addMessageToConsole(int level, String message, int lineNumber,
             String sourceId) {
+//        org.chromium.base.Log.d("iotto", "addMessageToConsole line=%d, message=%s, source=%s", lineNumber, message, sourceId);
         if (mXWalkContentsClient == null) return false;
         ConsoleMessage.MessageLevel messageLevel = ConsoleMessage.MessageLevel.DEBUG;
         switch(level) {
