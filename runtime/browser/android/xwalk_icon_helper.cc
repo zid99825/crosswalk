@@ -22,7 +22,6 @@ namespace xwalk {
 XWalkIconHelper::XWalkIconHelper(WebContents* web_contents)
     : content::WebContentsObserver(web_contents),
       listener_(NULL),
-      _got_first_icon(false),
       _this_weak(this) {
 }
 
@@ -72,9 +71,7 @@ void XWalkIconHelper::DidUpdateFaviconURL(
     }
   }
 
-  if (!_got_first_icon && largest_icon.icon_url.is_valid()) {
-    // download only the first favicon
-    _got_first_icon = true;
+  if (largest_icon.icon_url.is_valid()) {
 //        if (listener_) listener_->OnIconAvailable(i->icon_url);
     // TODO(iotto) : Ask Clinet if favicons should be downloaded
     web_contents()->DownloadImage(largest_icon.icon_url, true,  // Is a favicon
@@ -88,7 +85,6 @@ void XWalkIconHelper::DidUpdateFaviconURL(
 void XWalkIconHelper::DidFinishNavigation(content::NavigationHandle* navigation_handle) {
   if (!navigation_handle->IsInMainFrame() || !navigation_handle->HasCommitted())
     return;
-  _got_first_icon = false;
 }
 
 void XWalkIconHelper::DownloadFaviconCallback(
