@@ -60,6 +60,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.annotation.Annotation;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 
@@ -292,6 +293,9 @@ public class XWalkView extends android.widget.FrameLayout {
      */
     public static final String TEXTURE_VIEW = "TextureView";
 
+    public static void setJavascriptInterfaceClass(Class<? extends Annotation> clazz) {
+        XWalkContent.setJavascriptInterfaceClass(clazz);
+    }
     // The moment when the XWalkViewBridge is added to the XWalkView, the screen flashes black. The
     // reason is when the SurfaceView appears in the window the fist time, it requests the window's
     // parameters changing by calling IWindowSession.relayout(). But if the window already has
