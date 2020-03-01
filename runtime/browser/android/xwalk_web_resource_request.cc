@@ -11,6 +11,9 @@
 #include "services/network/public/cpp/resource_request.h"
 #include "ui/base/page_transition_types.h"
 
+using base::android::ConvertUTF8ToJavaString;
+using base::android::ToJavaArrayOfStrings;
+
 namespace xwalk {
 namespace {
 
@@ -43,5 +46,17 @@ XWalkWebResourceRequest::XWalkWebResourceRequest() {
 XWalkWebResourceRequest::XWalkWebResourceRequest(XWalkWebResourceRequest&& other) = default;
 XWalkWebResourceRequest& XWalkWebResourceRequest::operator=(XWalkWebResourceRequest&& other) = default;
 XWalkWebResourceRequest::~XWalkWebResourceRequest() = default;
+
+XWalkWebResourceRequest::JavaWebResourceRequest::JavaWebResourceRequest() = default;
+XWalkWebResourceRequest::JavaWebResourceRequest::~JavaWebResourceRequest() = default;
+
+// static
+void XWalkWebResourceRequest::ConvertToJava(JNIEnv* env, const XWalkWebResourceRequest& request,
+                                            JavaWebResourceRequest* jRequest) {
+  jRequest->jurl = ConvertUTF8ToJavaString(env, request.url);
+  jRequest->jmethod = ConvertUTF8ToJavaString(env, request.method);
+  jRequest->jheader_names = ToJavaArrayOfStrings(env, request.header_names);
+  jRequest->jheader_values = ToJavaArrayOfStrings(env, request.header_values);
+}
 
 } /* namespace xwalk */

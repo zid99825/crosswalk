@@ -273,7 +273,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
 
     @Override
     public XWalkWebResourceResponse shouldInterceptRequest(
-            WebResourceRequestInner request) {
+            XWalkWebResourceRequest request) {
         // For compatibility with the old shouldInterceptLoadRequest.
         WebResourceResponse response = mXWalkResourceClient.shouldInterceptLoadRequest(mXWalkView,
                 request.url);
@@ -389,7 +389,7 @@ class XWalkContentsClientBridge extends XWalkContentsClient {
     }
 
     @Override
-    public void onReceivedResponseHeaders(WebResourceRequestInner request,
+    public void onReceivedResponseHeaders(XWalkWebResourceRequest request,
             XWalkWebResourceResponse response) {
         if (mXWalkResourceClient != null) {
             mXWalkResourceClient.onReceivedResponseHeaders(mXWalkView,

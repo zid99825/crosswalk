@@ -210,19 +210,46 @@ abstract class XWalkContentsClient {
     /**
      * Parameters for the {@link XWalkContentsClient#shouldInterceptRequest} method.
      */
-    public static class WebResourceRequestInner {
+    public static class XWalkWebResourceRequest {
+        // Prefer using other constructors over this one.
+        public XWalkWebResourceRequest() {
+        }
+
+        public XWalkWebResourceRequest(String url, boolean isMainFrame, boolean hasUserGesture,
+                String method, HashMap<String, String> requestHeaders) {
+            this.url = url;
+            this.isMainFrame = isMainFrame;
+            this.hasUserGesture = hasUserGesture;
+            // Note: we intentionally let isRedirect default initialize to false. This is because we
+            // don't always know if this request is associated with a redirect or not.
+            this.method = method;
+            this.requestHeaders = requestHeaders;
+        }
+
+        public XWalkWebResourceRequest(String url, boolean isMainFrame, boolean hasUserGesture,
+                String method, String[] requestHeaderNames,
+                String[] requestHeaderValues) {
+            this(url, isMainFrame, hasUserGesture, method,
+                    new HashMap<String, String>(requestHeaderValues.length));
+            for (int i = 0; i < requestHeaderNames.length; ++i) {
+                this.requestHeaders.put(requestHeaderNames[i], requestHeaderValues[i]);
+            }
+        }
+
         // Url of the request.
         public String url;
         // Is this for the main frame or a child iframe?
         public boolean isMainFrame;
         // Was a gesture associated with the request? Don't trust can easily be spoofed.
         public boolean hasUserGesture;
+        // Was it a result of a server-side redirect?
+        public boolean isRedirect;
         // Method used (GET/POST/OPTIONS)
         public String method;
         // Headers that would have been sent to server.
         public HashMap<String, String> requestHeaders;
     }
-
+    
     public abstract void getVisitedHistory(ValueCallback<String[]> callback);
 
     public abstract void doUpdateVisitedHistory(String url, boolean isReload);
@@ -230,7 +257,7 @@ abstract class XWalkContentsClient {
     public abstract void onProgressChanged(int progress);
 
     public abstract XWalkWebResourceResponse shouldInterceptRequest(
-            WebResourceRequestInner request);
+            XWalkWebResourceRequest request);
 
     public abstract void onResourceLoadStarted(String url);
 
@@ -253,7 +280,7 @@ abstract class XWalkContentsClient {
 
     public abstract void onReceivedClientCertRequest(ClientCertRequest handler);
 
-    public abstract void onReceivedResponseHeaders(WebResourceRequestInner request,
+    public abstract void onReceivedResponseHeaders(XWalkWebResourceRequest request,
             XWalkWebResourceResponse response);
 
     public abstract void onFormResubmission(Message dontResend, Message resend);

@@ -30,11 +30,11 @@ class XWalkContentsClientCallbackHelper {
     }
 
     private static class OnReceivedResponseHeadersInfo {
-        final XWalkContentsClient.WebResourceRequestInner mRequest;
+        final XWalkContentsClient.XWalkWebResourceRequest mRequest;
         final XWalkWebResourceResponse mResponse;
 
         OnReceivedResponseHeadersInfo(
-                XWalkContentsClient.WebResourceRequestInner request,
+                XWalkContentsClient.XWalkWebResourceRequest request,
                 XWalkWebResourceResponse response) {
             mRequest = request;
             mResponse = response;
@@ -130,7 +130,7 @@ class XWalkContentsClientCallbackHelper {
         mHandler.sendMessage(mHandler.obtainMessage(MSG_ON_PAGE_FINISHED, url));
     }
 
-    public void postOnReceivedResponseHeaders(XWalkContentsClient.WebResourceRequestInner request,
+    public void postOnReceivedResponseHeaders(XWalkContentsClient.XWalkWebResourceRequest request,
             XWalkWebResourceResponse response) {
         OnReceivedResponseHeadersInfo info =
                 new OnReceivedResponseHeadersInfo(request, response);

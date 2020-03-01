@@ -15,6 +15,7 @@
 #include "base/bind.h"
 #include "base/lazy_instance.h"
 #include "base/synchronization/lock.h"
+#include "base/threading/scoped_blocking_call.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
@@ -27,6 +28,7 @@
 #include "net/http/http_response_headers.h"
 #include "net/url_request/url_request.h"
 #include "url/gurl.h"
+#include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContentsBackgroundThreadClient_jni.h"
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkContentsIoThreadClient_jni.h"
 #include "xwalk/runtime/browser/android/xwalk_web_resource_request.h"
 #include "xwalk/runtime/browser/android/xwalk_web_resource_response_impl.h"
@@ -245,10 +247,6 @@ struct WebResourceRequest {
   }
 };
 
-std::unique_ptr<XWalkWebResourceResponse> ReturnNull() {
-  return std::unique_ptr<XWalkWebResourceResponse>();
-}
-
 }  // namespace
 
 // XWalkContentsIoThreadClient -------------------------------------------
@@ -337,69 +335,67 @@ XWalkContentsIoThreadClient::GetCacheMode() const {
           env, java_object_));
 }
 
+// TODO(iotto): Remove, deprecated see ShouldInterceptRequestAsync
 std::unique_ptr<XWalkWebResourceResponse>
 XWalkContentsIoThreadClient::ShouldInterceptRequest(
     const GURL& location,
     const net::URLRequest* request) {
-  DCHECK(BrowserThread::CurrentlyOn(BrowserThread::IO));
-  if (java_object_.is_null())
-    return std::unique_ptr<XWalkWebResourceResponse>();
-  content::ResourceRequestInfo* info = content::ResourceRequestInfo::ForRequest(request);
-  bool is_main_frame = info && info->GetResourceType() == content::ResourceType::kMainFrame;
-  bool has_user_gesture = info && info->HasUserGesture();
+  LOG(FATAL) << "iotto " << __func__ << " TODO: Remove!, We should not have reached this!";
+  return std::unique_ptr<XWalkWebResourceResponse>();
+}
 
-  vector<string> headers_names;
-  vector<string> headers_values;
-  {
-    net::HttpRequestHeaders headers;
-    if (!request->GetFullRequestHeaders(&headers))
-      headers = request->extra_request_headers();
-    net::HttpRequestHeaders::Iterator headers_iterator(headers);
-    while (headers_iterator.GetNext()) {
-      headers_names.push_back(headers_iterator.name());
-      headers_values.push_back(headers_iterator.value());
-    }
-  }
+namespace {
+// ch77 --------------------------------------------
+std::unique_ptr<XWalkWebResourceResponse> RunShouldInterceptRequest(XWalkWebResourceRequest request,
+                                                                    JavaObjectWeakGlobalRef ref) {
+  base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
+  base::BlockingType::MAY_BLOCK);
 
   JNIEnv* env = AttachCurrentThread();
-  ScopedJavaLocalRef<jstring> jstring_url =
-      ConvertUTF8ToJavaString(env, location.spec());
-  ScopedJavaLocalRef<jstring> jstring_method =
-      ConvertUTF8ToJavaString(env, request->method());
-  ScopedJavaLocalRef<jobjectArray> jstringArray_headers_names =
-      ToJavaArrayOfStrings(env, headers_names);
-  ScopedJavaLocalRef<jobjectArray> jstringArray_headers_values =
-      ToJavaArrayOfStrings(env, headers_values);
+  base::android::ScopedJavaLocalRef<jobject> obj = ref.get(env);
+  if (obj.is_null())
+    return nullptr;
 
+  XWalkWebResourceRequest::JavaWebResourceRequest java_web_resource_request;
+  XWalkWebResourceRequest::ConvertToJava(env, request, &java_web_resource_request);
+
+//  devtools_instrumentation::ScopedEmbedderCallbackTask embedder_callback(
+//      "shouldInterceptRequest");
   ScopedJavaLocalRef<jobject> ret =
-      Java_XWalkContentsIoThreadClient_shouldInterceptRequest(
-          env,
-          java_object_,
-          jstring_url,
-          is_main_frame,
-          has_user_gesture,
-          jstring_method,
-          jstringArray_headers_names,
-          jstringArray_headers_values);
+      Java_XWalkContentsBackgroundThreadClient_shouldInterceptRequestFromNative(
+          env, obj, java_web_resource_request.jurl, request.is_main_frame,
+          request.has_user_gesture, java_web_resource_request.jmethod,
+          java_web_resource_request.jheader_names,
+          java_web_resource_request.jheader_values);
+
+//  RecordInterceptedScheme(ret.is_null(), request.url);
+
   if (ret.is_null())
-    return std::unique_ptr<XWalkWebResourceResponse>();
-  return std::unique_ptr<XWalkWebResourceResponse>(
-      new XWalkWebResourceResponseImpl(ret));
+    return std::unique_ptr<XWalkWebResourceResponse>(nullptr);
+
+  XWalkWebResourceResponse* response = new XWalkWebResourceResponseImpl(ret);
+
+  return std::unique_ptr<XWalkWebResourceResponse>(response);
 }
+
+std::unique_ptr<XWalkWebResourceResponse> ReturnNull() {
+  return std::unique_ptr<XWalkWebResourceResponse>();
+}
+
+} // namesapce
 
 void XWalkContentsIoThreadClient::ShouldInterceptRequestAsync(XWalkWebResourceRequest request,
                                                               ShouldInterceptRequestResultCallback callback) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   base::OnceCallback<std::unique_ptr<XWalkWebResourceResponse>()> get_response = base::BindOnce(&ReturnNull);
-  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT url=" << request.url;
-//  JNIEnv* env = AttachCurrentThread();
-//  if (bg_thread_client_object_.is_null() && !java_object_.is_null()) {
-//    bg_thread_client_object_.Reset(Java_XWalkContentsIoThreadClient_getBackgroundThreadClient(env, java_object_));
-//  }
-//  if (!bg_thread_client_object_.is_null()) {
-//    get_response = base::BindOnce(&RunShouldInterceptRequest, std::move(request),
-//                                  JavaObjectWeakGlobalRef(env, bg_thread_client_object_.obj()));
-//  }
+  JNIEnv* env = AttachCurrentThread();
+  if (bg_thread_client_object_.is_null() && !java_object_.is_null()) {
+    bg_thread_client_object_.Reset(Java_XWalkContentsIoThreadClient_getBackgroundThreadClient(env, java_object_));
+  }
+  if (!bg_thread_client_object_.is_null()) {
+    get_response = base::BindOnce(&RunShouldInterceptRequest, std::move(request),
+                                  JavaObjectWeakGlobalRef(env, bg_thread_client_object_.obj()));
+  }
   base::PostTaskAndReplyWithResult(sequenced_task_runner_.get(), FROM_HERE,
   std::move(get_response),
   std::move(callback));
@@ -448,54 +444,7 @@ bool XWalkContentsIoThreadClient::ShouldAcceptThirdPartyCookies() const {
 void XWalkContentsIoThreadClient::OnReceivedResponseHeaders(
     const net::URLRequest* request,
     const net::HttpResponseHeaders* response_headers) {
-  DCHECK_CURRENTLY_ON(BrowserThread::IO);
-  if (java_object_.is_null())
-    return;
-
-  JNIEnv* env = AttachCurrentThread();
-  WebResourceRequest web_request(env, request);
-
-  vector<string> response_header_names;
-  vector<string> response_header_values;
-  {
-    size_t headers_iterator = 0;
-    string header_name, header_value;
-    while (response_headers->EnumerateHeaderLines(
-        &headers_iterator, &header_name, &header_value)) {
-      response_header_names.push_back(header_name);
-      response_header_values.push_back(header_value);
-    }
-  }
-
-  string mime_type, encoding;
-  response_headers->GetMimeTypeAndCharset(&mime_type, &encoding);
-  ScopedJavaLocalRef<jstring> jstring_mime_type =
-      ConvertUTF8ToJavaString(env, mime_type);
-  ScopedJavaLocalRef<jstring> jstring_encoding =
-      ConvertUTF8ToJavaString(env, encoding);
-  int status_code = response_headers->response_code();
-  ScopedJavaLocalRef<jstring> jstring_reason =
-      ConvertUTF8ToJavaString(env, response_headers->GetStatusText());
-  ScopedJavaLocalRef<jobjectArray> jstringArray_response_header_names =
-      ToJavaArrayOfStrings(env, response_header_names);
-  ScopedJavaLocalRef<jobjectArray> jstringArray_response_header_values =
-      ToJavaArrayOfStrings(env, response_header_values);
-
-  Java_XWalkContentsIoThreadClient_onReceivedResponseHeaders(
-      env,
-      java_object_,
-      web_request.jstring_url,
-      web_request.is_main_frame,
-      web_request.has_user_gesture,
-      web_request.jstring_method,
-      web_request.jstringArray_header_names,
-      web_request.jstringArray_header_values,
-      jstring_mime_type,
-      jstring_encoding,
-      status_code,
-      jstring_reason,
-      jstringArray_response_header_names,
-      jstringArray_response_header_values);
+  LOG(FATAL) << "iotto " << __func__ << " TODO: Remove!, We should not have reached this!";
 }
 
 }  // namespace xwalk

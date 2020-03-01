@@ -5,9 +5,12 @@
 #ifndef XWALK_RUNTIME_BROWSER_ANDROID_NET_ANDROID_PROTOCOL_HANDLER_H_
 #define XWALK_RUNTIME_BROWSER_ANDROID_NET_ANDROID_PROTOCOL_HANDLER_H_
 
+#include <jni.h>
 #include <memory>
 
 #include "base/android/jni_android.h"
+
+class GURL;
 
 namespace net {
 class URLRequestContext;
@@ -15,6 +18,7 @@ class URLRequestInterceptor;
 }  // namespace net
 
 namespace xwalk {
+class InputStream;
 
 // These method register support for Android WebView-specific protocol schemes:
 //
@@ -34,8 +38,8 @@ std::unique_ptr<net::URLRequestInterceptor> CreateAssetFileRequestInterceptor();
 //    It's part of sysapps API, http://app-uri.sysapps.org.
 std::unique_ptr<net::URLRequestInterceptor> CreateAppSchemeRequestInterceptor();
 
-
-bool RegisterAndroidProtocolHandler(JNIEnv* env);
+std::unique_ptr<InputStream> CreateInputStream(JNIEnv* env, const GURL& url);
+bool GetInputStreamMimeType(JNIEnv* env, const GURL& url, InputStream* stream, std::string* mime_type);
 
 }  // namespace xwalk
 

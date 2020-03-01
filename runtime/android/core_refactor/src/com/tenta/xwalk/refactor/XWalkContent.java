@@ -28,6 +28,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 import com.tenta.metafs.MetaError;
+import com.tenta.xwalk.refactor.XWalkContentsClient.XWalkWebResourceRequest;
 
 import org.chromium.base.Callback;
 import org.chromium.base.LocaleUtils;
@@ -97,6 +98,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     private XWalkContentsClientBridge mContentsClientBridge;
     private XWalkContentsIoThreadClient mIoThreadClient;
     private XWalkWebContentsDelegateAdapter mXWalkContentsDelegateAdapter;
+    private final XWalkContentsBackgroundThreadClient mBackgroundThreadClient;
     private XWalkSettings mSettings;
     private XWalkGeolocationPermissions mGeolocationPermissions;
     //    private XWalkLaunchScreenManager mLaunchScreenManager;
@@ -182,6 +184,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mXWalkView = xwView;
         mViewContext = mXWalkView.getContext();
         mContentsClientBridge = new XWalkContentsClientBridge(mXWalkView);
+        mBackgroundThreadClient = new BackgroundThreadClientImpl();
         mXWalkContentsDelegateAdapter = new XWalkWebContentsDelegateAdapter(context,mContentsClientBridge,
                 this);
         mIoThreadClient = new XWalkIoThreadClientImpl();
@@ -1344,30 +1347,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         }
 
         @Override
-        public XWalkWebResourceResponse shouldInterceptRequest(
-                XWalkContentsClient.WebResourceRequestInner request) {
-
-            // Notify a resource load is started. This is not the best place to
-            // start the callback
-            // but it's a workable way.
-            mContentsClientBridge.getCallbackHelper().postOnResourceLoadStarted(request.url);
-
-            XWalkWebResourceResponse xwalkWebResourceResponse = mContentsClientBridge
-                    .shouldInterceptRequest(request);
-
-            if (xwalkWebResourceResponse == null) {
-                mContentsClientBridge.getCallbackHelper().postOnLoadResource(request.url);
-            } else {
-                if (request.isMainFrame && xwalkWebResourceResponse.getData() == null) {
-                    mContentsClientBridge.getCallbackHelper()
-                            .postOnReceivedError(XWalkResourceClient.ERROR_UNKNOWN, null,
-                                    request.url);
-                }
-            }
-            return xwalkWebResourceResponse;
-        }
-
-        @Override
         public boolean shouldBlockContentUrls() {
             return !mSettings.getAllowContentAccess();
         }
@@ -1388,13 +1367,48 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         }
         
         @Override
-        public void onReceivedResponseHeaders(XWalkContentsClient.WebResourceRequestInner request,
-                                              XWalkWebResourceResponse response) {
-            mContentsClientBridge.getCallbackHelper().postOnReceivedResponseHeaders(request,
-                    response);
+        public XWalkContentsBackgroundThreadClient getBackgroundThreadClient() {
+            return mBackgroundThreadClient;
         }
     }
 
+    private class BackgroundThreadClientImpl extends XWalkContentsBackgroundThreadClient {
+        // All methods are called on the background thread.
+
+        @Override
+        public XWalkWebResourceResponse shouldInterceptRequest(
+                XWalkContentsClient.XWalkWebResourceRequest request) {
+            String url = request.url;
+            Log.e(TAG, "TODO(iotto): shouldInterceptRequest url=%s", url);
+
+            XWalkWebResourceResponse webResourceResponse = null;
+//            // Return the response directly if the url is default video poster url.
+//            webResourceResponse = mDefaultVideoPosterRequestHandler.shouldInterceptRequest(url);
+//            if (webResourceResponse != null) return webResourceResponse;
+//            
+            webResourceResponse = mContentsClientBridge.shouldInterceptRequest(request);
+
+            if (webResourceResponse == null) {
+                mContentsClientBridge.getCallbackHelper().postOnLoadResource(url);
+            }
+//
+            if (webResourceResponse != null && webResourceResponse.getData() == null) {
+                // In this case the intercepted URLRequest job will simulate an empty response
+                // which doesn't trigger the onReceivedError callback. For WebViewClassic
+                // compatibility we synthesize that callback.  http://crbug.com/180950
+                // TODO(iotto): Fix postOnReceiveError
+//                mContentsClientBridge.getCallbackHelper().postOnReceivedError(
+//                        request,
+//                        /* error description filled in by the glue layer */
+//                        new AwContentsClient.AwWebResourceError());
+                mContentsClientBridge.getCallbackHelper().postOnReceivedError(XWalkResourceClient.ERROR_UNKNOWN, null,
+                        request.url);
+                
+            }
+            return webResourceResponse;
+        }
+    }
+    
     private class XWalkGeolocationCallback implements XWalkGeolocationPermissions.Callback {
         @Override
         public void invoke(final String origin, final boolean allow, final boolean retain) {

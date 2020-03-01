@@ -5,44 +5,48 @@
 #ifndef XWALK_RUNTIME_BROWSER_ANDROID_NET_INPUT_STREAM_H_
 #define XWALK_RUNTIME_BROWSER_ANDROID_NET_INPUT_STREAM_H_
 
+#include "base/android/scoped_java_ref.h"
+#include "base/compiler_specific.h"
+
 namespace net {
 class IOBuffer;
 }
 
 namespace xwalk {
 
-// Abstract wrapper used to access the InputStream Java class.
-// This class is safe to pass around between threads (the destructor,
-// constructor and methods can be called on different threads) but calling
-// methods concurrently might have undefined results.
 class InputStream {
  public:
-  virtual ~InputStream() {}
+  // Maximum size of |buffer_|.
+  static const int kBufferSize;
 
-  // Sets |bytes_available| to the number of bytes that can be read (or skipped
-  // over) from this input stream without blocking by the next caller of a
-  // method for this input stream.
-  // Returns true if completed successfully or false if an exception was
-  // thrown.
-  virtual bool BytesAvailable(int* bytes_available) const = 0;
+  static const InputStream* FromInputStream(
+      const InputStream* input_stream);
 
-  // Skips over and discards |n| bytes of data from this input stream. Sets
-  // |bytes_skipped| to the number of of bytes skipped.
-  // Returns true if completed successfully or false if an exception was
-  // thrown.
-  virtual bool Skip(int64_t n, int64_t* bytes_skipped) = 0;
+  // |stream| should be an instance of the InputStream Java class.
+  // |stream| can't be null.
+  explicit InputStream(const base::android::JavaRef<jobject>& stream);
+  virtual ~InputStream();
 
-  // Reads at most |length| bytes into |dest|. Sets |bytes_read| to the total
-  // number of bytes read into |dest| or 0 if there is no more data because the
-  // end of the stream was reached.
-  // |dest| must be at least |length| in size.
-  // Returns true if completed successfully or false if an exception was
-  // thrown.
-  virtual bool Read(net::IOBuffer* dest, int length, int* bytes_read) = 0;
+  // Gets the underlying Java object. Guaranteed non-NULL.
+  const base::android::ScopedJavaGlobalRef<jobject>& jobj() const { return jobject_; }
+
+  // InputStream implementation.
+  bool BytesAvailable(int* bytes_available) const;
+  bool Skip(int64_t n, int64_t* bytes_skipped);
+  bool Read(net::IOBuffer* dest, int length, int* bytes_read);
 
  protected:
-  InputStream() {}
+  // Parameterless constructor exposed for testing.
+  InputStream();
+
+ private:
+  base::android::ScopedJavaGlobalRef<jobject> jobject_;
+  base::android::ScopedJavaGlobalRef<jbyteArray> buffer_;
+
+  DISALLOW_COPY_AND_ASSIGN(InputStream);
 };
+
+bool RegisterInputStream(JNIEnv* env);
 
 }  // namespace xwalk
 

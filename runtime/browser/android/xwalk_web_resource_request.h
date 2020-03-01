@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "base/android/jni_array.h"
+#include "base/android/jni_string.h"
 #include "base/optional.h"
 
 namespace network {
@@ -30,6 +32,22 @@ struct XWalkWebResourceRequest {
 
   XWalkWebResourceRequest();
   virtual ~XWalkWebResourceRequest();
+
+  // The java equivalent
+  struct JavaWebResourceRequest {
+    JavaWebResourceRequest();
+    ~JavaWebResourceRequest();
+
+    base::android::ScopedJavaLocalRef<jstring> jurl;
+    base::android::ScopedJavaLocalRef<jstring> jmethod;
+    base::android::ScopedJavaLocalRef<jobjectArray> jheader_names;
+    base::android::ScopedJavaLocalRef<jobjectArray> jheader_values;
+  };
+
+  // Convenience method to convert AwWebResourceRequest to Java equivalent.
+  static void ConvertToJava(JNIEnv* env,
+                            const XWalkWebResourceRequest& request,
+                            JavaWebResourceRequest* jRequest);
 
   std::string url;
   std::string method;

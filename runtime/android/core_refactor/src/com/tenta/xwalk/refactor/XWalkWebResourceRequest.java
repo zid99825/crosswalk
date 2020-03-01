@@ -23,7 +23,6 @@ import java.util.Map;
 /**
  * Encompasses parameters to the {@link XWalkResourceClient#shouldInterceptLoadRequest} method.
  */
-//TODO(iotto) : @XWalkAPI(instance = XWalkWebResourceRequestHandlerInternal.class)
 public interface XWalkWebResourceRequest {
     /**
      * Gets the URL for which the resource request was made.
@@ -31,7 +30,6 @@ public interface XWalkWebResourceRequest {
      * @return the URL for which the resource request was made.
      * @since 6.0
      */
-//TODO(iotto) :     @XWalkAPI
     public Uri getUrl();
 
     /**
@@ -41,7 +39,6 @@ public interface XWalkWebResourceRequest {
      *         for example.
      * @since 6.0
      */
-//TODO(iotto) :     @XWalkAPI
     public boolean isForMainFrame();
 
     /**
@@ -52,7 +49,6 @@ public interface XWalkWebResourceRequest {
      * @return whether a gesture was associated with the request.
      * @since 6.0
      */
-//TODO(iotto) :     @XWalkAPI
     public boolean hasGesture();
 
     /**
@@ -61,7 +57,6 @@ public interface XWalkWebResourceRequest {
      * @return the method associated with the request.
      * @since 6.0
      */
-//TODO(iotto) :     @XWalkAPI
     public String getMethod();
 
     /**
@@ -71,6 +66,5 @@ public interface XWalkWebResourceRequest {
      * @return the headers associated with the request.
      * @since 6.0
      */
-//TODO(iotto) :     @XWalkAPI
     public Map<String, String> getRequestHeaders();
 }

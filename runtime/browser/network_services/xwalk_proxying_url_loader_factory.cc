@@ -24,6 +24,8 @@
 #include "content/public/common/url_utils.h"
 #include "net/base/load_flags.h"
 #include "net/http/http_util.h"
+#include "xwalk/runtime/browser/android/net/android_protocol_handler.h"
+#include "xwalk/runtime/browser/android/net/input_stream.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_client_bridge.h"
 #include "xwalk/runtime/browser/android/xwalk_contents_io_thread_client.h"
@@ -31,6 +33,7 @@
 #include "xwalk/runtime/browser/android/xwalk_web_resource_request.h"
 #include "xwalk/runtime/browser/android/xwalk_web_resource_response.h"
 #include "xwalk/runtime/browser/network_services/xwalk_net_helpers.h"
+#include "xwalk/runtime/browser/network_services/xwalk_stream_reader_url_loader.h"
 
 namespace xwalk {
 
@@ -137,90 +140,90 @@ class InterceptedRequest : public network::mojom::URLLoader,
   ;
 };
 
-//// A ResponseDelegate for responses returned by shouldInterceptRequest.
-//class InterceptResponseDelegate : public AndroidStreamReaderURLLoader::ResponseDelegate {
-// public:
-//  explicit InterceptResponseDelegate(std::unique_ptr<XWalkWebResourceResponse> response,
-//                                     base::WeakPtr<InterceptedRequest> request)
-//      : response_(std::move(response)),
-//        request_(request) {
-//  }
-//
-//  std::unique_ptr<android_webview::InputStream> OpenInputStream(JNIEnv* env) override {
-//    return response_->GetInputStream(env);
-//  }
-//
-//  bool OnInputStreamOpenFailed() override {
-//    // return true if there is no valid request, meaning it has completed or
-//    // deleted.
-//    return request_ ? request_->InputStreamFailed(false /* restart_needed */) : true;
-//  }
-//
-//  bool GetMimeType(JNIEnv* env, const GURL& url, android_webview::InputStream* stream, std::string* mime_type)
-//      override {
-//    return response_->GetMimeType(env, mime_type);
-//  }
-//
-//  bool GetCharset(JNIEnv* env, const GURL& url, android_webview::InputStream* stream, std::string* charset) override {
-//    return response_->GetCharset(env, charset);
-//  }
-//
-//  void AppendResponseHeaders(JNIEnv* env, net::HttpResponseHeaders* headers) override {
-//    int status_code;
-//    std::string reason_phrase;
-//    if (response_->GetStatusInfo(env, &status_code, &reason_phrase)) {
-//      std::string status_line("HTTP/1.1 ");
-//      status_line.append(base::NumberToString(status_code));
-//      status_line.append(" ");
-//      status_line.append(reason_phrase);
-//      headers->ReplaceStatusLine(status_line);
-//    }
-//    response_->GetResponseHeaders(env, headers);
-//  }
-//
-// private:
-//  std::unique_ptr<XWalkWebResourceResponse> response_;
-//  base::WeakPtr<InterceptedRequest> request_;
-//};
-//
-//// A ResponseDelegate based on top of AndroidProtocolHandler for special
-//// protocols, such as content://, file:///android_asset, and file:///android_res
-//// URLs.
-//class ProtocolResponseDelegate : public AndroidStreamReaderURLLoader::ResponseDelegate {
-// public:
-//  ProtocolResponseDelegate(const GURL& url, base::WeakPtr<InterceptedRequest> request)
-//      : url_(url),
-//        request_(request) {
-//  }
-//
-//  std::unique_ptr<android_webview::InputStream> OpenInputStream(JNIEnv* env) override {
-//    return CreateInputStream(env, url_);
-//  }
-//
-//  bool OnInputStreamOpenFailed() override {
-//    // return true if there is no valid request, meaning it has completed or has
-//    // been deleted.
-//    return request_ ? request_->InputStreamFailed(true /* restart_needed */) : true;
-//  }
-//
-//  bool GetMimeType(JNIEnv* env, const GURL& url, android_webview::InputStream* stream, std::string* mime_type)
-//      override {
-//    return GetInputStreamMimeType(env, url, stream, mime_type);
-//  }
-//
-//  bool GetCharset(JNIEnv* env, const GURL& url, android_webview::InputStream* stream, std::string* charset) override {
-//    // TODO: We should probably be getting this from the managed side.
-//    return false;
-//  }
-//
-//  void AppendResponseHeaders(JNIEnv* env, net::HttpResponseHeaders* headers) override {
-//    // no-op
-//  }
-//
-// private:
-//  GURL url_;
-//  base::WeakPtr<InterceptedRequest> request_;
-//};
+// A ResponseDelegate for responses returned by shouldInterceptRequest.
+class InterceptResponseDelegate :
+    public XWalkStreamReaderUrlLoader::ResponseDelegate {
+ public:
+  explicit InterceptResponseDelegate(std::unique_ptr<XWalkWebResourceResponse> response,
+                                     base::WeakPtr<InterceptedRequest> request)
+      : response_(std::move(response)),
+        request_(request) {
+  }
+
+  std::unique_ptr<InputStream> OpenInputStream(JNIEnv* env) override {
+    return response_->GetInputStream(env);
+  }
+
+  bool OnInputStreamOpenFailed() override {
+    // return true if there is no valid request, meaning it has completed or
+    // deleted.
+    return request_ ? request_->InputStreamFailed(false /* restart_needed */) : true;
+  }
+
+  bool GetMimeType(JNIEnv* env, const GURL& url, InputStream* stream, std::string* mime_type)
+      override {
+    return response_->GetMimeType(env, mime_type);
+  }
+
+  bool GetCharset(JNIEnv* env, const GURL& url, InputStream* stream, std::string* charset) override {
+    return response_->GetCharset(env, charset);
+  }
+
+  void AppendResponseHeaders(JNIEnv* env, net::HttpResponseHeaders* headers) override {
+    int status_code;
+    std::string reason_phrase;
+    if (response_->GetStatusInfo(env, &status_code, &reason_phrase)) {
+      std::string status_line("HTTP/1.1 ");
+      status_line.append(base::NumberToString(status_code));
+      status_line.append(" ");
+      status_line.append(reason_phrase);
+      headers->ReplaceStatusLine(status_line);
+    }
+    response_->GetResponseHeaders(env, headers);
+  }
+
+ private:
+  std::unique_ptr<XWalkWebResourceResponse> response_;
+  base::WeakPtr<InterceptedRequest> request_;
+};
+
+// A ResponseDelegate based on top of AndroidProtocolHandler for special
+// protocols, such as content://, file:///android_asset, and file:///android_res
+// URLs.
+class ProtocolResponseDelegate : public XWalkStreamReaderUrlLoader::ResponseDelegate {
+ public:
+  ProtocolResponseDelegate(const GURL& url, base::WeakPtr<InterceptedRequest> request)
+      : url_(url),
+        request_(request) {
+  }
+
+  std::unique_ptr<InputStream> OpenInputStream(JNIEnv* env) override {
+    return CreateInputStream(env, url_);
+  }
+
+  bool OnInputStreamOpenFailed() override {
+    // return true if there is no valid request, meaning it has completed or has
+    // been deleted.
+    return request_ ? request_->InputStreamFailed(true /* restart_needed */) : true;
+  }
+
+  bool GetMimeType(JNIEnv* env, const GURL& url, InputStream* stream, std::string* mime_type) override {
+    return GetInputStreamMimeType(env, url, stream, mime_type);
+  }
+
+  bool GetCharset(JNIEnv* env, const GURL& url, InputStream* stream, std::string* charset) override {
+    // TODO: We should probably be getting this from the managed side.
+    return false;
+  }
+
+  void AppendResponseHeaders(JNIEnv* env, net::HttpResponseHeaders* headers) override {
+    // no-op
+  }
+
+ private:
+  GURL url_;
+  base::WeakPtr<InterceptedRequest> request_;
+};
 
 InterceptedRequest::InterceptedRequest(int process_id, uint64_t request_id, int32_t routing_id, uint32_t options,
                                        const network::ResourceRequest& request,
@@ -266,12 +269,12 @@ void InterceptedRequest::Restart() {
     InterceptResponseReceived(nullptr);
   }
   else {
-    LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT url=" << request_.url;
-//    if (request_.referrer.is_valid()) {
-//      // intentionally override if referrer header already exists
-//      request_.headers.SetHeader(net::HttpRequestHeaders::kReferer, request_.referrer.spec());
-//    }
-//
+    // TODO(iotto): Why?
+    if (request_.referrer.is_valid()) {
+      // intentionally override if referrer header already exists
+      request_.headers.SetHeader(net::HttpRequestHeaders::kReferer, request_.referrer.spec());
+    }
+
     // TODO: verify the case when WebContents::RenderFrameDeleted is called
     // before network request is intercepted (i.e. if that's possible and
     // whether it can result in any issues).
@@ -360,13 +363,13 @@ void InterceptedRequest::ContinueAfterIntercept() {
   // opportunity to create a job for the request.
   if (!input_stream_previously_failed_
       && (request_.url.SchemeIs(url::kContentScheme) || IsAndroidSpecialFileUrl(request_.url))) {
-    LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!";
-//    network::mojom::URLLoaderClientPtr proxied_client;
-//    proxied_client_binding_.Bind(mojo::MakeRequest(&proxied_client));
-//    AndroidStreamReaderURLLoader* loader = new AndroidStreamReaderURLLoader(
-//        request_, std::move(proxied_client), traffic_annotation_,
-//        std::make_unique < ProtocolResponseDelegate > (request_.url, weak_factory_.GetWeakPtr()));
-//    loader->Start();
+
+    network::mojom::URLLoaderClientPtr proxied_client;
+    proxied_client_binding_.Bind(mojo::MakeRequest(&proxied_client));
+    XWalkStreamReaderUrlLoader* loader = new XWalkStreamReaderUrlLoader(
+        request_, std::move(proxied_client), traffic_annotation_,
+        std::make_unique < ProtocolResponseDelegate > (request_.url, weak_factory_.GetWeakPtr()));
+    loader->Start();
     return;
   }
 
@@ -379,13 +382,12 @@ void InterceptedRequest::ContinueAfterIntercept() {
 }
 
 void InterceptedRequest::ContinueAfterInterceptWithOverride(std::unique_ptr<XWalkWebResourceResponse> response) {
-  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
-//  network::mojom::URLLoaderClientPtr proxied_client;
-//  proxied_client_binding_.Bind(mojo::MakeRequest(&proxied_client));
-//  AndroidStreamReaderURLLoader* loader = new AndroidStreamReaderURLLoader(
-//      request_, std::move(proxied_client), traffic_annotation_,
-//      std::make_unique < InterceptResponseDelegate > (std::move(response), weak_factory_.GetWeakPtr()));
-//  loader->Start();
+  network::mojom::URLLoaderClientPtr proxied_client;
+  proxied_client_binding_.Bind(mojo::MakeRequest(&proxied_client));
+  XWalkStreamReaderUrlLoader* loader = new XWalkStreamReaderUrlLoader(
+      request_, std::move(proxied_client), traffic_annotation_,
+      std::make_unique < InterceptResponseDelegate > (std::move(response), weak_factory_.GetWeakPtr()));
+  loader->Start();
 }
 
 namespace {

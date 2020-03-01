@@ -22,10 +22,12 @@
 #include "url/gurl.h"
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/AndroidProtocolHandler_jni.h"
 #include "xwalk/runtime/browser/android/net/android_stream_reader_url_request_job.h"
-#include "xwalk/runtime/browser/android/net/input_stream_impl.h"
+#include "xwalk/runtime/browser/android/net/input_stream.h"
 #include "xwalk/runtime/browser/android/net/url_constants.h"
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/browser/xwalk_runner.h"
+
+#include "meta_logging.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ClearException;
@@ -34,7 +36,7 @@ using base::android::ScopedJavaGlobalRef;
 using base::android::ScopedJavaLocalRef;
 using base::android::JavaParamRef;
 using xwalk::InputStream;
-using xwalk::InputStreamImpl;
+using xwalk::InputStream;
 
 namespace {
 
@@ -158,7 +160,7 @@ AndroidStreamReaderURLRequestJobDelegateImpl::OpenInputStream(
     DLOG(ERROR) << "Unable to open input stream for Android URL";
     return std::unique_ptr<InputStream>();
   }
-  return base::WrapUnique(new InputStreamImpl(stream));
+  return base::WrapUnique(new InputStream(stream));
 }
 
 void AndroidStreamReaderURLRequestJobDelegateImpl::OnInputStreamOpenFailed(
@@ -182,8 +184,8 @@ bool AndroidStreamReaderURLRequestJobDelegateImpl::GetMimeType(
   // fail, as the mime type cannot be determined for all supported schemes.
   ScopedJavaLocalRef<jstring> url =
       ConvertUTF8ToJavaString(env, request->url().spec());
-  const InputStreamImpl* stream_impl =
-      InputStreamImpl::FromInputStream(stream);
+  const InputStream* stream_impl =
+      InputStream::FromInputStream(stream);
   ScopedJavaLocalRef<jstring> returned_type =
       xwalk::Java_AndroidProtocolHandler_getMimeType(
           env,
@@ -329,6 +331,33 @@ std::unique_ptr<net::URLRequestInterceptor> CreateAppSchemeRequestInterceptor() 
   return base::WrapUnique(new AppSchemeRequestInterceptor());
 }
 
+// static
+std::unique_ptr<InputStream> CreateInputStream(JNIEnv* env, const GURL& url) {
+  DCHECK(url.is_valid());
+  DCHECK(env);
+
+  // Open the input stream.
+  ScopedJavaLocalRef<jstring> jurl = ConvertUTF8ToJavaString(env, url.spec());
+  ScopedJavaLocalRef<jobject> stream = Java_AndroidProtocolHandler_open(env, jurl);
+
+  if (stream.is_null()) {
+    TENTA_LOG(ERROR) << "Unable to open input stream for Android URL";
+    return nullptr;
+  }
+  return std::make_unique < InputStream > (stream);
+}
+
+bool GetInputStreamMimeType(JNIEnv* env, const GURL& url, InputStream* stream, std::string* mime_type) {
+  // Query the mime type from the Java side. It is possible for the query to
+  // fail, as the mime type cannot be determined for all supported schemes.
+  ScopedJavaLocalRef<jstring> java_url = ConvertUTF8ToJavaString(env, url.spec());
+  ScopedJavaLocalRef<jstring> returned_type = Java_AndroidProtocolHandler_getMimeType(env, stream->jobj(), java_url);
+  if (returned_type.is_null())
+    return false;
+
+  *mime_type = base::android::ConvertJavaStringToUTF8(returned_type);
+  return true;
+}
 
 // Set a context object to be used for resolving resource queries. This can
 // be used to override the default application context and redirect all

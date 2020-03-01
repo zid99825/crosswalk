@@ -13,7 +13,7 @@
 #include "net/url_request/url_request.h"
 #include "net/url_request/url_request_job.h"
 #include "xwalk/runtime/android/core_refactor/xwalk_refactor_native_jni/XWalkWebResourceResponse_jni.h"
-#include "xwalk/runtime/browser/android/net/input_stream_impl.h"
+#include "xwalk/runtime/browser/android/net/input_stream.h"
 
 using base::android::ScopedJavaLocalRef;
 using base::android::AppendJavaStringArrayToStringVector;
@@ -35,7 +35,7 @@ XWalkWebResourceResponseImpl::GetInputStream(JNIEnv* env) const {
          env, java_object_);
   if (jstream.is_null())
     return std::unique_ptr<InputStream>();
-  return base::WrapUnique(new InputStreamImpl(jstream));
+  return base::WrapUnique(new InputStream(jstream));
 }
 
 bool XWalkWebResourceResponseImpl::GetMimeType(

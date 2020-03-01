@@ -8,9 +8,8 @@ import android.net.Uri;
 
 import java.util.Map;
 
-//TODO(iotto) : @XWalkAPI(impl = XWalkWebResourceRequest.class, createInternally = true)
 public class XWalkWebResourceRequestHandler implements XWalkWebResourceRequest {
-    private final XWalkContentsClientBridge.WebResourceRequestInner mRequest;
+    private final XWalkContentsClient.XWalkWebResourceRequest mRequest;
 
     // Never use this constructor.
     // It is only used in WebResourceRequestHandlerBridge.
@@ -19,7 +18,7 @@ public class XWalkWebResourceRequestHandler implements XWalkWebResourceRequest {
     }
 
     XWalkWebResourceRequestHandler(
-            XWalkContentsClientBridge.WebResourceRequestInner request) {
+            XWalkContentsClient.XWalkWebResourceRequest request) {
         mRequest = request;
     }
 

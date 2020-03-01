@@ -685,9 +685,6 @@ bool XWalkContentBrowserClient::WillCreateURLLoaderFactory(
     network::mojom::TrustedURLLoaderHeaderClientPtrInfo* header_client,
     bool* bypass_redirect_checks) {
 
-  LOG(ERROR) << "iotto " << __func__ << " Implement" << " request_initiator=" << request_initiator.GetURL().spec();
-//  return false;
-
   DCHECK(base::FeatureList::IsEnabled(network::features::kNetworkService));
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
