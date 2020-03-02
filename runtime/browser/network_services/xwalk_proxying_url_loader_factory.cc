@@ -9,6 +9,7 @@
 
 #include <utility>
 
+#include "android_webview/browser/renderer_host/auto_login_parser.h"
 #include "base/android/build_info.h"
 #include "base/bind.h"
 #include "base/strings/string_number_conversions.h"
@@ -392,14 +393,13 @@ void InterceptedRequest::ContinueAfterInterceptWithOverride(std::unique_ptr<XWal
 
 namespace {
 // TODO(timvolodine): consider factoring this out of this file.
-//
-//XWalkContentsClientBridge* GetXWalkContentsClientBridgeFromID(int process_id, int render_frame_id) {
-//  content::WebContents* wc =
-//      process_id ?
-//          content::WebContents::FromRenderFrameHost(content::RenderFrameHost::FromID(process_id, render_frame_id)) :
-//          content::WebContents::FromFrameTreeNodeId(render_frame_id);
-//  return XWalkContentsClientBridge::FromWebContents(wc);
-//}
+XWalkContentsClientBridge* GetXWalkContentsClientBridgeFromID(int process_id, int render_frame_id) {
+  content::WebContents* wc =
+      process_id ?
+          content::WebContents::FromRenderFrameHost(content::RenderFrameHost::FromID(process_id, render_frame_id)) :
+          content::WebContents::FromFrameTreeNodeId(render_frame_id);
+  return XWalkContentsClientBridge::FromWebContents(wc);
+}
 
 //void OnReceivedHttpErrorOnUiThread(int process_id, int render_frame_id, const XWalkWebResourceRequest& request,
 //                                   std::unique_ptr<XWalkContentsClientBridge::HttpErrorInfo> http_error_info) {
@@ -421,14 +421,14 @@ namespace {
 //  client->OnReceivedError(request, error_code, safebrowsing_hit);
 //}
 
-//void OnNewLoginRequestOnUiThread(int process_id, int render_frame_id, const std::string& realm,
-//                                 const std::string& account, const std::string& args) {
-//  auto* client = GetXWalkContentsClientBridgeFromID(process_id, render_frame_id);
-//  if (!client) {
-//    return;
-//  }
-//  client->NewLoginRequest(realm, account, args);
-//}
+void OnNewLoginRequestOnUiThread(int process_id, int render_frame_id, const std::string& realm,
+                                 const std::string& account, const std::string& args) {
+  auto* client = GetXWalkContentsClientBridgeFromID(process_id, render_frame_id);
+  if (!client) {
+    return;
+  }
+  client->NewLoginRequest(realm, account, args);
+}
 
 }  // namespace
 
@@ -453,24 +453,24 @@ void InterceptedRequest::OnReceiveResponse(const network::ResourceResponseHead& 
 //        std::move(error_info)));
 //  }
 //
-//  if (request_.resource_type ==
-//  static_cast<int>(content::ResourceType::kMainFrame)) {
-//    // Check for x-auto-login-header
-//    HeaderData header_data;
-//    std::string header_string;
-//    if (head.headers && head.headers->GetNormalizedHeader(kAutoLoginHeaderName,
-//        &header_string)) {
-//      if (ParseHeader(header_string, ALLOW_ANY_REALM, &header_data)) {
-//        // TODO(timvolodine): consider simplifying this and above callback
-//        // code, crbug.com/897149.
-//        base::PostTaskWithTraits(
-//        FROM_HERE, {content::BrowserThread::UI},
-//        base::BindOnce(&OnNewLoginRequestOnUiThread, process_id_,
-//            request_.render_frame_id, header_data.realm,
-//            header_data.account, header_data.args));
-//      }
-//    }
-//  }
+  if (request_.resource_type ==
+  static_cast<int>(content::ResourceType::kMainFrame)) {
+    // Check for x-auto-login-header
+    android_webview::HeaderData header_data;
+    std::string header_string;
+    if (head.headers && head.headers->GetNormalizedHeader(kAutoLoginHeaderName,
+        &header_string)) {
+      if (android_webview::ParseHeader(header_string, android_webview::ALLOW_ANY_REALM, &header_data)) {
+        // TODO(timvolodine): consider simplifying this and above callback
+        // code, crbug.com/897149.
+        base::PostTaskWithTraits(
+        FROM_HERE, {content::BrowserThread::UI},
+        base::BindOnce(&OnNewLoginRequestOnUiThread, process_id_,
+            request_.render_frame_id, header_data.realm,
+            header_data.account, header_data.args));
+      }
+    }
+  }
 
   target_client_->OnReceiveResponse(head);
 }
