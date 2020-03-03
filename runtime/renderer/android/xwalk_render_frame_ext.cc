@@ -5,13 +5,17 @@
  *      Author: iotto
  */
 
-#include <xwalk/runtime/renderer/android/xwalk_render_frame_ext.h>
+#include "xwalk/runtime/renderer/android/xwalk_render_frame_ext.h"
 
+#include <map>
 #include <string>
 
 #include "base/bind.h"
+#include "base/lazy_instance.h"
 #include "base/strings/string_piece.h"
 #include "base/strings/utf_string_conversions.h"
+#include "components/autofill/content/renderer/autofill_agent.h"
+#include "components/autofill/content/renderer/password_autofill_agent.h"
 #include "content/public/common/url_constants.h"
 #include "content/public/renderer/document_state.h"
 #include "content/public/renderer/render_frame.h"
@@ -148,11 +152,45 @@ void PopulateHitTestData(const GURL& absolute_link_url,
 
 }  // namespace
 
+// Registry for RenderFrame => AwRenderFrameExt lookups
+typedef std::map<content::RenderFrame*, XWalkRenderFrameExt*> FrameExtMap;
+base::LazyInstance<FrameExtMap>::Leaky render_frame_ext_map =
+    LAZY_INSTANCE_INITIALIZER;
+
 XWalkRenderFrameExt::XWalkRenderFrameExt(content::RenderFrame* render_frame)
     : content::RenderFrameObserver(render_frame) {
+  // TODO(sgurun) do not create a password autofill agent (change
+  // autofill agent to store a weakptr).
+  autofill::PasswordAutofillAgent* password_autofill_agent =
+      new autofill::PasswordAutofillAgent(render_frame, &registry_);
+  new autofill::AutofillAgent(render_frame, password_autofill_agent, nullptr,
+                              &registry_);
+
+  // Add myself to the RenderFrame => AwRenderFrameExt register.
+  render_frame_ext_map.Get().emplace(render_frame, this);
 }
 
 XWalkRenderFrameExt::~XWalkRenderFrameExt() {
+  // Remove myself from the RenderFrame => AwRenderFrameExt register. Ideally,
+  // we'd just use render_frame() and erase by key. However, by this time the
+  // render_frame has already been cleared so we have to iterate over all
+  // render_frames in the map and wipe the one(s) that point to this
+  // XWalkRenderFrameExt
+
+  auto& map = render_frame_ext_map.Get();
+  auto it = map.begin();
+  while (it != map.end()) {
+    if (it->second == this) {
+      it = map.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+bool XWalkRenderFrameExt::OnAssociatedInterfaceRequestForFrame(const std::string& interface_name,
+                                                               mojo::ScopedInterfaceEndpointHandle* handle) {
+  return registry_.TryBindInterface(interface_name, handle);
 }
 
 //// static

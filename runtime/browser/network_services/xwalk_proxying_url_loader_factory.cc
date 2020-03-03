@@ -36,6 +36,8 @@
 #include "xwalk/runtime/browser/network_services/xwalk_net_helpers.h"
 #include "xwalk/runtime/browser/network_services/xwalk_stream_reader_url_loader.h"
 
+#include "meta_logging.h"
+
 namespace xwalk {
 
 namespace {
@@ -438,7 +440,7 @@ void InterceptedRequest::OnReceiveResponse(const network::ResourceResponseHead& 
   // intercept response headers here
   // pause/resume proxied_client_binding_ if necessary
 
-  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
+  TENTA_LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT";
 //  if (head.headers && head.headers->response_code() >= 400) {
 //    // In Android WebView the WebViewClient.onReceivedHttpError callback
 //    // is invoked for any resource (main page, iframe, image, etc.) with
@@ -570,7 +572,7 @@ void InterceptedRequest::OnURLLoaderClientError() {
 
 void InterceptedRequest::OnURLLoaderError(uint32_t custom_reason, const std::string& description) {
   if (custom_reason == network::mojom::URLLoader::kClientDisconnectReason) {
-    LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT if needed";
+    TENTA_LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT if needed";
 //    if (description == safe_browsing::kCustomCancelReasonForURLLoader) {
 //      SendErrorCallback(safe_browsing::GetNetErrorCodeForSafeBrowsing(), true);
 //    } else
@@ -626,7 +628,7 @@ void InterceptedRequest::SendErrorAndCompleteImmediately(int error_code) {
 }
 
 void InterceptedRequest::SendErrorCallback(int error_code, bool safebrowsing_hit) {
-  LOG(ERROR) << "iotto " << __func__ << " implement!";
+  TENTA_LOG(ERROR) << "iotto " << __func__ << " implement!";
 //  // Ensure we only send one error callback, e.g. to avoid sending two if
 //  // there's both a networking error and safe browsing blocked the request.
 //  if (sent_error_callback_)

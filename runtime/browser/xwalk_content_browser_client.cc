@@ -627,7 +627,7 @@ XWalkContentBrowserClient::CreateThrottlesForNavigation(
 
 base::Optional<service_manager::Manifest>
 XWalkContentBrowserClient::GetServiceManifestOverlay(base::StringPiece name) {
-  LOG(INFO) << "iotto " << __func__ << " manifest=" << name;
+  TENTA_LOG(INFO) << __func__ << " manifest=" << name;
   if (name == content::mojom::kBrowserServiceName)
     return GetContentBrowserOverlayManifest();
   if (name == content::mojom::kRendererServiceName)
@@ -641,7 +641,7 @@ void XWalkContentBrowserClient::BindInterfaceRequestFromFrame(
     content::RenderFrameHost* render_frame_host,
     const std::string& interface_name,
     mojo::ScopedMessagePipeHandle interface_pipe) {
-  LOG(INFO) << "iotto " << __func__ << " interface=" << interface_name;
+  TENTA_LOG(INFO) << __func__ << " interface=" << interface_name;
   if (!frame_interfaces_) {
     frame_interfaces_ = std::make_unique<
     service_manager::BinderRegistryWithArgs<content::RenderFrameHost*>>();
@@ -656,7 +656,7 @@ bool XWalkContentBrowserClient::BindAssociatedInterfaceRequestFromFrame(
     content::RenderFrameHost* render_frame_host,
     const std::string& interface_name,
     mojo::ScopedInterfaceEndpointHandle* handle) {
-  LOG(INFO) << "iotto " << __func__ << " interface=" << interface_name;
+  TENTA_LOG(INFO) << __func__ << " interface=" << interface_name;
   if (interface_name == autofill::mojom::AutofillDriver::Name_) {
     autofill::ContentAutofillDriverFactory::BindAutofillDriver(
         mojo::PendingAssociatedReceiver<autofill::mojom::AutofillDriver>(
@@ -732,7 +732,6 @@ std::unique_ptr<content::LoginDelegate> XWalkContentBrowserClient::CreateLoginDe
     scoped_refptr<net::HttpResponseHeaders> response_headers,
     bool first_auth_attempt,
     LoginAuthRequiredCallback auth_required_callback) {
-  LOG(ERROR) << "iotto " << __func__ << " FIX/ use the callback!";
   return std::make_unique<XWalkHttpAuthHandler>(auth_info, web_contents,
                                                 first_auth_attempt,
                                                 std::move(auth_required_callback));
@@ -747,31 +746,30 @@ bool XWalkContentBrowserClient::HandleExternalProtocol(const GURL& url,
     bool has_user_gesture,
     network::mojom::URLLoaderFactoryPtr* out_factory) {
 
-  LOG(ERROR) << "iotto " << __func__ << " IMPLEMENT!! url=" << url << " isMainFrame=" << is_main_frame;
-//  if (base::FeatureList::IsEnabled(network::features::kNetworkService)) {
-//    auto request = mojo::MakeRequest(out_factory);
-//    if (content::BrowserThread::CurrentlyOn(content::BrowserThread::IO)) {
-//      // Manages its own lifetime.
-//      new android_webview::AwProxyingURLLoaderFactory(
-//          0 /* process_id */, std::move(request), nullptr,
-//          true /* intercept_only */);
-//    } else {
-//      base::PostTaskWithTraits(
-//          FROM_HERE, {content::BrowserThread::IO},
-//          base::BindOnce(
-//              [](network::mojom::URLLoaderFactoryRequest request) {
-//                // Manages its own lifetime.
-//                new android_webview::AwProxyingURLLoaderFactory(
-//                    0 /* process_id */, std::move(request), nullptr,
-//                    true /* intercept_only */);
-//              },
-//              std::move(request)));
-//    }
-//  } else {
-//    // The AwURLRequestJobFactory implementation should ensure this method never
-//    // gets called when Network Service is not enabled.
-//    NOTREACHED();
-//  }
+  if (base::FeatureList::IsEnabled(network::features::kNetworkService)) {
+    auto request = mojo::MakeRequest(out_factory);
+    if (content::BrowserThread::CurrentlyOn(content::BrowserThread::IO)) {
+      // Manages its own lifetime.
+      new XWalkProxyingURLLoaderFactory(
+          0 /* process_id */, std::move(request), nullptr,
+          true /* intercept_only */);
+    } else {
+      base::PostTaskWithTraits(
+          FROM_HERE, {content::BrowserThread::IO},
+          base::BindOnce(
+              [](network::mojom::URLLoaderFactoryRequest request) {
+                // Manages its own lifetime.
+                new XWalkProxyingURLLoaderFactory(
+                    0 /* process_id */, std::move(request), nullptr,
+                    true /* intercept_only */);
+              },
+              std::move(request)));
+    }
+  } else {
+    // The AwURLRequestJobFactory implementation should ensure this method never
+    // gets called when Network Service is not enabled.
+    NOTREACHED();
+  }
   return false;
 }
 

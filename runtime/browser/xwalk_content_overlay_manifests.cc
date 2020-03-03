@@ -8,7 +8,8 @@
 #include "xwalk/runtime/browser/xwalk_content_overlay_manifests.h"
 
 #include "base/no_destructor.h"
-//#include "components/autofill/content/common/mojom/autofill_driver.mojom.h"
+#include "components/autofill/content/common/mojom/autofill_agent.mojom.h"
+#include "components/autofill/content/common/mojom/autofill_driver.mojom.h"
 //#include "components/safe_browsing/common/safe_browsing.mojom.h"
 //#include "components/services/heap_profiling/public/mojom/heap_profiling_client.mojom.h"
 //#include "components/spellcheck/common/spellcheck.mojom.h"
@@ -20,7 +21,6 @@
 namespace xwalk {
 
 const service_manager::Manifest& GetContentBrowserOverlayManifest() {
-  LOG(INFO) << "iotto " << __func__;
   static base::NoDestructor<service_manager::Manifest> manifest{
       service_manager::ManifestBuilder()
 //          .ExposeCapability("renderer",
@@ -32,24 +32,23 @@ const service_manager::Manifest& GetContentBrowserOverlayManifest() {
           .ExposeInterfaceFilterCapability_Deprecated(
               "navigation:frame", "renderer",
               service_manager::Manifest::InterfaceList<
-//                  autofill::mojom::AutofillDriver,
-//                  autofill::mojom::PasswordManagerDriver,
-//                  blink::mojom::TextSuggestionHost,
+                  autofill::mojom::AutofillDriver,
+                  autofill::mojom::PasswordManagerDriver,
+                  blink::mojom::TextSuggestionHost,
                   mojom::JsApiHandler>())
           .Build()};
   return *manifest;
 }
 
 const service_manager::Manifest& GetContentRendererOverlayManifest() {
-  LOG(INFO) << "iotto " << __func__;
   static base::NoDestructor<service_manager::Manifest> manifest{
       service_manager::ManifestBuilder()
           .ExposeInterfaceFilterCapability_Deprecated(
               "navigation:frame", "browser",
               service_manager::Manifest::InterfaceList<
-//                  autofill::mojom::AutofillAgent,
-//                  autofill::mojom::PasswordAutofillAgent,
-//                  autofill::mojom::PasswordGenerationAgent,
+                  autofill::mojom::AutofillAgent,
+                  autofill::mojom::PasswordAutofillAgent,
+                  autofill::mojom::PasswordGenerationAgent,
 //                  safe_browsing::mojom::ThreatReporter,
                   mojom::JsJavaConfigurator, mojom::JsApiHandler>())
           .Build()};
