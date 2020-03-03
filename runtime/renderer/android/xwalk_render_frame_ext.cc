@@ -38,6 +38,8 @@
 #include "xwalk/runtime/common/android/xwalk_hit_test_data.h"
 #include "xwalk/runtime/common/android/xwalk_render_view_messages.h"
 
+#include "meta_logging.h"
+
 namespace xwalk {
 
 namespace {
@@ -272,11 +274,8 @@ void XWalkRenderFrameExt::FocusedElementChanged(const blink::WebElement& element
 
   GURL absolute_image_url = GetChildImageUrlFromElement(element);
 
-#if TENTA_LOG_ENABLE == 1
-  LOG(INFO) << __func__
-      << " link=" << absolute_link_url
-      << " IsContentEditable=" << element.IsContentEditable();
-#endif
+  TENTA_LOG(INFO) << "iotto " << __func__ << " link=" << absolute_link_url << " IsContentEditable="
+                  << element.IsContentEditable();
 
   PopulateHitTestData(absolute_link_url, absolute_image_url,
                       element.IsEditable(), &data);
@@ -309,11 +308,8 @@ void XWalkRenderFrameExt::OnDoHitTest(const gfx::PointF& touch_center,
     }
   }
 
-#if TENTA_LOG_ENABLE == 1
-  LOG(INFO) << __func__
-      << " link=" << result.AbsoluteLinkURL()
-      << " IsContentEditable=" << result.IsContentEditable();
-#endif
+  TENTA_LOG(INFO) << __func__ << " link=" << result.AbsoluteLinkURL() << " IsContentEditable="
+      << result.IsContentEditable();
   PopulateHitTestData(result.AbsoluteLinkURL(), absolute_image_url,
                       result.IsContentEditable(), &data);
   Send(new XWalkViewHostMsg_UpdateHitTestData(routing_id(), data));

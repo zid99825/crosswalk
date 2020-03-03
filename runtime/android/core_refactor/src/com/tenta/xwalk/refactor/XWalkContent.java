@@ -53,6 +53,7 @@ import org.chromium.content_public.browser.SelectionPopupController;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.WebContentsInternals;
 import org.chromium.content_public.browser.navigation_controller.UserAgentOverrideOption;
+import org.chromium.content_public.common.UseZoomForDSFPolicy;
 import org.chromium.ui.base.ActivityWindowAndroid;
 import org.chromium.ui.base.PageTransition;
 import org.chromium.ui.base.ViewAndroidDelegate;
@@ -377,6 +378,12 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         
         mComponentCallbacks = new XWalkComponentCallbacks();
         mViewContext.registerComponentCallbacks(mComponentCallbacks);
+        
+        if (mAppTargetSdkVersion < Build.VERSION_CODES.LOLLIPOP) {
+            // Prior to Lollipop, JavaScript objects injected via addJavascriptInterface
+            // were not inspectable.
+           getJavascriptInjector().setAllowInspection(false);
+        }
     }
 
     /**
@@ -393,7 +400,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         @Override
         public View acquireView() {
             final View retVal = super.acquireView();
-            Log.d("iotto", "acquireView %s", retVal);
             return retVal;
         }
     }
@@ -885,6 +891,16 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         return mPossiblyStaleHitTestData;
     }
 
+    @CalledByNative
+    private void updateHitTestData(int type, String extra, String href, String anchorText,
+                                   String imgSrc) {
+        mPossiblyStaleHitTestData.hitTestResultType = type;
+        mPossiblyStaleHitTestData.hitTestResultExtraData = extra;
+        mPossiblyStaleHitTestData.href = href;
+        mPossiblyStaleHitTestData.anchorText = anchorText;
+        mPossiblyStaleHitTestData.imgSrc = imgSrc;
+    }
+    
     public String getXWalkVersion() {
         if (mNativeContent == 0)
             return "";
@@ -1278,18 +1294,49 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
 
     public boolean onTouchEvent(MotionEvent event) {
+//        if (isDestroyed(NO_WARN)) return false;
+//        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+//            mSettings.setSpatialNavigationEnabled(false);
+//        }
+//
+//        mScrollOffsetManager.setProcessingTouchEvent(true);
+//        boolean rv = mWebContents.getEventForwarder().onTouchEvent(event);
+//        mScrollOffsetManager.setProcessingTouchEvent(false);
+        
         boolean retVal = mWebContents.getEventForwarder().onTouchEvent(event);
 
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             // Note this will trigger IPC back to browser even if nothing is
             // hit.
-            nativeRequestNewHitTestDataAt(mNativeContent, event.getX() / (float) mDIPScale,
-                    event.getY() / (float) mDIPScale, event.getTouchMajor() / (float) mDIPScale);
+            float eventX = event.getX();
+            float eventY = event.getY();
+            float touchMajor = Math.max(event.getTouchMajor(), event.getTouchMinor());
+            if (!UseZoomForDSFPolicy.isUseZoomForDSFEnabled()) {
+                float dipScale = getDeviceScaleFactor();
+                eventX /= dipScale;
+                eventY /= dipScale;
+                touchMajor /= dipScale;
+            }
+            nativeRequestNewHitTestDataAt(mNativeContent, eventX, eventY, touchMajor);
         }
+        
+//        if (mOverScrollGlow != null) {
+//            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+//                mOverScrollGlow.setShouldPull(true);
+//            } else if (event.getActionMasked() == MotionEvent.ACTION_UP
+//                    || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+//                mOverScrollGlow.setShouldPull(false);
+//                mOverScrollGlow.releaseAll();
+//            }
+//        }
         return retVal;
         // return mContentViewCore.onTouchEvent(event);
     }
 
+    private float getDeviceScaleFactor() {
+        return mWindow.getDisplay().getDipScale();
+    }
+    
     public void setOnTouchListener(OnTouchListener l) {
         mContentView.setOnTouchListener(l);
     }
@@ -1379,8 +1426,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         public XWalkWebResourceResponse shouldInterceptRequest(
                 XWalkContentsClient.XWalkWebResourceRequest request) {
             String url = request.url;
-            Log.e(TAG, "TODO(iotto): shouldInterceptRequest url=%s", url);
-
             XWalkWebResourceResponse webResourceResponse = null;
 //            // Return the response directly if the url is default video poster url.
 //            webResourceResponse = mDefaultVideoPosterRequestHandler.shouldInterceptRequest(url);
@@ -1450,16 +1495,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     @CalledByNative
     public void onGeolocationPermissionsHidePrompt() {
         mContentsClientBridge.onGeolocationPermissionsHidePrompt();
-    }
-
-    @CalledByNative
-    private void updateHitTestData(int type, String extra, String href, String anchorText,
-                                   String imgSrc) {
-        mPossiblyStaleHitTestData.hitTestResultType = type;
-        mPossiblyStaleHitTestData.hitTestResultExtraData = extra;
-        mPossiblyStaleHitTestData.href = href;
-        mPossiblyStaleHitTestData.anchorText = anchorText;
-        mPossiblyStaleHitTestData.imgSrc = imgSrc;
     }
 
     public void enableRemoteDebugging() {

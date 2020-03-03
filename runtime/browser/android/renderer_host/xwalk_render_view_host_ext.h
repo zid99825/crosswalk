@@ -91,9 +91,8 @@ class XWalkRenderViewHostExt : public content::WebContentsObserver
   bool OnMessageReceived(const IPC::Message& message,
                          content::RenderFrameHost* render_frame_host) override;
 
-  void OnDocumentHasImagesResponse(content::RenderFrameHost* render_frame_host,
-                                   int msg_id, bool has_images);
-  void OnUpdateHitTestData(const XWalkHitTestData& hit_test_data);
+  void OnDocumentHasImagesResponse(content::RenderFrameHost* render_frame_host, int msg_id, bool has_images);
+  void OnUpdateHitTestData(content::RenderFrameHost* render_frame_host, const XWalkHitTestData& hit_test_data);
   void OnPictureUpdated();
 
   bool IsRenderViewReady() const;

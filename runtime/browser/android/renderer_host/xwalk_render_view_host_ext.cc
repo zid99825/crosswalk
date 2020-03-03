@@ -18,6 +18,8 @@
 #include "xwalk/runtime/browser/xwalk_browser_context.h"
 #include "xwalk/runtime/common/android/xwalk_render_view_messages.h"
 
+#include "meta_logging.h"
+
 namespace xwalk {
 
 XWalkRenderViewHostExt::XWalkRenderViewHostExt(content::WebContents* contents)
@@ -72,6 +74,7 @@ void XWalkRenderViewHostExt::MarkHitTestDataRead() {
 void XWalkRenderViewHostExt::RequestNewHitTestDataAt(
     const gfx::PointF& touch_center,
     const gfx::SizeF& touch_area) {
+  TENTA_LOG(INFO) << "iotto " << __func__;
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   // We only need to get blink::WebView on the renderer side to invoke the
   // blink hit test API, so sending this IPC to main frame is enough.
@@ -173,9 +176,20 @@ void XWalkRenderViewHostExt::OnDocumentHasImagesResponse(
   }
 }
 
-void XWalkRenderViewHostExt::OnUpdateHitTestData(
-    const XWalkHitTestData& hit_test_data) {
+void XWalkRenderViewHostExt::OnUpdateHitTestData(content::RenderFrameHost* render_frame_host,
+                                                 const XWalkHitTestData& hit_test_data) {
+  content::RenderFrameHost* main_frame_host = render_frame_host;
+  while (main_frame_host->GetParent())
+    main_frame_host = main_frame_host->GetParent();
+
+  // Make sense from any frame of the current frame tree, because a focused
+  // node could be in either the mainframe or a subframe.
+  if (main_frame_host != web_contents()->GetMainFrame())
+    return;
+
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  TENTA_LOG(INFO) << "iotto " << __func__ << " hitTestDataType=" << hit_test_data.type;
+
   last_hit_test_data_ = hit_test_data;
   has_new_hit_test_data_ = true;
 }
