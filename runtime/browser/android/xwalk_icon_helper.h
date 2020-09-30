@@ -44,6 +44,7 @@ class XWalkIconHelper : public content::WebContentsObserver {
   // From WebContentsObserver
   void DidUpdateFaviconURL(
       const std::vector<content::FaviconURL>& candidates) override;
+  void DidFinishNavigation(content::NavigationHandle* navigation_handle) override;
 
   void DownloadFaviconCallback(
       int id,

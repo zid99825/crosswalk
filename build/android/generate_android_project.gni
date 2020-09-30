@@ -252,7 +252,6 @@ template("generate_android_project") {
   # If we are shipping native libraries, we need to create a wrapper to be able
   # to load them at runtime.
   if (_native_libs_deps != []) {
-    print("_native_libs_deps ", _native_libs_deps)
     # TODO(rakuco): We may need an additional block adding libc++_shared.so for
     # the is_component_build case. See the android_apk template in rules.gni.
     # M53 also added a block to order the library dependencies, but we do not
@@ -361,7 +360,6 @@ template("generate_android_project") {
       jar_excluded_patterns += invoker.jar_excluded_patterns
     }
                                    
-    print("java_library_impl", _java_target, " exclude_patterns", jar_excluded_patterns)
     jar_path = _resource_jar_path
     if (defined(invoker.java_files)) {
         java_files = invoker.java_files

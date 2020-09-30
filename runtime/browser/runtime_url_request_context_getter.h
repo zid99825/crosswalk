@@ -23,7 +23,9 @@ namespace net {
 class HostResolver;
 class MappedHostResolver;
 class NetworkDelegate;
+class NetworkQualityEstimator;
 class ProxyConfigService;
+class RTTAndThroughputEstimatesObserver;
 class URLRequestContextStorage;
 class URLRequestJobFactory;
 }
@@ -62,6 +64,9 @@ class RuntimeURLRequestContextGetter : public net::URLRequestContextGetter {
   std::unique_ptr<net::URLRequestContext> url_request_context_;
   content::ProtocolHandlerMap protocol_handlers_;
   content::URLRequestInterceptorScopedVector request_interceptors_;
+
+  std::unique_ptr<net::NetworkQualityEstimator> _network_quality_estimator;
+  std::unique_ptr<net::RTTAndThroughputEstimatesObserver> _network_quality_observer;
 
   DISALLOW_COPY_AND_ASSIGN(RuntimeURLRequestContextGetter);
 };

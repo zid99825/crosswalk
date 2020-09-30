@@ -22,11 +22,11 @@ vars = {
 }
 
 deps = {
-    'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:mikandi/android-database-sqlitecrypt.git@origin/chromium_64',
-    'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:mikandi/file-metadata-sqlite.git@origin/chromium_64',
-    'src/xwalk/third_party/tenta/chromium_cache' : 'git@bitbucket.org:mikandi/chromium-cache-metafs.git@origin/chromium_64',
-    'src/xwalk/third_party/tenta/crosswalk_extensions' : 'git@bitbucket.org:mikandi/crosswalk-extensions.git@origin/chromium_64',
-    'src/xwalk/third_party/tenta/mimicvpn' : 'git@bitbucket.org:mikandi/chromium-mimicvpn.git',
+    'src/xwalk/third_party/tenta/sqlitecrypt': 'git@bitbucket.org:tenta-browser/android-database-sqlitecrypt.git@origin/chromium_64',
+    'src/xwalk/third_party/tenta/meta_fs' : 'git@bitbucket.org:tenta-browser/crosswalk-metafs.git@origin/feature/ff',
+    'src/xwalk/third_party/tenta/chromium_cache' : 'git@bitbucket.org:tenta-browser/crosswalk-metafs-cache.git@origin/feature/ff',
+    'src/xwalk/third_party/tenta/crosswalk_extensions' : 'git@bitbucket.org:tenta-browser/crosswalk-extensions.git@origin/feature/ff',
+    'src/xwalk/third_party/tenta/mimicvpn' : 'git@bitbucket.org:tenta-browser/crosswalk-mimicvpn.git',
 }
 
 hooks = [

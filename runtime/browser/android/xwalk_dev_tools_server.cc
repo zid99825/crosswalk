@@ -72,7 +72,7 @@ class UnixDomainServerSocketFactory
     std::unique_ptr<net::UnixDomainServerSocket> socket(
         new net::UnixDomainServerSocket(auth_callback_, true /* use_abstract_namespace */));
     if (socket->BindAndListen(socket_name_, kBackLog) != net::OK) {
-      TENTA_LOG_NET(ERROR) << "iotto " << __func__ << " error_on_bind";
+      TENTA_LOG_NET(ERROR) << __func__ << " error_on_bind";
       return std::unique_ptr<net::ServerSocket>();
     }
 

@@ -156,13 +156,11 @@ class XWalkWebContentsDelegateAdapter extends XWalkWebContentsDelegate {
     
     @Override
     public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
-//        org.chromium.base.Log.d("iotto", "getContentVideoViewEmbedder");
         return mXwalkContent.getContentVideoViewEmbedder();
     }
     
     @Override
     public void toggleFullscreenModeForTab(boolean enterFullscreen) {
-//        org.chromium.base.Log.d("iotto", "toggleFullscreenModeForTab %b", enterFullscreen);
 //        if (enterFullscreen) {
 //            enterFullscreen();
 //        } else {

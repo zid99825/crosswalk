@@ -276,7 +276,8 @@ public class XWalkUIClient {
      * 
      * @since 1.0
      */
-    public void openFileChooser(XWalkView view, ValueCallback<String[]> uploadFile, String acceptType, boolean capture,
+    public void openFileChooser(XWalkView view, ValueCallback<String[]> uploadFile, String acceptType, 
+            String title, String defaultFilename, boolean capture,
             int modeFlags) {
         uploadFile.onReceiveValue(null);
     }

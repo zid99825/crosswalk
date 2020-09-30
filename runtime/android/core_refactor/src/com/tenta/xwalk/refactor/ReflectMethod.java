@@ -39,7 +39,6 @@ public class ReflectMethod {
         if (mClass == null) return false;
 
         try {
-//            org.chromium.base.Log.d("iotto", "object=%s, method=%s", mClass.getCanonicalName(), mName);
             mMethod = mClass.getMethod(mName, mParameterTypes);
         } catch (NoSuchMethodException e) {
             for (Class<?> parent = mClass; parent != null; parent = parent.getSuperclass()) {
@@ -48,7 +47,6 @@ public class ReflectMethod {
                     mMethod.setAccessible(true);
                     break;
                 } catch (NoSuchMethodException e2) {
-//                    Log.e("iotto", "missing method: " + name, e2);
                 }
             }
         }

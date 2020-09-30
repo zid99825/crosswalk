@@ -4,9 +4,12 @@
 
 package org.xwalk.core;
 
+import android.app.Application;
 import android.content.Context;
 import android.util.Log;
-
+import org.chromium.base.ApplicationStatus;
+import org.chromium.base.ContextUtils;
+import org.chromium.base.PathUtils;
 import org.xwalk.core.XWalkLibraryLoader.ActivateListener;
 import org.xwalk.core.XWalkLibraryLoader.DecompressListener;
 
@@ -152,6 +155,7 @@ public class XWalkInitializer {
     }
 
     private static final String TAG = "XWalkInitializer";
+    private static final String PRIVATE_DATA_DIRECTORY_SUFFIX = "xwalkcore";
 
     private XWalkInitListener mInitListener;
     private Context mContext;
@@ -168,6 +172,12 @@ public class XWalkInitializer {
     public XWalkInitializer(XWalkInitListener listener, Context context) {
         mInitListener = listener;
         mContext = context;
+
+        // do early Chromium init things
+        final Context appContext = context.getApplicationContext();
+        ContextUtils.initApplicationContext(appContext);
+        PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX);
+        ApplicationStatus.initialize((Application) appContext);
 
         XWalkLibraryLoader.prepareToInit(mContext);
     }
@@ -254,7 +264,6 @@ public class XWalkInitializer {
 
         @Override
         public void onActivateFailed() {
-            org.chromium.base.Log.d("iotto", "onActivateFailed");
             mInitListener.onXWalkInitFailed();
         }
 

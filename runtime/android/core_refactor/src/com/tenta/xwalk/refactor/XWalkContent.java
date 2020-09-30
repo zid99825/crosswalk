@@ -28,12 +28,13 @@ import android.view.inputmethod.InputConnection;
 import android.webkit.ValueCallback;
 import android.widget.FrameLayout;
 
-import com.tenta.fs.MetaErrors;
 import com.tenta.xwalk.refactor.XWalkDownloadListener;
 import com.tenta.xwalk.refactor.XWalkFindListener;
 import com.tenta.xwalk.refactor.XWalkGetBitmapCallback;
 import com.tenta.xwalk.refactor.XWalkSettings;
 import com.tenta.xwalk.refactor.AndroidProtocolHandler;
+
+import com.tenta.metafs.MetaError;
 
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.CalledByNative;
@@ -145,8 +146,20 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     // Reference to the active mNativeContent pointer while it is active use
     // (ie before it is destroyed).
     private XWalkCleanupReference mXWalkCleanupReference;
+    
+    private final int zoneId;
+    private final int tabId;
 
+    // orig xwalk
     public XWalkContent(Context context, XWalkView xwView) {
+        this(context, xwView, 0, 0);
+    }
+    
+    // Tenta tailored
+    public XWalkContent(Context context, XWalkView xwView,final int zoneId, final int tabId) {
+        this.zoneId = zoneId;
+        this.tabId = tabId;
+
         // Initialize the WebContensDelegate.
         mXWalkView = xwView;
         mViewContext = mXWalkView.getContext();
@@ -632,11 +645,11 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mContentsClientBridge.onStopLoading();
     }
 
-    public Bitmap getFavicon() {
-        if (mNativeContent == 0)
-            return null;
-        return mContentsClientBridge.getFavicon();
-    }
+//    public Bitmap getFavicon() {
+//        if (mNativeContent == 0)
+//            return null;
+//        return mContentsClientBridge.getFavicon();
+//    }
 
     // Currently, timer pause/resume is actually
     // a global setting. And multiple pause will fail the
@@ -896,7 +909,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
      */
     public int saveHistory(final String id, final String encKey) {
         if (mNativeContent == 0) {
-            return metaFsError = MetaErrors.ERR_INVALID_POINTER; // ERR_INVALID_POINTER
+            return metaFsError = MetaError.INVALID_POINTER; // ERR_INVALID_POINTER
         }
 
         int result = nativeSaveHistory(mNativeContent, id, encKey);
@@ -912,11 +925,11 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
      */
     public int restoreHistory(final String id, final String encKey) {
         if (mNativeContent == 0) {
-            return metaFsError = MetaErrors.ERR_INVALID_POINTER; // ERR_INVALID_POINTER
+            return metaFsError = MetaError.INVALID_POINTER; // ERR_INVALID_POINTER
         }
 
         int result = nativeRestoreHistory(mNativeContent, id, encKey);
-        if (result == MetaErrors.FS_OK) {
+        if (result == MetaError.FS_OK) {
             mContentsClientBridge.onTitleChanged(mWebContents.getTitle(), true);
         }
         return metaFsError = result;
@@ -934,12 +947,12 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
             final String encKey) {
 
         if (mNativeContent == 0) {
-            return metaFsError = MetaErrors.ERR_INVALID_POINTER;
+            return metaFsError = MetaError.INVALID_POINTER;
         }
 
         int result = nativeSaveOldHistory(mNativeContent, state, id, encKey);
 
-        if (metaFsError == MetaErrors.FS_OK) {
+        if (metaFsError == MetaError.FS_OK) {
             mContentsClientBridge.onTitleChanged(mWebContents.getTitle(), true);
         }
 
@@ -955,7 +968,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
      */
     public int nukeHistory(final String id, final String encKey) {
         if (mNativeContent == 0) {
-            return metaFsError = MetaErrors.ERR_INVALID_POINTER;
+            return metaFsError = MetaError.INVALID_POINTER;
         }
 
         int result = nativeNukeHistory(mNativeContent, id, encKey);
@@ -965,13 +978,13 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
     public boolean rekeyHistory(final String oldKey, final String newKey) {
         if (mNativeContent == 0) {
-            metaFsError = MetaErrors.ERR_INVALID_POINTER; // ERR_INVALID_POINTER
+            metaFsError = MetaError.INVALID_POINTER; // ERR_INVALID_POINTER
             return false;
         }
 
         int result = nativeReKeyHistory(mNativeContent, oldKey, newKey);
         metaFsError = result;
-        if (result != MetaErrors.FS_OK) {
+        if (result != MetaError.FS_OK) {
             return false;
         }
 
@@ -1499,18 +1512,15 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
     
     public void setOverlayVideoMode(boolean enabled) {
-//        org.chromium.base.Log.d("iotto", "setOverlayVideoMode");
         if (mContentViewRenderView != null) {
             mContentViewRenderView.setOverlayVideoMode(enabled);
         }
     }
     
     public ContentVideoViewEmbedder getContentVideoViewEmbedder() {
-//        org.chromium.base.Log.d("iotto", "getContentVideoViewEmbedder");
         return new ActivityContentVideoViewEmbedder((Activity) mViewContext) {
             @Override
             public void enterFullscreenVideo(View view, boolean isVideoLoaded) {
-//                org.chromium.base.Log.d("iotto", "enterFullscreenVideo");
                 super.enterFullscreenVideo(view, isVideoLoaded);
                 if (mContentViewRenderView != null) {
                     mContentViewRenderView.setOverlayVideoMode(true);
@@ -1519,7 +1529,6 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
             @Override
             public void exitFullscreenVideo() {
-//                org.chromium.base.Log.d("iotto", "exitFullscreenVideo");
                 super.exitFullscreenVideo();
                 if (mContentViewRenderView != null) {
                     mContentViewRenderView.setOverlayVideoMode(false);
@@ -1527,6 +1536,16 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
             }
         };
 
+    }
+    
+    @CalledByNative
+    public int getZoneId() { 
+        return zoneId;
+    }
+    
+    @CalledByNative
+    public int getTabId() {
+        return tabId;
     }
     
     private native long nativeInit();

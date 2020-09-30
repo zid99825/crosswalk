@@ -92,6 +92,8 @@
 #include "xwalk/runtime/browser/xwalk_presentation_service_delegate_win.h"
 #endif
 
+#include "meta_logging.h"
+
 namespace xwalk {
 
 namespace {
@@ -354,6 +356,7 @@ void XWalkContentBrowserClient::AllowCertificateError(
     bool strict_enforcement,
     bool expired_previous_decision,
     const base::Callback<void(content::CertificateRequestResultType)>& callback) {
+  TENTA_LOG(ERROR) << __func__ << " error=" << cert_error << " url=" << request_url;
   // Currently only Android handles it.
   // TODO(yongsheng): applies it for other platforms?
 #if defined(OS_ANDROID)

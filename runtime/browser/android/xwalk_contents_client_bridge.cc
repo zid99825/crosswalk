@@ -13,6 +13,8 @@
 #include "base/callback_helpers.h"
 #include "base/guid.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/favicon_status.h"
+#include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
@@ -576,7 +578,7 @@ static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, const Jav
   for (size_t i = 0; i < file_path_str.size(); ++i) {
     GURL url(file_path_str[i]);
     if (!url.is_valid()) {
-      TENTA_LOG_NET(WARNING) << "iotto " << __func__ << " invalid_url=" << file_path_str[i];
+      TENTA_LOG_NET(WARNING) << __func__ << " invalid_url=" << file_path_str[i];
       continue;
     }
     base::FilePath path(
@@ -588,7 +590,7 @@ static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, const Jav
     file_info.file_path = path;
     if (!display_name_str[i].empty())
       file_info.display_name = display_name_str[i];
-    TENTA_LOG_NET(INFO) << "iotto " << __func__ << " new_file=" << path;
+    TENTA_LOG_NET(INFO) << __func__ << " new_file=" << path;
     files.push_back(file_info);
   }
   FileChooserParams::Mode mode = static_cast<content::FileChooserParams::Mode>(mode_flags);
@@ -599,7 +601,7 @@ static void JNI_XWalkContentsClientBridge_OnFilesSelected(JNIEnv* env, const Jav
 //  } else {
 //    mode = FileChooserParams::Open;
 //  }
-  TENTA_LOG_NET(INFO) << "iotto " << __func__ << " mode=" << mode << " files_cnt=" << files.size() << " file paths="
+  TENTA_LOG_NET(INFO) << __func__ << " mode=" << mode << " files_cnt=" << files.size() << " file paths="
                       << base::JoinString(file_path_str, ":");
   rfh->FilesSelectedInChooser(files, mode);
 }
@@ -628,6 +630,17 @@ void XWalkContentsClientBridge::OnReceivedIcon(const GURL& icon_url,
   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI));
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);
+  if (obj.is_null())
+    return;
+
+  content::NavigationEntry* entry =
+      icon_helper_->web_contents()->GetController().GetLastCommittedEntry();
+
+  if (entry) {
+    entry->GetFavicon().valid = true;
+    entry->GetFavicon().url = icon_url;
+    entry->GetFavicon().image = gfx::Image::CreateFrom1xBitmap(bitmap);
+  }
 
   ScopedJavaLocalRef<jstring> jurl(
       ConvertUTF8ToJavaString(env, icon_url.spec()));

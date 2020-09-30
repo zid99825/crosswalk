@@ -65,7 +65,6 @@ abstract class XWalkContentsClient {
         @Override
         public void didFailLoad(boolean isMainFrame, int errorCode,
                 String description, String failingUrl) {
-//        	org.chromium.base.Log.d("iotto", "error_code=%d, error_str=%s", errorCode, description);
             if (errorCode == NetError.ERR_ABORTED || !isMainFrame) {
                 // This error code is generated for the following reasons:
                 // - XWalkViewInternal.stopLoading is called,

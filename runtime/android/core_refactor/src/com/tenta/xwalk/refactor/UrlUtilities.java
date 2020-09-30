@@ -35,8 +35,8 @@ public class UrlUtilities {
     /**
      * URI schemes that ContentView can handle.
      */
-    private static final HashSet<String> ACCEPTED_SCHEMES = CollectionUtil.newHashSet(
-            "about", "app", "content", "data", "file", "http", "https", "javascript");
+    private static HashSet<String> ACCEPTED_SCHEMES = CollectionUtil.newHashSet(
+            "about", "app", "content", "data", "file", "http", "https", "javascript", "tenta");
 
     /**
      * URI schemes that can be handled in Intent fallback navigation.
@@ -66,6 +66,9 @@ public class UrlUtilities {
         return FALLBACK_VALID_SCHEMES.contains(uri.getScheme());
     }
 
+    public static boolean addAcceptedScheme(final String scheme) {
+        return ACCEPTED_SCHEMES.add(scheme);
+    }
     /**
      * @param uri A URI.
      *
