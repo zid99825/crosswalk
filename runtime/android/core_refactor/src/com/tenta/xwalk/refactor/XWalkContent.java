@@ -147,8 +147,8 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     // (ie before it is destroyed).
     private XWalkCleanupReference mXWalkCleanupReference;
     
-    private final int zoneId;
-    private final int tabId;
+    private final long zoneId;
+    private final long tabId;
 
     // orig xwalk
     public XWalkContent(Context context, XWalkView xwView) {
@@ -156,7 +156,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
     
     // Tenta tailored
-    public XWalkContent(Context context, XWalkView xwView,final int zoneId, final int tabId) {
+    public XWalkContent(Context context, XWalkView xwView,final long zoneId, final long tabId) {
         this.zoneId = zoneId;
         this.tabId = tabId;
 
@@ -1539,12 +1539,12 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
     }
     
     @CalledByNative
-    public int getZoneId() { 
+    public long getZoneId() { 
         return zoneId;
     }
     
     @CalledByNative
-    public int getTabId() {
+    public long getTabId() {
         return tabId;
     }
     

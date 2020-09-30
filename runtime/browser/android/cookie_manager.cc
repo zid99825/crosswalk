@@ -192,6 +192,7 @@ class CookieManager {
   std::string GetCookie(const GURL& host);
   void RemoveSessionCookie();
   void RemoveAllCookie();
+  void RemoveAllCookieBlocking();
   void RemoveExpiredCookie();
   void FlushCookieStore();
   bool HasCookies();
@@ -338,6 +339,7 @@ net::CookieStore* CookieManager::GetCookieStore() {
     // TODO(iotto) : If not set will be posted to BrowerThread::IO
     cookie_config.client_task_runner = cookie_store_task_runner_;
 
+    // TODO(iotto): Start with option block shutdown
     cookie_config.background_task_runner = cookie_store_backend_thread_.task_runner();
 
     {
@@ -431,8 +433,15 @@ void CookieManager::RemoveSessionCookieAsyncHelper(base::WaitableEvent* completi
 }
 
 void CookieManager::RemoveAllCookie() {
+  TENTA_LOG_COOKIE(INFO) << __func__;
   ExecCookieTask(base::Bind(&CookieManager::RemoveAllCookieAsyncHelper, base::Unretained(this)),
   false);
+}
+
+void CookieManager::RemoveAllCookieBlocking() {
+  TENTA_LOG_COOKIE(INFO) << __func__;
+  ExecCookieTask(base::Bind(&CookieManager::RemoveAllCookieAsyncHelper, base::Unretained(this)),
+  true);
 }
 
 // TODO(kristianm): Pass a null callback so it will not be invoked
@@ -857,6 +866,10 @@ static void JNI_XWalkCookieManager_RemoveSessionCookie(JNIEnv* env, const JavaPa
 
 static void JNI_XWalkCookieManager_RemoveAllCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   CookieManager::GetInstance()->RemoveAllCookie();
+}
+
+static void JNI_XWalkCookieManager_RemoveAllCookieBlocking(JNIEnv* env, const JavaParamRef<jobject>& obj) {
+  CookieManager::GetInstance()->RemoveAllCookieBlocking();
 }
 
 static void JNI_XWalkCookieManager_RemoveExpiredCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {

@@ -111,6 +111,10 @@ public class XWalkCookieManager {
     nativeRemoveAllCookie();
   }
 
+  public void removeAllCookieBlocking() {
+    nativeRemoveAllCookieBlocking();
+  }
+  
   /**
    * Get whether there are stored cookies.
    * 
@@ -210,6 +214,8 @@ public class XWalkCookieManager {
   private native void nativeRemoveSessionCookie();
 
   private native void nativeRemoveAllCookie();
+  
+  private native void nativeRemoveAllCookieBlocking();
 
   private native void nativeRemoveExpiredCookie();
 

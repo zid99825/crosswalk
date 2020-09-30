@@ -332,7 +332,7 @@ public class XWalkView extends android.widget.FrameLayout {
     }
 
     // Tenta specific constructor
-    public XWalkView(Context context, final int zoneId, final int tabId) {
+    public XWalkView(Context context, final long zoneId, final long tabId) {
         super(context, null);
 
         checkThreadSafety();
@@ -420,7 +420,7 @@ public class XWalkView extends android.widget.FrameLayout {
         mContent.supplyContentsForPopup(newXWalkView == null ? null : newXWalkView.mContent);
     }
 
-    protected void initXWalkContent(final int zoneId, final int tabId) {
+    protected void initXWalkContent(final long zoneId, final long tabId) {
         mIsHidden = false;
         mContent = new XWalkContent(mContext, this, zoneId, tabId);
 
@@ -2128,14 +2128,14 @@ public class XWalkView extends android.widget.FrameLayout {
         }
     }
     
-    public int getZoneId() {
+    public long getZoneId() {
         if (mContent == null) {
             return -1;
         }
         return mContent.getZoneId();
     }
     
-    public int getTabId() {
+    public long getTabId() {
         if (mContent == null) {
             return -1;
         }
