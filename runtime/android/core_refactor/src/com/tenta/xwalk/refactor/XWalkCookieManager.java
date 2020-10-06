@@ -111,8 +111,8 @@ public class XWalkCookieManager {
     nativeRemoveAllCookie();
   }
 
-  public void removeAllCookieBlocking() {
-    nativeRemoveAllCookieBlocking();
+  public void clearZoneCookies(final String zone) {
+    nativeClearZoneCookies(zone);
   }
   
   /**
@@ -215,7 +215,7 @@ public class XWalkCookieManager {
 
   private native void nativeRemoveAllCookie();
   
-  private native void nativeRemoveAllCookieBlocking();
+  private native void nativeClearZoneCookies(final String zone);
 
   private native void nativeRemoveExpiredCookie();
 
