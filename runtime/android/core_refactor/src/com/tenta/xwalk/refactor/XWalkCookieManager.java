@@ -111,6 +111,10 @@ public class XWalkCookieManager {
     nativeRemoveAllCookie();
   }
 
+  public void clearZoneCookies(final String zone) {
+    nativeClearZoneCookies(zone);
+  }
+  
   /**
    * Get whether there are stored cookies.
    * 
@@ -210,6 +214,8 @@ public class XWalkCookieManager {
   private native void nativeRemoveSessionCookie();
 
   private native void nativeRemoveAllCookie();
+  
+  private native void nativeClearZoneCookies(final String zone);
 
   private native void nativeRemoveExpiredCookie();
 

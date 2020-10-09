@@ -191,6 +191,7 @@ class CookieManager {
   std::string GetCookie(const GURL& host);
   void RemoveSessionCookie();
   void RemoveAllCookie();
+  void ClearZoneCookies(const std::string& zone);
   void RemoveExpiredCookie();
   void FlushCookieStore();
   bool HasCookies();
@@ -226,6 +227,9 @@ class CookieManager {
   void RemoveSessionCookieAsyncHelper(base::WaitableEvent* completion);
   void RemoveAllCookieAsyncHelper(base::WaitableEvent* completion);
   void RemoveCookiesCompleted(base::WaitableEvent* completion, uint32_t num_deleted);
+
+  void ClearZoneCookiesTask(const std::string& zone, base::WaitableEvent* completion);
+//  void ClearZoneCookiesDone(const std::string& zone, base::WaitableEvent* completion);
 
   void FlushCookieStoreAsyncHelper(base::WaitableEvent* completion);
 
@@ -437,6 +441,7 @@ void CookieManager::RemoveAllCookieAsyncHelper(base::WaitableEvent* completion) 
   DCHECK(!completion);
   TENTA_LOG_COOKIE(INFO) << __func__;
 
+  // calls CookieMonster
   GetCookieStore()->DeleteAllAsync(
       base::BindOnce(&CookieManager::RemoveCookiesCompleted, base::Unretained(this), completion));
 }
@@ -450,6 +455,38 @@ void CookieManager::RemoveCookiesCompleted(base::WaitableEvent* completion, uint
     completion->Signal();
   }
 }
+
+void CookieManager::ClearZoneCookies(const std::string& zone) {
+  TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone;
+  ExecCookieTask(base::Bind(&CookieManager::ClearZoneCookiesTask, base::Unretained(this), zone),
+  true);
+}
+
+void CookieManager::ClearZoneCookiesTask(const std::string& zone, base::WaitableEvent* completion) {
+  TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone;
+
+  GetCookieStore();
+  // if zone == current_zone invoke deleteAllAsync
+  // else delete folder from db
+  if (_tenta_store->zone().compare(zone) == 0 ) { // clear for same zone as current
+    RemoveAllCookieAsyncHelper(completion);
+  } else {
+
+    // TODO(iotto): Invoke with callback and use ClearZoneCookiesDone
+    _tenta_store->DeleteZoneCookies(zone);
+    if ( completion != nullptr ) {
+      completion->Signal();
+    }
+  }
+}
+
+//void CookieManager::ClearZoneCookiesDone(const std::string& zone, base::WaitableEvent* completion) {
+//  TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone;
+//
+//  if ( completion != nullptr ) {
+//    completion->Signal();
+//  }
+//}
 
 void CookieManager::RemoveExpiredCookie() {
 // HasCookies will call GetAllCookiesAsync, which in turn will force a GC.
@@ -854,6 +891,12 @@ static void JNI_XWalkCookieManager_RemoveSessionCookie(JNIEnv* env, const JavaPa
 
 static void JNI_XWalkCookieManager_RemoveAllCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
   CookieManager::GetInstance()->RemoveAllCookie();
+}
+
+static void JNI_XWalkCookieManager_ClearZoneCookies(JNIEnv* env, const JavaParamRef<jobject>& obj,
+                                                           const JavaParamRef<jstring>& zone) {
+  std::string zone_str(ConvertJavaStringToUTF8(env, zone));
+  CookieManager::GetInstance()->ClearZoneCookies(zone_str);
 }
 
 static void JNI_XWalkCookieManager_RemoveExpiredCookie(JNIEnv* env, const JavaParamRef<jobject>& obj) {
