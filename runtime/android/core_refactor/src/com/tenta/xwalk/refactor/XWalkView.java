@@ -2086,6 +2086,13 @@ public class XWalkView extends android.widget.FrameLayout {
             return null;
         return mContent.getCompositingSurfaceType();
     }
+	
+    public void requestChildFocus() {
+        checkThreadSafety();
+        if (mContent == null)
+            return;
+        mContent.requestFocus();
+    }
     
     // Notify network change
     public static void forceConnectivityState(boolean networkAvailable) {
