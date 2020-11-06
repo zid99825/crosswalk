@@ -44,12 +44,12 @@ JNI_EXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
   JNIEnv* env = base::android::AttachCurrentThread();
 
   if (!RegisterMainDexNatives(env)) {
-    TENTA_LOG_NET(ERROR) << __func__ << " RegisterMainDexNatives ";
+    LOG(ERROR) << __func__ << " RegisterMainDexNatives ";
     return -1;
   }
 
   if (!RegisterNonMainDexNatives(env)) {
-    TENTA_LOG_NET(ERROR) << __func__ << " RegisterNonMainDexNatives ";
+    LOG(ERROR) << __func__ << " RegisterNonMainDexNatives ";
     return -1;
   }
 

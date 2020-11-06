@@ -270,7 +270,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mXWalkView.addView(mContentView,
                 new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT));
-        mContentView.requestFocus();
+        // mContentView.requestFocus(); //comment by liujy remove auto focus
         
 //        mContentViewCore.setContentViewClient(mContentsClientBridge);
         mContentViewRenderView.setCurrentContentViewCore(mContentViewCore);
@@ -350,11 +350,20 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
         mContentViewCore.onShow();
     }
 
+    public void requestFocus() {
+        if (mContentViewCore != null && mContentViewCore.getContainerView() != null) {
+            mContentViewCore.getContainerView().clearFocus();
+            mContentViewCore.getContainerView().requestFocus();
+        } else if (mContentView != null) {
+            mContentView.requestFocus();
+        }
+    }
+
     private void doLoadUrl(LoadUrlParams params) {
         params.setOverrideUserAgent(UserAgentOverrideOption.TRUE);
         mNavigationController.loadUrl(params);
-        mContentViewCore.getContainerView().clearFocus();
-        mContentViewCore.getContainerView().requestFocus();
+        // mContentViewCore.getContainerView().clearFocus();
+        // mContentViewCore.getContainerView().requestFocus();
 //        mContentView.requestFocus();
         mIsLoaded = true;
     }

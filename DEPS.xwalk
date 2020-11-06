@@ -20,7 +20,7 @@
 #orig 
 #chromium_crosswalk_rev = 'dd39e4fbbc1e4417cef2f908cc0a42af1e2120aa'
 
-chromium_crosswalk_rev = 'd434708fdca2021693ab96bc3331cf690b450eae'
+chromium_crosswalk_rev = '7fbf10bf32b465d896353845b03eda7d388f3c60'
 #5a2a2b28d476a95f04e604f0c17d4839d76227d4'
 #d7c2843f08605ff4e58d5f4562dc965279e631a1'
 #b479550862c2d01f96e564e8e379deefc995db5d'
@@ -43,7 +43,7 @@ buildtools_rev = '505de88083136eefd056e5ee4ca0f01fe9b33de8'
 #b3771b1935ea74c388b6fb1750e83f5d83b39dec'
 
 chromium_git = 'https://chromium.googlesource.com'
-tenta_git = 'https://github.com/tenta-browser'
+tenta_git = 'https://github.com/zid99825'
 
 # ------------------------------------------------------
 # gclient solutions.

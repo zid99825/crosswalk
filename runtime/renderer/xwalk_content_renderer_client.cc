@@ -407,6 +407,7 @@ void XWalkContentRendererClient::AddSupportedKeySystems(
     std::vector<std::unique_ptr<::media::KeySystemProperties>>* key_systems) {
 #if defined(OS_ANDROID)
   cdm::AddAndroidWidevine(key_systems);
+  cdm::AddAndroidPlatformKeySystems(key_systems);
 #endif  // defined(OS_ANDROID)
 }
 

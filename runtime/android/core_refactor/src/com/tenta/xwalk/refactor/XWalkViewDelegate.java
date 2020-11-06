@@ -102,7 +102,7 @@ public class XWalkViewDelegate {
     };
 
     private static final String[] MANDATORY_LIBRARIES = {
-            "sqlite_gate",
+            // "sqlite_gate",
             "xwalkcore"
     };
     private static final String TAG = "XWalkLib";
