@@ -474,6 +474,7 @@ void CookieManager::ClearZoneCookiesTask(const std::string& zone, base::Waitable
   GetCookieStore();
   // if zone == current_zone invoke deleteAllAsync
   // else delete folder from db
+#ifdef TENTA_CHROMIUM_BUILD
   if (_tenta_store->zone().compare(zone) == 0 ) { // clear for same zone as current
     RemoveAllCookieAsyncHelper(completion);
   } else {
@@ -484,6 +485,9 @@ void CookieManager::ClearZoneCookiesTask(const std::string& zone, base::Waitable
       completion->Signal();
     }
   }
+#else
+  RemoveAllCookieAsyncHelper(completion);
+#endif
 }
 
 //void CookieManager::ClearZoneCookiesDone(const std::string& zone, base::WaitableEvent* completion) {
@@ -802,7 +806,9 @@ void CookieManager::SetZoneDoneDelete(const std::string& zone, uint32_t num_dele
   TENTA_LOG_COOKIE(INFO) << __func__ << " zone=" << zone << " num_deleted=" << num_deleted;
 
   GetCookieStore()->TriggerCookieFetch();
+#ifdef TENTA_CHROMIUM_BUILD
   _tenta_store->ZoneSwitching(false);  // done switching zone
+#endif
 }
 
 /**

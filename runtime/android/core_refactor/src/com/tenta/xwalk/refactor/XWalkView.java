@@ -55,7 +55,6 @@ import com.tenta.xwalk.refactor.XWalkGetBitmapCallback;
 import com.tenta.xwalk.refactor.XWalkHitTestResult;
 import com.tenta.xwalk.refactor.XWalkSettings;
 
-import com.tenta.metafs.MetaError;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -1045,7 +1044,7 @@ public class XWalkView extends android.widget.FrameLayout {
 //    @XWalkAPI
     public int saveHistory(final String id, final String encKey) {
         if (mContent == null) {
-            return MetaError.INVALID_POINTER;
+            return -6;
         }
 
         return mContent.saveHistory(id, encKey);
@@ -1061,7 +1060,7 @@ public class XWalkView extends android.widget.FrameLayout {
 //    @XWalkAPI
     public int restoreHistory(final String id, final String encKey) {
         if (mContent == null) {
-            return MetaError.INVALID_POINTER;
+            return -6;
         }
 
         return mContent.restoreHistory(id, encKey);
@@ -1075,7 +1074,7 @@ public class XWalkView extends android.widget.FrameLayout {
 //    @XWalkAPI
     public int getMetaFsError() {
         if (mContent == null) {
-            return MetaError.INVALID_POINTER;
+            return -6;
         }
 
         return mContent.getMetaFsError();
@@ -1093,7 +1092,7 @@ public class XWalkView extends android.widget.FrameLayout {
     public int saveOldHistory(byte[] state, final String id,
             final String encKey) {
         if (mContent == null) {
-            return MetaError.INVALID_POINTER;
+            return -6;
         }
         
         return mContent.saveOldHistory(state, id, encKey);
@@ -1109,7 +1108,7 @@ public class XWalkView extends android.widget.FrameLayout {
 //    @XWalkAPI
     public int nukeHistory(final String id, final String encKey) {
         if (mContent == null) {
-            return MetaError.INVALID_POINTER;
+            return -6;
         }
         
         return mContent.nukeHistory(id, encKey);

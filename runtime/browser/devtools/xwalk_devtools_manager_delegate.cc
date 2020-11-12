@@ -190,11 +190,11 @@ class ClientProxy :
   ~ClientProxy() override {
   }
 
-  void DispatchProtocolMessage(DevToolsAgentHost* agent_host, const std::string& message) override {
+  void DispatchProtocolMessage(content::DevToolsAgentHost* agent_host, const std::string& message) override {
     proxy_->DispatchOnClientHost(message);
   }
 
-  void AgentHostClosed(DevToolsAgentHost* agent_host) override {
+  void AgentHostClosed(content::DevToolsAgentHost* agent_host) override {
     proxy_->ConnectionClosed();
   }
 
@@ -214,7 +214,7 @@ class TabProxyDelegate :
         title_(tab->GetTitle()),
         url_(tab->GetURL()),
         _browser_context(context),
-        agent_host_(tab->web_contents() ? DevToolsAgentHost::GetOrCreateFor(tab->web_contents()) : nullptr) {
+        agent_host_(tab->web_contents() ? content::DevToolsAgentHost::GetOrCreateFor(tab->web_contents()) : nullptr) {
   }
 
   ~TabProxyDelegate() override {
@@ -239,7 +239,7 @@ class TabProxyDelegate :
   }
 
   std::string GetType() override {
-    return agent_host_ ? agent_host_->GetType() : DevToolsAgentHost::kTypePage;
+    return agent_host_ ? agent_host_->GetType() : content::DevToolsAgentHost::kTypePage;
   }
 
   std::string GetTitle() override {
@@ -315,7 +315,7 @@ class TabProxyDelegate :
     WebContents* web_contents = tab->web_contents();
     if (!web_contents)
       return;
-    agent_host_ = DevToolsAgentHost::GetOrCreateFor(web_contents);
+    agent_host_ = content::DevToolsAgentHost::GetOrCreateFor(web_contents);
   }
 
   bool FindTab(TentaTab** tab_out) const {
@@ -337,7 +337,7 @@ class TabProxyDelegate :
   const std::string title_;
   const GURL url_;
   content::BrowserContext* _browser_context;
-  scoped_refptr<DevToolsAgentHost> agent_host_;
+  scoped_refptr<content::DevToolsAgentHost> agent_host_;
   std::map<content::DevToolsExternalAgentProxy*, std::unique_ptr<ClientProxy>> proxies_;
   DISALLOW_COPY_AND_ASSIGN(TabProxyDelegate);
 };
@@ -345,12 +345,12 @@ class TabProxyDelegate :
 /**
  *
  */
-scoped_refptr<DevToolsAgentHost> DevToolsAgentHostForTab(TentaTab* tab, content::BrowserContext* context) {
-  scoped_refptr<DevToolsAgentHost> result = tab->GetDevToolsAgentHost();
+scoped_refptr<content::DevToolsAgentHost> DevToolsAgentHostForTab(TentaTab* tab, content::BrowserContext* context) {
+  scoped_refptr<content::DevToolsAgentHost> result = tab->GetDevToolsAgentHost();
   if (result)
     return result;
 
-  result = DevToolsAgentHost::Forward(tab->zone_tab_id().ToString(), base::MakeUnique<TabProxyDelegate>(tab, context));
+  result = content::DevToolsAgentHost::Forward(tab->zone_tab_id().ToString(), base::MakeUnique<TabProxyDelegate>(tab, context));
   tab->SetDevToolsAgentHost(result);
   return result;
 }
@@ -390,7 +390,7 @@ scoped_refptr<content::DevToolsAgentHost> XWalkDevToolsManagerDelegate::CreateNe
 
 content::DevToolsAgentHost::List XWalkDevToolsManagerDelegate::RemoteDebuggingTargets() {
   // Enumerate existing tabs, including the ones with no WebContents.
-  DevToolsAgentHost::List result;
+  content::DevToolsAgentHost::List result;
 
 #ifdef TENTA_CHROMIUM_BUILD
   std::set<WebContents*> tab_web_contents;
@@ -410,8 +410,8 @@ content::DevToolsAgentHost::List XWalkDevToolsManagerDelegate::RemoteDebuggingTa
   }
 
   // Add descriptors for targets not associated with any tabs.
-  DevToolsAgentHost::List agents = DevToolsAgentHost::GetOrCreateAll();
-  for (DevToolsAgentHost::List::iterator it = agents.begin(); it != agents.end(); ++it) {
+  content::DevToolsAgentHost::List agents = content::DevToolsAgentHost::GetOrCreateAll();
+  for (content::DevToolsAgentHost::List::iterator it = agents.begin(); it != agents.end(); ++it) {
     if (WebContents* web_contents = (*it)->GetWebContents()) {
       if (tab_web_contents.find(web_contents) != tab_web_contents.end())
         continue;
@@ -468,7 +468,7 @@ bool XWalkDevToolsManagerDelegate::IsBrowserTargetDiscoverable() {
 }
 
 bool XWalkDevToolsManagerDelegate::HandleCommand(
-    DevToolsAgentHost* agent_host,
+    content::DevToolsAgentHost* agent_host,
     int session_id,
     base::DictionaryValue* command_dict) {
   /*

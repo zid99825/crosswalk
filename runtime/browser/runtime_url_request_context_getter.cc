@@ -84,7 +84,7 @@ namespace {
 // Field trial for network quality estimator. Seeds RTT and downstream
 // throughput observations with values that correspond to the connection type
 // determined by the operating system.
-const char kNetworkQualityEstimatorFieldTrialName[] = "NetworkQualityEstimator";
+//const char kNetworkQualityEstimatorFieldTrialName[] = "NetworkQualityEstimator";
 
 // TODO(rakuco): should Crosswalk's release cycle ever align with Chromium's,
 // we should use Chromium's Certificate Transparency policy and stop ignoring

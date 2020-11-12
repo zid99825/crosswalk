@@ -34,8 +34,6 @@ import com.tenta.xwalk.refactor.XWalkGetBitmapCallback;
 import com.tenta.xwalk.refactor.XWalkSettings;
 import com.tenta.xwalk.refactor.AndroidProtocolHandler;
 
-import com.tenta.metafs.MetaError;
-
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.JNINamespace;
@@ -918,7 +916,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
      */
     public int saveHistory(final String id, final String encKey) {
         if (mNativeContent == 0) {
-            return metaFsError = MetaError.INVALID_POINTER; // ERR_INVALID_POINTER
+            return metaFsError = -6; // ERR_INVALID_POINTER
         }
 
         int result = nativeSaveHistory(mNativeContent, id, encKey);
@@ -934,11 +932,11 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
      */
     public int restoreHistory(final String id, final String encKey) {
         if (mNativeContent == 0) {
-            return metaFsError = MetaError.INVALID_POINTER; // ERR_INVALID_POINTER
+            return metaFsError = -6; // ERR_INVALID_POINTER
         }
 
         int result = nativeRestoreHistory(mNativeContent, id, encKey);
-        if (result == MetaError.FS_OK) {
+        if (result == 0) {
             mContentsClientBridge.onTitleChanged(mWebContents.getTitle(), true);
         }
         return metaFsError = result;
@@ -956,12 +954,12 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
             final String encKey) {
 
         if (mNativeContent == 0) {
-            return metaFsError = MetaError.INVALID_POINTER;
+            return metaFsError = -6;
         }
 
         int result = nativeSaveOldHistory(mNativeContent, state, id, encKey);
 
-        if (metaFsError == MetaError.FS_OK) {
+        if (metaFsError == 0) {
             mContentsClientBridge.onTitleChanged(mWebContents.getTitle(), true);
         }
 
@@ -977,7 +975,7 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
      */
     public int nukeHistory(final String id, final String encKey) {
         if (mNativeContent == 0) {
-            return metaFsError = MetaError.INVALID_POINTER;
+            return metaFsError = -6;
         }
 
         int result = nativeNukeHistory(mNativeContent, id, encKey);
@@ -987,13 +985,13 @@ class XWalkContent implements XWalkPreferences.KeyValueChangeListener {
 
     public boolean rekeyHistory(final String oldKey, final String newKey) {
         if (mNativeContent == 0) {
-            metaFsError = MetaError.INVALID_POINTER; // ERR_INVALID_POINTER
+            metaFsError = -6; // ERR_INVALID_POINTER
             return false;
         }
 
         int result = nativeReKeyHistory(mNativeContent, oldKey, newKey);
         metaFsError = result;
-        if (result != MetaError.FS_OK) {
+        if (result != 0) {
             return false;
         }
 

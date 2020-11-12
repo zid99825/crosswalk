@@ -89,7 +89,7 @@ namespace keys = xwalk::application_manifest_keys;
 namespace xwalk {
 
 namespace {
-const int cBlkSize = 4 * 1024;
+//const int cBlkSize = 4 * 1024;
 
 const void* kXWalkContentUserDataKey = &kXWalkContentUserDataKey;
 
@@ -231,9 +231,12 @@ XWalkContent* XWalkContent::FromWebContents(content::WebContents* web_contents) 
 }
 
 XWalkContent::XWalkContent(std::unique_ptr<content::WebContents> web_contents)
-    : web_contents_(std::move(web_contents)),
-      _zone_id(0),
-      _tab_id(0) {
+    : web_contents_(std::move(web_contents))
+#ifdef TENTA_CHROMIUM_BUILD
+    ,_zone_id(0),
+      _tab_id(0) 
+#endif
+      {
   xwalk_autofill_manager_.reset(new XWalkAutofillManager(web_contents_.get()));
   XWalkContentLifecycleNotifier::OnXWalkViewCreated();
 }
